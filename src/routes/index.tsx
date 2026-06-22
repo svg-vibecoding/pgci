@@ -38,14 +38,21 @@ function Home() {
       />
       <section className="relative mx-auto flex w-full max-w-[720px] flex-col items-center gap-6 text-center">
         <SumatecLogo className="h-14 w-auto" />
-        <h1 className="suma-display-lg max-w-[18ch]">
-          La gestión comercial, convertida en una{" "}
-          <span className="text-[var(--color-primary)]">fuente de verdad.</span>
+        <h1 className="suma-display-lg">
+          <span className="block">La gestión comercial distribuida,</span>
+          <span className="block">centralizada en una única</span>
+          <span className="block text-[var(--color-primary)]">
+            fuente de verdad.
+          </span>
         </h1>
         <p className="suma-landing-lead max-w-2xl">
-          La <strong className="font-bold text-[var(--text-primary)]">PGCI</strong> reúne acuerdos, productos, códigos de
-          cliente, precios, vigencias y las condiciones de nuestra relación con los clientes en un solo lugar:
-          estructurado, consultable y con toda su trazabilidad.
+          La{" "}
+          <strong className="font-bold text-[var(--text-primary)]">PGCI</strong>{" "}
+          reúne solicitudes, acuerdos, equivalencias de productos, precios,
+          vigencias y condiciones comerciales en un solo lugar:{" "}
+          <strong className="font-bold text-[var(--text-primary)]">
+            Información estructurada, disponible y con todo su historial.
+          </strong>
         </p>
         <div className="flex justify-center pt-2">
           <button
