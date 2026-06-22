@@ -39,10 +39,10 @@ function Home() {
       <section className="relative mx-auto flex w-full max-w-[720px] flex-col items-center gap-6 text-center">
         <SumatecLogo className="h-14 w-auto" />
         <h1 className="suma-display-lg">
-          <span className="block">La gestión comercial</span>
-          <span className="block">distribuida, centralizada en una</span>
+          <span className="block">La gestión comercial distribuida,</span>
+          <span className="block">centralizada en una</span>
           <span className="block text-[var(--color-primary)]">
-            única fuente de verdad.
+            fuente de verdad.
           </span>
         </h1>
         <p className="suma-landing-lead max-w-2xl">
