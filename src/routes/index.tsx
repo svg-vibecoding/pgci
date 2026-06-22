@@ -42,7 +42,7 @@ function Home() {
           La gestión comercial, convertida en una{" "}
           <span className="text-[var(--color-primary)]">fuente de verdad.</span>
         </h1>
-        <p className="suma-body max-w-2xl text-[var(--text-secondary)]">
+        <p className="suma-landing-body max-w-2xl text-[var(--text-secondary)]">
           La <strong className="text-[var(--text-primary)]">PGCI</strong> reúne acuerdos, productos, códigos de
           cliente, precios, vigencias y las condiciones de nuestra relación con los clientes en un solo lugar:
           estructurado, consultable y con toda su trazabilidad.
