@@ -43,7 +43,7 @@ function Home() {
           <span className="text-[var(--color-primary)]">fuente de verdad.</span>
         </h1>
         <p className="suma-landing-lead max-w-2xl">
-          La <strong className="font-normal text-[var(--text-primary)]">PGCI</strong> reúne acuerdos, productos, códigos de
+          La <strong className="font-bold text-[var(--text-primary)]">PGCI</strong> reúne acuerdos, productos, códigos de
           cliente, precios, vigencias y las condiciones de nuestra relación con los clientes en un solo lugar:
           estructurado, consultable y con toda su trazabilidad.
         </p>
