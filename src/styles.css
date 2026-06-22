@@ -496,6 +496,27 @@
 }
 
 
+/* Landing / editorial utilities
+
+   Uso permitido: futuras páginas públicas de presentación.
+
+   No usar en vistas operativas internas de la app.
+
+*/
+@utility suma-landing-lead {
+  /* Intros de sección y lead del hero */
+  font: var(--fw-regular) 18px / 28px var(--font-body);
+  color: var(--text-secondary);
+}
+@utility suma-landing-body {
+  /* Párrafos narrativos de la landing */
+  font: var(--fw-regular) 16px / 26px var(--font-body);
+}
+@utility suma-landing-small {
+  /* Texto de apoyo en cards, legible (no metadata microscópica) */
+  font: var(--fw-regular) 13px / 18px var(--font-body);
+}
+
 /* Contenedor de marca (esquinas redondeadas, nunca cortes diagonales) */
 @utility suma-container-shape {
   border-radius: var(--radius-lg);
