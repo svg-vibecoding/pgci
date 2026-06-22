@@ -36,7 +36,7 @@ function Home() {
         }}
         aria-hidden="true"
       />
-      <section className="relative mx-auto flex w-full max-w-[900px] flex-col items-center gap-6 text-center">
+      <section className="relative mx-auto flex w-full max-w-[720px] flex-col items-center gap-6 text-center">
         <SumatecLogo className="h-14 w-auto" />
         <h1 className="suma-display-md">
           <span className="block">La gestión comercial distribuida,</span>
