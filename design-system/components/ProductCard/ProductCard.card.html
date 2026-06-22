@@ -1,0 +1,18 @@
+<!-- @dsCard group="Components" viewport="700x460" name="ProductCard" subtitle="MRO catalog tile — brand, SKU, price, cart" -->
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">
+<link rel="stylesheet" href="../../styles.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.2/css/all.min.css">
+<style>body{margin:0;padding:24px;background:var(--surface-page);}.row{display:flex;gap:16px;flex-wrap:wrap;}</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script></head>
+<body><div id="root"></div>
+<script type="text/babel">
+const { ProductCard } = window.SumatecDesignSystem_6b8e18;
+ReactDOM.createRoot(document.getElementById('root')).render(<div className="row">
+  <ProductCard brand="Bosch" sku="173000023" name="Taladro percutor GSB 550 RE 550W" price={253710} oldPrice={281900} onAdd={()=>{}}/>
+  <ProductCard brand="Stanley" sku="STHT0-77364" name="Set de brocas para metal HSS 19 piezas" price={89900} badge="Más vendido" onAdd={()=>{}}/>
+  <ProductCard brand="3M" sku="EPP-7500" name="Respirador media cara serie 7500 reutilizable" price={184500} inStock={false}/>
+</div>);
+</script></body></html>

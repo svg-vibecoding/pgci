@@ -1,0 +1,28 @@
+<!-- @dsCard group="Components" viewport="700x150" name="Chip" subtitle="Filters · selection · removable tokens" -->
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">
+<link rel="stylesheet" href="../../styles.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.2/css/all.min.css">
+<style>body{margin:0;padding:24px;background:#fff;}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px;}</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script></head>
+<body><div id="root"></div>
+<script type="text/babel">
+const { Chip } = window.SumatecDesignSystem_6b8e18;
+ReactDOM.createRoot(document.getElementById('root')).render(<div>
+  <div className="row">
+    <Chip selected iconLeft="check">Disponible</Chip>
+    <Chip>Bosch</Chip>
+    <Chip>Stanley</Chip>
+    <Chip color="primary">Envío gratis</Chip>
+    <Chip color="accent" variant="outline">B2B</Chip>
+  </div>
+  <div className="row">
+    <Chip onRemove={()=>{}}>Taladros</Chip>
+    <Chip color="primary" onRemove={()=>{}}>{'< $200.000'}</Chip>
+    <Chip color="success" iconLeft="truck">Entrega hoy</Chip>
+    <Chip color="warning" iconLeft="clock">Pocas unidades</Chip>
+  </div>
+</div>);
+</script></body></html>

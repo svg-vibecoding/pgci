@@ -1,0 +1,258 @@
+/*
+ * ================================================================
+ *  SUMATEC DESIGN SYSTEM — design-tokens.css
+ *  v1.0 · Junio 2026
+ *
+ *  Cómo usar:
+ *    <link rel="stylesheet" href="design-tokens.css">
+ *    + <link rel="stylesheet" href="https://fonts.googleapis.com/css2?
+ *        family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600;1,700
+ *        &family=Roboto:wght@400;500;700&display=swap">
+ *
+ *  Todas las variables están bajo :root — sin prefijos de vendor,
+ *  sin dependencias externas. Se puede importar en cualquier proyecto
+ *  moderno (React, Vue, Svelte, HTML puro).
+ * ================================================================
+ */
+
+/* ── FUENTES ──────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600;1,700&family=Roboto:wght@400;500;700&display=swap');
+
+:root {
+
+  /* ============================================================
+     COLORES — PALETA BASE
+     ============================================================ */
+
+  /* -- Rojo Sumatec ------------------------------------------ */
+  /* #D91020 es el primario digital; #C10D0E es el rojo impresión */
+  --red-50:  #fdecec;
+  --red-100: #fbd0d2;
+  --red-200: #f4999d;
+  --red-300: #ed6168;
+  --red-400: #e3363f;
+  --red-500: #d91020;   /* ← primario digital (pantallas) */
+  --red-600: #c10d0e;   /* ← rojo de marca (impresión / Pantone) */
+  --red-700: #a30a0f;
+  --red-800: #7d0a0d;
+  --red-900: #5a0709;
+
+  /* -- Azul Institucional (Pantone 286C) --------------------- */
+  --blue-50:  #e7edf7;
+  --blue-100: #b9caea;
+  --blue-200: #7d9dd6;
+  --blue-300: #3d6bc0;
+  --blue-400: #0f47ad;
+  --blue-500: #0033a1;  /* ← azul de marca */
+  --blue-600: #002d8d;
+  --blue-700: #002470;
+  --blue-800: #001b54;
+  --blue-900: #001238;
+
+  /* -- Neutros · Cool Gray ----------------------------------- */
+  --gray-0:   #ffffff;
+  --gray-25:  #f9fafb;
+  --gray-50:  #f4f6f8;  /* ← fondo de página */
+  --gray-100: #ebedf0;
+  --gray-200: #dfe3e8;  /* ← borde sutil */
+  --gray-300: #c8c8c8;  /* ← Cool Gray 3C */
+  --gray-400: #a8aeb5;
+  --gray-500: #898a8d;  /* ← Cool Gray 8C */
+  --gray-600: #637381;
+  --gray-700: #4b5563;
+  --gray-800: #323a42;
+  --gray-900: #1b1a1a;  /* ← tinta de marca */
+
+  /* -- Estado / Semánticos ----------------------------------- */
+  --info-soft:      #ebf1ff;
+  --info:           #3366ff;
+  --info-strong:    #1f47cc;
+
+  --success-soft:   #e4f4ea;
+  --success:        #229a52;
+  --success-strong: #16723b;
+
+  --warning-soft:   #fff4da;
+  --warning:        #ffc745;
+  --warning-strong: #c9930f;
+
+  --error-soft:     #fde7e6;
+  --error:          #ed362f;
+  --error-strong:   #c0211b;
+
+  /* ============================================================
+     COLORES — ALIASES SEMÁNTICOS
+     Usar SIEMPRE estos en el código de producto, no los valores raw.
+     ============================================================ */
+
+  /* Acciones de marca */
+  --color-primary:        var(--red-500);
+  --color-primary-hover:  var(--red-600);
+  --color-primary-active: var(--red-700);
+  --color-primary-soft:   var(--red-50);
+
+  --color-secondary:      var(--gray-500);
+
+  --color-accent:         var(--blue-500);
+  --color-accent-hover:   var(--blue-600);
+  --color-accent-soft:    var(--blue-50);
+
+  /* Superficies */
+  --surface-page:    var(--gray-50);    /* fondo de página */
+  --surface-card:    var(--gray-0);     /* tarjeta, modal, panel */
+  --surface-sunken:  var(--gray-100);   /* recuadro hundido */
+  --surface-inverse: var(--gray-900);   /* barra utility oscura */
+  --surface-brand:   var(--red-500);    /* fondo de marca */
+
+  /* Texto */
+  --text-primary:   var(--gray-900);
+  --text-secondary: var(--gray-600);
+  --text-tertiary:  var(--gray-500);
+  --text-disabled:  var(--gray-400);
+  --text-on-brand:  #ffffff;
+  --text-link:      var(--blue-500);
+
+  /* Bordes */
+  --border-subtle:  var(--gray-200);
+  --border-default: var(--gray-300);
+  --border-strong:  var(--gray-400);
+  --border-focus:   var(--blue-500);
+
+  /* Anillo de foco (accesibilidad) */
+  --focus-ring: 0 0 0 3px rgba(0, 51, 161, 0.32);
+
+  /* ============================================================
+     TIPOGRAFÍA
+     ============================================================ */
+
+  /* Familias */
+  --font-display: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-ui:      'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-body:    'Roboto',     -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono:    ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  /* Pesos */
+  --fw-regular:  400;
+  --fw-medium:   500;
+  --fw-semibold: 600;
+  --fw-bold:     700;
+  --fw-black:    800;
+
+  /* Escala tipográfica (tamaño / line-height) */
+  --display-lg:    56px;  --display-lg-lh: 64px;   /* héroe web */
+  --display-md:    44px;  --display-md-lh: 52px;
+  --display-sm:    36px;  --display-sm-lh: 44px;
+
+  --h1: 30px;  --h1-lh: 38px;
+  --h2: 24px;  --h2-lh: 32px;
+  --h3: 20px;  --h3-lh: 28px;
+  --h4: 18px;  --h4-lh: 24px;
+
+  --subtitle-1: 16px;  --subtitle-1-lh: 22px;
+  --subtitle-2: 14px;  --subtitle-2-lh: 20px;
+
+  --body-lg: 16px;  --body-lg-lh: 24px;
+  --body-md: 14px;  --body-md-lh: 20px;   /* ← default UI */
+  --body-sm: 13px;  --body-sm-lh: 18px;
+
+  --button:   14px;  --button-lh:  18px;
+  --caption:  12px;  --caption-lh: 16px;
+  --overline: 11px;  --overline-lh: 16px;
+
+  /* Espaciado de letras */
+  --tracking-tight:    -0.02em;
+  --tracking-normal:    0;
+  --tracking-wide:      0.04em;
+  --tracking-overline:  0.08em;
+
+  /* ============================================================
+     ESPACIADO — grilla de 8px con medios pasos en 4px
+     ============================================================ */
+  --space-0:  0;
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+
+  /* ============================================================
+     RADIO DE BORDE
+     ============================================================ */
+  --radius-xs:   4px;
+  --radius-sm:   6px;
+  --radius-md:   8px;    /* default — botones, inputs, tarjetas */
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-pill: 999px;  /* chips, avatares, badges */
+
+  /* ============================================================
+     ELEVACIÓN / SOMBRAS
+     Derivadas de la paleta cool-gray de marca.
+     ============================================================ */
+  --shadow-xs:    0 1px 2px rgba(99,115,129,0.12);
+  --shadow-sm:    0 1px 3px rgba(99,115,129,0.14), 0 1px 2px rgba(99,115,129,0.10);
+  --shadow-md:    0 4px 12px rgba(99,115,129,0.14), 0 2px 4px rgba(99,115,129,0.08);
+  --shadow-lg:    0 12px 28px rgba(99,115,129,0.18), 0 4px 8px rgba(99,115,129,0.08);
+  --shadow-brand: 0 8px 24px rgba(217,16,32,0.24);   /* CTA primario elevado */
+
+  /* ============================================================
+     MOVIMIENTO / ANIMACIÓN
+     ============================================================ */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);   /* la mayoría de transiciones */
+  --ease-emphasis: cubic-bezier(0.3, 0, 0, 1);   /* entradas y escala */
+  --dur-fast:   120ms;
+  --dur-normal: 200ms;
+  --dur-slow:   320ms;
+
+  /* ============================================================
+     LAYOUT
+     ============================================================ */
+  --container-max: 1280px;
+  --sidebar-w:     264px;
+  --topbar-h:       64px;
+
+}
+
+/* ============================================================
+   RESET LIGERO + CLASES DE TIPOGRAFÍA
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--body-md);
+  line-height: var(--body-md-lh);
+  color: var(--text-primary);
+  background: var(--surface-page);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection { background: var(--red-100); color: var(--red-800); }
+
+/* Helpers de tipografía */
+.suma-display-lg { font: var(--fw-black) var(--display-lg)/var(--display-lg-lh) var(--font-display); letter-spacing: var(--tracking-tight); }
+.suma-display-md { font: var(--fw-black) var(--display-md)/var(--display-md-lh) var(--font-display); letter-spacing: var(--tracking-tight); }
+.suma-display-sm { font: var(--fw-bold)  var(--display-sm)/var(--display-sm-lh) var(--font-display); letter-spacing: var(--tracking-tight); }
+.suma-h1       { font: var(--fw-bold)     var(--h1)/var(--h1-lh)     var(--font-display); }
+.suma-h2       { font: var(--fw-bold)     var(--h2)/var(--h2-lh)     var(--font-display); }
+.suma-h3       { font: var(--fw-semibold) var(--h3)/var(--h3-lh)     var(--font-display); }
+.suma-h4       { font: var(--fw-semibold) var(--h4)/var(--h4-lh)     var(--font-display); }
+.suma-subtitle { font: var(--fw-semibold) var(--subtitle-1)/var(--subtitle-1-lh) var(--font-ui); }
+.suma-body     { font: var(--fw-regular)  var(--body-md)/var(--body-md-lh) var(--font-ui); }
+.suma-caption  { font: var(--fw-regular)  var(--caption)/var(--caption-lh)  var(--font-ui); color: var(--text-secondary); }
+.suma-overline {
+  font: var(--fw-bold) var(--overline)/var(--overline-lh) var(--font-ui);
+  letter-spacing: var(--tracking-overline);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+

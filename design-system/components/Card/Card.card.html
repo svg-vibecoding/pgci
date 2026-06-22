@@ -1,0 +1,19 @@
+<!-- @dsCard group="Components" viewport="700x200" name="Card" subtitle="Neutral surface · elevations · interactive" -->
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">
+<link rel="stylesheet" href="../../styles.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.2/css/all.min.css">
+<style>body{margin:0;padding:24px;background:var(--surface-page);}.grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script></head>
+<body><div id="root"></div>
+<script type="text/babel">
+const { Card } = window.SumatecDesignSystem_6b8e18;
+const H=({i,t,d})=>(<div><div style={{width:36,height:36,borderRadius:8,background:'var(--color-primary-soft)',color:'var(--color-primary)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,marginBottom:10}}><i className={'fa-solid fa-'+i}/></div><div style={{font:'700 15px var(--font-ui)',marginBottom:4}}>{t}</div><div style={{font:'13px/18px var(--font-ui)',color:'var(--text-secondary)'}}>{d}</div></div>);
+ReactDOM.createRoot(document.getElementById('root')).render(<div className="grid">
+  <Card elevation="sm"><H i="truck-fast" t="Entrega ágil" d="Despacho a toda la industria nacional."/></Card>
+  <Card elevation="md"><H i="shield-halved" t="Respaldo" d="Marcas líderes con garantía."/></Card>
+  <Card interactive><H i="headset" t="Asesoría experta" d="Te acompañamos de tú a tú."/></Card>
+</div>);
+</script></body></html>

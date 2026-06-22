@@ -1,0 +1,522 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+/* Fuentes Sumatec — auto-hospedadas (no usar @import de URL en Tailwind v4) */
+@import "@fontsource/montserrat/400.css";
+@import "@fontsource/montserrat/500.css";
+@import "@fontsource/montserrat/600.css";
+@import "@fontsource/montserrat/700.css";
+@import "@fontsource/montserrat/800.css";
+@import "@fontsource/roboto/400.css";
+@import "@fontsource/roboto/500.css";
+@import "@fontsource/roboto/700.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * ================================================================
+ *  SUMATEC DESIGN SYSTEM — tokens (v1.0 · Junio 2026)
+ *
+ *  Base de diseño de la PGCI. Los valores de marca se conservan en
+ *  HEX para fidelidad exacta de color (#D91020, #0033A1, etc.).
+ *
+ *  - :root        → valores crudos + aliases semánticos Sumatec
+ *  - @theme inline → mapea tokens shadcn y de marca a utilidades
+ *                    Tailwind (bg-primary, text-accent, etc.)
+ * ================================================================
+ */
+
+:root {
+  /* ── Rojo Sumatec ──────────────────────────────────────────── */
+  --red-50: #fdecec;
+  --red-100: #fbd0d2;
+  --red-200: #f4999d;
+  --red-300: #ed6168;
+  --red-400: #e3363f;
+  --red-500: #d91020; /* primario digital */
+  --red-600: #c10d0e; /* rojo de marca (impresión) */
+  --red-700: #a30a0f;
+  --red-800: #7d0a0d;
+  --red-900: #5a0709;
+
+  /* ── Azul Institucional (Pantone 286C) ─────────────────────── */
+  --blue-50: #e7edf7;
+  --blue-100: #b9caea;
+  --blue-200: #7d9dd6;
+  --blue-300: #3d6bc0;
+  --blue-400: #0f47ad;
+  --blue-500: #0033a1; /* azul de marca */
+  --blue-600: #002d8d;
+  --blue-700: #002470;
+  --blue-800: #001b54;
+  --blue-900: #001238;
+
+  /* ── Neutros · Cool Gray ───────────────────────────────────── */
+  --gray-0: #ffffff;
+  --gray-25: #f9fafb;
+  --gray-50: #f4f6f8; /* fondo de página */
+  --gray-100: #ebedf0;
+  --gray-200: #dfe3e8; /* borde sutil */
+  --gray-300: #c8c8c8; /* Cool Gray 3C */
+  --gray-400: #a8aeb5;
+  --gray-500: #898a8d; /* Cool Gray 8C */
+  --gray-600: #637381;
+  --gray-700: #4b5563;
+  --gray-800: #323a42;
+  --gray-900: #1b1a1a; /* tinta de marca */
+
+  /* ── Estado / Semánticos ───────────────────────────────────── */
+  --info-soft: #ebf1ff;
+  --info: #3366ff;
+  --info-strong: #1f47cc;
+
+  --success-soft: #e4f4ea;
+  --success: #229a52;
+  --success-strong: #16723b;
+
+  --warning-soft: #fff4da;
+  --warning: #ffc745;
+  --warning-strong: #c9930f;
+
+  --error-soft: #fde7e6;
+  --error: #ed362f;
+  --error-strong: #c0211b;
+
+  /* ── Estado de dominio (operación) ─────────────────────────────
+     Tokens semánticos de estado para tablas, cards y badges.
+     Mapeados a las rampas existentes — sin colores nuevos
+     (única excepción: review-strong #8f6300, ámbar más oscuro,
+     estrictamente para contraste de texto sobre review-soft).
+       active  → verde   (vigente / en operación)
+       pending → azul    (en espera / sin asignar)
+       review  → ámbar   (en revisión / requiere atención)
+       success → verde   (completado / aprobado)
+       warning → ámbar   (alerta / próximo a vencer)
+       danger  → rojo    (vencido / rechazado / crítico)
+       info    → azul    (informativo)
+       neutral → gris    (borrador / sin estado)
+     --------------------------------------------------------------- */
+  --status-active-soft: var(--success-soft);
+  --status-active-base: var(--success);
+  --status-active-strong: var(--success-strong);
+
+  --status-pending-soft: var(--blue-50);
+  --status-pending-base: var(--blue-500);
+  --status-pending-strong: var(--blue-700);
+
+  --status-review-soft: var(--warning-soft);
+  --status-review-base: var(--warning-strong);
+  --status-review-strong: #8f6300;
+
+  --status-success-soft: var(--success-soft);
+  --status-success-base: var(--success);
+  --status-success-strong: var(--success-strong);
+
+  --status-warning-soft: var(--warning-soft);
+  --status-warning-base: var(--warning);
+  --status-warning-strong: var(--warning-strong);
+
+  --status-danger-soft: var(--red-50);
+  --status-danger-base: var(--red-500);
+  --status-danger-strong: var(--red-700);
+
+  --status-info-soft: var(--info-soft);
+  --status-info-base: var(--info);
+  --status-info-strong: var(--info-strong);
+
+  --status-neutral-soft: var(--gray-100);
+  --status-neutral-base: var(--gray-500);
+  --status-neutral-strong: var(--gray-700);
+
+  /* ── Aliases semánticos (usar SIEMPRE en producto) ─────────── */
+  --color-primary: var(--red-500);
+  --color-primary-hover: var(--red-600);
+  --color-primary-active: var(--red-700);
+  --color-primary-soft: var(--red-50);
+
+  --color-secondary: var(--gray-500);
+
+  --color-accent: var(--blue-500);
+  --color-accent-hover: var(--blue-600);
+  --color-accent-soft: var(--blue-50);
+
+  /* Superficies */
+  --surface-page: var(--gray-50);
+  --surface-card: var(--gray-0);
+  --surface-sunken: var(--gray-100);
+  --surface-inverse: var(--gray-900);
+  --surface-brand: var(--red-500);
+
+  /* Texto */
+  --text-primary: var(--gray-900);
+  --text-secondary: var(--gray-600);
+  --text-tertiary: var(--gray-500);
+  --text-disabled: var(--gray-400);
+  --text-on-brand: #ffffff;
+  --text-link: var(--blue-500);
+
+  /* Bordes */
+  --border-subtle: var(--gray-200);
+  --border-default: var(--gray-300);
+  --border-strong: var(--gray-400);
+  --border-focus: var(--blue-500);
+
+  /* Anillo de foco (accesibilidad) */
+  --focus-ring: 0 0 0 3px rgba(0, 51, 161, 0.32);
+
+  /* ── Tipografía ────────────────────────────────────────────── */
+  --font-display: "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-ui: "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-body: "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --fw-black: 800;
+
+  --display-lg: 56px;
+  --display-lg-lh: 60px;
+  --display-md: 44px;
+  --display-md-lh: 48px;
+  --display-sm: 36px;
+  --display-sm-lh: 40px;
+
+  --h1: 30px;
+  --h1-lh: 36px;
+  --h2: 24px;
+  --h2-lh: 30px;
+  --h3: 20px;
+  --h3-lh: 26px;
+  --h4: 18px;
+  --h4-lh: 24px;
+
+  --subtitle-1: 16px;
+  --subtitle-1-lh: 22px;
+  --subtitle-2: 14px;
+  --subtitle-2-lh: 20px;
+
+  --body-lg: 16px;
+  --body-lg-lh: 24px;
+  --body-md: 14px;
+  --body-md-lh: 20px;
+  --body-sm: 13px;
+  --body-sm-lh: 18px;
+
+  --button: 14px;
+  --button-lh: 18px;
+  --caption: 12px;
+  --caption-lh: 16px;
+  --overline: 11px;
+  --overline-lh: 16px;
+
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.04em;
+  --tracking-overline: 0.08em;
+
+  /* ── Espaciado — grilla 8px (semipaso 4px) ─────────────────── */
+  --space-0: 0;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+
+  /* ── Radio de borde ────────────────────────────────────────── */
+  --radius: 8px; /* default de marca (--radius-md) */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 999px;
+
+  /* ── Elevación / Sombras (cool-gray, nunca negro puro) ─────── */
+  --shadow-xs: 0 1px 2px rgba(99, 115, 129, 0.12);
+  --shadow-sm: 0 1px 3px rgba(99, 115, 129, 0.14), 0 1px 2px rgba(99, 115, 129, 0.1);
+  --shadow-md: 0 4px 12px rgba(99, 115, 129, 0.14), 0 2px 4px rgba(99, 115, 129, 0.08);
+  --shadow-lg: 0 12px 28px rgba(99, 115, 129, 0.18), 0 4px 8px rgba(99, 115, 129, 0.08);
+  --shadow-brand: 0 8px 24px rgba(217, 16, 32, 0.24);
+
+  /* ── Movimiento / Animación ────────────────────────────────── */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasis: cubic-bezier(0.3, 0, 0, 1);
+  --dur-fast: 120ms;
+  --dur-normal: 200ms;
+  --dur-slow: 320ms;
+
+  /* ── Layout ────────────────────────────────────────────────── */
+  --container-max: 1280px;
+  --sidebar-w: 264px;
+  --topbar-h: 64px;
+
+  /* ============================================================
+     Mapeo shadcn → Sumatec (modo claro)
+     Tokens que consumen los componentes shadcn existentes.
+     ============================================================ */
+  --background: var(--surface-page);
+  --foreground: var(--text-primary);
+  --card: var(--surface-card);
+  --card-foreground: var(--text-primary);
+  --popover: var(--surface-card);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--text-on-brand);
+  --secondary: var(--gray-100);
+  --secondary-foreground: var(--text-primary);
+  --muted: var(--gray-100);
+  --muted-foreground: var(--text-secondary);
+  --accent: var(--color-accent);
+  --accent-foreground: var(--text-on-brand);
+  --destructive: var(--error);
+  --destructive-foreground: #ffffff;
+  --border: var(--border-subtle);
+  --input: var(--border-default);
+  --ring: var(--border-focus);
+  --chart-1: var(--red-500);
+  --chart-2: var(--blue-500);
+  --chart-3: var(--success);
+  --chart-4: var(--warning);
+  --chart-5: var(--gray-500);
+  --sidebar: var(--surface-card);
+  --sidebar-foreground: var(--text-primary);
+  --sidebar-primary: var(--color-primary);
+  --sidebar-primary-foreground: var(--text-on-brand);
+  --sidebar-accent: var(--gray-100);
+  --sidebar-accent-foreground: var(--text-primary);
+  --sidebar-border: var(--border-subtle);
+  --sidebar-ring: var(--border-focus);
+}
+
+@theme inline {
+  /* Radios shadcn derivados del radio de marca */
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius) + 8px);
+
+  /* Tokens semánticos shadcn */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* ── Familias de color de marca → utilidades Tailwind ──────── */
+  --color-red-50: var(--red-50);
+  --color-red-100: var(--red-100);
+  --color-red-200: var(--red-200);
+  --color-red-300: var(--red-300);
+  --color-red-400: var(--red-400);
+  --color-red-500: var(--red-500);
+  --color-red-600: var(--red-600);
+  --color-red-700: var(--red-700);
+  --color-red-800: var(--red-800);
+  --color-red-900: var(--red-900);
+
+  --color-blue-50: var(--blue-50);
+  --color-blue-100: var(--blue-100);
+  --color-blue-200: var(--blue-200);
+  --color-blue-300: var(--blue-300);
+  --color-blue-400: var(--blue-400);
+  --color-blue-500: var(--blue-500);
+  --color-blue-600: var(--blue-600);
+  --color-blue-700: var(--blue-700);
+  --color-blue-800: var(--blue-800);
+  --color-blue-900: var(--blue-900);
+
+  --color-gray-0: var(--gray-0);
+  --color-gray-25: var(--gray-25);
+  --color-gray-50: var(--gray-50);
+  --color-gray-100: var(--gray-100);
+  --color-gray-200: var(--gray-200);
+  --color-gray-300: var(--gray-300);
+  --color-gray-400: var(--gray-400);
+  --color-gray-500: var(--gray-500);
+  --color-gray-600: var(--gray-600);
+  --color-gray-700: var(--gray-700);
+  --color-gray-800: var(--gray-800);
+  --color-gray-900: var(--gray-900);
+
+  /* Marca semántica */
+  --color-brand: var(--color-primary);
+  --color-brand-hover: var(--color-primary-hover);
+  --color-brand-active: var(--color-primary-active);
+  --color-brand-soft: var(--color-primary-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-info-strong: var(--info-strong);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-success-strong: var(--success-strong);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-strong: var(--warning-strong);
+  --color-error: var(--error);
+  --color-error-soft: var(--error-soft);
+  --color-error-strong: var(--error-strong);
+
+  /* Superficies / texto / borde como utilidades */
+  --color-surface-page: var(--surface-page);
+  --color-surface-card: var(--surface-card);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface-inverse: var(--surface-inverse);
+  --color-surface-brand: var(--surface-brand);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-disabled: var(--text-disabled);
+  --color-text-on-brand: var(--text-on-brand);
+  --color-text-link: var(--text-link);
+
+  /* Familias tipográficas → font-display, font-body, etc. */
+  --font-display: var(--font-display);
+  --font-ui: var(--font-ui);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
+  --font-sans: var(--font-ui);
+
+  /* Sombras de marca → shadow-xs … shadow-brand */
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-brand: var(--shadow-brand);
+
+  /* Pill radius */
+  --radius-pill: 999px;
+
+  /* Easings / duraciones */
+  --ease-standard: var(--ease-standard);
+  --ease-emphasis: var(--ease-emphasis);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font-ui);
+    font-size: var(--body-md);
+    line-height: var(--body-md-lh);
+    color: var(--text-primary);
+    background: var(--surface-page);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: var(--red-100);
+    color: var(--red-800);
+  }
+}
+
+/* ============================================================
+   Helpers de tipografía de marca (Tailwind v4 @utility)
+   ============================================================ */
+@utility suma-display-lg {
+  font: var(--fw-black) var(--display-lg) / var(--display-lg-lh) var(--font-display);
+  letter-spacing: var(--tracking-tight);
+}
+@utility suma-display-md {
+  font: var(--fw-black) var(--display-md) / var(--display-md-lh) var(--font-display);
+  letter-spacing: var(--tracking-tight);
+}
+@utility suma-display-sm {
+  font: var(--fw-bold) var(--display-sm) / var(--display-sm-lh) var(--font-display);
+  letter-spacing: var(--tracking-tight);
+}
+@utility suma-h1 {
+  font: var(--fw-bold) var(--h1) / var(--h1-lh) var(--font-display);
+}
+@utility suma-h2 {
+  font: var(--fw-bold) var(--h2) / var(--h2-lh) var(--font-display);
+}
+@utility suma-h3 {
+  font: var(--fw-semibold) var(--h3) / var(--h3-lh) var(--font-display);
+}
+@utility suma-h4 {
+  font: var(--fw-semibold) var(--h4) / var(--h4-lh) var(--font-display);
+}
+@utility suma-subtitle {
+  font: var(--fw-semibold) var(--subtitle-1) / var(--subtitle-1-lh) var(--font-ui);
+}
+@utility suma-body {
+  font: var(--fw-regular) var(--body-md) / var(--body-md-lh) var(--font-body);
+}
+@utility suma-caption {
+  font: var(--fw-regular) var(--caption) / var(--caption-lh) var(--font-ui);
+  color: var(--text-secondary);
+}
+@utility suma-overline {
+  font: var(--fw-bold) var(--overline) / var(--overline-lh) var(--font-ui);
+  letter-spacing: var(--tracking-overline);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+/* ============================================================
+   Capa editorial de landing (NO usar en UI operativa)
+   Escala de lectura más generosa para piezas de presentación.
+   suma-body (14px) sigue siendo el estándar de producto.
+   ============================================================ */
+@utility suma-landing-lead {
+  /* Intros de sección y lead del hero */
+  font: var(--fw-regular) 18px / 28px var(--font-body);
+  color: var(--text-secondary);
+}
+@utility suma-landing-body {
+  /* Párrafos narrativos de la landing */
+  font: var(--fw-regular) 16px / 26px var(--font-body);
+}
+@utility suma-landing-small {
+  /* Texto de apoyo en cards, legible (no metadata microscópica) */
+  font: var(--fw-regular) 13px / 18px var(--font-body);
+}
+
+/* Contenedor de marca (esquinas redondeadas, nunca cortes diagonales) */
+@utility suma-container-shape {
+  border-radius: var(--radius-lg);
+  background: var(--surface-brand);
+  color: var(--text-on-brand);
+}
