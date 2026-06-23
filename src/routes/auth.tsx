@@ -33,14 +33,14 @@ function AuthPage() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-[var(--surface-page)] px-6">
-      <div className="flex w-full max-w-sm flex-col items-center gap-4">
-        <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 font-ui text-sm font-semibold uppercase tracking-wide text-muted-foreground shadow-sm">
+      <div className="flex w-full max-w-md flex-col items-center gap-4">
+        <span className="inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-border bg-card px-4 py-1.5 font-ui text-xs font-semibold uppercase tracking-wide text-muted-foreground shadow-sm">
           <span className="h-2 w-2 rounded-full bg-[var(--color-primary)]" aria-hidden="true" />
           PGCI | Plataforma de Gestión Comercial Inteligente
         </span>
         <form
           onSubmit={onSubmit}
-          className="w-full space-y-5 rounded-lg border border-border bg-card p-8 shadow-sm"
+          className="w-full max-w-md space-y-5 rounded-lg border border-border bg-card p-8 shadow-sm"
         >
           <div className="flex flex-col items-center">
             <SumatecLogo className="h-14 w-auto" />
