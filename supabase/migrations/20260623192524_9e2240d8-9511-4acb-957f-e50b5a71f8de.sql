@@ -1,0 +1,1 @@
+COMMENT ON TABLE public.profiles IS 'User profiles for PGCI platform';
