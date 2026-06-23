@@ -21,7 +21,7 @@ type NavItem = {
 const NAV: NavItem[] = [
   { to: "/setup", label: "Inicio", icon: Home, exact: true },
   { to: "/setup/clients", label: "Clientes", icon: Building2 },
-  { to: "/setup/products", label: "PIM · Productos", icon: Package },
+  { to: "/setup/products", label: "Productos", icon: Package },
   { to: "/setup/users", label: "Usuarios", icon: Users, disabled: true },
 ];
 
@@ -88,7 +88,7 @@ function SetupLayout() {
                       <Icon className="h-4 w-4" />
                       <span className="flex-1">{item.label}</span>
                       <span className="rounded-full bg-[var(--gray-100)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
-                        Pronto
+                        ...
                       </span>
                     </div>
                   </li>
