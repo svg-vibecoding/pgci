@@ -19,8 +19,8 @@ export const PIM_HEADERS = [
 
 export type PimRow = {
   sku: string;
-  erp_name: string;
-  commercial_name: string | null;
+  erp_description: string;
+  commercial_description: string | null;
   erp_brand: string | null;
   commercial_brand: string | null;
   brand_reference: string | null;
@@ -54,17 +54,17 @@ function normalizeStatus(s: string): "active" | "inactive" {
 
 function rowFromRaw(raw: Record<string, string>, rowNumber: number): ParsedRow {
   const sku = pick(raw, "Código Jaivaná");
-  const erp_name = pick(raw, "Nombre del producto Jaivaná ERP");
+  const erp_description = pick(raw, "Nombre del producto Jaivaná ERP");
   if (!sku) return { rowNumber, raw, error: "El código Jaivaná es obligatorio." };
-  if (!erp_name)
+  if (!erp_description)
     return { rowNumber, raw, error: "El nombre del producto (Jaivaná ERP) es obligatorio." };
   return {
     rowNumber,
     raw,
     data: {
       sku,
-      erp_name,
-      commercial_name: nullable(pick(raw, "Nombre del producto Comercial")),
+      erp_description,
+      commercial_description: nullable(pick(raw, "Nombre del producto Comercial")),
       erp_brand: nullable(pick(raw, "Marca Jaivaná ERP")),
       commercial_brand: nullable(pick(raw, "Marca Comercial")),
       brand_reference: nullable(pick(raw, "Referencia comercial")),
@@ -115,8 +115,8 @@ export type DiffGroups = {
 };
 
 const COMPARE_FIELDS: (keyof PimRow)[] = [
-  "erp_name",
-  "commercial_name",
+  "erp_description",
+  "commercial_description",
   "erp_brand",
   "commercial_brand",
   "brand_reference",

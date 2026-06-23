@@ -13,8 +13,8 @@ export const Route = createFileRoute("/_authenticated/setup/products/$productId"
 
 const FIELDS: { k: string; l: string }[] = [
   { k: "sku", l: "Código Jaivaná" },
-  { k: "erp_name", l: "Nombre Jaivaná ERP" },
-  { k: "commercial_name", l: "Nombre comercial" },
+  { k: "erp_description", l: "Nombre Jaivaná ERP" },
+  { k: "commercial_description", l: "Nombre comercial" },
   { k: "erp_brand", l: "Marca Jaivaná ERP" },
   { k: "commercial_brand", l: "Marca comercial" },
   { k: "brand_reference", l: "Referencia comercial" },
@@ -53,7 +53,7 @@ function ProductDetail() {
       <header className="flex items-start justify-between">
         <div>
           <p className="font-mono text-xs text-muted-foreground">{data.sku}</p>
-          <h1 className="text-2xl font-bold tracking-tight">{data.erp_name}</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{data.erp_description}</h1>
         </div>
         <StatusBadge status={data.status === "active" ? "active" : "neutral"} label={data.status === "active" ? "Activo" : "Inactivo"} />
       </header>

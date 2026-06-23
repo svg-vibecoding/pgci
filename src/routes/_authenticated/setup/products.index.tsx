@@ -37,7 +37,7 @@ function ProductsList() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("id, sku, erp_name, commercial_name, erp_brand, commercial_unit, status, updated_at")
+        .select("id, sku, erp_description, commercial_description, erp_brand, commercial_unit, status, updated_at")
         .order("sku");
       if (error) throw error;
       return data ?? [];
@@ -48,7 +48,7 @@ function ProductsList() {
     if (statusF !== "all" && p.status !== statusF) return false;
     if (search) {
       const s = search.toLowerCase();
-      const hay = [p.sku, p.erp_name, p.commercial_name, p.erp_brand]
+      const hay = [p.sku, p.erp_description, p.commercial_description, p.erp_brand]
         .filter(Boolean)
         .some((v) => v!.toLowerCase().includes(s));
       if (!hay) return false;
@@ -127,8 +127,8 @@ function ProductsList() {
                     {p.sku}
                   </Link>
                 </TableCell>
-                <TableCell>{p.erp_name}</TableCell>
-                <TableCell className="text-muted-foreground">{p.commercial_name ?? "—"}</TableCell>
+                <TableCell>{p.erp_description}</TableCell>
+                <TableCell className="text-muted-foreground">{p.commercial_description ?? "—"}</TableCell>
                 <TableCell className="text-muted-foreground">{p.erp_brand ?? "—"}</TableCell>
                 <TableCell className="text-muted-foreground">{p.commercial_unit ?? "—"}</TableCell>
                 <TableCell>
