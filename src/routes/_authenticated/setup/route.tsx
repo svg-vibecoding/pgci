@@ -51,9 +51,9 @@ function SetupLayout() {
   }
 
   return (
-    <div className="flex min-h-screen bg-[var(--surface-card)]">
+    <div className="flex min-h-screen bg-[var(--surface-page)]">
       <aside
-        className="flex w-[264px] flex-col border-r border-[var(--border-subtle)] bg-[var(--surface-page)]"
+        className="flex w-[264px] flex-col border-r border-[var(--border-subtle)] bg-[var(--surface-sidebar)]"
       >
         {/* Marca */}
         <div className="px-6 pt-7 pb-3">
