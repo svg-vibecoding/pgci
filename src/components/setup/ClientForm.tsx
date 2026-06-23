@@ -85,7 +85,9 @@ export function ClientForm({
     const next: typeof errors = {};
     if (!v.legal_name.trim()) next.legal_name = "La razón social es obligatoria.";
     if (!v.type) next.type = "Selecciona si el cliente es holding o directo.";
-    if (!v.tax_id.trim()) next.tax_id = "El NIT / identificación tributaria es obligatorio.";
+    const taxIdDigits = v.tax_id.trim().replace(/\D/g, "");
+    if (!taxIdDigits) next.tax_id = "El NIT / identificación tributaria es obligatorio.";
+    else if (taxIdDigits.length < 9 || taxIdDigits.length > 10) next.tax_id = "El NIT debe tener entre 9 y 10 dígitos numéricos.";
     if (v.type === "direct" && v.belongs_to_holding && !v.parent_client_id) {
       next.parent_client_id = "Selecciona el holding asociado.";
     }
@@ -97,6 +99,7 @@ export function ClientForm({
 
     const payload: ClientFormValues = {
       ...v,
+      tax_id: taxIdDigits,
       tax_id_type: "NIT",
       parent_client_id,
     };
@@ -159,8 +162,13 @@ export function ClientForm({
           <Label htmlFor="tax_id">NIT<Req /></Label>
           <Input
             id="tax_id"
+            inputMode="numeric"
+            maxLength={10}
             value={v.tax_id}
-            onChange={(e) => setV({ ...v, tax_id: e.target.value })}
+            onChange={(e) => {
+              const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+              setV({ ...v, tax_id: digits });
+            }}
           />
           {errors.tax_id && (
             <p className="text-sm text-destructive">{errors.tax_id}</p>
