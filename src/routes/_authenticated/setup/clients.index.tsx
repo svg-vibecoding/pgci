@@ -20,7 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { StatusBadge } from "@/components/sumatec";
-import { Plus, Building2 } from "lucide-react";
+import { Plus } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/setup/clients/")({
   head: () => ({ meta: [{ title: "Clientes · Setup · PGCI" }] }),
