@@ -58,7 +58,7 @@ function SetupLayout() {
         {/* Marca */}
         <div className="px-6 pt-5 pb-2">
           <Link to="/setup" className="inline-flex items-start" aria-label="Sumatec · Inicio">
-            <SumatecLogo className="h-14 w-auto" />
+            <SumatecLogo className="h-14 w-auto -ml-[6px]" />
           </Link>
         </div>
 
