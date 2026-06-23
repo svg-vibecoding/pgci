@@ -81,13 +81,13 @@ function SetupLayout() {
               if (item.disabled) {
                 return (
                   <li key={item.to}>
-                    <div
-                      className="group relative flex cursor-not-allowed items-center gap-2.5 rounded-md px-3 py-2 text-sm text-[var(--text-disabled)]"
+                <div
+                      className="group relative flex cursor-not-allowed items-center gap-2.5 rounded-md px-3 py-2 text-sm text-[var(--text-disabled)] hover:bg-[var(--gray-200)]"
                       title="Disponible cuando se construya el módulo de Usuarios (S-08)"
                     >
                       <Icon className="h-4 w-4" />
                       <span className="flex-1">{item.label}</span>
-                      <span className="rounded-full bg-[var(--gray-100)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
+                      <span className="rounded-full bg-[var(--gray-200)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
                         PRÓX...
                       </span>
                     </div>
