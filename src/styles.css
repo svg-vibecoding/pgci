@@ -54,16 +54,16 @@
 
   /* ── Neutros · Cool Gray ───────────────────────────────────── */
   --gray-0: #ffffff;
-  --gray-25: #fbfaf7;
-  --gray-50: #f7f4ef; /* fondo de página — warm off-white */
-  --gray-100: #efeae2; /* sidebar — warm sand */
-  --gray-200: #e4ddd2; /* borde sutil cálido */
-  --gray-300: #c9c2b6;
-  --gray-400: #a8a195;
-  --gray-500: #898378;
-  --gray-600: #5f5a52;
-  --gray-700: #423e38;
-  --gray-800: #2a2723;
+  --gray-25: #f9fafb;
+  --gray-50: #f4f6f8; /* fondo de página — gris claro */
+  --gray-100: #eceef1; /* hover/fondo sutil */
+  --gray-200: #dee2e6; /* borde sutil */
+  --gray-300: #c5cbd2;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
   --gray-900: #1b1a1a; /* tinta de marca */
 
   /* ── Estado / Semánticos ───────────────────────────────────── */
