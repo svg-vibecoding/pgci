@@ -1,74 +1,24 @@
+# Cambio de fondo de página a gray-25
 
-## Dirección visual
+## Objetivo
+Actualizar el color de fondo general de la interfaz (`--surface-page`) para que use el token más claro `--gray-25` (`#F9FAFB`) de la paleta Cool Gray del Sumatec Design System, en lugar del `--gray-50` actual (`#F4F6F8`).
 
-Pasar de "panel admin rígido" a "centro de configuración B2B inteligente" sin tocar lógica.
+## Cambio planificado
 
-Principios:
-- Rojo Sumatec solo para señalizar acción/estado activo, nunca como fondo plano dominante.
-- Eliminar todo azul accidental (hoy el hover usa `hover:bg-accent`, que está mapeado a azul institucional → se ve genérico y fuera de identidad).
-- Sidebar mantiene fondo claro pero con superficie levemente diferenciada (`surface-card` con un tinte gris-cool) para sentirse más sofisticada que un panel blanco plano.
-- Estado activo: indicador lateral rojo + fondo `red-50` muy ligero + texto `gray-900` + ícono rojo. Sin pill rojo sólido pesado.
-- Hover: fondo `gray-100` neutro + transición suave 120ms. Nada de azul, nada de rojo.
-- Disabled (Usuarios): se ve intencional con badge "Próximamente" en lugar de parecer roto.
-- Tipografía jerárquica Montserrat para títulos y `suma-overline` para etiquetas de sección.
+En `src/styles.css`:
+- Modificar el alias semántico:
+  ```css
+  --surface-page: var(--gray-25); /* fondo de página — casi blanco */
+  ```
+- Actualizar el comentario descriptivo para reflejar el nuevo token.
 
-## Cambios concretos (solo UI)
+## Impacto
+Este es un cambio centralizado: `--surface-page` alimenta a `--background`, `--color-surface-page` y el `background` base del `body`. También se usa directamente en las rutas `index.tsx`, `auth.tsx`, `setup/route.tsx` y en `Table.tsx`, por lo que todos esos fondos pasarán automáticamente al nuevo gris más claro sin tocar cada componente.
 
-### 1. `src/routes/_authenticated/setup/route.tsx`
-- Sidebar: ancho 264px (token `--sidebar-w`), fondo `surface-card`, separador sutil, padding más generoso.
-- Header del sidebar: logo + etiqueta "PLATAFORMA" arriba y "Setup Operativo" como label de sección con `suma-overline`.
-- Sección de navegación con label "GESTIÓN" en overline.
-- Item activo:
-  - `bg-red-50 text-gray-900 font-semibold`
-  - Barra lateral izquierda de 3px en `--color-primary` (pseudo-borde con `before:`)
-  - Ícono en `text-red-500`
-- Item hover (no activo): `hover:bg-gray-100` + ícono que pasa a `text-gray-900`. Sin azul.
-- Item disabled (Usuarios): texto `text-gray-400`, chip "Próximamente" pequeño a la derecha, tooltip explica que llega con S-08.
-- Footer del sidebar: pequeña tarjeta con email del usuario + botón "Cerrar sesión" como `ghost` con ícono.
+## Verificación
+1. Ejecutar `bun run build` para confirmar que no hay errores de estilos.
+2. Capturar una vista previa de `/auth` y `/setup` para validar que el fondo se ve casi blanco y sigue integrado con las tarjetas blancas (`--surface-card` / `--gray-0`).
 
-### 2. `src/routes/_authenticated/setup/index.tsx` — Home Setup
-- Header:
-  - Overline "SETUP OPERATIVO · MÓDULO M2"
-  - H1 "Configura la base operativa de PGCI"
-  - Subtítulo: *"Define clientes, empresas, productos y accesos desde una sola fuente de verdad. Esta configuración alimenta acuerdos, matching y todo el flujo comercial."*
-- Barra de progreso de setup (visual, no funcional nueva): pasos `Clientes → Empresas → PIM → Accesos`. Cada paso indica `completo / pendiente` derivado de los counts ya existentes (sin nuevas queries). Estado completo = check verde, pendiente = punto gris, próximo recomendado = punto rojo. Esto resuelve "qué configurar primero / qué falta / qué sigue".
-- Cards rediseñadas (misma data, sin nuevas métricas):
-  - Layout: 3 columnas en desktop, ícono en chip suave (no plano), número grande Montserrat bold, label, **microcopy** debajo, y enlace "Ver →" cuando aplica.
-  - Microcopy propuesto (editable):
-    - Clientes piloto: "Base inicial de clientes que activa cobertura y acuerdos."
-    - Empresas registradas: "Razones sociales por cliente para facturación y matching."
-    - Productos PIM: "Catálogo Jaivaná listo para acuerdos y matching automatizado."
-    - Usuarios activos: "Personas con sesión activa en la plataforma."
-    - Accesos configurados: "Vínculo entre usuarios y clientes habilitados."
-  - Sin sombras pesadas: borde sutil + `shadow-xs` en hover.
-- Alertas: mantienen contenido pero se mueven a un bloque con icono `AlertTriangle` en `--warning-strong` sobre `--warning-soft`, no como Card genérica.
-- Accesos rápidos inferiores: se mantienen los enlaces a Clientes/PIM (Usuarios disabled con chip "Próximamente"), pero como `Button variant="outline"` discretos al pie, no como bloque protagónico.
-
-### 3. Empty state inicial
-Cuando no hay clientes ni productos activos:
-- Card con `surface-card`, borde sutil, ilustración mínima con ícono `Building2` dentro de círculo `bg-red-50` y anillo `red-100`.
-- Título: "Empieza por crear tus clientes piloto"
-- Texto: "Los clientes piloto son la base operativa de PGCI. Una vez creados podrás registrar sus empresas, importar el catálogo y habilitar accesos."
-- Lista de 3 pasos numerados (1·Clientes  2·Empresas  3·PIM) como guía.
-- CTA primario: "Crear primer cliente" → `/setup/clients/new` (se mantiene).
-- CTA secundario textual: "¿Necesitas ayuda con la importación? Ver guía de PIM" enlazando a `/setup/products` (sin nuevas rutas).
-
-### 4. Microajustes globales
-- Reemplazar todos los `hover:bg-accent hover:text-accent-foreground` del sidebar (origen del azul) por hover neutro.
-- Ningún color hex en componentes; todo via tokens (`bg-red-50`, `text-gray-600`, etc., ya existentes en el design system).
-
-## Fuera de alcance (no se toca)
-
-- Backend, RLS, Supabase, rutas, auth, gates, importación PIM, lógica de productos.
-- No se crean Usuarios, Accesos, Diagnóstico, Acuerdos, Matching, Dashboard, Export, IA, costos, márgenes.
-- No se agregan dependencias.
-
-## Archivos a modificar
-
-- `src/routes/_authenticated/setup/route.tsx` (sidebar)
-- `src/routes/_authenticated/setup/index.tsx` (Home, cards, empty state, textos)
-
-## Validación
-
-- Playwright headless screenshot de `/setup` (logueado con sesión inyectada) → revisar sidebar sin azul, Home con nueva jerarquía, empty state guiado.
-- Verificar que rutas, navegación y counts siguen funcionando idénticos.
+## Notas
+- No se modificarán otros tokens de superficie (`--surface-card`, `--surface-sidebar`, `--surface-sunken`) para mantener la jerarquía visual: página más clara, cards y sidebar blancas.
+- No se introducen colores nuevos; se usa un token existente de la rampa Cool Gray.
