@@ -127,7 +127,7 @@ function ImportPim() {
               </div>
 
               {diff.duplicateSkus.length > 0 && (
-                <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4">
+                <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4">
                   <p className="text-sm font-medium text-destructive">
                     El archivo tiene códigos Jaivaná repetidos. Corrige el archivo antes de importar.
                   </p>
@@ -140,7 +140,7 @@ function ImportPim() {
               )}
 
               {diff.errors.length > 0 && (
-                <details className="rounded-md border border-border p-3">
+                <details className="rounded-lg border border-border p-3">
                   <summary className="cursor-pointer text-sm font-medium">
                     Filas con error ({diff.errors.length})
                   </summary>
@@ -196,7 +196,7 @@ function Stat({
       ? "text-destructive"
       : "text-foreground";
   return (
-    <div className="rounded-md border border-border p-3">
+    <div className="rounded-lg border border-border p-3">
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className={`text-2xl font-bold ${color}`}>{value}</p>
     </div>
