@@ -149,7 +149,7 @@ function SetupHome() {
       {!isEmpty && (
         <section
           aria-label="Progreso de configuración"
-          className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6"
+          className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6"
         >
           <div className="mb-5 flex items-center justify-between">
             <p className="text-sm font-semibold text-[var(--text-primary)]">
