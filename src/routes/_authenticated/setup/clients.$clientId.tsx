@@ -121,7 +121,7 @@ function ViewClient() {
   const parentName = parent?.commercial_name?.trim() || parent?.legal_name;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Volver */}
       <Button asChild variant="ghost" size="sm" className="-ml-2 h-8 px-2 text-muted-foreground">
         <Link to="/setup/clients">
@@ -131,12 +131,9 @@ function ViewClient() {
 
       {/* Encabezado */}
       <header className="flex flex-wrap items-start justify-between gap-4">
-        <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Detalle del cliente
-          </p>
-          <h1 className="text-3xl font-bold tracking-tight">{displayName}</h1>
-          <div className="flex flex-wrap items-center gap-2">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">{displayName}</h1>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
             <Badge color={isHolding ? "accent" : "neutral"} variant="soft">
               {isHolding ? "Holding" : "Directo"}
             </Badge>
@@ -178,6 +175,35 @@ function ViewClient() {
           </div>
         )}
       </header>
+
+      {/* Resumen */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="rounded-lg border border-border bg-card p-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            {isHolding ? "Empresas asociadas" : "Holding asociado"}
+          </p>
+          <p className="mt-1 text-xl font-semibold text-foreground">
+            {isHolding ? children?.length ?? 0 : parentName ?? "—"}
+          </p>
+        </div>
+        <div className="rounded-lg border border-border bg-card p-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Acuerdos asociados
+          </p>
+          <p className="mt-1 text-xl font-semibold text-foreground">{agreements?.length ?? 0}</p>
+        </div>
+        <div className="rounded-lg border border-border bg-card p-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Estado
+          </p>
+          <div className="mt-1">
+            <StatusBadge
+              status={isActive ? "active" : "neutral"}
+              label={isActive ? "Activo" : "Inactivo"}
+            />
+          </div>
+        </div>
+      </div>
 
       {/* Información general */}
       <Card>
