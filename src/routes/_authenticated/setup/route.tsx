@@ -128,7 +128,7 @@ function SetupLayout() {
           <Button
             variant="ghost"
             size="sm"
-            className="w-full justify-start text-[var(--text-secondary)] hover:bg-[var(--gray-100)] hover:text-[var(--text-primary)]"
+            className="w-full justify-start text-[var(--text-secondary)] hover:bg-[var(--gray-200)] hover:text-[var(--text-primary)]"
             onClick={async () => {
               await supabase.auth.signOut();
               window.location.href = "/auth";
