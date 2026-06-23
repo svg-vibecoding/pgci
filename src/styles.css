@@ -294,7 +294,7 @@
   --sidebar-foreground: var(--text-primary);
   --sidebar-primary: var(--color-primary);
   --sidebar-primary-foreground: var(--text-on-brand);
-  --sidebar-accent: var(--gray-100);
+  --sidebar-accent: var(--gray-50); /* hover/fondo sutil del menú — más claro */
   --sidebar-accent-foreground: var(--text-primary);
   --sidebar-border: var(--border-subtle);
   --sidebar-ring: var(--border-focus);
