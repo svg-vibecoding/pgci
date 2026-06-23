@@ -250,6 +250,7 @@ export type Database = {
           id: string
           legal_name: string
           notes: string | null
+          parent_client_id: string | null
           status: string
           tax_id: string
           tax_id_type: string
@@ -263,6 +264,7 @@ export type Database = {
           id?: string
           legal_name: string
           notes?: string | null
+          parent_client_id?: string | null
           status?: string
           tax_id: string
           tax_id_type?: string
@@ -276,13 +278,22 @@ export type Database = {
           id?: string
           legal_name?: string
           notes?: string | null
+          parent_client_id?: string | null
           status?: string
           tax_id?: string
           tax_id_type?: string
           type?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "clients_parent_client_id_fkey"
+            columns: ["parent_client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       products: {
         Row: {
