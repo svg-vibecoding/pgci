@@ -1,20 +1,49 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ClientForm, emptyClient, type ClientFormValues } from "@/components/setup/ClientForm";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2 } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { StatusBadge } from "@/components/sumatec";
+import { Badge } from "@/components/sumatec/Badge";
+import { useIsSuperAdmin } from "@/hooks/use-profile";
+import {
+  ArrowLeft,
+  Building2,
+  Pencil,
+  Power,
+  Plus,
+  FileText,
+} from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/setup/clients/$clientId")({
   head: () => ({ meta: [{ title: "Cliente · Setup · PGCI" }] }),
-  component: EditClient,
+  component: ViewClient,
 });
 
-function EditClient() {
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </p>
+      <div className="mt-1 text-sm text-foreground">{children}</div>
+    </div>
+  );
+}
+
+function ViewClient() {
   const { clientId } = Route.useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const { isSuperAdmin } = useIsSuperAdmin();
 
   const { data, isLoading } = useQuery({
     queryKey: ["clients", clientId],
@@ -29,103 +58,302 @@ function EditClient() {
     },
   });
 
-  const { data: agreementCount } = useQuery({
-    queryKey: ["clients", clientId, "agreements-count"],
+  const { data: parent } = useQuery({
+    queryKey: ["clients", "parent", data?.parent_client_id ?? null],
+    enabled: Boolean(data?.parent_client_id),
     queryFn: async () => {
-      const { count } = await supabase
-        .from("agreements")
-        .select("*", { count: "exact", head: true })
-        .eq("client_id", clientId);
-      return count ?? 0;
+      const { data: p } = await supabase
+        .from("clients")
+        .select("id, commercial_name, legal_name")
+        .eq("id", data!.parent_client_id!)
+        .maybeSingle();
+      return p;
     },
   });
 
-  const m = useMutation({
-    mutationFn: async (v: ClientFormValues) => {
+  const { data: children } = useQuery({
+    queryKey: ["clients", "children", clientId],
+    enabled: data?.type === "holding",
+    queryFn: async () => {
+      const { data: rows, error } = await supabase
+        .from("clients")
+        .select("id, commercial_name, legal_name, tax_id, status")
+        .eq("parent_client_id", clientId)
+        .order("commercial_name");
+      if (error) throw error;
+      return rows ?? [];
+    },
+  });
+
+  const { data: agreements } = useQuery({
+    queryKey: ["clients", clientId, "agreements"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("agreements")
+        .select("id, name, status, updated_at")
+        .eq("client_id", clientId)
+        .order("updated_at", { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const toggleStatus = useMutation({
+    mutationFn: async (next: "active" | "inactive") => {
       const { error } = await supabase
         .from("clients")
-        .update({
-          commercial_name: v.commercial_name.trim() || null,
-          legal_name: v.legal_name.trim(),
-          erp_name: v.erp_name.trim() || null,
-          type: v.type as "holding" | "direct",
-          status: v.status,
-          tax_id: v.tax_id.trim(),
-          tax_id_type: "NIT",
-          notes: v.notes.trim() || null,
-          parent_client_id: v.parent_client_id,
-        })
+        .update({ status: next })
         .eq("id", clientId);
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["clients"] });
-      navigate({ to: "/setup/clients" });
     },
   });
 
   if (isLoading) return <p className="text-sm text-muted-foreground">Cargando…</p>;
   if (!data) return <p className="text-sm text-muted-foreground">No encontrado.</p>;
 
-  const initial: ClientFormValues = {
-    ...emptyClient,
-    commercial_name: data.commercial_name ?? "",
-    legal_name: data.legal_name ?? "",
-    erp_name: data.erp_name ?? "",
-    type: (data.type as "holding" | "direct") ?? "",
-    status: (data.status as "active" | "inactive") ?? "active",
-    tax_id: data.tax_id ?? "",
-    tax_id_type: "NIT",
-    notes: data.notes ?? "",
-    parent_client_id: data.parent_client_id ?? null,
-    belongs_to_holding: Boolean(data.parent_client_id),
-  };
-
+  const displayName = data.commercial_name?.trim() || data.legal_name;
+  const isHolding = data.type === "holding";
+  const isActive = data.status === "active";
+  const parentName = parent?.commercial_name?.trim() || parent?.legal_name;
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold tracking-tight">{data.commercial_name}</h1>
-        <p className="text-sm text-muted-foreground">Editar cliente</p>
-      </header>
+      {/* Volver */}
+      <Button asChild variant="ghost" size="sm" className="-ml-2 h-8 px-2 text-muted-foreground">
+        <Link to="/setup/clients">
+          <ArrowLeft className="mr-1.5 h-4 w-4" /> Volver a clientes
+        </Link>
+      </Button>
 
-      <ClientForm
-        initial={initial}
-        submitting={m.isPending}
-        excludeHoldingId={clientId}
-        onSubmit={async (v) => {
-          await m.mutateAsync(v);
-        }}
-        onCancel={() => navigate({ to: "/setup/clients" })}
-      />
+      {/* Encabezado */}
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Detalle del cliente
+          </p>
+          <h1 className="text-3xl font-bold tracking-tight">{displayName}</h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge color={isHolding ? "accent" : "neutral"} variant="soft">
+              {isHolding ? "Holding" : "Directo"}
+            </Badge>
+            <StatusBadge
+              status={isActive ? "active" : "neutral"}
+              label={isActive ? "Activo" : "Inactivo"}
+            />
+            {parentName && (
+              <span className="text-xs text-muted-foreground">
+                Pertenece a{" "}
+                <Link
+                  to="/setup/clients/$clientId"
+                  params={{ clientId: parent!.id }}
+                  className="font-medium text-foreground hover:underline"
+                >
+                  {parentName}
+                </Link>
+              </span>
+            )}
+          </div>
+        </div>
 
-      {data.type === "holding" && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-base">Empresas del cliente</CardTitle>
-            <Button asChild size="sm" variant="outline">
-              <Link to="/setup/clients/$clientId/companies" params={{ clientId }}>
-                <Building2 className="mr-2 h-4 w-4" /> Gestionar empresas
+        {isSuperAdmin && (
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline" size="sm">
+              <Link to="/setup/clients/$clientId/edit" params={{ clientId }}>
+                <Pencil className="mr-2 h-4 w-4" /> Editar
               </Link>
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={toggleStatus.isPending}
+              onClick={() => toggleStatus.mutate(isActive ? "inactive" : "active")}
+            >
+              <Power className="mr-2 h-4 w-4" />
+              {isActive ? "Inactivar" : "Activar"}
+            </Button>
+          </div>
+        )}
+      </header>
+
+      {/* Información general */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Información general</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <Field label="Razón social">{data.legal_name || "—"}</Field>
+          <Field label="Nombre comercial">{data.commercial_name?.trim() || "—"}</Field>
+          <Field label="Nombre ERP">{data.erp_name?.trim() || "—"}</Field>
+          <Field label="Tipo ID">{data.tax_id_type || "NIT"}</Field>
+          <Field label="NIT">{data.tax_id || "—"}</Field>
+          <Field label="Tipo de cliente">{isHolding ? "Holding" : "Directo"}</Field>
+          <Field label="Estado">
+            <StatusBadge
+              status={isActive ? "active" : "neutral"}
+              label={isActive ? "Activo" : "Inactivo"}
+            />
+          </Field>
+          {data.type === "direct" && (
+            <Field label="Holding asociado">
+              {parentName ? (
+                <Link
+                  to="/setup/clients/$clientId"
+                  params={{ clientId: parent!.id }}
+                  className="text-foreground hover:underline"
+                >
+                  {parentName}
+                </Link>
+              ) : (
+                "—"
+              )}
+            </Field>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Notas internas */}
+      {data.notes?.trim() && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Notas internas</CardTitle>
           </CardHeader>
+          <CardContent>
+            <p className="whitespace-pre-wrap text-sm text-foreground">{data.notes}</p>
+          </CardContent>
         </Card>
       )}
 
+      {/* Empresas del cliente (solo holdings) */}
+      {isHolding && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between gap-3">
+            <div>
+              <CardTitle className="text-base">Empresas del cliente</CardTitle>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Clientes directos asociados a este holding.
+              </p>
+            </div>
+            {isSuperAdmin && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  navigate({
+                    to: "/setup/clients/new",
+                    search: { parent: clientId },
+                  })
+                }
+              >
+                <Plus className="mr-2 h-4 w-4" /> Agregar empresa
+              </Button>
+            )}
+          </CardHeader>
+          <CardContent>
+            {!children || children.length === 0 ? (
+              <div className="flex flex-col items-center justify-center rounded-md border border-dashed border-border py-8 text-center">
+                <Building2 className="mb-2 h-6 w-6 text-muted-foreground" />
+                <p className="text-sm font-medium">Aún no hay empresas asociadas.</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Registra clientes directos vinculados a este holding.
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-md border border-border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nombre</TableHead>
+                      <TableHead>NIT</TableHead>
+                      <TableHead>Estado</TableHead>
+                      {isSuperAdmin && <TableHead className="text-right">Acciones</TableHead>}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {children.map((c) => {
+                      const name = c.commercial_name?.trim() || c.legal_name;
+                      const active = c.status === "active";
+                      return (
+                        <TableRow key={c.id}>
+                          <TableCell className="font-medium">
+                            <Link
+                              to="/setup/clients/$clientId"
+                              params={{ clientId: c.id }}
+                              className="hover:underline"
+                            >
+                              {name}
+                            </Link>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">{c.tax_id ?? "—"}</TableCell>
+                          <TableCell>
+                            <StatusBadge
+                              status={active ? "active" : "neutral"}
+                              label={active ? "Activo" : "Inactivo"}
+                            />
+                          </TableCell>
+                          {isSuperAdmin && (
+                            <TableCell className="text-right">
+                              <Button asChild size="sm" variant="ghost">
+                                <Link
+                                  to="/setup/clients/$clientId/edit"
+                                  params={{ clientId: c.id }}
+                                >
+                                  <Pencil className="mr-1.5 h-4 w-4" /> Editar
+                                </Link>
+                              </Button>
+                            </TableCell>
+                          )}
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Acuerdos asociados */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Acuerdos asociados</CardTitle>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Acuerdos comerciales registrados para este cliente.
+          </p>
         </CardHeader>
         <CardContent>
-          {agreementCount && agreementCount > 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Este cliente tiene {agreementCount} acuerdo(s) asociado(s).
-            </p>
+          {!agreements || agreements.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-md border border-dashed border-border py-8 text-center">
+              <FileText className="mb-2 h-6 w-6 text-muted-foreground" />
+              <p className="text-sm font-medium">Sin acuerdos asociados.</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Los acuerdos se crean desde el módulo de Acuerdos.
+              </p>
+            </div>
           ) : (
-            <p className="text-sm text-muted-foreground">
-              Este cliente todavía no tiene acuerdos. Los acuerdos se crean desde el módulo de
-              Acuerdos.
-            </p>
+            <ul className="divide-y divide-border rounded-md border border-border">
+              {agreements.map((a) => (
+                <li key={a.id} className="flex items-center justify-between gap-3 px-4 py-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{a.name ?? "Acuerdo"}</p>
+                    {a.updated_at && (
+                      <p className="text-xs text-muted-foreground">
+                        Actualizado {new Date(a.updated_at).toLocaleDateString()}
+                      </p>
+                    )}
+                  </div>
+                  {a.status && (
+                    <span className="text-xs uppercase tracking-wider text-muted-foreground">
+                      {a.status}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
           )}
         </CardContent>
       </Card>
