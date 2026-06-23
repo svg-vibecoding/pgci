@@ -23,6 +23,7 @@ function NewClient() {
           tax_id: v.tax_id.trim(),
           tax_id_type: "NIT",
           notes: v.notes.trim() || null,
+          parent_client_id: v.parent_client_id,
         })
         .select("id")
         .single();
