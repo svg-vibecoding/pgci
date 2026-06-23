@@ -135,7 +135,7 @@ function SetupHome() {
     <div className="space-y-10">
       {/* Header */}
       <header className="space-y-3">
-        <p className="suma-overline">Setup Operativo · Módulo M2</p>
+        <p className="suma-overline">Módulo M2 · Configuración inicial</p>
         <h1 className="suma-h1 max-w-3xl text-[var(--text-primary)]">
           Configura la base operativa de PGCI
         </h1>
