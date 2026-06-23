@@ -10,12 +10,20 @@ export const Route = createFileRoute("/_authenticated/setup")({
   component: SetupLayout,
 });
 
-const NAV = [
+type NavItem = {
+  to: string;
+  label: string;
+  icon: typeof Home;
+  exact?: boolean;
+  disabled?: boolean;
+};
+
+const NAV: NavItem[] = [
   { to: "/setup", label: "Inicio", icon: Home, exact: true },
   { to: "/setup/clients", label: "Clientes", icon: Building2 },
   { to: "/setup/products", label: "PIM · Productos", icon: Package },
   { to: "/setup/users", label: "Usuarios", icon: Users, disabled: true },
-] as const;
+];
 
 function SetupLayout() {
   const { isSuperAdmin, isLoading } = useIsSuperAdmin();
