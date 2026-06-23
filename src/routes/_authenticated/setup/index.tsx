@@ -91,7 +91,7 @@ function SetupHome() {
     to?: string;
   }> = [
     {
-      label: "Clientes piloto",
+      label: "CLIENTES",
       value: `${clients} / 4`,
       microcopy: "Base inicial de clientes que activa cobertura y acuerdos.",
       icon: Building2,
@@ -105,7 +105,7 @@ function SetupHome() {
       to: "/setup/clients",
     },
     {
-      label: "Productos PIM",
+      label: "PRODUCTOS",
       value: `${productsActive} activos · ${productsInactive} inactivos`,
       microcopy: "Catálogo Jaivaná listo para acuerdos y matching automatizado.",
       icon: Package,
@@ -135,7 +135,7 @@ function SetupHome() {
     <div className="space-y-10">
       {/* Header */}
       <header className="space-y-3">
-        <p className="suma-overline">Módulo M2 · Configuración inicial</p>
+        <p className="suma-overline">CONFIGURACIÓN INICIAL</p>
         <h1 className="suma-h1 max-w-3xl text-[var(--text-primary)]">
           Configura la base operativa de PGCI
         </h1>
@@ -214,19 +214,19 @@ function SetupHome() {
             <div className="space-y-5">
               <div className="space-y-2">
                 <h2 className="suma-h3 text-[var(--text-primary)]">
-                  Empieza por crear tus clientes piloto
+                  Empieza por crear tus clientes
                 </h2>
                 <p className="max-w-2xl text-sm leading-relaxed text-[var(--text-secondary)]">
-                  Los clientes piloto son la base operativa de PGCI. Una vez creados podrás
+                  Los clientes son la base operativa de la PGCI. Una vez creados podrás
                   registrar sus empresas, importar el catálogo y habilitar accesos.
                 </p>
               </div>
 
               <ol className="grid gap-3 sm:grid-cols-3">
                 {[
-                  { n: 1, t: "Crea clientes", d: "Define la cartera piloto." },
+                  { n: 1, t: "Crea clientes", d: "Define la cartera de clientes." },
                   { n: 2, t: "Registra empresas", d: "Razones sociales por cliente." },
-                  { n: 3, t: "Importa PIM", d: "Catálogo activo para acuerdos." },
+                  { n: 3, t: "Importa Productos", d: "Catálogo activo para acuerdos." },
                 ].map((s) => (
                   <li
                     key={s.n}
@@ -253,7 +253,7 @@ function SetupHome() {
                   to="/setup/products"
                   className="text-sm font-medium text-[var(--text-secondary)] underline-offset-4 hover:text-[var(--color-primary)] hover:underline"
                 >
-                  ¿Necesitas ayuda con la importación? Ver guía de PIM →
+                  {"\n"}
                 </Link>
               </div>
             </div>
@@ -265,7 +265,7 @@ function SetupHome() {
       <section className="space-y-4">
         <div className="flex items-end justify-between">
           <div>
-            <p className="suma-overline">Estado del setup</p>
+            <p className="suma-overline">ESTADO ACTUAL</p>
             <h2 className="mt-1 text-lg font-semibold text-[var(--text-primary)]">
               Indicadores operativos
             </h2>
