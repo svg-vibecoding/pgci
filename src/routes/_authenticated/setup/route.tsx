@@ -55,22 +55,24 @@ function SetupLayout() {
       <aside
         className="flex w-[264px] flex-col border-r border-[var(--border-subtle)] bg-[var(--surface-page)]"
       >
-        {/* Marca + contexto de módulo */}
-        <div className="px-6 pt-7 pb-6">
-          <Link to="/setup" className="inline-flex items-center" aria-label="Sumatec · Inicio">
-            <SumatecLogo className="h-11 w-auto" />
+        {/* Marca */}
+        <div className="px-6 pt-7 pb-5">
+          <Link to="/setup" className="inline-flex flex-col items-start" aria-label="Sumatec · Inicio">
+            <SumatecLogo className="h-14 w-auto" />
+            <span className="mt-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
+              PGCI
+            </span>
           </Link>
-          <div className="mt-5 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--text-tertiary)]">
-            <span>PGCI</span>
-            <span aria-hidden className="text-[var(--border-default)]">/</span>
-            <span className="text-[var(--text-primary)]">Setup Operativo</span>
-          </div>
         </div>
 
         <div className="mx-6 h-px bg-[var(--border-subtle)]" />
 
         {/* Navegación */}
-        <nav className="flex-1 px-3 pt-4">
+        <nav className="flex-1 px-3 pt-5">
+          <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
+            Setup Operativo
+          </p>
+
           <ul className="space-y-0.5">
             {NAV.map((item) => {
               const active = item.exact
