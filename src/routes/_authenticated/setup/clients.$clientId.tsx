@@ -14,7 +14,7 @@ import {
 import { StatusBadge } from "@/components/sumatec";
 import { Badge } from "@/components/sumatec/Badge";
 import { useIsSuperAdmin } from "@/hooks/use-profile";
-import { ArrowLeft, Building2, Pencil, Power, FileText } from "lucide-react";
+import { ArrowLeft, Building2, Pencil, Power, FileText, Users } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/setup/clients/$clientId")({
   head: () => ({ meta: [{ title: "Cliente · Setup · PGCI" }] }),
@@ -113,13 +113,14 @@ function ViewClient() {
   const parentName = parent?.commercial_name?.trim() || parent?.legal_name;
 
   return (
-    <div className="space-y-5">
+    <div className="-mt-6 space-y-5">
       {/* Volver */}
-      <Button asChild variant="ghost" size="sm" className="-ml-2 h-8 px-2 text-muted-foreground">
-        <Link to="/setup/clients">
-          <ArrowLeft className="mr-1.5 h-4 w-4" /> Volver a clientes
-        </Link>
-      </Button>
+      <Link
+        to="/setup/clients"
+        className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" /> Volver a clientes
+      </Link>
 
       {/* Encabezado */}
       <header className="flex flex-wrap items-start justify-between gap-4">
@@ -169,15 +170,9 @@ function ViewClient() {
       </header>
 
       {/* Resumen */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="rounded-lg border border-border bg-card p-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            {isHolding ? "Empresas asociadas" : "Holding asociado"}
-          </p>
-          <p className="mt-1 text-xl font-semibold text-foreground">
-            {isHolding ? children?.length ?? 0 : parentName ?? "—"}
-          </p>
-        </div>
+      <div
+        className={`grid grid-cols-1 gap-3 ${isHolding ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}
+      >
         <div className="rounded-lg border border-border bg-card p-3">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Acuerdos asociados
@@ -186,15 +181,20 @@ function ViewClient() {
         </div>
         <div className="rounded-lg border border-border bg-card p-3">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Estado
+            Usuarios asociados
           </p>
-          <div className="mt-1">
-            <StatusBadge
-              status={isActive ? "active" : "neutral"}
-              label={isActive ? "Activo" : "Inactivo"}
-            />
-          </div>
+          <p className="mt-1 text-xl font-semibold text-foreground">0</p>
         </div>
+        {isHolding && (
+          <div className="rounded-lg border border-border bg-card p-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Empresas asociadas
+            </p>
+            <p className="mt-1 text-xl font-semibold text-foreground">
+              {children?.length ?? 0}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Información general */}
@@ -244,6 +244,63 @@ function ViewClient() {
           </CardContent>
         </Card>
       )}
+
+      {/* Acuerdos asociados */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Acuerdos asociados</CardTitle>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Acuerdos comerciales registrados para este cliente.
+          </p>
+        </CardHeader>
+        <CardContent>
+          {!agreements || agreements.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-md border border-dashed border-border py-8 text-center">
+              <FileText className="mb-2 h-6 w-6 text-muted-foreground" />
+              <p className="text-sm font-medium">Sin acuerdos asociados.</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Los acuerdos se crean desde el módulo de Acuerdos.
+              </p>
+            </div>
+          ) : (
+            <ul className="divide-y divide-border rounded-md border border-border">
+              {agreements.map((a) => (
+                <li key={a.id} className="flex items-center justify-between gap-3 px-4 py-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-mono text-xs text-muted-foreground">
+                      {a.id.slice(0, 8)}
+                    </p>
+                    {a.updated_at && (
+                      <p className="text-xs text-muted-foreground">
+                        Actualizado {new Date(a.updated_at).toLocaleDateString()}
+                      </p>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Usuarios asociados */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Usuarios asociados</CardTitle>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Usuarios con acceso a este cliente. Se gestionan desde el módulo Usuarios.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center rounded-md border border-dashed border-border py-8 text-center">
+            <Users className="mb-2 h-6 w-6 text-muted-foreground" />
+            <p className="text-sm font-medium">Sin usuarios asociados aún.</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Disponible cuando se construya el módulo de Usuarios.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Empresas del cliente (solo holdings) */}
       {isHolding && (
@@ -318,44 +375,6 @@ function ViewClient() {
           </CardContent>
         </Card>
       )}
-
-      {/* Acuerdos asociados */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Acuerdos asociados</CardTitle>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Acuerdos comerciales registrados para este cliente.
-          </p>
-        </CardHeader>
-        <CardContent>
-          {!agreements || agreements.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-md border border-dashed border-border py-8 text-center">
-              <FileText className="mb-2 h-6 w-6 text-muted-foreground" />
-              <p className="text-sm font-medium">Sin acuerdos asociados.</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Los acuerdos se crean desde el módulo de Acuerdos.
-              </p>
-            </div>
-          ) : (
-            <ul className="divide-y divide-border rounded-md border border-border">
-              {agreements.map((a) => (
-                <li key={a.id} className="flex items-center justify-between gap-3 px-4 py-3">
-                  <div className="min-w-0">
-                    <p className="truncate font-mono text-xs text-muted-foreground">
-                      {a.id.slice(0, 8)}
-                    </p>
-                    {a.updated_at && (
-                      <p className="text-xs text-muted-foreground">
-                        Actualizado {new Date(a.updated_at).toLocaleDateString()}
-                      </p>
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }
