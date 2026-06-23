@@ -209,7 +209,7 @@ export function ClientForm({
                 ¿Pertenece a un holding?
               </Label>
               <p className="text-xs text-muted-foreground">
-                Asocia este cliente directo a un holding existente.
+                Relaciona este cliente con un holding registrado.
               </p>
             </div>
             <Switch
