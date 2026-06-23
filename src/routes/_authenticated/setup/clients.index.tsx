@@ -38,7 +38,7 @@ function ClientsList() {
     queryFn: async () => {
       const { data: clients, error } = await supabase
         .from("clients")
-        .select("id, commercial_name, legal_name, erp_name, type, status, updated_at")
+        .select("id, commercial_name, legal_name, erp_name, tax_id, type, status, updated_at")
         .order("commercial_name");
       if (error) throw error;
 
@@ -65,6 +65,7 @@ function ClientsList() {
       }
       return (clients ?? []).map((c) => ({
         ...c,
+        display_name: c.commercial_name?.trim() || c.legal_name,
         company_count: companyCounts.get(c.id) ?? 0,
         agreement_count: agreementCounts.get(c.id) ?? 0,
       }));
@@ -85,7 +86,7 @@ function ClientsList() {
     if (typeF !== "all" && c.type !== typeF) return false;
     if (search) {
       const s = search.toLowerCase();
-      const hay = [c.commercial_name, c.legal_name, c.erp_name]
+      const hay = [c.commercial_name, c.legal_name, c.erp_name, c.tax_id]
         .filter(Boolean)
         .some((v) => v!.toLowerCase().includes(s));
       if (!hay) return false;
@@ -111,7 +112,7 @@ function ClientsList() {
 
       <div className="flex flex-wrap gap-3">
         <Input
-          placeholder="Buscar por nombre comercial, legal o ERP…"
+          placeholder="Buscar por nombre, NIT o ERP…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-xs"
@@ -139,22 +140,21 @@ function ClientsList() {
           <TableHeader>
             <TableRow>
               <TableHead>Cliente</TableHead>
-              <TableHead>Razón social</TableHead>
-              <TableHead>Nombre ERP</TableHead>
               <TableHead>Tipo</TableHead>
-              <TableHead>Estado</TableHead>
+              <TableHead>NIT</TableHead>
               <TableHead className="text-right">Empresas</TableHead>
               <TableHead className="text-right">Acuerdos</TableHead>
+              <TableHead>Estado</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading && (
-              <TableRow><TableCell colSpan={8} className="text-center text-sm text-muted-foreground">Cargando…</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="text-center text-sm text-muted-foreground">Cargando…</TableCell></TableRow>
             )}
             {!isLoading && filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={8} className="text-center text-sm text-muted-foreground py-8">
+                <TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-8">
                   {data?.length === 0
                     ? "Aún no hay clientes creados. Crea los clientes piloto para continuar."
                     : "No hay clientes que coincidan con los filtros."}
@@ -165,17 +165,18 @@ function ClientsList() {
               <TableRow key={c.id}>
                 <TableCell className="font-medium">
                   <Link to="/setup/clients/$clientId" params={{ clientId: c.id }} className="hover:underline">
-                    {c.commercial_name}
+                    {c.display_name}
                   </Link>
                 </TableCell>
-                <TableCell className="text-muted-foreground">{c.legal_name ?? "—"}</TableCell>
-                <TableCell className="text-muted-foreground">{c.erp_name ?? "—"}</TableCell>
                 <TableCell>{c.type === "holding" ? "Holding" : "Directo"}</TableCell>
+                <TableCell className="text-muted-foreground">{c.tax_id ?? "—"}</TableCell>
+                <TableCell className="text-right">
+                  {c.type === "holding" ? c.company_count : "—"}
+                </TableCell>
+                <TableCell className="text-right">{c.agreement_count}</TableCell>
                 <TableCell>
                   <StatusBadge status={c.status === "active" ? "active" : "neutral"} label={c.status === "active" ? "Activo" : "Inactivo"} />
                 </TableCell>
-                <TableCell className="text-right">{c.company_count}</TableCell>
-                <TableCell className="text-right">{c.agreement_count}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1">
                     {c.type === "holding" && (
