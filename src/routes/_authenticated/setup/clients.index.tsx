@@ -112,7 +112,7 @@ function ClientsList() {
 
       <div className="flex flex-wrap gap-3">
         <Input
-          placeholder="Buscar por nombre, NIT o ERP…"
+          placeholder="Buscar por nombre o NIT…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-xs"
