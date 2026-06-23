@@ -9,38 +9,190 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedSetupRouteRouteImport } from './routes/_authenticated/setup/route'
+import { Route as AuthenticatedSetupIndexRouteImport } from './routes/_authenticated/setup/index'
+import { Route as AuthenticatedSetupProductsIndexRouteImport } from './routes/_authenticated/setup/products.index'
+import { Route as AuthenticatedSetupClientsIndexRouteImport } from './routes/_authenticated/setup/clients.index'
+import { Route as AuthenticatedSetupProductsImportRouteImport } from './routes/_authenticated/setup/products.import'
+import { Route as AuthenticatedSetupProductsProductIdRouteImport } from './routes/_authenticated/setup/products.$productId'
+import { Route as AuthenticatedSetupClientsNewRouteImport } from './routes/_authenticated/setup/clients.new'
+import { Route as AuthenticatedSetupClientsClientIdRouteImport } from './routes/_authenticated/setup/clients.$clientId'
+import { Route as AuthenticatedSetupClientsClientIdCompaniesRouteImport } from './routes/_authenticated/setup/clients.$clientId.companies'
 
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedSetupRouteRoute = AuthenticatedSetupRouteRouteImport.update({
+  id: '/setup',
+  path: '/setup',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSetupIndexRoute = AuthenticatedSetupIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedSetupRouteRoute,
+} as any)
+const AuthenticatedSetupProductsIndexRoute =
+  AuthenticatedSetupProductsIndexRouteImport.update({
+    id: '/products/',
+    path: '/products/',
+    getParentRoute: () => AuthenticatedSetupRouteRoute,
+  } as any)
+const AuthenticatedSetupClientsIndexRoute =
+  AuthenticatedSetupClientsIndexRouteImport.update({
+    id: '/clients/',
+    path: '/clients/',
+    getParentRoute: () => AuthenticatedSetupRouteRoute,
+  } as any)
+const AuthenticatedSetupProductsImportRoute =
+  AuthenticatedSetupProductsImportRouteImport.update({
+    id: '/products/import',
+    path: '/products/import',
+    getParentRoute: () => AuthenticatedSetupRouteRoute,
+  } as any)
+const AuthenticatedSetupProductsProductIdRoute =
+  AuthenticatedSetupProductsProductIdRouteImport.update({
+    id: '/products/$productId',
+    path: '/products/$productId',
+    getParentRoute: () => AuthenticatedSetupRouteRoute,
+  } as any)
+const AuthenticatedSetupClientsNewRoute =
+  AuthenticatedSetupClientsNewRouteImport.update({
+    id: '/clients/new',
+    path: '/clients/new',
+    getParentRoute: () => AuthenticatedSetupRouteRoute,
+  } as any)
+const AuthenticatedSetupClientsClientIdRoute =
+  AuthenticatedSetupClientsClientIdRouteImport.update({
+    id: '/clients/$clientId',
+    path: '/clients/$clientId',
+    getParentRoute: () => AuthenticatedSetupRouteRoute,
+  } as any)
+const AuthenticatedSetupClientsClientIdCompaniesRoute =
+  AuthenticatedSetupClientsClientIdCompaniesRouteImport.update({
+    id: '/companies',
+    path: '/companies',
+    getParentRoute: () => AuthenticatedSetupClientsClientIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/setup': typeof AuthenticatedSetupRouteRouteWithChildren
+  '/setup/': typeof AuthenticatedSetupIndexRoute
+  '/setup/clients/$clientId': typeof AuthenticatedSetupClientsClientIdRouteWithChildren
+  '/setup/clients/new': typeof AuthenticatedSetupClientsNewRoute
+  '/setup/products/$productId': typeof AuthenticatedSetupProductsProductIdRoute
+  '/setup/products/import': typeof AuthenticatedSetupProductsImportRoute
+  '/setup/clients/': typeof AuthenticatedSetupClientsIndexRoute
+  '/setup/products/': typeof AuthenticatedSetupProductsIndexRoute
+  '/setup/clients/$clientId/companies': typeof AuthenticatedSetupClientsClientIdCompaniesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/setup': typeof AuthenticatedSetupIndexRoute
+  '/setup/clients/$clientId': typeof AuthenticatedSetupClientsClientIdRouteWithChildren
+  '/setup/clients/new': typeof AuthenticatedSetupClientsNewRoute
+  '/setup/products/$productId': typeof AuthenticatedSetupProductsProductIdRoute
+  '/setup/products/import': typeof AuthenticatedSetupProductsImportRoute
+  '/setup/clients': typeof AuthenticatedSetupClientsIndexRoute
+  '/setup/products': typeof AuthenticatedSetupProductsIndexRoute
+  '/setup/clients/$clientId/companies': typeof AuthenticatedSetupClientsClientIdCompaniesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/_authenticated/setup': typeof AuthenticatedSetupRouteRouteWithChildren
+  '/_authenticated/setup/': typeof AuthenticatedSetupIndexRoute
+  '/_authenticated/setup/clients/$clientId': typeof AuthenticatedSetupClientsClientIdRouteWithChildren
+  '/_authenticated/setup/clients/new': typeof AuthenticatedSetupClientsNewRoute
+  '/_authenticated/setup/products/$productId': typeof AuthenticatedSetupProductsProductIdRoute
+  '/_authenticated/setup/products/import': typeof AuthenticatedSetupProductsImportRoute
+  '/_authenticated/setup/clients/': typeof AuthenticatedSetupClientsIndexRoute
+  '/_authenticated/setup/products/': typeof AuthenticatedSetupProductsIndexRoute
+  '/_authenticated/setup/clients/$clientId/companies': typeof AuthenticatedSetupClientsClientIdCompaniesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/setup'
+    | '/setup/'
+    | '/setup/clients/$clientId'
+    | '/setup/clients/new'
+    | '/setup/products/$productId'
+    | '/setup/products/import'
+    | '/setup/clients/'
+    | '/setup/products/'
+    | '/setup/clients/$clientId/companies'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/setup'
+    | '/setup/clients/$clientId'
+    | '/setup/clients/new'
+    | '/setup/products/$productId'
+    | '/setup/products/import'
+    | '/setup/clients'
+    | '/setup/products'
+    | '/setup/clients/$clientId/companies'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/_authenticated/setup'
+    | '/_authenticated/setup/'
+    | '/_authenticated/setup/clients/$clientId'
+    | '/_authenticated/setup/clients/new'
+    | '/_authenticated/setup/products/$productId'
+    | '/_authenticated/setup/products/import'
+    | '/_authenticated/setup/clients/'
+    | '/_authenticated/setup/products/'
+    | '/_authenticated/setup/clients/$clientId/companies'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +200,131 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/setup': {
+      id: '/_authenticated/setup'
+      path: '/setup'
+      fullPath: '/setup'
+      preLoaderRoute: typeof AuthenticatedSetupRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/setup/': {
+      id: '/_authenticated/setup/'
+      path: '/'
+      fullPath: '/setup/'
+      preLoaderRoute: typeof AuthenticatedSetupIndexRouteImport
+      parentRoute: typeof AuthenticatedSetupRouteRoute
+    }
+    '/_authenticated/setup/products/': {
+      id: '/_authenticated/setup/products/'
+      path: '/products'
+      fullPath: '/setup/products/'
+      preLoaderRoute: typeof AuthenticatedSetupProductsIndexRouteImport
+      parentRoute: typeof AuthenticatedSetupRouteRoute
+    }
+    '/_authenticated/setup/clients/': {
+      id: '/_authenticated/setup/clients/'
+      path: '/clients'
+      fullPath: '/setup/clients/'
+      preLoaderRoute: typeof AuthenticatedSetupClientsIndexRouteImport
+      parentRoute: typeof AuthenticatedSetupRouteRoute
+    }
+    '/_authenticated/setup/products/import': {
+      id: '/_authenticated/setup/products/import'
+      path: '/products/import'
+      fullPath: '/setup/products/import'
+      preLoaderRoute: typeof AuthenticatedSetupProductsImportRouteImport
+      parentRoute: typeof AuthenticatedSetupRouteRoute
+    }
+    '/_authenticated/setup/products/$productId': {
+      id: '/_authenticated/setup/products/$productId'
+      path: '/products/$productId'
+      fullPath: '/setup/products/$productId'
+      preLoaderRoute: typeof AuthenticatedSetupProductsProductIdRouteImport
+      parentRoute: typeof AuthenticatedSetupRouteRoute
+    }
+    '/_authenticated/setup/clients/new': {
+      id: '/_authenticated/setup/clients/new'
+      path: '/clients/new'
+      fullPath: '/setup/clients/new'
+      preLoaderRoute: typeof AuthenticatedSetupClientsNewRouteImport
+      parentRoute: typeof AuthenticatedSetupRouteRoute
+    }
+    '/_authenticated/setup/clients/$clientId': {
+      id: '/_authenticated/setup/clients/$clientId'
+      path: '/clients/$clientId'
+      fullPath: '/setup/clients/$clientId'
+      preLoaderRoute: typeof AuthenticatedSetupClientsClientIdRouteImport
+      parentRoute: typeof AuthenticatedSetupRouteRoute
+    }
+    '/_authenticated/setup/clients/$clientId/companies': {
+      id: '/_authenticated/setup/clients/$clientId/companies'
+      path: '/companies'
+      fullPath: '/setup/clients/$clientId/companies'
+      preLoaderRoute: typeof AuthenticatedSetupClientsClientIdCompaniesRouteImport
+      parentRoute: typeof AuthenticatedSetupClientsClientIdRoute
+    }
   }
 }
 
+interface AuthenticatedSetupClientsClientIdRouteChildren {
+  AuthenticatedSetupClientsClientIdCompaniesRoute: typeof AuthenticatedSetupClientsClientIdCompaniesRoute
+}
+
+const AuthenticatedSetupClientsClientIdRouteChildren: AuthenticatedSetupClientsClientIdRouteChildren =
+  {
+    AuthenticatedSetupClientsClientIdCompaniesRoute:
+      AuthenticatedSetupClientsClientIdCompaniesRoute,
+  }
+
+const AuthenticatedSetupClientsClientIdRouteWithChildren =
+  AuthenticatedSetupClientsClientIdRoute._addFileChildren(
+    AuthenticatedSetupClientsClientIdRouteChildren,
+  )
+
+interface AuthenticatedSetupRouteRouteChildren {
+  AuthenticatedSetupIndexRoute: typeof AuthenticatedSetupIndexRoute
+  AuthenticatedSetupClientsClientIdRoute: typeof AuthenticatedSetupClientsClientIdRouteWithChildren
+  AuthenticatedSetupClientsNewRoute: typeof AuthenticatedSetupClientsNewRoute
+  AuthenticatedSetupProductsProductIdRoute: typeof AuthenticatedSetupProductsProductIdRoute
+  AuthenticatedSetupProductsImportRoute: typeof AuthenticatedSetupProductsImportRoute
+  AuthenticatedSetupClientsIndexRoute: typeof AuthenticatedSetupClientsIndexRoute
+  AuthenticatedSetupProductsIndexRoute: typeof AuthenticatedSetupProductsIndexRoute
+}
+
+const AuthenticatedSetupRouteRouteChildren: AuthenticatedSetupRouteRouteChildren =
+  {
+    AuthenticatedSetupIndexRoute: AuthenticatedSetupIndexRoute,
+    AuthenticatedSetupClientsClientIdRoute:
+      AuthenticatedSetupClientsClientIdRouteWithChildren,
+    AuthenticatedSetupClientsNewRoute: AuthenticatedSetupClientsNewRoute,
+    AuthenticatedSetupProductsProductIdRoute:
+      AuthenticatedSetupProductsProductIdRoute,
+    AuthenticatedSetupProductsImportRoute:
+      AuthenticatedSetupProductsImportRoute,
+    AuthenticatedSetupClientsIndexRoute: AuthenticatedSetupClientsIndexRoute,
+    AuthenticatedSetupProductsIndexRoute: AuthenticatedSetupProductsIndexRoute,
+  }
+
+const AuthenticatedSetupRouteRouteWithChildren =
+  AuthenticatedSetupRouteRoute._addFileChildren(
+    AuthenticatedSetupRouteRouteChildren,
+  )
+
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedSetupRouteRoute: typeof AuthenticatedSetupRouteRouteWithChildren
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedSetupRouteRoute: AuthenticatedSetupRouteRouteWithChildren,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
