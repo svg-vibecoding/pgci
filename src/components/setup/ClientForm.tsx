@@ -152,6 +152,23 @@ export function ClientForm({
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
+          <Label htmlFor="tax_id_type">Tipo ID</Label>
+          <Input id="tax_id_type" value="NIT" disabled readOnly />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="tax_id">NIT<Req /></Label>
+          <Input
+            id="tax_id"
+            value={v.tax_id}
+            onChange={(e) => setV({ ...v, tax_id: e.target.value })}
+          />
+          {errors.tax_id && (
+            <p className="text-sm text-destructive">{errors.tax_id}</p>
+          )}
+        </div>
+      </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
           <Label>Tipo de cliente<Req /></Label>
           <Select
             value={v.type}
@@ -181,23 +198,6 @@ export function ClientForm({
               <SelectItem value="inactive">Inactivo</SelectItem>
             </SelectContent>
           </Select>
-        </div>
-      </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="tax_id_type">Tipo ID</Label>
-          <Input id="tax_id_type" value="NIT" disabled readOnly />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="tax_id">NIT<Req /></Label>
-          <Input
-            id="tax_id"
-            value={v.tax_id}
-            onChange={(e) => setV({ ...v, tax_id: e.target.value })}
-          />
-          {errors.tax_id && (
-            <p className="text-sm text-destructive">{errors.tax_id}</p>
-          )}
         </div>
       </div>
 
