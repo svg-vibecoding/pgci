@@ -104,7 +104,7 @@ function SetupLayout() {
                       "group relative flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors duration-150",
                       active
                         ? "bg-[var(--color-primary)] font-semibold text-[var(--text-on-brand)] hover:bg-[var(--color-primary-hover)]"
-                        : "font-medium text-[var(--text-secondary)] hover:bg-[var(--gray-100)] hover:text-[var(--text-primary)]",
+                        : "font-medium text-[var(--text-secondary)] hover:bg-[var(--gray-200)] hover:text-[var(--text-primary)]",
                     )}
                   >
                     <Icon
