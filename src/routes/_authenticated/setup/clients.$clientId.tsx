@@ -245,6 +245,63 @@ function ViewClient() {
         </Card>
       )}
 
+      {/* Acuerdos asociados */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Acuerdos asociados</CardTitle>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Acuerdos comerciales registrados para este cliente.
+          </p>
+        </CardHeader>
+        <CardContent>
+          {!agreements || agreements.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-md border border-dashed border-border py-8 text-center">
+              <FileText className="mb-2 h-6 w-6 text-muted-foreground" />
+              <p className="text-sm font-medium">Sin acuerdos asociados.</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Los acuerdos se crean desde el módulo de Acuerdos.
+              </p>
+            </div>
+          ) : (
+            <ul className="divide-y divide-border rounded-md border border-border">
+              {agreements.map((a) => (
+                <li key={a.id} className="flex items-center justify-between gap-3 px-4 py-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-mono text-xs text-muted-foreground">
+                      {a.id.slice(0, 8)}
+                    </p>
+                    {a.updated_at && (
+                      <p className="text-xs text-muted-foreground">
+                        Actualizado {new Date(a.updated_at).toLocaleDateString()}
+                      </p>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Usuarios asociados */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Usuarios asociados</CardTitle>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Usuarios con acceso a este cliente. Se gestionan desde el módulo Usuarios.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center rounded-md border border-dashed border-border py-8 text-center">
+            <Users className="mb-2 h-6 w-6 text-muted-foreground" />
+            <p className="text-sm font-medium">Sin usuarios asociados aún.</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Disponible cuando se construya el módulo de Usuarios.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Empresas del cliente (solo holdings) */}
       {isHolding && (
         <Card>
@@ -318,44 +375,6 @@ function ViewClient() {
           </CardContent>
         </Card>
       )}
-
-      {/* Acuerdos asociados */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Acuerdos asociados</CardTitle>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Acuerdos comerciales registrados para este cliente.
-          </p>
-        </CardHeader>
-        <CardContent>
-          {!agreements || agreements.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-md border border-dashed border-border py-8 text-center">
-              <FileText className="mb-2 h-6 w-6 text-muted-foreground" />
-              <p className="text-sm font-medium">Sin acuerdos asociados.</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Los acuerdos se crean desde el módulo de Acuerdos.
-              </p>
-            </div>
-          ) : (
-            <ul className="divide-y divide-border rounded-md border border-border">
-              {agreements.map((a) => (
-                <li key={a.id} className="flex items-center justify-between gap-3 px-4 py-3">
-                  <div className="min-w-0">
-                    <p className="truncate font-mono text-xs text-muted-foreground">
-                      {a.id.slice(0, 8)}
-                    </p>
-                    {a.updated_at && (
-                      <p className="text-xs text-muted-foreground">
-                        Actualizado {new Date(a.updated_at).toLocaleDateString()}
-                      </p>
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }
