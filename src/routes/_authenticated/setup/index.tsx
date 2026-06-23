@@ -1,9 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Building2, Package, Users, FileText, KeyRound, AlertTriangle } from "lucide-react";
+import {
+  Building2,
+  Package,
+  Users,
+  KeyRound,
+  AlertTriangle,
+  ArrowRight,
+  Check,
+  Briefcase,
+  Sparkles,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/setup/")({
   head: () => ({ meta: [{ title: "Setup · PGCI" }] }),
@@ -44,102 +55,276 @@ function useSetupCounts() {
   });
 }
 
+type StepState = "done" | "next" | "pending";
+
 function SetupHome() {
   const { data } = useSetupCounts();
-  const cards = [
-    { label: "Clientes piloto", value: `${data?.clients ?? 0} / 4`, icon: Building2 },
-    { label: "Empresas registradas", value: data?.companies ?? 0, icon: Building2 },
+
+  const clients = data?.clients ?? 0;
+  const companies = data?.companies ?? 0;
+  const productsActive = data?.productsActive ?? 0;
+  const productsInactive = data?.productsInactive ?? 0;
+  const users = data?.users ?? 0;
+  const accesses = data?.accesses ?? 0;
+
+  const isEmpty = clients === 0 && productsActive === 0;
+
+  // Progreso visual de setup — derivado de counts existentes, sin nuevas queries
+  const stepStates: StepState[] = (() => {
+    const done = [clients > 0, companies > 0, productsActive > 0, accesses > 0];
+    const firstPending = done.indexOf(false);
+    return done.map((d, i) => (d ? "done" : i === firstPending ? "next" : "pending"));
+  })();
+
+  const steps: Array<{ label: string; hint: string; to?: string }> = [
+    { label: "Clientes", hint: "Base inicial", to: "/setup/clients" },
+    { label: "Empresas", hint: "Razones sociales", to: "/setup/clients" },
+    { label: "PIM", hint: "Catálogo activo", to: "/setup/products" },
+    { label: "Accesos", hint: "Usuarios ↔ clientes" },
+  ];
+
+  const cards: Array<{
+    label: string;
+    value: string | number;
+    microcopy: string;
+    icon: LucideIcon;
+    to?: string;
+  }> = [
+    {
+      label: "Clientes piloto",
+      value: `${clients} / 4`,
+      microcopy: "Base inicial de clientes que activa cobertura y acuerdos.",
+      icon: Building2,
+      to: "/setup/clients",
+    },
+    {
+      label: "Empresas registradas",
+      value: companies,
+      microcopy: "Razones sociales por cliente para facturación y matching.",
+      icon: Briefcase,
+      to: "/setup/clients",
+    },
     {
       label: "Productos PIM",
-      value: `${data?.productsActive ?? 0} activos · ${data?.productsInactive ?? 0} inactivos`,
+      value: `${productsActive} activos · ${productsInactive} inactivos`,
+      microcopy: "Catálogo Jaivaná listo para acuerdos y matching automatizado.",
       icon: Package,
+      to: "/setup/products",
     },
-    { label: "Usuarios activos", value: data?.users ?? 0, icon: Users },
-    { label: "Accesos configurados", value: data?.accesses ?? 0, icon: KeyRound },
+    {
+      label: "Usuarios activos",
+      value: users,
+      microcopy: "Personas con sesión activa en la plataforma.",
+      icon: Users,
+    },
+    {
+      label: "Accesos configurados",
+      value: accesses,
+      microcopy: "Vínculo entre usuarios y clientes habilitados.",
+      icon: KeyRound,
+    },
   ];
 
   const alerts: string[] = [];
-  if ((data?.clients ?? 0) === 0)
+  if (clients === 0)
     alerts.push("Aún no hay clientes creados. Crea los clientes piloto para continuar.");
-  if ((data?.productsActive ?? 0) === 0)
+  if (productsActive === 0)
     alerts.push("Aún no hay productos activos en el PIM. Impórtalos desde archivo.");
 
-  const isEmpty = (data?.clients ?? 0) === 0 && (data?.productsActive ?? 0) === 0;
-
   return (
-    <div className="space-y-8">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold tracking-tight">Setup Operativo</h1>
-        <p className="text-sm text-muted-foreground">
-          Configuración base del piloto: clientes, empresas, productos y accesos.
+    <div className="space-y-10">
+      {/* Header */}
+      <header className="space-y-3">
+        <p className="suma-overline">Setup Operativo · Módulo M2</p>
+        <h1 className="suma-h1 max-w-3xl text-[var(--text-primary)]">
+          Configura la base operativa de PGCI
+        </h1>
+        <p className="max-w-3xl text-[15px] leading-relaxed text-[var(--text-secondary)]">
+          Define clientes, empresas, productos y accesos desde una sola fuente de verdad.
+          Esta configuración alimenta acuerdos, matching y todo el flujo comercial.
         </p>
       </header>
 
-      {isEmpty && (
-        <Card>
-          <CardContent className="py-10 text-center">
-            <p className="text-sm text-muted-foreground">
-              Aún no hay datos de Setup Operativo. Empieza creando los clientes piloto.
+      {/* Progreso de setup */}
+      {!isEmpty && (
+        <section
+          aria-label="Progreso de configuración"
+          className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6"
+        >
+          <div className="mb-5 flex items-center justify-between">
+            <p className="text-sm font-semibold text-[var(--text-primary)]">
+              Progreso de configuración
             </p>
-            <Button asChild className="mt-4">
-              <Link to="/setup/clients/new">Crear primer cliente</Link>
-            </Button>
-          </CardContent>
-        </Card>
+            <p className="text-xs text-[var(--text-tertiary)]">
+              {stepStates.filter((s) => s === "done").length} de {steps.length} completados
+            </p>
+          </div>
+          <ol className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {steps.map((step, i) => {
+              const state = stepStates[i];
+              return (
+                <li key={step.label} className="relative">
+                  <div className="flex items-start gap-3">
+                    <span
+                      className={cn(
+                        "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold",
+                        state === "done" &&
+                          "bg-[var(--success-soft)] text-[var(--success-strong)]",
+                        state === "next" &&
+                          "bg-[var(--red-50)] text-[var(--color-primary)] ring-2 ring-[var(--color-primary)]",
+                        state === "pending" &&
+                          "bg-[var(--gray-100)] text-[var(--text-tertiary)]",
+                      )}
+                    >
+                      {state === "done" ? <Check className="h-3.5 w-3.5" /> : i + 1}
+                    </span>
+                    <div className="min-w-0">
+                      <p
+                        className={cn(
+                          "text-sm font-semibold",
+                          state === "pending"
+                            ? "text-[var(--text-tertiary)]"
+                            : "text-[var(--text-primary)]",
+                        )}
+                      >
+                        {step.label}
+                      </p>
+                      <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
+                        {state === "next" ? "Siguiente paso" : step.hint}
+                      </p>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        </section>
       )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {cards.map((c) => {
-          const Icon = c.icon;
-          return (
-            <Card key={c.label}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  {c.label}
-                </CardTitle>
-                <Icon className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold">{c.value}</p>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+      {/* Empty state */}
+      {isEmpty && (
+        <section className="overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)]">
+          <div className="grid gap-8 p-8 md:grid-cols-[auto_1fr] md:items-start md:p-10">
+            <div
+              aria-hidden
+              className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--red-50)] ring-8 ring-[color:var(--red-50)]/40"
+            >
+              <Sparkles className="h-7 w-7 text-[var(--color-primary)]" />
+            </div>
+            <div className="space-y-5">
+              <div className="space-y-2">
+                <h2 className="suma-h3 text-[var(--text-primary)]">
+                  Empieza por crear tus clientes piloto
+                </h2>
+                <p className="max-w-2xl text-sm leading-relaxed text-[var(--text-secondary)]">
+                  Los clientes piloto son la base operativa de PGCI. Una vez creados podrás
+                  registrar sus empresas, importar el catálogo y habilitar accesos.
+                </p>
+              </div>
 
+              <ol className="grid gap-3 sm:grid-cols-3">
+                {[
+                  { n: 1, t: "Crea clientes", d: "Define la cartera piloto." },
+                  { n: 2, t: "Registra empresas", d: "Razones sociales por cliente." },
+                  { n: 3, t: "Importa PIM", d: "Catálogo activo para acuerdos." },
+                ].map((s) => (
+                  <li
+                    key={s.n}
+                    className="rounded-lg border border-[var(--border-subtle)] bg-[var(--gray-25)] p-4"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-primary)] text-[10px] font-bold text-white">
+                        {s.n}
+                      </span>
+                      <span className="text-sm font-semibold text-[var(--text-primary)]">
+                        {s.t}
+                      </span>
+                    </div>
+                    <p className="mt-1.5 text-xs text-[var(--text-tertiary)]">{s.d}</p>
+                  </li>
+                ))}
+              </ol>
+
+              <div className="flex flex-wrap items-center gap-4 pt-1">
+                <Button asChild>
+                  <Link to="/setup/clients/new">Crear primer cliente</Link>
+                </Button>
+                <Link
+                  to="/setup/products"
+                  className="text-sm font-medium text-[var(--text-secondary)] underline-offset-4 hover:text-[var(--color-primary)] hover:underline"
+                >
+                  ¿Necesitas ayuda con la importación? Ver guía de PIM →
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Cards de estado */}
+      <section className="space-y-4">
+        <div className="flex items-end justify-between">
+          <div>
+            <p className="suma-overline">Estado del setup</p>
+            <h2 className="mt-1 text-lg font-semibold text-[var(--text-primary)]">
+              Indicadores operativos
+            </h2>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {cards.map((c) => {
+            const Icon = c.icon;
+            const content = (
+              <div className="group flex h-full flex-col rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-5 transition-all duration-150 hover:border-[var(--border-default)] hover:shadow-[var(--shadow-xs)]">
+                <div className="mb-4 flex items-center justify-between">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--red-50)] text-[var(--color-primary)]">
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  {c.to && (
+                    <ArrowRight className="h-4 w-4 text-[var(--text-tertiary)] opacity-0 transition-all duration-150 group-hover:translate-x-0.5 group-hover:opacity-100 group-hover:text-[var(--color-primary)]" />
+                  )}
+                </div>
+                <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-tertiary)]">
+                  {c.label}
+                </p>
+                <p className="mt-1 font-display text-[26px] font-bold leading-tight tracking-tight text-[var(--text-primary)]">
+                  {c.value}
+                </p>
+                <p className="mt-2 text-[13px] leading-relaxed text-[var(--text-secondary)]">
+                  {c.microcopy}
+                </p>
+              </div>
+            );
+            return c.to ? (
+              <Link key={c.label} to={c.to} className="block">
+                {content}
+              </Link>
+            ) : (
+              <div key={c.label}>{content}</div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Alertas */}
       {alerts.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <AlertTriangle className="h-4 w-4 text-[var(--warning-strong)]" />
-              Alertas de setup
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2 text-sm text-muted-foreground">
+        <section
+          className="flex gap-4 rounded-xl border border-[color:var(--warning)]/30 bg-[var(--warning-soft)] p-5"
+          role="status"
+        >
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[var(--warning-strong)]" />
+          <div className="space-y-2">
+            <p className="text-sm font-semibold text-[var(--text-primary)]">
+              Pendientes de setup
+            </p>
+            <ul className="space-y-1 text-sm text-[var(--text-secondary)]">
               {alerts.map((a) => (
                 <li key={a}>• {a}</li>
               ))}
             </ul>
-          </CardContent>
-        </Card>
+          </div>
+        </section>
       )}
-
-      <div className="flex flex-wrap gap-3">
-        <Button asChild variant="outline">
-          <Link to="/setup/clients">
-            <Building2 className="mr-2 h-4 w-4" /> Ir a Clientes
-          </Link>
-        </Button>
-        <Button asChild variant="outline">
-          <Link to="/setup/products">
-            <Package className="mr-2 h-4 w-4" /> Ir a PIM
-          </Link>
-        </Button>
-        <Button variant="outline" disabled title="Disponible cuando se construya Usuarios (S-08)">
-          <FileText className="mr-2 h-4 w-4" /> Ir a Usuarios
-        </Button>
-      </div>
     </div>
   );
 }

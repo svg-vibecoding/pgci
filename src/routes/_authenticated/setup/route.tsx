@@ -10,10 +10,18 @@ export const Route = createFileRoute("/_authenticated/setup")({
   component: SetupLayout,
 });
 
-const NAV = [
+type NavItem = {
+  to: string;
+  label: string;
+  icon: typeof Home;
+  exact?: boolean;
+  disabled?: boolean;
+};
+
+const NAV: NavItem[] = [
   { to: "/setup", label: "Inicio", icon: Home, exact: true },
   { to: "/setup/clients", label: "Clientes", icon: Building2 },
-  { to: "/setup/products", label: "PIM (Productos)", icon: Package },
+  { to: "/setup/products", label: "PIM · Productos", icon: Package },
   { to: "/setup/users", label: "Usuarios", icon: Users, disabled: true },
 ];
 
@@ -44,55 +52,88 @@ function SetupLayout() {
 
   return (
     <div className="flex min-h-screen bg-[var(--surface-page)]">
-      <aside className="flex w-60 flex-col border-r border-border bg-card">
-        <div className="border-b border-border px-5 py-4">
-          <Link to="/setup" className="flex items-center gap-2">
+      <aside
+        className="flex w-[264px] flex-col border-r border-[var(--border-subtle)] bg-[var(--surface-card)]"
+      >
+        {/* Marca */}
+        <div className="px-6 pt-6 pb-5">
+          <Link to="/setup" className="flex items-center gap-2.5">
             <SumatecLogo className="h-7 w-auto" />
-            <span className="text-xs font-semibold tracking-wide text-muted-foreground">
-              SETUP
-            </span>
           </Link>
+          <p className="suma-overline mt-4">Plataforma</p>
+          <p className="mt-1 text-[15px] font-semibold tracking-tight text-[var(--text-primary)]">
+            Setup Operativo
+          </p>
         </div>
-        <nav className="flex-1 space-y-1 px-3 py-4">
-          {NAV.map((item) => {
-            const active = item.exact
-              ? pathname === item.to
-              : pathname.startsWith(item.to);
-            const Icon = item.icon;
-            if (item.disabled) {
+
+        <div className="mx-6 h-px bg-[var(--border-subtle)]" />
+
+        {/* Navegación */}
+        <nav className="flex-1 px-3 pt-5">
+          <p className="suma-overline px-3 pb-2">Gestión</p>
+          <ul className="space-y-0.5">
+            {NAV.map((item) => {
+              const active = item.exact
+                ? pathname === item.to
+                : pathname.startsWith(item.to);
+              const Icon = item.icon;
+
+              if (item.disabled) {
+                return (
+                  <li key={item.to}>
+                    <div
+                      className="group relative flex cursor-not-allowed items-center gap-2.5 rounded-md px-3 py-2 text-sm text-[var(--text-disabled)]"
+                      title="Disponible cuando se construya el módulo de Usuarios (S-08)"
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span className="flex-1">{item.label}</span>
+                      <span className="rounded-full bg-[var(--gray-100)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
+                        Pronto
+                      </span>
+                    </div>
+                  </li>
+                );
+              }
+
               return (
-                <div
-                  key={item.to}
-                  className="flex cursor-not-allowed items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground/60"
-                  title="Disponible cuando se construya el módulo de Usuarios (S-08)"
-                >
-                  <Icon className="h-4 w-4" />
-                  {item.label}
-                </div>
+                <li key={item.to}>
+                  <Link
+                    to={item.to}
+                    className={cn(
+                      "group relative flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors duration-150",
+                      active
+                        ? "bg-[var(--red-50)] font-semibold text-[var(--text-primary)]"
+                        : "font-medium text-[var(--text-secondary)] hover:bg-[var(--gray-100)] hover:text-[var(--text-primary)]",
+                    )}
+                  >
+                    {active && (
+                      <span
+                        aria-hidden
+                        className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-[var(--color-primary)]"
+                      />
+                    )}
+                    <Icon
+                      className={cn(
+                        "h-4 w-4 transition-colors",
+                        active
+                          ? "text-[var(--color-primary)]"
+                          : "text-[var(--text-tertiary)] group-hover:text-[var(--text-primary)]",
+                      )}
+                    />
+                    <span>{item.label}</span>
+                  </Link>
+                </li>
               );
-            }
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={cn(
-                  "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                  active
-                    ? "bg-primary text-primary-foreground"
-                    : "text-foreground hover:bg-accent hover:text-accent-foreground",
-                )}
-              >
-                <Icon className="h-4 w-4" />
-                {item.label}
-              </Link>
-            );
-          })}
+            })}
+          </ul>
         </nav>
-        <div className="border-t border-border p-3">
+
+        {/* Footer */}
+        <div className="border-t border-[var(--border-subtle)] p-3">
           <Button
             variant="ghost"
             size="sm"
-            className="w-full justify-start"
+            className="w-full justify-start text-[var(--text-secondary)] hover:bg-[var(--gray-100)] hover:text-[var(--text-primary)]"
             onClick={async () => {
               await supabase.auth.signOut();
               window.location.href = "/auth";
@@ -103,8 +144,9 @@ function SetupLayout() {
           </Button>
         </div>
       </aside>
+
       <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-6xl px-8 py-8">
+        <div className="mx-auto max-w-6xl px-8 py-10">
           <Outlet />
         </div>
       </main>
