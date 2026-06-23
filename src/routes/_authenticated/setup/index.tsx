@@ -214,10 +214,10 @@ function SetupHome() {
             <div className="space-y-5">
               <div className="space-y-2">
                 <h2 className="suma-h3 text-[var(--text-primary)]">
-                  Empieza por crear tus clientes piloto
+                  Empieza por crear tus clientes
                 </h2>
                 <p className="max-w-2xl text-sm leading-relaxed text-[var(--text-secondary)]">
-                  Los clientes piloto son la base operativa de PGCI. Una vez creados podrás
+                  Los clientes son la base operativa de la PGCI. Una vez creados podrás
                   registrar sus empresas, importar el catálogo y habilitar accesos.
                 </p>
               </div>
@@ -253,7 +253,7 @@ function SetupHome() {
                   to="/setup/products"
                   className="text-sm font-medium text-[var(--text-secondary)] underline-offset-4 hover:text-[var(--color-primary)] hover:underline"
                 >
-                  ¿Necesitas ayuda con la importación? Ver guía de PIM →
+                  {\"\n\"}
                 </Link>
               </div>
             </div>
