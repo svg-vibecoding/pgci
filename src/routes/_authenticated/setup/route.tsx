@@ -51,9 +51,9 @@ function SetupLayout() {
   }
 
   return (
-    <div className="flex min-h-screen bg-[var(--surface-page)]">
+    <div className="flex min-h-screen bg-[var(--surface-card)]">
       <aside
-        className="flex w-[264px] flex-col border-r border-[var(--border-subtle)] bg-[var(--surface-card)]"
+        className="flex w-[264px] flex-col border-r border-[var(--border-subtle)] bg-[var(--surface-page)]"
       >
         {/* Marca + contexto de módulo */}
         <div className="px-6 pt-7 pb-6">
@@ -63,7 +63,7 @@ function SetupLayout() {
           <div className="mt-5 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--text-tertiary)]">
             <span>PGCI</span>
             <span aria-hidden className="text-[var(--border-default)]">/</span>
-            <span className="text-[var(--color-primary)]">Setup Operativo</span>
+            <span className="text-[var(--text-primary)]">Setup Operativo</span>
           </div>
         </div>
 
@@ -103,21 +103,15 @@ function SetupLayout() {
                     className={cn(
                       "group relative flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors duration-150",
                       active
-                        ? "bg-[var(--red-50)] font-semibold text-[var(--color-primary)]"
+                        ? "bg-[var(--color-primary)] font-semibold text-[var(--text-on-brand)] hover:bg-[var(--color-primary-hover)]"
                         : "font-medium text-[var(--text-secondary)] hover:bg-[var(--gray-100)] hover:text-[var(--text-primary)]",
                     )}
                   >
-                    {active && (
-                      <span
-                        aria-hidden
-                        className="absolute left-0 top-1 bottom-1 w-[3px] rounded-r-full bg-[var(--color-primary)]"
-                      />
-                    )}
                     <Icon
                       className={cn(
                         "h-4 w-4 transition-colors",
                         active
-                          ? "text-[var(--color-primary)]"
+                          ? "text-[var(--text-on-brand)] group-hover:text-[var(--text-on-brand)]"
                           : "text-[var(--text-tertiary)] group-hover:text-[var(--text-primary)]",
                       )}
                     />
