@@ -195,18 +195,42 @@ export type Database = {
       client_companies: {
         Row: {
           client_id: string | null
+          commercial_name: string | null
           created_at: string
+          erp_name: string | null
           id: string
+          legal_name: string | null
+          notes: string | null
+          status: string | null
+          tax_id: string | null
+          tax_id_type: string | null
+          updated_at: string | null
         }
         Insert: {
           client_id?: string | null
+          commercial_name?: string | null
           created_at?: string
+          erp_name?: string | null
           id?: string
+          legal_name?: string | null
+          notes?: string | null
+          status?: string | null
+          tax_id?: string | null
+          tax_id_type?: string | null
+          updated_at?: string | null
         }
         Update: {
           client_id?: string | null
+          commercial_name?: string | null
           created_at?: string
+          erp_name?: string | null
           id?: string
+          legal_name?: string | null
+          notes?: string | null
+          status?: string | null
+          tax_id?: string | null
+          tax_id_type?: string | null
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -220,16 +244,91 @@ export type Database = {
       }
       clients: {
         Row: {
+          commercial_name: string | null
           created_at: string
+          erp_name: string | null
           id: string
+          legal_name: string | null
+          notes: string | null
+          status: string | null
+          type: string | null
+          updated_at: string | null
         }
         Insert: {
+          commercial_name?: string | null
           created_at?: string
+          erp_name?: string | null
           id?: string
+          legal_name?: string | null
+          notes?: string | null
+          status?: string | null
+          type?: string | null
+          updated_at?: string | null
         }
         Update: {
+          commercial_name?: string | null
           created_at?: string
+          erp_name?: string | null
           id?: string
+          legal_name?: string | null
+          notes?: string | null
+          status?: string | null
+          type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          brand_reference: string | null
+          commercial_brand: string | null
+          commercial_name: string | null
+          commercial_unit: string | null
+          created_at: string
+          erp_brand: string | null
+          erp_name: string
+          erp_product_category_n1: string | null
+          erp_product_category_n2: string | null
+          erp_product_category_n3: string | null
+          id: string
+          product_classification: string | null
+          sku: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          brand_reference?: string | null
+          commercial_brand?: string | null
+          commercial_name?: string | null
+          commercial_unit?: string | null
+          created_at?: string
+          erp_brand?: string | null
+          erp_name: string
+          erp_product_category_n1?: string | null
+          erp_product_category_n2?: string | null
+          erp_product_category_n3?: string | null
+          id?: string
+          product_classification?: string | null
+          sku: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          brand_reference?: string | null
+          commercial_brand?: string | null
+          commercial_name?: string | null
+          commercial_unit?: string | null
+          created_at?: string
+          erp_brand?: string | null
+          erp_name?: string
+          erp_product_category_n1?: string | null
+          erp_product_category_n2?: string | null
+          erp_product_category_n3?: string | null
+          id?: string
+          product_classification?: string | null
+          sku?: string
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }
