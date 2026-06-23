@@ -99,7 +99,7 @@ function ClientsList() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Clientes</h1>
           <p className="text-sm text-muted-foreground">
-            Administra clientes y holdings como base para la gestión de acuerdos y la operación comercial.
+            Administra clientes como base para la gestión de acuerdos y la operación comercial.
           </p>
         </div>
         <Button asChild>
