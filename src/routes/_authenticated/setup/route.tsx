@@ -62,13 +62,14 @@ function SetupLayout() {
           </Link>
         </div>
 
-        <div className="mx-6 h-px bg-[var(--border-subtle)]" />
-
         {/* Navegación */}
         <nav className="flex-1 px-3 pt-3">
-          <p className="mx-3 mb-2 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
-            Setup Operativo
-          </p>
+          <div className="mx-3 mb-2 flex items-center gap-3">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
+              Setup Operativo
+            </p>
+            <div className="h-px flex-1 bg-[var(--border-subtle)]" />
+          </div>
 
 
           <ul className="space-y-0.5">
