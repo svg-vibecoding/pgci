@@ -99,6 +99,7 @@ export function ClientForm({
 
     const payload: ClientFormValues = {
       ...v,
+      tax_id: taxIdDigits,
       tax_id_type: "NIT",
       parent_client_id,
     };
