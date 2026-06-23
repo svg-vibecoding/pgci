@@ -127,7 +127,7 @@ function ClientCompanies() {
   });
 
   const toggleStatus = useMutation({
-    mutationFn: async (c: { id: string; status: string }) => {
+    mutationFn: async (c: { id: string; status: string | null }) => {
       const next = c.status === "active" ? "inactive" : "active";
       const { error } = await supabase
         .from("client_companies")

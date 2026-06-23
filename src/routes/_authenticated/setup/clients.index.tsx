@@ -72,7 +72,7 @@ function ClientsList() {
   });
 
   const toggleStatus = useMutation({
-    mutationFn: async (c: { id: string; status: string }) => {
+    mutationFn: async (c: { id: string; status: string | null }) => {
       const next = c.status === "active" ? "inactive" : "active";
       const { error } = await supabase.from("clients").update({ status: next }).eq("id", c.id);
       if (error) throw error;
