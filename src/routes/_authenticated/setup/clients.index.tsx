@@ -179,15 +179,11 @@ function ClientsList() {
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1">
-                    {c.type === "holding" && (
-                      <Button asChild size="sm" variant="ghost">
-                        <Link to="/setup/clients/$clientId/companies" params={{ clientId: c.id }}>
-                          <Building2 className="h-4 w-4" />
-                        </Link>
-                      </Button>
-                    )}
                     <Button asChild size="sm" variant="ghost">
-                      <Link to="/setup/clients/$clientId" params={{ clientId: c.id }}>Editar</Link>
+                      <Link to="/setup/clients/$clientId" params={{ clientId: c.id }}>Ver</Link>
+                    </Button>
+                    <Button asChild size="sm" variant="ghost">
+                      <Link to="/setup/clients/$clientId/edit" params={{ clientId: c.id }}>Editar</Link>
                     </Button>
                     <Button
                       size="sm"
