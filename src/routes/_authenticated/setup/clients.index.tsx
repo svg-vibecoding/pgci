@@ -38,21 +38,21 @@ function ClientsList() {
     queryFn: async () => {
       const { data: clients, error } = await supabase
         .from("clients")
-        .select("id, commercial_name, legal_name, erp_name, tax_id, type, status, updated_at")
+        .select("id, commercial_name, legal_name, erp_name, tax_id, type, status, parent_client_id, updated_at")
         .order("commercial_name");
       if (error) throw error;
 
       const ids = (clients ?? []).map((c) => c.id);
-      const companyCounts = new Map<string, number>();
+      const childCounts = new Map<string, number>();
       const agreementCounts = new Map<string, number>();
       if (ids.length) {
-        const { data: companies } = await supabase
-          .from("client_companies")
-          .select("client_id")
-          .in("client_id", ids);
-        (companies ?? []).forEach((c) => {
-          if (c.client_id)
-            companyCounts.set(c.client_id, (companyCounts.get(c.client_id) ?? 0) + 1);
+        (clients ?? []).forEach((c) => {
+          if (c.parent_client_id) {
+            childCounts.set(
+              c.parent_client_id,
+              (childCounts.get(c.parent_client_id) ?? 0) + 1,
+            );
+          }
         });
         const { data: agreements } = await supabase
           .from("agreements")
@@ -66,7 +66,7 @@ function ClientsList() {
       return (clients ?? []).map((c) => ({
         ...c,
         display_name: c.commercial_name?.trim() || c.legal_name,
-        company_count: companyCounts.get(c.id) ?? 0,
+        company_count: childCounts.get(c.id) ?? 0,
         agreement_count: agreementCounts.get(c.id) ?? 0,
       }));
     },
