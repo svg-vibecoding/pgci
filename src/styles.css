@@ -302,7 +302,7 @@
 
 @theme inline {
   /* Radios shadcn derivados del radio de marca */
-  --radius-sm: calc(var(--radius) - 2px);
+  --radius-sm: 8px;
   --radius-md: var(--radius);
   --radius-lg: calc(var(--radius) + 4px);
   --radius-xl: calc(var(--radius) + 8px);
