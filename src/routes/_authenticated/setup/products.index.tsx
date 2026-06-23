@@ -60,7 +60,7 @@ function ProductsList() {
     <div className="space-y-6">
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">PIM — Productos</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Productos</h1>
           <p className="text-sm text-muted-foreground">
             Catálogo Jaivaná. La escritura es solo por importación de archivo.
           </p>
