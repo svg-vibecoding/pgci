@@ -14,7 +14,7 @@ import {
 import { StatusBadge } from "@/components/sumatec";
 import { Badge } from "@/components/sumatec/Badge";
 import { useIsSuperAdmin } from "@/hooks/use-profile";
-import { ArrowLeft, Building2, Pencil, Power, FileText } from "lucide-react";
+import { ArrowLeft, Building2, Pencil, Power, FileText, Users } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/setup/clients/$clientId")({
   head: () => ({ meta: [{ title: "Cliente · Setup · PGCI" }] }),
