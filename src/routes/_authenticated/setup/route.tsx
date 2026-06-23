@@ -66,7 +66,7 @@ function SetupLayout() {
 
         {/* Navegación */}
         <nav className="flex-1 px-3 pt-3">
-          <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
+          <p className="mx-3 mb-2 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
             Setup Operativo
           </p>
 
@@ -82,7 +82,7 @@ function SetupLayout() {
                 return (
                   <li key={item.to}>
                     <div
-                      className="group relative flex cursor-not-allowed items-center gap-2.5 rounded-md px-3 py-2 text-sm text-[var(--text-disabled)] hover:bg-[var(--gray-200)]"
+                      className="group relative flex cursor-not-allowed items-center gap-2.5 rounded-sm px-3 py-2 text-sm text-[var(--text-disabled)] hover:bg-[var(--gray-200)]"
                       title="Disponible cuando se construya el módulo de Usuarios (S-08)"
                     >
                       <Icon className="h-4 w-4" />
@@ -101,7 +101,7 @@ function SetupLayout() {
                     to={item.to}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "group relative flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors duration-150",
+                      "group relative flex items-center gap-2.5 rounded-sm px-3 py-2 text-sm transition-colors duration-150",
                       active
                         ? "bg-[var(--color-primary)] font-semibold text-[var(--text-on-brand)] hover:bg-[var(--color-primary-hover)]"
                         : "font-medium text-[var(--text-secondary)] hover:bg-[var(--gray-200)] hover:text-[var(--text-primary)]",
