@@ -55,22 +55,22 @@ function SetupLayout() {
       <aside
         className="flex w-[264px] flex-col border-r border-[var(--border-subtle)] bg-[var(--surface-card)]"
       >
-        {/* Marca */}
-        <div className="px-6 pt-6 pb-5">
-          <Link to="/setup" className="flex items-center gap-2.5">
-            <SumatecLogo className="h-7 w-auto" />
+        {/* Marca + contexto de módulo */}
+        <div className="px-6 pt-7 pb-6">
+          <Link to="/setup" className="inline-flex items-center" aria-label="Sumatec · Inicio">
+            <SumatecLogo className="h-11 w-auto" />
           </Link>
-          <p className="suma-overline mt-4">Plataforma</p>
-          <p className="mt-1 text-[15px] font-semibold tracking-tight text-[var(--text-primary)]">
-            Setup Operativo
-          </p>
+          <div className="mt-5 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--text-tertiary)]">
+            <span>PGCI</span>
+            <span aria-hidden className="text-[var(--border-default)]">/</span>
+            <span className="text-[var(--color-primary)]">Setup Operativo</span>
+          </div>
         </div>
 
         <div className="mx-6 h-px bg-[var(--border-subtle)]" />
 
         {/* Navegación */}
-        <nav className="flex-1 px-3 pt-5">
-          <p className="suma-overline px-3 pb-2">Gestión</p>
+        <nav className="flex-1 px-3 pt-4">
           <ul className="space-y-0.5">
             {NAV.map((item) => {
               const active = item.exact
@@ -99,17 +99,18 @@ function SetupLayout() {
                 <li key={item.to}>
                   <Link
                     to={item.to}
+                    aria-current={active ? "page" : undefined}
                     className={cn(
                       "group relative flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors duration-150",
                       active
-                        ? "bg-[var(--red-50)] font-semibold text-[var(--text-primary)]"
+                        ? "bg-[var(--red-50)] font-semibold text-[var(--color-primary)]"
                         : "font-medium text-[var(--text-secondary)] hover:bg-[var(--gray-100)] hover:text-[var(--text-primary)]",
                     )}
                   >
                     {active && (
                       <span
                         aria-hidden
-                        className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-[var(--color-primary)]"
+                        className="absolute left-0 top-1 bottom-1 w-[3px] rounded-r-full bg-[var(--color-primary)]"
                       />
                     )}
                     <Icon

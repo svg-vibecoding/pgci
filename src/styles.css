@@ -142,11 +142,12 @@
   --color-accent-soft: var(--blue-50);
 
   /* Superficies */
-  --surface-page: var(--gray-50);
+  --surface-page: var(--gray-25); /* unificado con sidebar blanco para sentir una sola pieza */
   --surface-card: var(--gray-0);
-  --surface-sunken: var(--gray-100);
+  --surface-sunken: var(--gray-50);
   --surface-inverse: var(--gray-900);
   --surface-brand: var(--red-500);
+
 
   /* Texto */
   --text-primary: var(--gray-900);
