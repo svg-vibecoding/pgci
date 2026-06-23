@@ -99,7 +99,7 @@ function ClientsList() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Clientes</h1>
           <p className="text-sm text-muted-foreground">
-            Maestro de clientes y holdings del piloto.
+            Administra clientes y holdings como base para la gestión de acuerdos y la operación comercial.
           </p>
         </div>
         <Button asChild>
