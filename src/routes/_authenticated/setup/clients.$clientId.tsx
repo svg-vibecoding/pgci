@@ -90,7 +90,7 @@ function ViewClient() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("agreements")
-        .select("id, name, status, updated_at")
+        .select("id, updated_at, created_at")
         .eq("client_id", clientId)
         .order("updated_at", { ascending: false })
         .limit(10);
