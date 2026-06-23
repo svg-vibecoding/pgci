@@ -1,51 +1,89 @@
-## Objetivo
+## Resumen
 
-Corregir el uso tipográfico de la landing PGCI: títulos con interlineado más tenso ("potente") y textos continuos con un espaciado vertical de lectura natural (no inflado). No se rediseña nada; solo se ajusta interlineado/escala. Sin cambios de color, fuente, copy ni layout.
+Aprobado con stub adicional `client_companies`. Ejecuto en orden: habilitar Lovable Cloud → Migración 1 (stubs) → Migración 2 (Anexo A) → Migración 3 (Anexo B).
 
-## Diagnóstico
+## Migración 1 — Foundation stubs
 
-Dos causas:
+```sql
+create extension if not exists pgcrypto;
 
-1. **Tokens de line-height flojos en títulos** (`src/styles.css`). Relaciones actuales:
-   - display-lg 56/64 = 1.14 · display-md 44/52 = 1.18 · display-sm 36/44 = 1.22
-   - h1 30/38 = 1.27 · h2 24/32 = 1.33 · h3 20/28 = 1.40
-   Para titulares grandes lo ideal es bajar hacia ~1.05–1.20.
+-- clients (stub)
+create table if not exists public.clients (
+  id         uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now()
+);
+grant select, insert, update, delete on public.clients to authenticated;
+grant all on public.clients to service_role;
+alter table public.clients enable row level security;
 
-2. **Overrides ad-hoc en `src/routes/index.tsx`** que inflan el cuerpo: párrafos con `!leading-7` (28px) y `!leading-8` (32px) sobre texto de 16–18px → ratios 1.75–2.0, muy por encima del rango de lectura cómodo (1.5–1.6).
+-- client_companies (stub) — client_id nullable a propósito
+create table if not exists public.client_companies (
+  id         uuid primary key default gen_random_uuid(),
+  client_id  uuid references public.clients(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+grant select, insert, update, delete on public.client_companies to authenticated;
+grant all on public.client_companies to service_role;
+alter table public.client_companies enable row level security;
 
-## Cambios
+-- agreements (stub)
+create table if not exists public.agreements (
+  id         uuid primary key default gen_random_uuid(),
+  client_id  uuid not null references public.clients(id) on delete restrict,
+  created_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+grant select, insert, update, delete on public.agreements to authenticated;
+grant all on public.agreements to service_role;
+alter table public.agreements enable row level security;
 
-### 1. Tensar tokens de títulos — `src/styles.css`
+-- agreement_products (stub)
+create table if not exists public.agreement_products (
+  id           uuid primary key default gen_random_uuid(),
+  agreement_id uuid not null references public.agreements(id) on delete cascade,
+  created_at   timestamptz not null default now()
+);
+grant select, insert, update, delete on public.agreement_products to authenticated;
+grant all on public.agreement_products to service_role;
+alter table public.agreement_products enable row level security;
 
-Ajustar solo los `*-lh` de la escala display/heading (los tamaños no cambian):
-
-```text
---display-lg-lh: 64px → 60px   (1.07)
---display-md-lh: 52px → 48px   (1.09)
---display-sm-lh: 44px → 40px   (1.11)
---h1-lh:         38px → 36px   (1.20)
---h2-lh:         32px → 30px   (1.25)
---h3-lh:         28px → 26px   (1.30)
+-- agreement_costs (stub)
+create table if not exists public.agreement_costs (
+  id           uuid primary key default gen_random_uuid(),
+  agreement_id uuid not null references public.agreements(id) on delete cascade,
+  created_at   timestamptz not null default now()
+);
+grant select, insert, update, delete on public.agreement_costs to authenticated;
+grant all on public.agreement_costs to service_role;
+alter table public.agreement_costs enable row level security;
 ```
 
-(subtitle/body/caption/overline se mantienen igual.)
+Sin `GRANT ... TO anon`. Sin policies (las pone Anexo B). Sin columnas de negocio. Sin datos.
 
-### 2. Normalizar interlineado de textos continuos — `src/routes/index.tsx`
+## Migración 2 — Anexo A S-08
 
-Reemplazar los `!leading-8` / `!leading-7` de los párrafos de cuerpo por un interlineado de lectura (~1.55):
-- Hero (`!text-[18px] !leading-8`) → `!leading-[1.55]` (≈28px).
-- Intros y párrafos `!text-[16px] !leading-7` → `!leading-[1.55]` (≈25px).
-- Párrafos sobre fondo oscuro (`!text-[14px] !leading-6`, `text-[14px] leading-6`) → mantener (14/24 = 1.71 es alto; bajar a `leading-[1.5]` ≈21px para coherencia).
-- Quote destacada (`suma-h3 !leading-8`) → `!leading-[1.3]` para que el bloque de cita no se abra de más.
+Ejecución literal de `PGCI_4_S-08_Anexo_A_SQL_Schema.sql` (extensión, `set_updated_at`, tablas `profiles`/`user_client_access`/`agreement_members`/`agreement_change_requests`, los 3 triggers). Único añadido: `GRANT`s requeridos por Lovable Cloud después de cada `CREATE TABLE`:
 
-Se conservan los tamaños puntuales (`!text-[16px]`, `!text-[18px]`), solo se corrige el interlineado.
+```sql
+grant select, insert, update, delete on public.profiles to authenticated;
+grant all on public.profiles to service_role;
+grant select, insert, update, delete on public.user_client_access to authenticated;
+grant all on public.user_client_access to service_role;
+grant select, insert, update, delete on public.agreement_members to authenticated;
+grant all on public.agreement_members to service_role;
+grant select, insert, update, delete on public.agreement_change_requests to authenticated;
+grant all on public.agreement_change_requests to service_role;
+```
 
-## Validación
+## Migración 3 — Anexo B S-08
 
-- Revisar el preview en desktop (hero `#vision`) y verificar que los títulos cierren más compactos y los párrafos largos respiren sin abrirse en exceso.
-- Comprobar que no quedan `!leading-8` en párrafos de cuerpo.
+Ejecución literal de `PGCI_4_S-08_Anexo_B_RLS_Policies.sql`: funciones auxiliares, `ENABLE ROW LEVEL SECURITY` donde aplique, y todas las `CREATE POLICY`.
 
-## Notas
+## Fuera de alcance
 
-- Cambios acotados a presentación (tokens CSS + clases utilitarias). Sin tocar lógica ni componentes de `src/components/sumatec/`.
-- Si tras verlo prefieres títulos aún más tensos (p. ej. display ~1.0), es un ajuste fino adicional de un solo valor por token.
+Sin UI, sin formularios, sin costos/márgenes en UI, sin toggle `can_view_costs`, sin UI de `agreement_change_requests`, sin invitación de usuarios desde frontend, sin manejo de contraseñas.
+
+## Reporte de cierre
+
+Tablas creadas · funciones creadas · triggers activos · políticas RLS activas por tabla · dependencias pendientes para S-01/S-02/S-03 · errores o advertencias del migrador.
