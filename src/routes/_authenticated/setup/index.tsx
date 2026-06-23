@@ -149,7 +149,7 @@ function SetupHome() {
       {!isEmpty && (
         <section
           aria-label="Progreso de configuración"
-          className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6"
+          className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6"
         >
           <div className="mb-5 flex items-center justify-between">
             <p className="text-sm font-semibold text-[var(--text-primary)]">
@@ -203,7 +203,7 @@ function SetupHome() {
 
       {/* Empty state */}
       {isEmpty && (
-        <section className="overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] shadow-[var(--shadow-sm)]">
+        <section className="overflow-hidden rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] shadow-[var(--shadow-sm)]">
           <div className="grid gap-8 p-8 md:grid-cols-[auto_1fr] md:items-start md:p-10">
             <div
               aria-hidden
@@ -275,7 +275,7 @@ function SetupHome() {
           {cards.map((c) => {
             const Icon = c.icon;
             const content = (
-              <div className="group flex h-full flex-col rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6 shadow-[var(--shadow-xs)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--border-default)] hover:shadow-[var(--shadow-md)]">
+              <div className="group flex h-full flex-col rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6 shadow-[var(--shadow-xs)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--border-default)] hover:shadow-[var(--shadow-md)]">
                 <div className="mb-4 flex items-center justify-between">
                   <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--red-50)] text-[var(--color-primary)]">
                     <Icon className="h-4 w-4" />
@@ -309,7 +309,7 @@ function SetupHome() {
       {/* Alertas */}
       {alerts.length > 0 && (
         <section
-          className="flex gap-4 rounded-xl border border-[color:var(--warning)]/30 bg-[var(--warning-soft)] p-5"
+          className="flex gap-4 rounded-lg border border-[color:var(--warning)]/30 bg-[var(--warning-soft)] p-5"
           role="status"
         >
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[var(--warning-strong)]" />
