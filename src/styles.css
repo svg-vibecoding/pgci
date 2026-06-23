@@ -54,16 +54,16 @@
 
   /* ── Neutros · Cool Gray ───────────────────────────────────── */
   --gray-0: #ffffff;
-  --gray-25: #fbfaf7;
-  --gray-50: #f7f4ef; /* fondo de página — warm off-white */
-  --gray-100: #efeae2; /* sidebar — warm sand */
-  --gray-200: #e4ddd2; /* borde sutil cálido */
-  --gray-300: #c9c2b6;
-  --gray-400: #a8a195;
-  --gray-500: #898378;
-  --gray-600: #5f5a52;
-  --gray-700: #423e38;
-  --gray-800: #2a2723;
+  --gray-25: #f9fafb;
+  --gray-50: #f4f6f8; /* fondo de página — gris claro */
+  --gray-100: #eceef1; /* hover/fondo sutil */
+  --gray-200: #dee2e6; /* borde sutil */
+  --gray-300: #c5cbd2;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
   --gray-900: #1b1a1a; /* tinta de marca */
 
   /* ── Estado / Semánticos ───────────────────────────────────── */
@@ -144,7 +144,7 @@
   /* Superficies */
   --surface-page: var(--gray-50); /* fondo de página — gris claro */
   --surface-card: var(--gray-0);
-  --surface-sidebar: var(--gray-100); /* sidebar un tono más oscuro que el fondo principal */
+  --surface-sidebar: var(--gray-0); /* sidebar blanco */
   --surface-sunken: var(--gray-100);
   --surface-inverse: var(--gray-900);
   --surface-brand: var(--red-500);
@@ -243,11 +243,11 @@
   --radius-xl: 20px;
   --radius-pill: 999px;
 
-  /* ── Elevación / Sombras (warm, nunca negro puro) ─────────── */
-  --shadow-xs: 0 1px 2px rgba(120, 100, 80, 0.06);
-  --shadow-sm: 0 2px 6px rgba(120, 100, 80, 0.06), 0 1px 2px rgba(120, 100, 80, 0.04);
-  --shadow-md: 0 8px 20px rgba(120, 100, 80, 0.08), 0 2px 6px rgba(120, 100, 80, 0.05);
-  --shadow-lg: 0 18px 40px rgba(120, 100, 80, 0.12), 0 6px 12px rgba(120, 100, 80, 0.06);
+  /* ── Elevación / Sombras (cool gray, nunca negro puro) ─────── */
+  --shadow-xs: 0 1px 2px rgba(31, 41, 55, 0.06);
+  --shadow-sm: 0 2px 6px rgba(31, 41, 55, 0.06), 0 1px 2px rgba(31, 41, 55, 0.04);
+  --shadow-md: 0 8px 20px rgba(31, 41, 55, 0.08), 0 2px 6px rgba(31, 41, 55, 0.05);
+  --shadow-lg: 0 18px 40px rgba(31, 41, 55, 0.12), 0 6px 12px rgba(31, 41, 55, 0.06);
   --shadow-brand: 0 10px 28px rgba(217, 16, 32, 0.22);
 
   /* ── Movimiento / Animación ────────────────────────────────── */
