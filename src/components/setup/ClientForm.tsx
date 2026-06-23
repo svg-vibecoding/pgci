@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export type TaxIdType = "NIT" | "RFC" | "EIN" | "CIF" | "CUIT";
+export type TaxIdType = "NIT";
 
 export type ClientFormValues = {
   commercial_name: string;
@@ -35,7 +35,9 @@ export const emptyClient: ClientFormValues = {
   notes: "",
 };
 
-const TAX_ID_TYPES: TaxIdType[] = ["NIT", "RFC", "EIN", "CIF", "CUIT"];
+function Req() {
+  return <span className="text-primary"> *</span>;
+}
 
 export function ClientForm({
   initial,
@@ -57,32 +59,34 @@ export function ClientForm({
     const next: typeof errors = {};
     if (!v.legal_name.trim()) next.legal_name = "La razón social es obligatoria.";
     if (!v.type) next.type = "Selecciona si el cliente es holding o directo.";
-    if (v.type === "direct" && !v.tax_id.trim()) {
-      next.tax_id = "El NIT / identificación tributaria es obligatorio para clientes directos.";
-    }
+    if (!v.tax_id.trim()) next.tax_id = "El NIT / identificación tributaria es obligatorio.";
     setErrors(next);
     if (Object.keys(next).length > 0) return;
 
-    const payload: ClientFormValues =
-      v.type === "holding"
-        ? { ...v, tax_id: "", tax_id_type: "NIT" }
-        : v;
+    const payload: ClientFormValues = { ...v, tax_id_type: "NIT" };
 
     try {
       setServerError(null);
       await onSubmit(payload);
-    } catch (e: any) {
-      const msg = String(e?.message ?? "");
-      if (msg.includes("duplicate") || msg.includes("unique"))
-        setServerError("Ya existe un cliente con este nombre.");
-      else setServerError("No fue posible guardar el cliente. Intenta nuevamente.");
+    } catch (err: any) {
+      const msg = String(err?.message ?? "");
+      const code = String(err?.code ?? "");
+      if (code === "23505" || msg.includes("duplicate") || msg.includes("unique")) {
+        if (msg.includes("tax_id")) {
+          setErrors((p) => ({ ...p, tax_id: "Ya existe un cliente con esta identificación tributaria." }));
+        } else {
+          setServerError("Ya existe un cliente con esta identificación tributaria.");
+        }
+      } else {
+        setServerError("No fue posible guardar el cliente. Intenta nuevamente.");
+      }
     }
   }
 
   return (
     <form onSubmit={handle} className="space-y-5 max-w-2xl">
       <div className="space-y-2">
-        <Label htmlFor="legal_name">Razón social *</Label>
+        <Label htmlFor="legal_name">Razón social<Req /></Label>
         <Input
           id="legal_name"
           value={v.legal_name}
@@ -112,7 +116,7 @@ export function ClientForm({
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label>Tipo *</Label>
+          <Label>Tipo de cliente<Req /></Label>
           <Select value={v.type} onValueChange={(val) => setV({ ...v, type: val as "holding" | "direct" })}>
             <SelectTrigger><SelectValue placeholder="Selecciona" /></SelectTrigger>
             <SelectContent>
@@ -123,7 +127,7 @@ export function ClientForm({
           {errors.type && <p className="text-sm text-destructive">{errors.type}</p>}
         </div>
         <div className="space-y-2">
-          <Label>Estado *</Label>
+          <Label>Estado<Req /></Label>
           <Select value={v.status} onValueChange={(val) => setV({ ...v, status: val as "active" | "inactive" })}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -133,35 +137,23 @@ export function ClientForm({
           </Select>
         </div>
       </div>
-      {v.type === "direct" && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label>Tipo de identificación *</Label>
-            <Select
-              value={v.tax_id_type}
-              onValueChange={(val) => setV({ ...v, tax_id_type: val as TaxIdType })}
-            >
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {TAX_ID_TYPES.map((t) => (
-                  <SelectItem key={t} value={t}>{t}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="tax_id">Identificación tributaria *</Label>
-            <Input
-              id="tax_id"
-              value={v.tax_id}
-              onChange={(e) => setV({ ...v, tax_id: e.target.value })}
-            />
-            {errors.tax_id && (
-              <p className="text-sm text-destructive">{errors.tax_id}</p>
-            )}
-          </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="tax_id_type">Tipo ID</Label>
+          <Input id="tax_id_type" value="NIT" disabled readOnly />
         </div>
-      )}
+        <div className="space-y-2">
+          <Label htmlFor="tax_id">NIT<Req /></Label>
+          <Input
+            id="tax_id"
+            value={v.tax_id}
+            onChange={(e) => setV({ ...v, tax_id: e.target.value })}
+          />
+          {errors.tax_id && (
+            <p className="text-sm text-destructive">{errors.tax_id}</p>
+          )}
+        </div>
+      </div>
       <div className="space-y-2">
         <Label htmlFor="notes">Notas internas</Label>
         <Textarea
