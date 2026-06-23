@@ -142,7 +142,7 @@
   --color-accent-soft: var(--blue-50);
 
   /* Superficies */
-  --surface-page: var(--gray-50); /* fondo de página — gris claro */
+  --surface-page: var(--gray-25); /* fondo de página — casi blanco */
   --surface-card: var(--gray-0);
   --surface-sidebar: var(--gray-0); /* sidebar blanco */
   --surface-sunken: var(--gray-100);
