@@ -81,7 +81,7 @@ function SetupLayout() {
               if (item.disabled) {
                 return (
                   <li key={item.to}>
-                <div
+                    <div
                       className="group relative flex cursor-not-allowed items-center gap-2.5 rounded-md px-3 py-2 text-sm text-[var(--text-disabled)] hover:bg-[var(--gray-200)]"
                       title="Disponible cuando se construya el módulo de Usuarios (S-08)"
                     >
