@@ -162,8 +162,13 @@ export function ClientForm({
           <Label htmlFor="tax_id">NIT<Req /></Label>
           <Input
             id="tax_id"
+            inputMode="numeric"
+            maxLength={10}
             value={v.tax_id}
-            onChange={(e) => setV({ ...v, tax_id: e.target.value })}
+            onChange={(e) => {
+              const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+              setV({ ...v, tax_id: digits });
+            }}
           />
           {errors.tax_id && (
             <p className="text-sm text-destructive">{errors.tax_id}</p>
