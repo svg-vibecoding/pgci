@@ -83,7 +83,7 @@ function SetupLayout() {
                 return (
                   <li key={item.to}>
                     <div
-                      className="group relative flex cursor-not-allowed items-center gap-2.5 rounded-sm px-3 py-2 text-sm text-[var(--text-disabled)] hover:bg-[var(--gray-200)]"
+                      className="group relative flex cursor-not-allowed items-center gap-2.5 rounded-sm px-3 py-2 text-sm text-[var(--text-disabled)] hover:bg-[var(--gray-50)]"
                       title="Disponible cuando se construya el módulo de Usuarios (S-08)"
                     >
                       <Icon className="h-4 w-4" />
@@ -105,7 +105,7 @@ function SetupLayout() {
                       "group relative flex items-center gap-2.5 rounded-sm px-3 py-2 text-sm transition-colors duration-150",
                       active
                         ? "bg-[var(--color-primary)] font-semibold text-[var(--text-on-brand)] hover:bg-[var(--color-primary-hover)]"
-                        : "font-medium text-[var(--text-secondary)] hover:bg-[var(--gray-200)] hover:text-[var(--text-primary)]",
+                        : "font-medium text-[var(--text-secondary)] hover:bg-[var(--gray-50)] hover:text-[var(--text-primary)]",
                     )}
                   >
                     <Icon
@@ -129,7 +129,7 @@ function SetupLayout() {
           <Button
             variant="ghost"
             size="sm"
-            className="w-full justify-start text-[var(--text-secondary)] hover:bg-[var(--gray-200)] hover:text-[var(--text-primary)]"
+            className="w-full justify-start text-[var(--text-secondary)] hover:bg-[var(--gray-50)] hover:text-[var(--text-primary)]"
             onClick={async () => {
               await supabase.auth.signOut();
               window.location.href = "/auth";
