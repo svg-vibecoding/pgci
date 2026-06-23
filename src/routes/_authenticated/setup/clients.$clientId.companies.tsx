@@ -238,9 +238,7 @@ function ClientCompanies() {
                 <TableCell>{c.tax_id}</TableCell>
                 <TableCell>{c.tax_id_type}</TableCell>
                 <TableCell>
-                  <StatusBadge status={c.status === "active" ? "active" : "neutral"}>
-                    {c.status === "active" ? "Activo" : "Inactivo"}
-                  </StatusBadge>
+                  <StatusBadge status={c.status === "active" ? "active" : "neutral"} label={c.status === "active" ? "Activo" : "Inactivo"} />
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1">
