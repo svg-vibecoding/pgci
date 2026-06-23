@@ -34,7 +34,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function ViewClient() {
   const { clientId } = Route.useParams();
-  const navigate = useNavigate();
   const qc = useQueryClient();
   const { isSuperAdmin } = useIsSuperAdmin();
 
