@@ -203,7 +203,7 @@ function SetupHome() {
 
       {/* Empty state */}
       {isEmpty && (
-        <section className="overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] shadow-[var(--shadow-sm)]">
+        <section className="overflow-hidden rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] shadow-[var(--shadow-sm)]">
           <div className="grid gap-8 p-8 md:grid-cols-[auto_1fr] md:items-start md:p-10">
             <div
               aria-hidden
