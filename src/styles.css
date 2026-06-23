@@ -290,7 +290,7 @@
   --chart-3: var(--success);
   --chart-4: var(--warning);
   --chart-5: var(--gray-500);
-  --sidebar: var(--surface-card);
+  --sidebar: var(--surface-sidebar);
   --sidebar-foreground: var(--text-primary);
   --sidebar-primary: var(--color-primary);
   --sidebar-primary-foreground: var(--text-on-brand);
