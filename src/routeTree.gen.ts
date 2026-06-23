@@ -20,6 +20,7 @@ import { Route as AuthenticatedSetupProductsImportRouteImport } from './routes/_
 import { Route as AuthenticatedSetupProductsProductIdRouteImport } from './routes/_authenticated/setup/products.$productId'
 import { Route as AuthenticatedSetupClientsNewRouteImport } from './routes/_authenticated/setup/clients.new'
 import { Route as AuthenticatedSetupClientsClientIdRouteImport } from './routes/_authenticated/setup/clients.$clientId'
+import { Route as AuthenticatedSetupClientsClientIdEditRouteImport } from './routes/_authenticated/setup/clients.$clientId.edit'
 import { Route as AuthenticatedSetupClientsClientIdCompaniesRouteImport } from './routes/_authenticated/setup/clients.$clientId.companies'
 
 const AuthRoute = AuthRouteImport.update({
@@ -82,6 +83,12 @@ const AuthenticatedSetupClientsClientIdRoute =
     path: '/clients/$clientId',
     getParentRoute: () => AuthenticatedSetupRouteRoute,
   } as any)
+const AuthenticatedSetupClientsClientIdEditRoute =
+  AuthenticatedSetupClientsClientIdEditRouteImport.update({
+    id: '/edit',
+    path: '/edit',
+    getParentRoute: () => AuthenticatedSetupClientsClientIdRoute,
+  } as any)
 const AuthenticatedSetupClientsClientIdCompaniesRoute =
   AuthenticatedSetupClientsClientIdCompaniesRouteImport.update({
     id: '/companies',
@@ -101,6 +108,7 @@ export interface FileRoutesByFullPath {
   '/setup/clients/': typeof AuthenticatedSetupClientsIndexRoute
   '/setup/products/': typeof AuthenticatedSetupProductsIndexRoute
   '/setup/clients/$clientId/companies': typeof AuthenticatedSetupClientsClientIdCompaniesRoute
+  '/setup/clients/$clientId/edit': typeof AuthenticatedSetupClientsClientIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -113,6 +121,7 @@ export interface FileRoutesByTo {
   '/setup/clients': typeof AuthenticatedSetupClientsIndexRoute
   '/setup/products': typeof AuthenticatedSetupProductsIndexRoute
   '/setup/clients/$clientId/companies': typeof AuthenticatedSetupClientsClientIdCompaniesRoute
+  '/setup/clients/$clientId/edit': typeof AuthenticatedSetupClientsClientIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -128,6 +137,7 @@ export interface FileRoutesById {
   '/_authenticated/setup/clients/': typeof AuthenticatedSetupClientsIndexRoute
   '/_authenticated/setup/products/': typeof AuthenticatedSetupProductsIndexRoute
   '/_authenticated/setup/clients/$clientId/companies': typeof AuthenticatedSetupClientsClientIdCompaniesRoute
+  '/_authenticated/setup/clients/$clientId/edit': typeof AuthenticatedSetupClientsClientIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -143,6 +153,7 @@ export interface FileRouteTypes {
     | '/setup/clients/'
     | '/setup/products/'
     | '/setup/clients/$clientId/companies'
+    | '/setup/clients/$clientId/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -155,6 +166,7 @@ export interface FileRouteTypes {
     | '/setup/clients'
     | '/setup/products'
     | '/setup/clients/$clientId/companies'
+    | '/setup/clients/$clientId/edit'
   id:
     | '__root__'
     | '/'
@@ -169,6 +181,7 @@ export interface FileRouteTypes {
     | '/_authenticated/setup/clients/'
     | '/_authenticated/setup/products/'
     | '/_authenticated/setup/clients/$clientId/companies'
+    | '/_authenticated/setup/clients/$clientId/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -256,6 +269,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSetupClientsClientIdRouteImport
       parentRoute: typeof AuthenticatedSetupRouteRoute
     }
+    '/_authenticated/setup/clients/$clientId/edit': {
+      id: '/_authenticated/setup/clients/$clientId/edit'
+      path: '/edit'
+      fullPath: '/setup/clients/$clientId/edit'
+      preLoaderRoute: typeof AuthenticatedSetupClientsClientIdEditRouteImport
+      parentRoute: typeof AuthenticatedSetupClientsClientIdRoute
+    }
     '/_authenticated/setup/clients/$clientId/companies': {
       id: '/_authenticated/setup/clients/$clientId/companies'
       path: '/companies'
@@ -268,12 +288,15 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedSetupClientsClientIdRouteChildren {
   AuthenticatedSetupClientsClientIdCompaniesRoute: typeof AuthenticatedSetupClientsClientIdCompaniesRoute
+  AuthenticatedSetupClientsClientIdEditRoute: typeof AuthenticatedSetupClientsClientIdEditRoute
 }
 
 const AuthenticatedSetupClientsClientIdRouteChildren: AuthenticatedSetupClientsClientIdRouteChildren =
   {
     AuthenticatedSetupClientsClientIdCompaniesRoute:
       AuthenticatedSetupClientsClientIdCompaniesRoute,
+    AuthenticatedSetupClientsClientIdEditRoute:
+      AuthenticatedSetupClientsClientIdEditRoute,
   }
 
 const AuthenticatedSetupClientsClientIdRouteWithChildren =
