@@ -306,7 +306,35 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      can_access_agreement: {
+        Args: { p_agreement_id: string }
+        Returns: boolean
+      }
+      can_admin_agreement: {
+        Args: { p_agreement_id: string }
+        Returns: boolean
+      }
+      can_create_agreements_for_client: {
+        Args: { p_client_id: string }
+        Returns: boolean
+      }
+      can_view_costs: { Args: { p_agreement_id: string }; Returns: boolean }
+      get_agreement_client_id: {
+        Args: { p_agreement_id: string }
+        Returns: string
+      }
+      get_agreement_role: { Args: { p_agreement_id: string }; Returns: string }
+      has_client_access: { Args: { p_client_id: string }; Returns: boolean }
+      is_active_user: { Args: { p_user_id: string }; Returns: boolean }
+      is_super_admin: { Args: never; Returns: boolean }
+      user_can_access_agreement: {
+        Args: { p_agreement_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      user_has_client_access: {
+        Args: { p_client_id: string; p_user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
