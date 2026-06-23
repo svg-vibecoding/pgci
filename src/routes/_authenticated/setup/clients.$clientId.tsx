@@ -53,6 +53,7 @@ function EditClient() {
           tax_id: v.tax_id.trim(),
           tax_id_type: "NIT",
           notes: v.notes.trim() || null,
+          parent_client_id: v.parent_client_id,
         })
         .eq("id", clientId);
       if (error) throw error;
@@ -76,6 +77,8 @@ function EditClient() {
     tax_id: data.tax_id ?? "",
     tax_id_type: "NIT",
     notes: data.notes ?? "",
+    parent_client_id: data.parent_client_id ?? null,
+    belongs_to_holding: Boolean(data.parent_client_id),
   };
 
 
@@ -89,6 +92,7 @@ function EditClient() {
       <ClientForm
         initial={initial}
         submitting={m.isPending}
+        excludeHoldingId={clientId}
         onSubmit={async (v) => {
           await m.mutateAsync(v);
         }}

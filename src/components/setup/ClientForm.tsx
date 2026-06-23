@@ -1,8 +1,11 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -22,6 +25,8 @@ export type ClientFormValues = {
   tax_id: string;
   tax_id_type: TaxIdType;
   notes: string;
+  parent_client_id: string | null;
+  belongs_to_holding: boolean;
 };
 
 export const emptyClient: ClientFormValues = {
@@ -33,6 +38,8 @@ export const emptyClient: ClientFormValues = {
   tax_id: "",
   tax_id_type: "NIT",
   notes: "",
+  parent_client_id: null,
+  belongs_to_holding: false,
 };
 
 function Req() {
@@ -44,15 +51,34 @@ export function ClientForm({
   submitting,
   onSubmit,
   onCancel,
+  excludeHoldingId,
 }: {
   initial: ClientFormValues;
   submitting: boolean;
   onSubmit: (v: ClientFormValues) => Promise<void> | void;
   onCancel: () => void;
+  excludeHoldingId?: string;
 }) {
   const [v, setV] = useState<ClientFormValues>(initial);
   const [errors, setErrors] = useState<Partial<Record<keyof ClientFormValues, string>>>({});
   const [serverError, setServerError] = useState<string | null>(null);
+
+  const { data: holdings } = useQuery({
+    queryKey: ["clients", "holdings-active", excludeHoldingId ?? null],
+    queryFn: async () => {
+      let q = supabase
+        .from("clients")
+        .select("id, commercial_name, legal_name")
+        .eq("type", "holding")
+        .eq("status", "active")
+        .order("commercial_name");
+      if (excludeHoldingId) q = q.neq("id", excludeHoldingId);
+      const { data, error } = await q;
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: v.type === "direct" && v.belongs_to_holding,
+  });
 
   async function handle(e: React.FormEvent) {
     e.preventDefault();
@@ -60,10 +86,20 @@ export function ClientForm({
     if (!v.legal_name.trim()) next.legal_name = "La razón social es obligatoria.";
     if (!v.type) next.type = "Selecciona si el cliente es holding o directo.";
     if (!v.tax_id.trim()) next.tax_id = "El NIT / identificación tributaria es obligatorio.";
+    if (v.type === "direct" && v.belongs_to_holding && !v.parent_client_id) {
+      next.parent_client_id = "Selecciona el holding asociado.";
+    }
     setErrors(next);
     if (Object.keys(next).length > 0) return;
 
-    const payload: ClientFormValues = { ...v, tax_id_type: "NIT" };
+    const parent_client_id =
+      v.type === "direct" && v.belongs_to_holding ? v.parent_client_id : null;
+
+    const payload: ClientFormValues = {
+      ...v,
+      tax_id_type: "NIT",
+      parent_client_id,
+    };
 
     try {
       setServerError(null);
@@ -117,7 +153,17 @@ export function ClientForm({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label>Tipo de cliente<Req /></Label>
-          <Select value={v.type} onValueChange={(val) => setV({ ...v, type: val as "holding" | "direct" })}>
+          <Select
+            value={v.type}
+            onValueChange={(val) =>
+              setV({
+                ...v,
+                type: val as "holding" | "direct",
+                belongs_to_holding: val === "holding" ? false : v.belongs_to_holding,
+                parent_client_id: val === "holding" ? null : v.parent_client_id,
+              })
+            }
+          >
             <SelectTrigger><SelectValue placeholder="Selecciona" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="holding">Holding</SelectItem>
@@ -154,6 +200,61 @@ export function ClientForm({
           )}
         </div>
       </div>
+
+      {v.type === "direct" && (
+        <div className="space-y-3 rounded-lg border border-border p-4">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <Label htmlFor="belongs_to_holding" className="text-sm font-medium">
+                ¿Pertenece a un holding?
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Asocia este cliente directo a un holding existente.
+              </p>
+            </div>
+            <Switch
+              id="belongs_to_holding"
+              checked={v.belongs_to_holding}
+              onCheckedChange={(checked) =>
+                setV({
+                  ...v,
+                  belongs_to_holding: checked,
+                  parent_client_id: checked ? v.parent_client_id : null,
+                })
+              }
+            />
+          </div>
+          {v.belongs_to_holding && (
+            <div className="space-y-2">
+              <Label>Holding asociado<Req /></Label>
+              <Select
+                value={v.parent_client_id ?? ""}
+                onValueChange={(val) => setV({ ...v, parent_client_id: val })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona un holding" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(holdings ?? []).map((h) => (
+                    <SelectItem key={h.id} value={h.id}>
+                      {h.commercial_name?.trim() || h.legal_name}
+                    </SelectItem>
+                  ))}
+                  {holdings && holdings.length === 0 && (
+                    <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                      No hay holdings activos disponibles.
+                    </div>
+                  )}
+                </SelectContent>
+              </Select>
+              {errors.parent_client_id && (
+                <p className="text-sm text-destructive">{errors.parent_client_id}</p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="space-y-2">
         <Label htmlFor="notes">Notas internas</Label>
         <Textarea
