@@ -172,7 +172,7 @@ function ClientsList() {
                 <TableCell className="text-muted-foreground">{c.erp_name ?? "—"}</TableCell>
                 <TableCell>{c.type === "holding" ? "Holding" : "Directo"}</TableCell>
                 <TableCell>
-                  <StatusBadge status={c.status === "active" ? "active" : "inactive"}>
+                  <StatusBadge status={c.status === "active" ? "active" : "neutral"}>
                     {c.status === "active" ? "Activo" : "Inactivo"}
                   </StatusBadge>
                 </TableCell>

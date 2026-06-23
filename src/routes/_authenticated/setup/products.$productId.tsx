@@ -55,7 +55,7 @@ function ProductDetail() {
           <p className="font-mono text-xs text-muted-foreground">{data.sku}</p>
           <h1 className="text-2xl font-bold tracking-tight">{data.erp_name}</h1>
         </div>
-        <StatusBadge status={data.status === "active" ? "active" : "inactive"}>
+        <StatusBadge status={data.status === "active" ? "active" : "neutral"}>
           {data.status === "active" ? "Activo" : "Inactivo"}
         </StatusBadge>
       </header>

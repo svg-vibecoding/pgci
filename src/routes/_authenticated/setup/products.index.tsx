@@ -132,7 +132,7 @@ function ProductsList() {
                 <TableCell className="text-muted-foreground">{p.erp_brand ?? "—"}</TableCell>
                 <TableCell className="text-muted-foreground">{p.commercial_unit ?? "—"}</TableCell>
                 <TableCell>
-                  <StatusBadge status={p.status === "active" ? "active" : "inactive"}>
+                  <StatusBadge status={p.status === "active" ? "active" : "neutral"}>
                     {p.status === "active" ? "Activo" : "Inactivo"}
                   </StatusBadge>
                 </TableCell>

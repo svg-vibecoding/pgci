@@ -238,7 +238,7 @@ function ClientCompanies() {
                 <TableCell>{c.tax_id}</TableCell>
                 <TableCell>{c.tax_id_type}</TableCell>
                 <TableCell>
-                  <StatusBadge status={c.status === "active" ? "active" : "inactive"}>
+                  <StatusBadge status={c.status === "active" ? "active" : "neutral"}>
                     {c.status === "active" ? "Activo" : "Inactivo"}
                   </StatusBadge>
                 </TableCell>
