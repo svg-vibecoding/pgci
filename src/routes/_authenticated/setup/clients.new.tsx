@@ -39,7 +39,7 @@ function NewClient() {
       <header>
         <h1 className="text-2xl font-bold tracking-tight">Nuevo cliente</h1>
         <p className="text-sm text-muted-foreground">
-          Registra un cliente piloto del programa.
+          Registra clientes tipo holding o directos, como base para acuerdos, accesos y operación comercial.
         </p>
       </header>
       <ClientForm
