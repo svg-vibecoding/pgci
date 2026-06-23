@@ -42,14 +42,17 @@ function EditClient() {
 
   const m = useMutation({
     mutationFn: async (v: ClientFormValues) => {
+      const isDirect = v.type === "direct";
       const { error } = await supabase
         .from("clients")
         .update({
-          commercial_name: v.commercial_name.trim(),
-          legal_name: v.legal_name.trim() || null,
+          commercial_name: v.commercial_name.trim() || null,
+          legal_name: v.legal_name.trim(),
           erp_name: v.erp_name.trim() || null,
           type: v.type as "holding" | "direct",
           status: v.status,
+          tax_id: isDirect ? v.tax_id.trim() : null,
+          tax_id_type: isDirect ? v.tax_id_type : null,
           notes: v.notes.trim() || null,
         })
         .eq("id", clientId);
@@ -69,10 +72,13 @@ function EditClient() {
     commercial_name: data.commercial_name ?? "",
     legal_name: data.legal_name ?? "",
     erp_name: data.erp_name ?? "",
-    type: (data.type as any) ?? "",
-    status: (data.status as any) ?? "active",
+    type: (data.type as "holding" | "direct") ?? "",
+    status: (data.status as "active" | "inactive") ?? "active",
+    tax_id: data.tax_id ?? "",
+    tax_id_type: ((data.tax_id_type as "NIT" | "RFC" | "EIN" | "CIF" | "CUIT") ?? "NIT"),
     notes: data.notes ?? "",
   };
+
 
   return (
     <div className="space-y-6">
