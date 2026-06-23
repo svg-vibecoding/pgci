@@ -339,18 +339,15 @@ function ViewClient() {
               {agreements.map((a) => (
                 <li key={a.id} className="flex items-center justify-between gap-3 px-4 py-3">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{a.name ?? "Acuerdo"}</p>
+                    <p className="truncate font-mono text-xs text-muted-foreground">
+                      {a.id.slice(0, 8)}
+                    </p>
                     {a.updated_at && (
                       <p className="text-xs text-muted-foreground">
                         Actualizado {new Date(a.updated_at).toLocaleDateString()}
                       </p>
                     )}
                   </div>
-                  {a.status && (
-                    <span className="text-xs uppercase tracking-wider text-muted-foreground">
-                      {a.status}
-                    </span>
-                  )}
                 </li>
               ))}
             </ul>
