@@ -113,13 +113,14 @@ function ViewClient() {
   const parentName = parent?.commercial_name?.trim() || parent?.legal_name;
 
   return (
-    <div className="space-y-5">
+    <div className="-mt-6 space-y-5">
       {/* Volver */}
-      <Button asChild variant="ghost" size="sm" className="-ml-2 h-8 px-2 text-muted-foreground">
-        <Link to="/setup/clients">
-          <ArrowLeft className="mr-1.5 h-4 w-4" /> Volver a clientes
-        </Link>
-      </Button>
+      <Link
+        to="/setup/clients"
+        className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" /> Volver a clientes
+      </Link>
 
       {/* Encabezado */}
       <header className="flex flex-wrap items-start justify-between gap-4">
@@ -169,15 +170,9 @@ function ViewClient() {
       </header>
 
       {/* Resumen */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="rounded-lg border border-border bg-card p-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            {isHolding ? "Empresas asociadas" : "Holding asociado"}
-          </p>
-          <p className="mt-1 text-xl font-semibold text-foreground">
-            {isHolding ? children?.length ?? 0 : parentName ?? "—"}
-          </p>
-        </div>
+      <div
+        className={`grid grid-cols-1 gap-3 ${isHolding ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}
+      >
         <div className="rounded-lg border border-border bg-card p-3">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Acuerdos asociados
@@ -186,15 +181,20 @@ function ViewClient() {
         </div>
         <div className="rounded-lg border border-border bg-card p-3">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Estado
+            Usuarios asociados
           </p>
-          <div className="mt-1">
-            <StatusBadge
-              status={isActive ? "active" : "neutral"}
-              label={isActive ? "Activo" : "Inactivo"}
-            />
-          </div>
+          <p className="mt-1 text-xl font-semibold text-foreground">0</p>
         </div>
+        {isHolding && (
+          <div className="rounded-lg border border-border bg-card p-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Empresas asociadas
+            </p>
+            <p className="mt-1 text-xl font-semibold text-foreground">
+              {children?.length ?? 0}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Información general */}
