@@ -14,6 +14,62 @@ export type Database = {
   }
   public: {
     Tables: {
+      agreement_change_requests: {
+        Row: {
+          agreement_id: string
+          created_at: string
+          field_name: string
+          id: string
+          new_value: Json | null
+          old_value: Json | null
+          requested_by: string
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          target_record_id: string
+          target_table: string
+        }
+        Insert: {
+          agreement_id: string
+          created_at?: string
+          field_name: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          requested_by: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          target_record_id: string
+          target_table: string
+        }
+        Update: {
+          agreement_id?: string
+          created_at?: string
+          field_name?: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          requested_by?: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          target_record_id?: string
+          target_table?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agreement_change_requests_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "agreements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agreement_costs: {
         Row: {
           agreement_id: string
@@ -33,6 +89,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "agreement_costs_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "agreements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agreement_members: {
+        Row: {
+          agreement_id: string
+          assigned_by: string | null
+          can_view_costs: boolean
+          created_at: string
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          agreement_id: string
+          assigned_by?: string | null
+          can_view_costs?: boolean
+          created_at?: string
+          id?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          agreement_id?: string
+          assigned_by?: string | null
+          can_view_costs?: boolean
+          created_at?: string
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agreement_members_agreement_id_fkey"
             columns: ["agreement_id"]
             isOneToOne: false
             referencedRelation: "agreements"
@@ -138,6 +232,74 @@ export type Database = {
           id?: string
         }
         Relationships: []
+      }
+      profiles: {
+        Row: {
+          can_create_agreements: boolean
+          created_at: string
+          created_by: string | null
+          email: string
+          full_name: string
+          role: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          can_create_agreements?: boolean
+          created_at?: string
+          created_by?: string | null
+          email: string
+          full_name: string
+          role?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          can_create_agreements?: boolean
+          created_at?: string
+          created_by?: string | null
+          email?: string
+          full_name?: string
+          role?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_client_access: {
+        Row: {
+          assigned_by: string | null
+          client_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          client_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          assigned_by?: string | null
+          client_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_client_access_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
