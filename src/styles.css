@@ -399,6 +399,7 @@
   /* Superficies / texto / borde como utilidades */
   --color-surface-page: var(--surface-page);
   --color-surface-card: var(--surface-card);
+  --color-surface-sidebar: var(--surface-sidebar);
   --color-surface-sunken: var(--surface-sunken);
   --color-surface-inverse: var(--surface-inverse);
   --color-surface-brand: var(--surface-brand);
