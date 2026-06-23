@@ -88,7 +88,7 @@ function SetupLayout() {
                       <Icon className="h-4 w-4" />
                       <span className="flex-1">{item.label}</span>
                       <span className="rounded-full bg-[var(--gray-100)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
-                        ...
+                        PRÓX...
                       </span>
                     </div>
                   </li>
