@@ -56,14 +56,14 @@ function SetupLayout() {
         className="flex w-[264px] flex-col border-r border-[var(--border-subtle)] bg-[var(--surface-sidebar)]"
       >
         {/* Marca */}
-        <div className="px-6 pt-7 pb-3">
+        <div className="px-6 pt-5 pb-2">
           <Link to="/setup" className="inline-flex items-start" aria-label="Sumatec · Inicio">
             <SumatecLogo className="h-14 w-auto" />
           </Link>
         </div>
 
         {/* Navegación */}
-        <nav className="flex-1 px-3 pt-3">
+        <nav className="flex-1 px-3 pt-2">
           <div className="mx-3 mb-2 flex items-center gap-3">
             <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
               Setup Operativo
