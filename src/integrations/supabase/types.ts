@@ -199,12 +199,12 @@ export type Database = {
           created_at: string
           erp_name: string | null
           id: string
-          legal_name: string | null
+          legal_name: string
           notes: string | null
-          status: string | null
-          tax_id: string | null
-          tax_id_type: string | null
-          updated_at: string | null
+          status: string
+          tax_id: string
+          tax_id_type: string
+          updated_at: string
         }
         Insert: {
           client_id?: string | null
@@ -212,12 +212,12 @@ export type Database = {
           created_at?: string
           erp_name?: string | null
           id?: string
-          legal_name?: string | null
+          legal_name: string
           notes?: string | null
-          status?: string | null
-          tax_id?: string | null
-          tax_id_type?: string | null
-          updated_at?: string | null
+          status?: string
+          tax_id: string
+          tax_id_type?: string
+          updated_at?: string
         }
         Update: {
           client_id?: string | null
@@ -225,12 +225,12 @@ export type Database = {
           created_at?: string
           erp_name?: string | null
           id?: string
-          legal_name?: string | null
+          legal_name?: string
           notes?: string | null
-          status?: string | null
-          tax_id?: string | null
-          tax_id_type?: string | null
-          updated_at?: string | null
+          status?: string
+          tax_id?: string
+          tax_id_type?: string
+          updated_at?: string
         }
         Relationships: [
           {
@@ -248,33 +248,39 @@ export type Database = {
           created_at: string
           erp_name: string | null
           id: string
-          legal_name: string | null
+          legal_name: string
           notes: string | null
-          status: string | null
-          type: string | null
-          updated_at: string | null
+          status: string
+          tax_id: string | null
+          tax_id_type: string | null
+          type: string
+          updated_at: string
         }
         Insert: {
           commercial_name?: string | null
           created_at?: string
           erp_name?: string | null
           id?: string
-          legal_name?: string | null
+          legal_name: string
           notes?: string | null
-          status?: string | null
-          type?: string | null
-          updated_at?: string | null
+          status?: string
+          tax_id?: string | null
+          tax_id_type?: string | null
+          type: string
+          updated_at?: string
         }
         Update: {
           commercial_name?: string | null
           created_at?: string
           erp_name?: string | null
           id?: string
-          legal_name?: string | null
+          legal_name?: string
           notes?: string | null
-          status?: string | null
-          type?: string | null
-          updated_at?: string | null
+          status?: string
+          tax_id?: string | null
+          tax_id_type?: string | null
+          type?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -282,11 +288,11 @@ export type Database = {
         Row: {
           brand_reference: string | null
           commercial_brand: string | null
-          commercial_name: string | null
+          commercial_description: string | null
           commercial_unit: string | null
           created_at: string
           erp_brand: string | null
-          erp_name: string
+          erp_description: string
           erp_product_category_n1: string | null
           erp_product_category_n2: string | null
           erp_product_category_n3: string | null
@@ -299,11 +305,11 @@ export type Database = {
         Insert: {
           brand_reference?: string | null
           commercial_brand?: string | null
-          commercial_name?: string | null
+          commercial_description?: string | null
           commercial_unit?: string | null
           created_at?: string
           erp_brand?: string | null
-          erp_name: string
+          erp_description: string
           erp_product_category_n1?: string | null
           erp_product_category_n2?: string | null
           erp_product_category_n3?: string | null
@@ -316,11 +322,11 @@ export type Database = {
         Update: {
           brand_reference?: string | null
           commercial_brand?: string | null
-          commercial_name?: string | null
+          commercial_description?: string | null
           commercial_unit?: string | null
           created_at?: string
           erp_brand?: string | null
-          erp_name?: string
+          erp_description?: string
           erp_product_category_n1?: string | null
           erp_product_category_n2?: string | null
           erp_product_category_n3?: string | null
@@ -338,6 +344,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           email: string
+          erp_user_code: string | null
           full_name: string
           role: string
           status: string
@@ -349,6 +356,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           email: string
+          erp_user_code?: string | null
           full_name: string
           role?: string
           status?: string
@@ -360,6 +368,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           email?: string
+          erp_user_code?: string | null
           full_name?: string
           role?: string
           status?: string
