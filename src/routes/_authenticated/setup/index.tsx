@@ -135,9 +135,9 @@ function SetupHome() {
     <div className="space-y-10">
       {/* Header */}
       <header className="space-y-3">
-        <p className="suma-overline">CONFIGURACIÓN INICIAL</p>
+        <p className="suma-overline">GESTIÓN COMERCIAL INTELIGENTE</p>
         <h1 className="suma-h1 max-w-3xl text-[var(--text-primary)]">
-          Configura la base operativa de PGCI
+          Configura la base operativa de la PGCI
         </h1>
         <p className="max-w-3xl text-[15px] leading-relaxed text-[var(--text-secondary)]">
           Define clientes, empresas, productos y accesos desde una sola fuente de verdad.
