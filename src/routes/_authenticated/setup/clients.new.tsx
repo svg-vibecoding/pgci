@@ -12,14 +12,17 @@ function NewClient() {
   const navigate = useNavigate();
   const m = useMutation({
     mutationFn: async (v: ClientFormValues) => {
+      const isDirect = v.type === "direct";
       const { data, error } = await supabase
         .from("clients")
         .insert({
-          commercial_name: v.commercial_name.trim(),
-          legal_name: v.legal_name.trim() || null,
+          commercial_name: v.commercial_name.trim() || null,
+          legal_name: v.legal_name.trim(),
           erp_name: v.erp_name.trim() || null,
           type: v.type as "holding" | "direct",
           status: v.status,
+          tax_id: isDirect ? v.tax_id.trim() : null,
+          tax_id_type: isDirect ? v.tax_id_type : null,
           notes: v.notes.trim() || null,
         })
         .select("id")
@@ -27,6 +30,7 @@ function NewClient() {
       if (error) throw error;
       return data;
     },
+
     onSuccess: (d) => navigate({ to: "/setup/clients/$clientId", params: { clientId: d.id } }),
   });
 
