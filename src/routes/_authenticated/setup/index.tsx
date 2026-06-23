@@ -309,7 +309,7 @@ function SetupHome() {
       {/* Alertas */}
       {alerts.length > 0 && (
         <section
-          className="flex gap-4 rounded-xl border border-[color:var(--warning)]/30 bg-[var(--warning-soft)] p-5"
+          className="flex gap-4 rounded-lg border border-[color:var(--warning)]/30 bg-[var(--warning-soft)] p-5"
           role="status"
         >
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[var(--warning-strong)]" />
