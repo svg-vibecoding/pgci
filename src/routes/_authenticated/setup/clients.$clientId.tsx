@@ -256,27 +256,11 @@ function ViewClient() {
       {/* Empresas del cliente (solo holdings) */}
       {isHolding && (
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between gap-3">
-            <div>
-              <CardTitle className="text-base">Empresas del cliente</CardTitle>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Clientes directos asociados a este holding.
-              </p>
-            </div>
-            {isSuperAdmin && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() =>
-                  navigate({
-                    to: "/setup/clients/new",
-                    search: { parent: clientId },
-                  })
-                }
-              >
-                <Plus className="mr-2 h-4 w-4" /> Agregar empresa
-              </Button>
-            )}
+          <CardHeader>
+            <CardTitle className="text-base">Empresas del cliente</CardTitle>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Clientes directos asociados a este holding.
+            </p>
           </CardHeader>
           <CardContent>
             {!children || children.length === 0 ? (
