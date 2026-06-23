@@ -251,8 +251,8 @@ export type Database = {
           legal_name: string
           notes: string | null
           status: string
-          tax_id: string | null
-          tax_id_type: string | null
+          tax_id: string
+          tax_id_type: string
           type: string
           updated_at: string
         }
@@ -264,8 +264,8 @@ export type Database = {
           legal_name: string
           notes?: string | null
           status?: string
-          tax_id?: string | null
-          tax_id_type?: string | null
+          tax_id: string
+          tax_id_type?: string
           type: string
           updated_at?: string
         }
@@ -277,8 +277,8 @@ export type Database = {
           legal_name?: string
           notes?: string | null
           status?: string
-          tax_id?: string | null
-          tax_id_type?: string | null
+          tax_id?: string
+          tax_id_type?: string
           type?: string
           updated_at?: string
         }
