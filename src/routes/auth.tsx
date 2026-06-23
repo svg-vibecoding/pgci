@@ -32,42 +32,47 @@ function AuthPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[var(--surface-page)] px-6">
-      <form
-        onSubmit={onSubmit}
-        className="w-full max-w-sm space-y-5 rounded-lg border border-border bg-card p-8 shadow-sm"
-      >
-        <div className="flex flex-col items-center gap-3">
-          <SumatecLogo className="h-10 w-auto" />
-          <h1 className="text-xl font-semibold tracking-tight">Acceso PGCI</h1>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="email">Correo</Label>
-          <Input
-            id="email"
-            type="email"
-            autoComplete="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="password">Contraseña</Label>
-          <Input
-            id="password"
-            type="password"
-            autoComplete="current-password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </div>
-        {error && <p className="text-sm text-destructive">{error}</p>}
-        <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? "Ingresando…" : "Ingresar"}
-        </Button>
-      </form>
+    <main className="flex min-h-screen flex-col items-center justify-center bg-[var(--surface-page)] px-6">
+      <div className="flex w-full max-w-sm flex-col items-center gap-4">
+        <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 text-[var(--font-ui)] text-sm font-semibold uppercase tracking-wide text-muted-foreground shadow-sm">
+          <span className="h-2 w-2 rounded-full bg-[var(--color-primary)]" aria-hidden="true" />
+          PGCI | Plataforma de Gestión Comercial Inteligente
+        </span>
+        <form
+          onSubmit={onSubmit}
+          className="w-full space-y-5 rounded-lg border border-border bg-card p-8 shadow-sm"
+        >
+          <div className="flex flex-col items-center">
+            <SumatecLogo className="h-14 w-auto" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="email">Correo</Label>
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">Contraseña</Label>
+            <Input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? "Ingresando…" : "Ingresar"}
+          </Button>
+        </form>
+      </div>
     </main>
   );
 }
