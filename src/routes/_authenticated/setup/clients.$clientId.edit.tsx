@@ -53,24 +53,6 @@ function EditClient() {
     },
   });
 
-  const toggleStatus = useMutation({
-    mutationFn: async (next: "active" | "inactive") => {
-      const { error } = await supabase
-        .from("clients")
-        .update({ status: next })
-        .eq("id", clientId);
-      if (error) throw error;
-      return next;
-    },
-    onSuccess: (next) => {
-      qc.invalidateQueries({ queryKey: ["clients"] });
-      toast.success(next === "active" ? "Cliente activado." : "Cliente inactivado.");
-      setConfirmOpen(false);
-    },
-    onError: () => {
-      toast.error("No fue posible cambiar el estado del cliente.");
-    },
-  });
 
   if (isLoading) return <p className="text-sm text-muted-foreground">Cargando…</p>;
   if (!data) return <p className="text-sm text-muted-foreground">No encontrado.</p>;
