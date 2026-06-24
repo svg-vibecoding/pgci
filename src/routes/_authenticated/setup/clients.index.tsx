@@ -19,8 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { StatusBadge } from "@/components/sumatec";
-import { Badge } from "@/components/ui/badge";
+import { Badge, StatusBadge } from "@/components/sumatec";
 import { Plus } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/setup/clients/")({
@@ -174,7 +173,7 @@ function ClientsList() {
                       {c.display_name}
                     </Link>
                     {c.type === "holding" && (
-                      <Badge variant="secondary">Holding</Badge>
+                      <Badge color="info">Holding</Badge>
                     )}
                   </div>
                   {c.parent_client_id && (

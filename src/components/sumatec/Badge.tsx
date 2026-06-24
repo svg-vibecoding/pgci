@@ -4,6 +4,7 @@ export type SumatecBadgeColor =
   | "neutral"
   | "primary"
   | "accent"
+  | "info"
   | "success"
   | "warning"
   | "error";
@@ -19,6 +20,7 @@ const palette: Record<SumatecBadgeColor, { main: string; soft: string }> = {
   neutral: { main: "var(--gray-700)", soft: "var(--gray-100)" },
   primary: { main: "var(--color-primary)", soft: "var(--color-primary-soft)" },
   accent: { main: "var(--color-accent)", soft: "var(--color-accent-soft)" },
+  info: { main: "var(--info-strong)", soft: "var(--info-soft)" },
   success: { main: "var(--success-strong)", soft: "var(--success-soft)" },
   warning: { main: "var(--warning-strong)", soft: "var(--warning-soft)" },
   error: { main: "var(--error)", soft: "var(--error-soft)" },
