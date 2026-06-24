@@ -143,16 +143,15 @@ function ClientsList() {
       <div className="rounded-lg border border-border bg-card">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Cliente</TableHead>
-              <TableHead>Tipo</TableHead>
-              <TableHead>NIT</TableHead>
-              <TableHead className="text-right">Empresas</TableHead>
-              <TableHead className="text-right">Acuerdos</TableHead>
-              <TableHead>Pertenece a</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
-            </TableRow>
+              <TableRow>
+                <TableHead>Cliente</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead>NIT</TableHead>
+                <TableHead className="text-right">Empresas</TableHead>
+                <TableHead className="text-right">Acuerdos</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
+              </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading && (
