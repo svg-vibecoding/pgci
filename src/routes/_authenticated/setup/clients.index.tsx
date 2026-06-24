@@ -192,14 +192,6 @@ function ClientsList() {
                     <Button asChild size="sm" variant="ghost">
                       <Link to="/setup/clients/$clientId/edit" params={{ clientId: c.id }}>Editar</Link>
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => toggleStatus.mutate(c)}
-                      disabled={toggleStatus.isPending}
-                    >
-                      {c.status === "active" ? "Inactivar" : "Activar"}
-                    </Button>
                   </div>
                 </TableCell>
               </TableRow>
