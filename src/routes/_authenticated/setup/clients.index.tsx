@@ -173,7 +173,7 @@ function ClientsList() {
                       {c.display_name}
                     </Link>
                     {c.type === "holding" && (
-                      <Badge variant="secondary">Holding</Badge>
+                      <Badge color="info">Holding</Badge>
                     )}
                   </div>
                   {c.parent_client_id && (
