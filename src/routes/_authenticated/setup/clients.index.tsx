@@ -28,7 +28,6 @@ export const Route = createFileRoute("/_authenticated/setup/clients/")({
 });
 
 function ClientsList() {
-  const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [statusF, setStatusF] = useState<"all" | "active" | "inactive">("all");
   const [typeF, setTypeF] = useState<"all" | "holding" | "direct">("all");
