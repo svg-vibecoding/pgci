@@ -172,6 +172,14 @@ function ClientsList() {
                   <Link to="/setup/clients/$clientId" params={{ clientId: c.id }} className="hover:underline">
                     {c.display_name}
                   </Link>
+                  {c.parent_client_id && (
+                    <span
+                      className="block text-xs text-muted-foreground truncate max-w-[260px]"
+                      title={c.parent_name ?? undefined}
+                    >
+                      {c.parent_name}
+                    </span>
+                  )}
                 </TableCell>
                 <TableCell>{c.type === "holding" ? "Holding" : "Directo"}</TableCell>
                 <TableCell className="text-muted-foreground">{c.tax_id ?? "—"}</TableCell>
@@ -179,20 +187,6 @@ function ClientsList() {
                   {c.type === "holding" ? c.company_count : "—"}
                 </TableCell>
                 <TableCell className="text-right">{c.agreement_count}</TableCell>
-                <TableCell className="max-w-[200px]">
-                  {c.type === "holding" ? (
-                    <span className="text-muted-foreground">—</span>
-                  ) : c.parent_client_id ? (
-                    <span
-                      className="block truncate text-foreground"
-                      title={c.parent_name ?? undefined}
-                    >
-                      {c.parent_name ?? "—"}
-                    </span>
-                  ) : (
-                    <span className="text-xs text-muted-foreground italic">Independiente</span>
-                  )}
-                </TableCell>
                 <TableCell>
                   <StatusBadge status={c.status === "active" ? "active" : "neutral"} label={c.status === "active" ? "Activo" : "Inactivo"} />
                 </TableCell>
