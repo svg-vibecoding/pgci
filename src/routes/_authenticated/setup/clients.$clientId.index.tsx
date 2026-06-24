@@ -28,7 +28,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Building2, Pencil, Power, FileText, Users } from "lucide-react";
 import { useState } from "react";
 
-export const Route = createFileRoute("/_authenticated/setup/clients/$clientId")({
+export const Route = createFileRoute("/_authenticated/setup/clients/$clientId/")({
   head: () => ({ meta: [{ title: "Cliente · Setup · PGCI" }] }),
   component: ViewClient,
 });
