@@ -149,13 +149,14 @@ function ClientsList() {
               <TableHead>NIT</TableHead>
               <TableHead className="text-right">Empresas</TableHead>
               <TableHead className="text-right">Acuerdos</TableHead>
+              <TableHead>Pertenece a</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading && (
-              <TableRow><TableCell colSpan={7} className="text-center text-sm text-muted-foreground">Cargando…</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="text-center text-sm text-muted-foreground">Cargando…</TableCell></TableRow>
             )}
             {!isLoading && filtered.length === 0 && (
               <TableRow>
