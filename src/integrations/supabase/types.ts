@@ -139,16 +139,19 @@ export type Database = {
           agreement_id: string
           created_at: string
           id: string
+          product_id: string | null
         }
         Insert: {
           agreement_id: string
           created_at?: string
           id?: string
+          product_id?: string | null
         }
         Update: {
           agreement_id?: string
           created_at?: string
           id?: string
+          product_id?: string | null
         }
         Relationships: [
           {
@@ -156,6 +159,13 @@ export type Database = {
             columns: ["agreement_id"]
             isOneToOne: false
             referencedRelation: "agreements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreement_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
