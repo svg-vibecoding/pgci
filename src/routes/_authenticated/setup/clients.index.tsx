@@ -169,9 +169,14 @@ function ClientsList() {
             {filtered.map((c) => (
               <TableRow key={c.id}>
                 <TableCell className="font-medium">
-                  <Link to="/setup/clients/$clientId" params={{ clientId: c.id }} className="hover:underline">
-                    {c.display_name}
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <Link to="/setup/clients/$clientId" params={{ clientId: c.id }} className="hover:underline">
+                      {c.display_name}
+                    </Link>
+                    {c.type === "holding" && (
+                      <Badge variant="secondary">Holding</Badge>
+                    )}
+                  </div>
                   {c.parent_client_id && (
                     <span
                       className="block text-xs text-muted-foreground truncate max-w-[260px]"
@@ -181,7 +186,6 @@ function ClientsList() {
                     </span>
                   )}
                 </TableCell>
-                <TableCell>{c.type === "holding" ? "Holding" : "Directo"}</TableCell>
                 <TableCell className="text-muted-foreground">{c.tax_id ?? "—"}</TableCell>
                 <TableCell className="text-right">
                   {c.type === "holding" ? c.company_count : "—"}
