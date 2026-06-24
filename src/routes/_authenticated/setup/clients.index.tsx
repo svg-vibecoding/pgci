@@ -177,7 +177,7 @@ function ClientsList() {
                       className="block text-xs text-muted-foreground truncate max-w-[260px]"
                       title={c.parent_name ?? undefined}
                     >
-                      {c.parent_name}
+                      {c.parent_name ?? "—"}
                     </span>
                   )}
                 </TableCell>
