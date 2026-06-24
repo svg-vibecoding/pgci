@@ -1,24 +1,10 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ClientForm, emptyClient, type ClientFormValues } from "@/components/setup/ClientForm";
-import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { StatusBadge } from "@/components/sumatec";
 import { Badge } from "@/components/sumatec/Badge";
-import { useIsSuperAdmin } from "@/hooks/use-profile";
-import { toast } from "sonner";
-import { ArrowLeft, Power } from "lucide-react";
+import { StatusBadge } from "@/components/sumatec";
+import { ArrowLeft } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/setup/clients/$clientId/edit")({
   head: () => ({ meta: [{ title: "Editar cliente · Setup · PGCI" }] }),
