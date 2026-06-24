@@ -143,24 +143,23 @@ function ClientsList() {
       <div className="rounded-lg border border-border bg-card">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Cliente</TableHead>
-              <TableHead>Tipo</TableHead>
-              <TableHead>NIT</TableHead>
-              <TableHead className="text-right">Empresas</TableHead>
-              <TableHead className="text-right">Acuerdos</TableHead>
-              <TableHead>Pertenece a</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
-            </TableRow>
+              <TableRow>
+                <TableHead>Cliente</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead>NIT</TableHead>
+                <TableHead className="text-right">Empresas</TableHead>
+                <TableHead className="text-right">Acuerdos</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
+              </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading && (
-              <TableRow><TableCell colSpan={8} className="text-center text-sm text-muted-foreground">Cargando…</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="text-center text-sm text-muted-foreground">Cargando…</TableCell></TableRow>
             )}
             {!isLoading && filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={8} className="text-center text-sm text-muted-foreground py-8">
+                <TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-8">
                   {data?.length === 0
                     ? "Aún no hay clientes creados. Crea los clientes piloto para continuar."
                     : "No hay clientes que coincidan con los filtros."}
@@ -173,6 +172,14 @@ function ClientsList() {
                   <Link to="/setup/clients/$clientId" params={{ clientId: c.id }} className="hover:underline">
                     {c.display_name}
                   </Link>
+                  {c.parent_client_id && (
+                    <span
+                      className="block text-xs text-muted-foreground truncate max-w-[260px]"
+                      title={c.parent_name ?? undefined}
+                    >
+                      {c.parent_name ?? "—"}
+                    </span>
+                  )}
                 </TableCell>
                 <TableCell>{c.type === "holding" ? "Holding" : "Directo"}</TableCell>
                 <TableCell className="text-muted-foreground">{c.tax_id ?? "—"}</TableCell>
@@ -180,20 +187,6 @@ function ClientsList() {
                   {c.type === "holding" ? c.company_count : "—"}
                 </TableCell>
                 <TableCell className="text-right">{c.agreement_count}</TableCell>
-                <TableCell className="max-w-[200px]">
-                  {c.type === "holding" ? (
-                    <span className="text-muted-foreground">—</span>
-                  ) : c.parent_client_id ? (
-                    <span
-                      className="block truncate text-foreground"
-                      title={c.parent_name ?? undefined}
-                    >
-                      {c.parent_name ?? "—"}
-                    </span>
-                  ) : (
-                    <span className="text-xs text-muted-foreground italic">Independiente</span>
-                  )}
-                </TableCell>
                 <TableCell>
                   <StatusBadge status={c.status === "active" ? "active" : "neutral"} label={c.status === "active" ? "Activo" : "Inactivo"} />
                 </TableCell>
