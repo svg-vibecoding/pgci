@@ -146,7 +146,6 @@ function ClientsList() {
           <TableHeader>
               <TableRow>
                 <TableHead>Cliente</TableHead>
-                <TableHead>Tipo</TableHead>
                 <TableHead>NIT</TableHead>
                 <TableHead className="text-right">Empresas</TableHead>
                 <TableHead className="text-right">Acuerdos</TableHead>
