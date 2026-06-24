@@ -2,7 +2,8 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ClientForm, emptyClient, type ClientFormValues } from "@/components/setup/ClientForm";
-import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/sumatec";
+import { Badge } from "@/components/sumatec/Badge";
 import { ArrowLeft } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/setup/clients/$clientId/edit")({
@@ -70,18 +71,34 @@ function EditClient() {
   };
 
   const displayName = data.commercial_name?.trim() || data.legal_name;
+  const isHolding = data.type === "holding";
+  const isActive = data.status === "active";
 
   return (
-    <div className="space-y-6">
-      <Button asChild variant="ghost" size="sm" className="-ml-2 h-8 px-2 text-muted-foreground">
-        <Link to="/setup/clients/$clientId" params={{ clientId }}>
-          <ArrowLeft className="mr-1.5 h-4 w-4" /> Volver al cliente
-        </Link>
-      </Button>
+    <div className="-mt-6 space-y-5">
+      {/* Volver */}
+      <Link
+        to="/setup/clients"
+        className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" /> Volver a clientes
+      </Link>
 
+      {/* Encabezado (igual al de Detalle) */}
       <header>
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Editar cliente</p>
         <h1 className="text-2xl font-bold tracking-tight">{displayName}</h1>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <Badge color={isHolding ? "accent" : "neutral"} variant="soft">
+            {isHolding ? "Holding" : "Directo"}
+          </Badge>
+          <StatusBadge
+            status={isActive ? "active" : "neutral"}
+            label={isActive ? "Activo" : "Inactivo"}
+          />
+          <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            · Editando
+          </span>
+        </div>
       </header>
 
       <ClientForm
