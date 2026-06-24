@@ -120,21 +120,59 @@ function EditClient() {
       </Link>
 
       {/* Encabezado (igual al de Detalle) */}
-      <header>
-        <h1 className="text-2xl font-bold tracking-tight">{displayName}</h1>
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <Badge color={isHolding ? "accent" : "neutral"} variant="soft">
-            {isHolding ? "Holding" : "Directo"}
-          </Badge>
-          <StatusBadge
-            status={isActive ? "active" : "neutral"}
-            label={isActive ? "Activo" : "Inactivo"}
-          />
-          <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            · Editando
-          </span>
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">{displayName}</h1>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <Badge color={isHolding ? "accent" : "neutral"} variant="soft">
+              {isHolding ? "Holding" : "Directo"}
+            </Badge>
+            <StatusBadge
+              status={isActive ? "active" : "neutral"}
+              label={isActive ? "Activo" : "Inactivo"}
+            />
+            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              · Editando
+            </span>
+          </div>
         </div>
+
+        {isSuperAdmin && (
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={toggleStatus.isPending}
+            onClick={() => setConfirmOpen(true)}
+          >
+            <Power className="mr-2 h-4 w-4" />
+            {isActive ? "Inactivar" : "Activar"}
+          </Button>
+        )}
       </header>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {isActive ? "¿Inactivar cliente?" : "¿Activar cliente?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {isActive
+                ? "El cliente pasará a estado inactivo y no podrá usarse en nuevos acuerdos hasta que se reactive."
+                : "El cliente pasará a estado activo y podrá usarse en acuerdos."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={toggleStatus.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={toggleStatus.isPending}
+              onClick={() => toggleStatus.mutate(isActive ? "inactive" : "active")}
+            >
+              {toggleStatus.isPending ? "Procesando…" : isActive ? "Inactivar" : "Activar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <ClientForm
         initial={initial}
