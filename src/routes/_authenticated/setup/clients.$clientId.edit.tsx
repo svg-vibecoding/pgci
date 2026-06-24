@@ -101,7 +101,6 @@ function EditClient() {
             </span>
           </div>
         </div>
-
       </header>
 
       <ClientForm
