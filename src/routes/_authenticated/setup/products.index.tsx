@@ -35,12 +35,30 @@ function ProductsList() {
   const { data, isLoading } = useQuery({
     queryKey: ["products", "list"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("products")
-        .select("id, sku, erp_description, commercial_description, erp_brand, commercial_unit, status, updated_at")
-        .order("sku");
-      if (error) throw error;
-      return data ?? [];
+      const [
+        { data: products, error: productsError },
+        { data: agreementProducts, error: countsError },
+      ] = await Promise.all([
+        supabase
+          .from("products")
+          .select("id, sku, erp_description, commercial_brand, status, updated_at")
+          .order("sku"),
+        supabase.from("agreement_products").select("product_id"),
+      ]);
+
+      if (productsError) throw productsError;
+      if (countsError) throw countsError;
+
+      const counts = new Map<string, number>();
+      (agreementProducts ?? []).forEach((row) => {
+        if (!row.product_id) return;
+        counts.set(row.product_id, (counts.get(row.product_id) ?? 0) + 1);
+      });
+
+      return (products ?? []).map((p) => ({
+        ...p,
+        agreement_count: counts.get(p.id) ?? 0,
+      }));
     },
   });
 
@@ -48,7 +66,7 @@ function ProductsList() {
     if (statusF !== "all" && p.status !== statusF) return false;
     if (search) {
       const s = search.toLowerCase();
-      const hay = [p.sku, p.erp_description, p.commercial_description, p.erp_brand]
+      const hay = [p.sku, p.erp_description, p.commercial_brand]
         .filter(Boolean)
         .some((v) => v!.toLowerCase().includes(s));
       if (!hay) return false;
@@ -79,7 +97,7 @@ function ProductsList() {
 
       <div className="flex flex-wrap gap-3">
         <Input
-          placeholder="Buscar por código, nombre o marca…"
+          placeholder="Buscar por código, descripción o marca…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-xs"
@@ -99,21 +117,20 @@ function ProductsList() {
           <TableHeader>
             <TableRow>
               <TableHead>Código Jaivaná</TableHead>
-              <TableHead>Nombre Jaivaná ERP</TableHead>
-              <TableHead>Nombre comercial</TableHead>
-              <TableHead>Marca Jaivaná ERP</TableHead>
-              <TableHead>Unidad comercial</TableHead>
+              <TableHead>Descripción Jaivaná</TableHead>
+              <TableHead>Marca</TableHead>
+              <TableHead className="text-center">Acuerdos</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead>Última actualización</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading && (
-              <TableRow><TableCell colSpan={7} className="text-center text-sm text-muted-foreground">Cargando…</TableCell></TableRow>
+              <TableRow><TableCell colSpan={6} className="text-center text-sm text-muted-foreground">Cargando…</TableCell></TableRow>
             )}
             {!isLoading && filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="py-8 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
                   {(data ?? []).length === 0
                     ? "Aún no hay productos en el PIM. Impórtalos desde archivo para empezar."
                     : "No hay productos que coincidan con los filtros."}
@@ -128,9 +145,8 @@ function ProductsList() {
                   </Link>
                 </TableCell>
                 <TableCell>{p.erp_description}</TableCell>
-                <TableCell className="text-muted-foreground">{p.commercial_description ?? "—"}</TableCell>
-                <TableCell className="text-muted-foreground">{p.erp_brand ?? "—"}</TableCell>
-                <TableCell className="text-muted-foreground">{p.commercial_unit ?? "—"}</TableCell>
+                <TableCell className="text-muted-foreground">{p.commercial_brand ?? "—"}</TableCell>
+                <TableCell className="text-center font-mono text-sm">{p.agreement_count}</TableCell>
                 <TableCell>
                   <StatusBadge status={p.status === "active" ? "active" : "neutral"} label={p.status === "active" ? "Activo" : "Inactivo"} />
                 </TableCell>
