@@ -4,6 +4,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Table,
   TableBody,
   TableCell,
@@ -14,7 +24,9 @@ import {
 import { StatusBadge } from "@/components/sumatec";
 import { Badge } from "@/components/sumatec/Badge";
 import { useIsSuperAdmin } from "@/hooks/use-profile";
+import { toast } from "sonner";
 import { ArrowLeft, Building2, Pencil, Power, FileText, Users } from "lucide-react";
+import { useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/setup/clients/$clientId")({
   head: () => ({ meta: [{ title: "Cliente · Setup · PGCI" }] }),
@@ -36,6 +48,7 @@ function ViewClient() {
   const { clientId } = Route.useParams();
   const qc = useQueryClient();
   const { isSuperAdmin } = useIsSuperAdmin();
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["clients", clientId],
@@ -98,9 +111,15 @@ function ViewClient() {
         .update({ status: next })
         .eq("id", clientId);
       if (error) throw error;
+      return next;
     },
-    onSuccess: () => {
+    onSuccess: (next) => {
       qc.invalidateQueries({ queryKey: ["clients"] });
+      toast.success(next === "active" ? "Cliente activado." : "Cliente inactivado.");
+      setConfirmOpen(false);
+    },
+    onError: () => {
+      toast.error("No fue posible cambiar el estado del cliente.");
     },
   });
 
@@ -160,7 +179,7 @@ function ViewClient() {
               variant="outline"
               size="sm"
               disabled={toggleStatus.isPending}
-              onClick={() => toggleStatus.mutate(isActive ? "inactive" : "active")}
+              onClick={() => setConfirmOpen(true)}
             >
               <Power className="mr-2 h-4 w-4" />
               {isActive ? "Inactivar" : "Activar"}
@@ -168,6 +187,30 @@ function ViewClient() {
           </div>
         )}
       </header>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {isActive ? "¿Inactivar cliente?" : "¿Activar cliente?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {isActive
+                ? "El cliente pasará a estado inactivo y no podrá usarse en nuevos acuerdos hasta que se reactive."
+                : "El cliente pasará a estado activo y podrá usarse en acuerdos."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={toggleStatus.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={toggleStatus.isPending}
+              onClick={() => toggleStatus.mutate(isActive ? "inactive" : "active")}
+            >
+              {toggleStatus.isPending ? "Procesando…" : isActive ? "Inactivar" : "Activar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Resumen */}
       <div
