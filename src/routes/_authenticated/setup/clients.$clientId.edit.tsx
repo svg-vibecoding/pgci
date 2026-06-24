@@ -29,6 +29,8 @@ function EditClient() {
   const { clientId } = Route.useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const { isSuperAdmin } = useIsSuperAdmin();
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["clients", clientId],
