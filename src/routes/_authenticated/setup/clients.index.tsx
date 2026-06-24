@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -28,7 +28,6 @@ export const Route = createFileRoute("/_authenticated/setup/clients/")({
 });
 
 function ClientsList() {
-  const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [statusF, setStatusF] = useState<"all" | "active" | "inactive">("all");
   const [typeF, setTypeF] = useState<"all" | "holding" | "direct">("all");
@@ -77,14 +76,6 @@ function ClientsList() {
     },
   });
 
-  const toggleStatus = useMutation({
-    mutationFn: async (c: { id: string; status: string | null }) => {
-      const next = c.status === "active" ? "inactive" : "active";
-      const { error } = await supabase.from("clients").update({ status: next }).eq("id", c.id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["clients", "list"] }),
-  });
 
   const filtered = (data ?? []).filter((c) => {
     if (statusF !== "all" && c.status !== statusF) return false;
@@ -200,14 +191,6 @@ function ClientsList() {
                     </Button>
                     <Button asChild size="sm" variant="ghost">
                       <Link to="/setup/clients/$clientId/edit" params={{ clientId: c.id }}>Editar</Link>
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => toggleStatus.mutate(c)}
-                      disabled={toggleStatus.isPending}
-                    >
-                      {c.status === "active" ? "Inactivar" : "Activar"}
                     </Button>
                   </div>
                 </TableCell>

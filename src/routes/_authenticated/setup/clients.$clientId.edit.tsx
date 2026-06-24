@@ -1,10 +1,24 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ClientForm, emptyClient, type ClientFormValues } from "@/components/setup/ClientForm";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { StatusBadge } from "@/components/sumatec";
 import { Badge } from "@/components/sumatec/Badge";
-import { ArrowLeft } from "lucide-react";
+import { useIsSuperAdmin } from "@/hooks/use-profile";
+import { toast } from "sonner";
+import { ArrowLeft, Power } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/setup/clients/$clientId/edit")({
   head: () => ({ meta: [{ title: "Editar cliente · Setup · PGCI" }] }),
@@ -15,6 +29,8 @@ function EditClient() {
   const { clientId } = Route.useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const { isSuperAdmin } = useIsSuperAdmin();
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["clients", clientId],
@@ -53,6 +69,25 @@ function EditClient() {
     },
   });
 
+  const toggleStatus = useMutation({
+    mutationFn: async (next: "active" | "inactive") => {
+      const { error } = await supabase
+        .from("clients")
+        .update({ status: next })
+        .eq("id", clientId);
+      if (error) throw error;
+      return next;
+    },
+    onSuccess: (next) => {
+      qc.invalidateQueries({ queryKey: ["clients"] });
+      toast.success(next === "active" ? "Cliente activado." : "Cliente inactivado.");
+      setConfirmOpen(false);
+    },
+    onError: () => {
+      toast.error("No fue posible cambiar el estado del cliente.");
+    },
+  });
+
   if (isLoading) return <p className="text-sm text-muted-foreground">Cargando…</p>;
   if (!data) return <p className="text-sm text-muted-foreground">No encontrado.</p>;
 
@@ -85,21 +120,59 @@ function EditClient() {
       </Link>
 
       {/* Encabezado (igual al de Detalle) */}
-      <header>
-        <h1 className="text-2xl font-bold tracking-tight">{displayName}</h1>
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <Badge color={isHolding ? "accent" : "neutral"} variant="soft">
-            {isHolding ? "Holding" : "Directo"}
-          </Badge>
-          <StatusBadge
-            status={isActive ? "active" : "neutral"}
-            label={isActive ? "Activo" : "Inactivo"}
-          />
-          <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            · Editando
-          </span>
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">{displayName}</h1>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <Badge color={isHolding ? "accent" : "neutral"} variant="soft">
+              {isHolding ? "Holding" : "Directo"}
+            </Badge>
+            <StatusBadge
+              status={isActive ? "active" : "neutral"}
+              label={isActive ? "Activo" : "Inactivo"}
+            />
+            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              · Editando
+            </span>
+          </div>
         </div>
+
+        {isSuperAdmin && (
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={toggleStatus.isPending}
+            onClick={() => setConfirmOpen(true)}
+          >
+            <Power className="mr-2 h-4 w-4" />
+            {isActive ? "Inactivar" : "Activar"}
+          </Button>
+        )}
       </header>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {isActive ? "¿Inactivar cliente?" : "¿Activar cliente?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {isActive
+                ? "El cliente pasará a estado inactivo y no podrá usarse en nuevos acuerdos hasta que se reactive."
+                : "El cliente pasará a estado activo y podrá usarse en acuerdos."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={toggleStatus.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={toggleStatus.isPending}
+              onClick={() => toggleStatus.mutate(isActive ? "inactive" : "active")}
+            >
+              {toggleStatus.isPending ? "Procesando…" : isActive ? "Inactivar" : "Activar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <ClientForm
         initial={initial}
