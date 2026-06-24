@@ -103,42 +103,7 @@ function EditClient() {
           </div>
         </div>
 
-        {isSuperAdmin && (
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={toggleStatus.isPending}
-            onClick={() => setConfirmOpen(true)}
-          >
-            <Power className="mr-2 h-4 w-4" />
-            {isActive ? "Inactivar" : "Activar"}
-          </Button>
-        )}
       </header>
-
-      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {isActive ? "¿Inactivar cliente?" : "¿Activar cliente?"}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {isActive
-                ? "El cliente pasará a estado inactivo y no podrá usarse en nuevos acuerdos hasta que se reactive."
-                : "El cliente pasará a estado activo y podrá usarse en acuerdos."}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={toggleStatus.isPending}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              disabled={toggleStatus.isPending}
-              onClick={() => toggleStatus.mutate(isActive ? "inactive" : "active")}
-            >
-              {toggleStatus.isPending ? "Procesando…" : isActive ? "Inactivar" : "Activar"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       <ClientForm
         initial={initial}
