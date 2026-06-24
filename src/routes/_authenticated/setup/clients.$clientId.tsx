@@ -4,6 +4,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Table,
   TableBody,
   TableCell,
@@ -14,7 +24,9 @@ import {
 import { StatusBadge } from "@/components/sumatec";
 import { Badge } from "@/components/sumatec/Badge";
 import { useIsSuperAdmin } from "@/hooks/use-profile";
+import { toast } from "sonner";
 import { ArrowLeft, Building2, Pencil, Power, FileText, Users } from "lucide-react";
+import { useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/setup/clients/$clientId")({
   head: () => ({ meta: [{ title: "Cliente · Setup · PGCI" }] }),
