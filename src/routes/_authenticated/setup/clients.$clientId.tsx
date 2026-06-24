@@ -48,6 +48,7 @@ function ViewClient() {
   const { clientId } = Route.useParams();
   const qc = useQueryClient();
   const { isSuperAdmin } = useIsSuperAdmin();
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["clients", clientId],
@@ -110,9 +111,15 @@ function ViewClient() {
         .update({ status: next })
         .eq("id", clientId);
       if (error) throw error;
+      return next;
     },
-    onSuccess: () => {
+    onSuccess: (next) => {
       qc.invalidateQueries({ queryKey: ["clients"] });
+      toast.success(next === "active" ? "Cliente activado." : "Cliente inactivado.");
+      setConfirmOpen(false);
+    },
+    onError: () => {
+      toast.error("No fue posible cambiar el estado del cliente.");
     },
   });
 
