@@ -53,7 +53,6 @@ function EditClient() {
     },
   });
 
-
   if (isLoading) return <p className="text-sm text-muted-foreground">Cargando…</p>;
   if (!data) return <p className="text-sm text-muted-foreground">No encontrado.</p>;
 
