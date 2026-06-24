@@ -20,6 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { StatusBadge } from "@/components/sumatec";
+import { Badge } from "@/components/ui/badge";
 import { Plus } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/setup/clients/")({
@@ -145,7 +146,6 @@ function ClientsList() {
           <TableHeader>
               <TableRow>
                 <TableHead>Cliente</TableHead>
-                <TableHead>Tipo</TableHead>
                 <TableHead>NIT</TableHead>
                 <TableHead className="text-right">Empresas</TableHead>
                 <TableHead className="text-right">Acuerdos</TableHead>
@@ -155,11 +155,11 @@ function ClientsList() {
           </TableHeader>
           <TableBody>
             {isLoading && (
-              <TableRow><TableCell colSpan={7} className="text-center text-sm text-muted-foreground">Cargando…</TableCell></TableRow>
+              <TableRow><TableCell colSpan={6} className="text-center text-sm text-muted-foreground">Cargando…</TableCell></TableRow>
             )}
             {!isLoading && filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-8">
+                <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">
                   {data?.length === 0
                     ? "Aún no hay clientes creados. Crea los clientes piloto para continuar."
                     : "No hay clientes que coincidan con los filtros."}
@@ -169,9 +169,14 @@ function ClientsList() {
             {filtered.map((c) => (
               <TableRow key={c.id}>
                 <TableCell className="font-medium">
-                  <Link to="/setup/clients/$clientId" params={{ clientId: c.id }} className="hover:underline">
-                    {c.display_name}
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <Link to="/setup/clients/$clientId" params={{ clientId: c.id }} className="hover:underline">
+                      {c.display_name}
+                    </Link>
+                    {c.type === "holding" && (
+                      <Badge variant="secondary">Holding</Badge>
+                    )}
+                  </div>
                   {c.parent_client_id && (
                     <span
                       className="block text-xs text-muted-foreground truncate max-w-[260px]"
@@ -181,7 +186,6 @@ function ClientsList() {
                     </span>
                   )}
                 </TableCell>
-                <TableCell>{c.type === "holding" ? "Holding" : "Directo"}</TableCell>
                 <TableCell className="text-muted-foreground">{c.tax_id ?? "—"}</TableCell>
                 <TableCell className="text-right">
                   {c.type === "holding" ? c.company_count : "—"}
