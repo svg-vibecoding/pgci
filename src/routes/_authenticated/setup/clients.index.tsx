@@ -63,11 +63,16 @@ function ClientsList() {
             agreementCounts.set(a.client_id, (agreementCounts.get(a.client_id) ?? 0) + 1);
         });
       }
+      const nameById = new Map<string, string>();
+      (clients ?? []).forEach((c) => {
+        nameById.set(c.id, c.commercial_name?.trim() || c.legal_name);
+      });
       return (clients ?? []).map((c) => ({
         ...c,
         display_name: c.commercial_name?.trim() || c.legal_name,
         company_count: childCounts.get(c.id) ?? 0,
         agreement_count: agreementCounts.get(c.id) ?? 0,
+        parent_name: c.parent_client_id ? nameById.get(c.parent_client_id) ?? null : null,
       }));
     },
   });
