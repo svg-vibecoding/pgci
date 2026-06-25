@@ -19,9 +19,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { StatusBadge } from "@/components/sumatec";
-import { Upload, Download } from "lucide-react";
-import { downloadPimTemplate } from "@/lib/pim-import";
+import { Upload, Download, ChevronDown } from "lucide-react";
+import { exportProductsXlsx } from "@/lib/product-export";
 
 export const Route = createFileRoute("/_authenticated/setup/products/")({
   head: () => ({ meta: [{ title: "PIM · Setup · PGCI" }] }),
@@ -42,7 +49,7 @@ function ProductsList() {
       const { data, error } = await supabase
         .from("products")
         .select(
-          "id, sku, erp_description, commercial_description, erp_brand, commercial_brand, status, updated_at",
+          "id, sku, erp_description, commercial_description, erp_brand, commercial_brand, brand_reference, product_classification, erp_product_category_n1, erp_product_category_n2, erp_product_category_n3, commercial_unit, status, created_at, updated_at",
         )
         .order("sku");
       if (error) throw error;
@@ -50,8 +57,6 @@ function ProductsList() {
     },
   });
 
-  // Contador de acuerdos: query independiente y no bloqueante.
-  // Si falla, el listado de productos no se rompe.
   const { data: agreementCounts } = useQuery({
     queryKey: ["products", "agreement-counts"],
     queryFn: async () => {
@@ -74,7 +79,8 @@ function ProductsList() {
     return "—";
   };
 
-  const filtered = (products ?? []).filter((p) => {
+  const all = products ?? [];
+  const filtered = all.filter((p) => {
     if (statusF !== "all" && p.status !== statusF) return false;
     if (search) {
       const s = search.toLowerCase();
@@ -92,6 +98,28 @@ function ProductsList() {
     return true;
   });
 
+  const totalCount = all.length;
+  const activeCount = all.filter((p) => p.status === "active").length;
+  const inactiveCount = all.filter((p) => p.status === "inactive").length;
+  const withAgreementsCount = all.filter(
+    (p) => (agreementCounts?.get(p.id) ?? 0) > 0,
+  ).length;
+
+  const hasFilters = search !== "" || statusF !== "all";
+  const canDownload = !isLoading && !isError && totalCount > 0;
+
+  const handleExport = (mode: "all" | "filtered") => {
+    const rows = mode === "filtered" ? filtered : all;
+    exportProductsXlsx(rows, agreementCounts, { filtered: mode === "filtered" });
+  };
+
+  const summaryCards = [
+    { label: "Productos", value: totalCount },
+    { label: "Activos", value: activeCount },
+    { label: "Inactivos", value: inactiveCount },
+    { label: "Con acuerdos", value: withAgreementsCount },
+  ];
+
   return (
     <div className="space-y-6">
       <header className="flex items-center justify-between">
@@ -102,9 +130,25 @@ function ProductsList() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={downloadPimTemplate}>
-            <Download className="mr-2 h-4 w-4" /> Descargar plantilla
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" disabled={!canDownload}>
+                <Download className="mr-2 h-4 w-4" /> Descargar productos
+                <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleExport("all")}>
+                Todos los productos ({totalCount})
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={!hasFilters}
+                onClick={() => handleExport("filtered")}
+              >
+                Productos filtrados ({filtered.length})
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button asChild>
             <Link to="/setup/products/import">
               <Upload className="mr-2 h-4 w-4" /> Importar productos
@@ -112,6 +156,19 @@ function ProductsList() {
           </Button>
         </div>
       </header>
+
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {summaryCards.map((c) => (
+          <Card key={c.label}>
+            <CardContent className="p-4">
+              <div className="text-xs text-muted-foreground">{c.label}</div>
+              <div className="mt-1 text-2xl font-semibold tracking-tight">
+                {isLoading ? "—" : c.value}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
       <div className="flex flex-wrap gap-3">
         <Input
@@ -155,7 +212,7 @@ function ProductsList() {
             {!isLoading && !isError && filtered.length === 0 && (
               <TableRow>
                 <TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">
-                  {(products ?? []).length === 0
+                  {all.length === 0
                     ? "Aún no hay productos en el PIM. Impórtalos desde archivo para empezar."
                     : "No hay productos que coincidan con los filtros."}
                 </TableCell>
