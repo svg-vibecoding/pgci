@@ -141,7 +141,7 @@ function SetupLayout() {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-y-auto">
+      <main className="h-screen flex-1 overflow-y-auto">
         <div className="mx-auto max-w-6xl px-10 py-14">
           <Outlet />
         </div>
