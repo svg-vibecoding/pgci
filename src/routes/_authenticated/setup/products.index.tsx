@@ -28,6 +28,26 @@ export const Route = createFileRoute("/_authenticated/setup/products/")({
   component: ProductsList,
 });
 
+async function fetchAllPaginated<T>(
+  fetchPage: (from: number, to: number) => Promise<{ data: T[] | null; error: { message: string } | null }>,
+): Promise<T[]> {
+  const PAGE = 1000;
+  const all: T[] = [];
+  let from = 0;
+  while (true) {
+    const to = from + PAGE - 1;
+    const { data, error } = await fetchPage(from, to);
+    if (error) throw new Error(`Error cargando datos paginados (rango ${from}-${to}): ${error.message}`);
+    const batch = data ?? [];
+    all.push(...batch);
+    if (batch.length < PAGE) break;
+    from += PAGE;
+  }
+  return all;
+}
+
+
+
 function ProductsList() {
   const [search, setSearch] = useState("");
   const [statusF, setStatusF] = useState<"all" | "active" | "inactive">("all");
