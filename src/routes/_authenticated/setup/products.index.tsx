@@ -5,13 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Table,
   TableBody,
   TableCell,
@@ -27,7 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { StatusBadge } from "@/components/sumatec";
-import { Upload, Download, ChevronDown } from "lucide-react";
+import { Upload, Download, ChevronDown, Search } from "lucide-react";
 import { exportProductsXlsx } from "@/lib/product-export";
 
 export const Route = createFileRoute("/_authenticated/setup/products/")({
@@ -195,8 +188,8 @@ function ProductsList() {
               <Card
                 className={
                   selected
-                    ? "border-primary ring-1 ring-primary/40 transition-colors"
-                    : "hover:border-muted-foreground/30 transition-colors"
+                    ? "border-l-2 border-l-primary/40 bg-primary/[0.03] shadow-sm transition-colors"
+                    : "hover:border-muted-foreground/20 hover:bg-muted/30 transition-colors"
                 }
               >
                 <CardContent className="p-4">
@@ -212,20 +205,15 @@ function ProductsList() {
       </div>
 
       <div className="flex flex-wrap gap-3">
-        <Input
-          placeholder="Buscar por código, descripción o marca…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-xs"
-        />
-        <Select value={statusF} onValueChange={(v) => setStatusF(v as any)}>
-          <SelectTrigger className="w-40"><SelectValue placeholder="Estado" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="active">Activo</SelectItem>
-            <SelectItem value="inactive">Inactivo</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="relative w-full md:w-[calc(50%-0.375rem)]">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por código, descripción o marca…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9"
+          />
+        </div>
       </div>
 
 
