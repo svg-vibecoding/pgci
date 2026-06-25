@@ -244,7 +244,7 @@ function SetupHome() {
         <div>
           <p className="suma-overline">ESTADO ACTUAL</p>
           <h2 className="mt-1 text-lg font-semibold text-[var(--text-primary)]">
-            Readiness por área
+            Base operativa
           </h2>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
