@@ -38,6 +38,7 @@ export const Route = createFileRoute("/_authenticated/setup/products/")({
 function ProductsList() {
   const [search, setSearch] = useState("");
   const [statusF, setStatusF] = useState<"all" | "active" | "inactive">("all");
+  const [withAgreementsOnly, setWithAgreementsOnly] = useState(false);
 
   const {
     data: products,
@@ -82,6 +83,7 @@ function ProductsList() {
   const all = products ?? [];
   const filtered = all.filter((p) => {
     if (statusF !== "all" && p.status !== statusF) return false;
+    if (withAgreementsOnly && (agreementCounts?.get(p.id) ?? 0) === 0) return false;
     if (search) {
       const s = search.toLowerCase();
       const hay = [
@@ -105,7 +107,7 @@ function ProductsList() {
     (p) => (agreementCounts?.get(p.id) ?? 0) > 0,
   ).length;
 
-  const hasFilters = search !== "" || statusF !== "all";
+  const hasFilters = search !== "" || statusF !== "all" || withAgreementsOnly;
   const canDownload = !isLoading && !isError && totalCount > 0;
 
   const handleExport = (mode: "all" | "filtered") => {
@@ -113,11 +115,33 @@ function ProductsList() {
     exportProductsXlsx(rows, agreementCounts, { filtered: mode === "filtered" });
   };
 
-  const summaryCards = [
-    { label: "Productos", value: totalCount },
-    { label: "Activos", value: activeCount },
-    { label: "Inactivos", value: inactiveCount },
-    { label: "Con acuerdos", value: withAgreementsCount },
+  type CardKey = "all" | "active" | "inactive" | "withAgreements";
+  const activeCard: CardKey =
+    withAgreementsOnly ? "withAgreements"
+    : statusF === "active" ? "active"
+    : statusF === "inactive" ? "inactive"
+    : "all";
+
+  const selectCard = (key: CardKey) => {
+    if (key === "all") {
+      setStatusF("all");
+      setWithAgreementsOnly(false);
+    } else if (key === "active") {
+      setStatusF("active");
+      setWithAgreementsOnly(false);
+    } else if (key === "inactive") {
+      setStatusF("inactive");
+      setWithAgreementsOnly(false);
+    } else {
+      setWithAgreementsOnly(true);
+    }
+  };
+
+  const summaryCards: { key: CardKey; label: string; value: number }[] = [
+    { key: "all", label: "Productos", value: totalCount },
+    { key: "active", label: "Activos", value: activeCount },
+    { key: "inactive", label: "Inactivos", value: inactiveCount },
+    { key: "withAgreements", label: "Con acuerdos", value: withAgreementsCount },
   ];
 
   return (
@@ -158,16 +182,33 @@ function ProductsList() {
       </header>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        {summaryCards.map((c) => (
-          <Card key={c.label}>
-            <CardContent className="p-4">
-              <div className="text-xs text-muted-foreground">{c.label}</div>
-              <div className="mt-1 text-2xl font-semibold tracking-tight">
-                {isLoading ? "—" : c.value}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+        {summaryCards.map((c) => {
+          const selected = activeCard === c.key;
+          return (
+            <button
+              key={c.key}
+              type="button"
+              onClick={() => selectCard(c.key)}
+              aria-pressed={selected}
+              className="text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
+            >
+              <Card
+                className={
+                  selected
+                    ? "border-primary ring-1 ring-primary/40 transition-colors"
+                    : "hover:border-muted-foreground/30 transition-colors"
+                }
+              >
+                <CardContent className="p-4">
+                  <div className="text-xs text-muted-foreground">{c.label}</div>
+                  <div className="mt-1 text-2xl font-semibold tracking-tight">
+                    {isLoading ? "—" : c.value}
+                  </div>
+                </CardContent>
+              </Card>
+            </button>
+          );
+        })}
       </div>
 
       <div className="flex flex-wrap gap-3">
@@ -186,6 +227,7 @@ function ProductsList() {
           </SelectContent>
         </Select>
       </div>
+
 
       <div className="rounded-lg border border-border bg-card">
         <Table>
