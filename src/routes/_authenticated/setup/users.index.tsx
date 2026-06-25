@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
 import { Chip, StatusBadge, Badge } from "@/components/sumatec";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, AlertTriangle } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/setup/users/")({
   head: () => ({ meta: [{ title: "Usuarios y accesos · Setup · PGCI" }] }),
