@@ -126,7 +126,7 @@ function ProductsList() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Productos</h1>
           <p className="text-sm text-muted-foreground">
-            Catálogo Jaivaná. La escritura es solo por importación de archivo.
+            Catálogo de Productos Jaivaná ERP.
           </p>
         </div>
         <div className="flex gap-2">
