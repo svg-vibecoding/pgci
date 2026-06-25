@@ -134,8 +134,7 @@ function ProductsList() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Código Jaivaná</TableHead>
-              <TableHead>Descripción Jaivaná</TableHead>
+              <TableHead>Producto</TableHead>
               <TableHead>Marca</TableHead>
               <TableHead className="text-center">Acuerdos</TableHead>
               <TableHead>Estado</TableHead>
@@ -144,18 +143,18 @@ function ProductsList() {
           </TableHeader>
           <TableBody>
             {isLoading && (
-              <TableRow><TableCell colSpan={6} className="text-center text-sm text-muted-foreground">Cargando…</TableCell></TableRow>
+              <TableRow><TableCell colSpan={5} className="text-center text-sm text-muted-foreground">Cargando…</TableCell></TableRow>
             )}
             {!isLoading && isError && (
               <TableRow>
-                <TableCell colSpan={6} className="py-8 text-center text-sm text-destructive">
+                <TableCell colSpan={5} className="py-8 text-center text-sm text-destructive">
                   No fue posible cargar el catálogo de productos. Intenta de nuevo más tarde.
                 </TableCell>
               </TableRow>
             )}
             {!isLoading && !isError && filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">
                   {(products ?? []).length === 0
                     ? "Aún no hay productos en el PIM. Impórtalos desde archivo para empezar."
                     : "No hay productos que coincidan con los filtros."}
@@ -164,12 +163,16 @@ function ProductsList() {
             )}
             {!isError && filtered.map((p) => (
               <TableRow key={p.id}>
-                <TableCell className="font-mono text-xs">
-                  <Link to="/setup/products/$productId" params={{ productId: p.id }} className="hover:underline">
-                    {p.sku}
+                <TableCell>
+                  <div className="font-mono text-xs text-muted-foreground">{p.sku}</div>
+                  <Link
+                    to="/setup/products/$productId"
+                    params={{ productId: p.id }}
+                    className="hover:underline"
+                  >
+                    {p.erp_description}
                   </Link>
                 </TableCell>
-                <TableCell>{p.erp_description}</TableCell>
                 <TableCell className="text-muted-foreground">{getBrand(p)}</TableCell>
                 <TableCell className="text-center font-mono text-sm">
                   {agreementCounts?.get(p.id) ?? 0}
