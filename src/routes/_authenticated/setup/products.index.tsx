@@ -40,32 +40,38 @@ function ProductsList() {
   } = useQuery({
     queryKey: ["products", "list"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("products")
-        .select(
-          "id, sku, erp_description, commercial_description, erp_brand, commercial_brand, brand_reference, product_classification, erp_product_category_n1, erp_product_category_n2, erp_product_category_n3, commercial_unit, status, created_at, updated_at",
-        )
-        .order("sku");
-      if (error) throw error;
-      return data ?? [];
+      return fetchAllPaginated(async (from, to) => {
+        const res = await supabase
+          .from("products")
+          .select(
+            "id, sku, erp_description, commercial_description, erp_brand, commercial_brand, brand_reference, product_classification, erp_product_category_n1, erp_product_category_n2, erp_product_category_n3, commercial_unit, status, created_at, updated_at",
+          )
+          .order("sku")
+          .range(from, to);
+        return { data: res.data, error: res.error };
+      });
     },
   });
 
   const { data: agreementCounts } = useQuery({
     queryKey: ["products", "agreement-counts"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("agreement_products")
-        .select("product_id");
-      if (error) throw error;
+      const rows = await fetchAllPaginated(async (from, to) => {
+        const res = await supabase
+          .from("agreement_products")
+          .select("product_id")
+          .range(from, to);
+        return { data: res.data, error: res.error };
+      });
       const counts = new Map<string, number>();
-      (data ?? []).forEach((row) => {
+      rows.forEach((row) => {
         if (!row.product_id) return;
         counts.set(row.product_id, (counts.get(row.product_id) ?? 0) + 1);
       });
       return counts;
     },
   });
+
 
   const getBrand = (p: { commercial_brand: string | null; erp_brand: string | null }) => {
     if (p.commercial_brand && p.commercial_brand.trim()) return p.commercial_brand;
