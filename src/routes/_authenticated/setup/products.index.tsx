@@ -216,7 +216,6 @@ function ProductsList() {
         </div>
       </div>
 
-
       <div className="rounded-lg border border-border bg-card">
         <Table>
           <TableHeader>
