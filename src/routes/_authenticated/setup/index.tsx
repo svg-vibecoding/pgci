@@ -133,8 +133,7 @@ function SetupHome() {
       microcopy: "Define quién puede ver clientes y operar acuerdos.",
       icon: Users,
       cta: "Ir a Usuarios",
-      disabled: true,
-      badge: "Próximamente",
+      to: "/setup/users",
     },
     {
       label: "ACUERDOS",
