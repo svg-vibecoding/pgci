@@ -32,41 +32,59 @@ function ProductsList() {
   const [search, setSearch] = useState("");
   const [statusF, setStatusF] = useState<"all" | "active" | "inactive">("all");
 
-  const { data, isLoading } = useQuery({
+  const {
+    data: products,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ["products", "list"],
     queryFn: async () => {
-      const [
-        { data: products, error: productsError },
-        { data: agreementProducts, error: countsError },
-      ] = await Promise.all([
-        supabase
-          .from("products")
-          .select("id, sku, erp_description, commercial_brand, status, updated_at")
-          .order("sku"),
-        supabase.from("agreement_products").select("product_id"),
-      ]);
-
-      if (productsError) throw productsError;
-      if (countsError) throw countsError;
-
-      const counts = new Map<string, number>();
-      (agreementProducts ?? []).forEach((row) => {
-        if (!row.product_id) return;
-        counts.set(row.product_id, (counts.get(row.product_id) ?? 0) + 1);
-      });
-
-      return (products ?? []).map((p) => ({
-        ...p,
-        agreement_count: counts.get(p.id) ?? 0,
-      }));
+      const { data, error } = await supabase
+        .from("products")
+        .select(
+          "id, sku, erp_description, commercial_description, erp_brand, commercial_brand, status, updated_at",
+        )
+        .order("sku");
+      if (error) throw error;
+      return data ?? [];
     },
   });
 
-  const filtered = (data ?? []).filter((p) => {
+  // Contador de acuerdos: query independiente y no bloqueante.
+  // Si falla, el listado de productos no se rompe.
+  const { data: agreementCounts } = useQuery({
+    queryKey: ["products", "agreement-counts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("agreement_products")
+        .select("product_id");
+      if (error) throw error;
+      const counts = new Map<string, number>();
+      (data ?? []).forEach((row) => {
+        if (!row.product_id) return;
+        counts.set(row.product_id, (counts.get(row.product_id) ?? 0) + 1);
+      });
+      return counts;
+    },
+  });
+
+  const getBrand = (p: { commercial_brand: string | null; erp_brand: string | null }) => {
+    if (p.commercial_brand && p.commercial_brand.trim()) return p.commercial_brand;
+    if (p.erp_brand && p.erp_brand.trim()) return p.erp_brand;
+    return "—";
+  };
+
+  const filtered = (products ?? []).filter((p) => {
     if (statusF !== "all" && p.status !== statusF) return false;
     if (search) {
       const s = search.toLowerCase();
-      const hay = [p.sku, p.erp_description, p.commercial_brand]
+      const hay = [
+        p.sku,
+        p.erp_description,
+        p.commercial_description,
+        p.commercial_brand,
+        p.erp_brand,
+      ]
         .filter(Boolean)
         .some((v) => v!.toLowerCase().includes(s));
       if (!hay) return false;
@@ -105,7 +123,7 @@ function ProductsList() {
         <Select value={statusF} onValueChange={(v) => setStatusF(v as any)}>
           <SelectTrigger className="w-40"><SelectValue placeholder="Estado" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos los estados</SelectItem>
+            <SelectItem value="all">Todos</SelectItem>
             <SelectItem value="active">Activo</SelectItem>
             <SelectItem value="inactive">Inactivo</SelectItem>
           </SelectContent>
@@ -128,16 +146,23 @@ function ProductsList() {
             {isLoading && (
               <TableRow><TableCell colSpan={6} className="text-center text-sm text-muted-foreground">Cargando…</TableCell></TableRow>
             )}
-            {!isLoading && filtered.length === 0 && (
+            {!isLoading && isError && (
+              <TableRow>
+                <TableCell colSpan={6} className="py-8 text-center text-sm text-destructive">
+                  No fue posible cargar el catálogo de productos. Intenta de nuevo más tarde.
+                </TableCell>
+              </TableRow>
+            )}
+            {!isLoading && !isError && filtered.length === 0 && (
               <TableRow>
                 <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
-                  {(data ?? []).length === 0
+                  {(products ?? []).length === 0
                     ? "Aún no hay productos en el PIM. Impórtalos desde archivo para empezar."
                     : "No hay productos que coincidan con los filtros."}
                 </TableCell>
               </TableRow>
             )}
-            {filtered.map((p) => (
+            {!isError && filtered.map((p) => (
               <TableRow key={p.id}>
                 <TableCell className="font-mono text-xs">
                   <Link to="/setup/products/$productId" params={{ productId: p.id }} className="hover:underline">
@@ -145,8 +170,10 @@ function ProductsList() {
                   </Link>
                 </TableCell>
                 <TableCell>{p.erp_description}</TableCell>
-                <TableCell className="text-muted-foreground">{p.commercial_brand ?? "—"}</TableCell>
-                <TableCell className="text-center font-mono text-sm">{p.agreement_count}</TableCell>
+                <TableCell className="text-muted-foreground">{getBrand(p)}</TableCell>
+                <TableCell className="text-center font-mono text-sm">
+                  {agreementCounts?.get(p.id) ?? 0}
+                </TableCell>
                 <TableCell>
                   <StatusBadge status={p.status === "active" ? "active" : "neutral"} label={p.status === "active" ? "Activo" : "Inactivo"} />
                 </TableCell>
