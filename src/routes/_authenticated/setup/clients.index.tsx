@@ -20,7 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge, StatusBadge } from "@/components/sumatec";
+import { Badge, Chip, StatusBadge } from "@/components/sumatec";
 import { Plus, Search } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/setup/clients/")({
