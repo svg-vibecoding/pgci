@@ -36,17 +36,18 @@ const HEADERS = [
   "Última actualización",
 ];
 
-const statusLabel = (s: string | null) =>
-  s === "active" ? "Activo" : s === "inactive" ? "Inactivo" : "";
+const statusLabel = (s: string | null): string | null =>
+  s === "active" ? "Activo" : s === "inactive" ? "Inactivo" : null;
 
-const fmtDate = (v: string | null) => {
-  if (!v) return "";
+const fmtDate = (v: string | null): string | null => {
+  if (!v || !v.trim()) return null;
   const d = new Date(v);
-  if (Number.isNaN(d.getTime())) return "";
+  if (Number.isNaN(d.getTime())) return null;
   return d.toLocaleDateString("es-CO");
 };
 
-const v = (s: string | null | undefined) => (s && s.trim() ? s : "");
+const v = (s: string | null | undefined): string | null =>
+  s && s.trim() ? s : null;
 
 export function exportProductsXlsx(
   rows: ExportProduct[],
