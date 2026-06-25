@@ -138,8 +138,10 @@ function ImportPim() {
                     El archivo tiene códigos Jaivaná repetidos. Corrige el archivo antes de importar.
                   </p>
                   <ul className="mt-2 max-h-40 overflow-auto text-xs text-destructive">
-                    {diff.duplicateSkus.map((s) => (
-                      <li key={s} className="font-mono">{s}</li>
+                    {diff.duplicateSkus.map((d) => (
+                      <li key={d.sku} className="font-mono">
+                        {d.sku} — filas: {d.rows.join(", ")}
+                      </li>
                     ))}
                   </ul>
                 </div>
