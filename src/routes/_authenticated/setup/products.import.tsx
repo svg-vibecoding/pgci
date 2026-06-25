@@ -7,11 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Download, Upload } from "lucide-react";
 import {
+  buildUpsertPayload,
   diffAgainstExisting,
   downloadPimTemplate,
   parsePimFile,
   type DiffGroups,
   type ParsedRow,
+  type PimField,
 } from "@/lib/pim-import";
 
 export const Route = createFileRoute("/_authenticated/setup/products/import")({
