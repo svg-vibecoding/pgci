@@ -137,8 +137,8 @@ function SetupHome() {
       badge: "Próximamente",
     },
     {
-      label: "Preparación para Acuerdos",
-      value: `${prerequisitesDone} de ${prerequisitesTotal} prerequisitos listos`,
+      label: "ACUERDOS",
+      value: `${prerequisitesDone} de ${prerequisitesTotal}`,
       microcopy:
         "Clientes y PIM están listos. Falta revisar usuarios y accesos antes de avanzar.",
       icon: Handshake,
@@ -187,7 +187,7 @@ function SetupHome() {
             Progreso de configuración
           </p>
           <p className="text-xs text-[var(--text-tertiary)]">
-            {prerequisitesDone} de {prerequisitesTotal} prerequisitos listos
+            {prerequisitesDone} de {prerequisitesTotal}
           </p>
         </div>
         <ol className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
