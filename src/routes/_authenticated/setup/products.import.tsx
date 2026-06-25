@@ -44,12 +44,19 @@ export const Route = createFileRoute("/_authenticated/setup/products/import")({
 });
 
 type FinalSummary = {
+  status: "confirmed" | "failed";
+  executedByEmail: string | null;
+  executedAt: string;
+  fileName: string | null;
+  totalRows: number;
   created: number;
   updated: number;
   unchanged: number;
   errors: number;
+  duplicateSkus: number;
   inactivated: number;
   cleared: number;
+  errorMessage?: string;
 };
 
 function ImportPim() {
@@ -61,6 +68,8 @@ function ImportPim() {
   const [fileError, setFileError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [finalSummary, setFinalSummary] = useState<FinalSummary | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
+
 
   const inactivations: Inactivation[] = useMemo(
     () => (diff ? getInactivations(diff) : []),
@@ -77,6 +86,7 @@ function ImportPim() {
     setDiff(null);
     setFileError(null);
     setFinalSummary(null);
+    setFileName(null);
   }
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -84,6 +94,7 @@ function ImportPim() {
     setFinalSummary(null);
     const file = e.target.files?.[0];
     if (!file) return;
+    setFileName(file.name);
     try {
       const { rows, presentColumns: cols } = await parsePimFile(file);
       const skus = rows.filter((r) => r.data).map((r) => r.data!.sku);
@@ -124,14 +135,21 @@ function ImportPim() {
         if (error) throw error;
       }
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       if (!diff) return;
       qc.invalidateQueries({ queryKey: ["products"] });
+      const { data: userData } = await supabase.auth.getUser();
       setFinalSummary({
+        status: "confirmed",
+        executedByEmail: userData?.user?.email ?? null,
+        executedAt: new Date().toISOString(),
+        fileName,
+        totalRows: parsed?.length ?? 0,
         created: diff.toCreate.length,
         updated: diff.toUpdate.length,
         unchanged: diff.unchanged.length,
         errors: diff.errors.length,
+        duplicateSkus: 0,
         inactivated: inactivations.length,
         cleared: clearedFields.length,
       });
@@ -139,12 +157,31 @@ function ImportPim() {
       setPresentColumns([]);
       setDiff(null);
       setConfirmOpen(false);
+      setFileName(null);
     },
-    onError: () => {
+    onError: async (err: any) => {
+      if (!diff) return;
       setConfirmOpen(false);
-      setFileError(
-        "No fue posible importar el archivo. Revisa el formato e intenta nuevamente.",
-      );
+      const { data: userData } = await supabase.auth.getUser();
+      setFinalSummary({
+        status: "failed",
+        executedByEmail: userData?.user?.email ?? null,
+        executedAt: new Date().toISOString(),
+        fileName,
+        totalRows: parsed?.length ?? 0,
+        created: diff.toCreate.length,
+        updated: diff.toUpdate.length,
+        unchanged: diff.unchanged.length,
+        errors: diff.errors.length,
+        duplicateSkus: diff.duplicateSkus.length,
+        inactivated: inactivations.length,
+        cleared: clearedFields.length,
+        errorMessage:
+          err?.message ??
+          "No fue posible aplicar la importación. Revisa el archivo e intenta nuevamente.",
+      });
+      // Conservamos parsed / diff / presentColumns / fileName para permitir reintentar
+      // sin tener que volver a cargar el archivo.
     },
   });
 
@@ -157,6 +194,7 @@ function ImportPim() {
   };
   const blocked = !!(diff && diff.duplicateSkus.length > 0);
   const hasChanges = !!(diff && diff.toCreate.length + diff.toUpdate.length > 0);
+
 
   return (
     <div className="space-y-6">
@@ -483,32 +521,104 @@ function ImportPim() {
       {finalSummary && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Importación completada</CardTitle>
+            <CardTitle className="text-base">
+              {finalSummary.status === "confirmed"
+                ? "Importación completada"
+                : "La importación no se pudo aplicar"}
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-sm text-[var(--success-strong)]">
-              Importación completada correctamente.
-            </p>
+          <CardContent className="space-y-4">
+            {finalSummary.status === "confirmed" ? (
+              <p className="text-sm text-[var(--success-strong)]">
+                Importación completada correctamente.
+              </p>
+            ) : (
+              <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3">
+                <p className="text-sm font-medium text-destructive">
+                  No se aplicaron cambios al catálogo.
+                </p>
+                {finalSummary.errorMessage && (
+                  <p className="mt-1 text-xs text-destructive/90">
+                    {finalSummary.errorMessage}
+                  </p>
+                )}
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Mantuvimos la previsualización cargada para que puedas reintentar
+                  o cargar otro archivo.
+                </p>
+              </div>
+            )}
+
+            <dl className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+              <Meta label="Usuario" value={finalSummary.executedByEmail ?? "—"} />
+              <Meta
+                label="Fecha"
+                value={new Date(finalSummary.executedAt).toLocaleString("es-CO")}
+              />
+              <Meta label="Archivo" value={finalSummary.fileName ?? "—"} />
+              <Meta
+                label="Estado"
+                value={
+                  finalSummary.status === "confirmed" ? "Confirmada" : "Fallida"
+                }
+              />
+            </dl>
+
             <ul className="text-sm text-muted-foreground">
+              <li>Total filas: <strong className="text-foreground">{finalSummary.totalRows}</strong></li>
               <li>Creados: <strong className="text-foreground">{finalSummary.created}</strong></li>
               <li>Actualizados: <strong className="text-foreground">{finalSummary.updated}</strong></li>
               <li>Sin cambios: <strong className="text-foreground">{finalSummary.unchanged}</strong></li>
               <li>Omitidos por error: <strong className="text-foreground">{finalSummary.errors}</strong></li>
+              <li>SKUs duplicados: <strong className="text-foreground">{finalSummary.duplicateSkus}</strong></li>
               <li>Inactivados: <strong className="text-foreground">{finalSummary.inactivated}</strong></li>
               <li>Campos limpiados: <strong className="text-foreground">{finalSummary.cleared}</strong></li>
             </ul>
-            <div className="flex gap-2">
-              <Button onClick={() => navigate({ to: "/setup/products" })}>Ir al PIM</Button>
-              <Button variant="outline" onClick={resetAll}>
-                Importar otro archivo
-              </Button>
+
+            <div className="flex flex-wrap gap-2">
+              {finalSummary.status === "confirmed" ? (
+                <>
+                  <Button onClick={() => navigate({ to: "/setup/products" })}>
+                    Ir al PIM
+                  </Button>
+                  <Button variant="outline" onClick={resetAll}>
+                    Importar otro archivo
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    onClick={() => {
+                      setFinalSummary(null);
+                      setConfirmOpen(true);
+                    }}
+                    disabled={!diff || blocked || !hasChanges || apply.isPending}
+                  >
+                    Reintentar importación
+                  </Button>
+                  <Button variant="outline" onClick={resetAll}>
+                    Cargar otro archivo
+                  </Button>
+                </>
+              )}
             </div>
           </CardContent>
         </Card>
       )}
+
     </div>
   );
 }
+
+function Meta({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-border bg-muted/40 px-3 py-2">
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className="text-sm font-medium text-foreground break-words">{value}</dd>
+    </div>
+  );
+}
+
 
 function Stat({
   label,
