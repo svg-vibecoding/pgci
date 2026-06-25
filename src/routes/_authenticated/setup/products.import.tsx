@@ -521,29 +521,91 @@ function ImportPim() {
       {finalSummary && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Importación completada</CardTitle>
+            <CardTitle className="text-base">
+              {finalSummary.status === "confirmed"
+                ? "Importación completada"
+                : "La importación no se pudo aplicar"}
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-sm text-[var(--success-strong)]">
-              Importación completada correctamente.
-            </p>
+          <CardContent className="space-y-4">
+            {finalSummary.status === "confirmed" ? (
+              <p className="text-sm text-[var(--success-strong)]">
+                Importación completada correctamente.
+              </p>
+            ) : (
+              <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3">
+                <p className="text-sm font-medium text-destructive">
+                  No se aplicaron cambios al catálogo.
+                </p>
+                {finalSummary.errorMessage && (
+                  <p className="mt-1 text-xs text-destructive/90">
+                    {finalSummary.errorMessage}
+                  </p>
+                )}
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Mantuvimos la previsualización cargada para que puedas reintentar
+                  o cargar otro archivo.
+                </p>
+              </div>
+            )}
+
+            <dl className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+              <Meta label="Usuario" value={finalSummary.executedByEmail ?? "—"} />
+              <Meta
+                label="Fecha"
+                value={new Date(finalSummary.executedAt).toLocaleString("es-CO")}
+              />
+              <Meta label="Archivo" value={finalSummary.fileName ?? "—"} />
+              <Meta
+                label="Estado"
+                value={
+                  finalSummary.status === "confirmed" ? "Confirmada" : "Fallida"
+                }
+              />
+            </dl>
+
             <ul className="text-sm text-muted-foreground">
+              <li>Total filas: <strong className="text-foreground">{finalSummary.totalRows}</strong></li>
               <li>Creados: <strong className="text-foreground">{finalSummary.created}</strong></li>
               <li>Actualizados: <strong className="text-foreground">{finalSummary.updated}</strong></li>
               <li>Sin cambios: <strong className="text-foreground">{finalSummary.unchanged}</strong></li>
               <li>Omitidos por error: <strong className="text-foreground">{finalSummary.errors}</strong></li>
+              <li>SKUs duplicados: <strong className="text-foreground">{finalSummary.duplicateSkus}</strong></li>
               <li>Inactivados: <strong className="text-foreground">{finalSummary.inactivated}</strong></li>
               <li>Campos limpiados: <strong className="text-foreground">{finalSummary.cleared}</strong></li>
             </ul>
-            <div className="flex gap-2">
-              <Button onClick={() => navigate({ to: "/setup/products" })}>Ir al PIM</Button>
-              <Button variant="outline" onClick={resetAll}>
-                Importar otro archivo
-              </Button>
+
+            <div className="flex flex-wrap gap-2">
+              {finalSummary.status === "confirmed" ? (
+                <>
+                  <Button onClick={() => navigate({ to: "/setup/products" })}>
+                    Ir al PIM
+                  </Button>
+                  <Button variant="outline" onClick={resetAll}>
+                    Importar otro archivo
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    onClick={() => {
+                      setFinalSummary(null);
+                      setConfirmOpen(true);
+                    }}
+                    disabled={!diff || blocked || !hasChanges || apply.isPending}
+                  >
+                    Reintentar importación
+                  </Button>
+                  <Button variant="outline" onClick={resetAll}>
+                    Cargar otro archivo
+                  </Button>
+                </>
+              )}
             </div>
           </CardContent>
         </Card>
       )}
+
     </div>
   );
 }
