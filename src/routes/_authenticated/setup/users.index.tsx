@@ -253,8 +253,8 @@ function UsersList() {
             <TableHeader>
               <TableRow>
                 <TableHead>Usuario</TableHead>
-                <TableHead>Rol</TableHead>
-                <TableHead className="text-right">Clientes</TableHead>
+                <TableHead>Código ERP</TableHead>
+                <TableHead>Capacidades</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
@@ -276,55 +276,111 @@ function UsersList() {
                   </TableCell>
                 </TableRow>
               )}
-              {filtered.map((u) => (
-                <TableRow key={u.user_id}>
-                  <TableCell className="font-medium">
-                    <Link
-                      to="/setup/users/$userId"
-                      params={{ userId: u.user_id }}
-                      className="hover:underline"
-                    >
-                      {u.full_name}
-                    </Link>
-                    <span className="block text-xs text-muted-foreground">{u.email}</span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm">{roleLabel(u.role)}</span>
-                      {u.can_create_agreements && u.role === "platform_user" && (
-                        <Badge color="info">Crea acuerdos</Badge>
+              {filtered.map((u) => {
+                const issues = getUserIssues(u);
+                const isSuper = u.role === "super_admin";
+                const hasZeroClients = !isSuper && u.client_count === 0;
+                const incompleteCreator =
+                  !isSuper && u.can_create_agreements && u.client_count === 0;
+                return (
+                  <TableRow key={u.user_id}>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        <Link
+                          to="/setup/users/$userId"
+                          params={{ userId: u.user_id }}
+                          className="hover:underline"
+                        >
+                          {u.full_name}
+                        </Link>
+                        {isSuper && <Badge color="info">Super admin</Badge>}
+                        {issues.length > 0 && (
+                          <AlertTriangle
+                            className="h-4 w-4 text-amber-600"
+                            aria-label={issues.join(" · ")}
+                          >
+                            <title>{issues.join(" · ")}</title>
+                          </AlertTriangle>
+                        )}
+                      </div>
+                      <span className="block text-xs text-muted-foreground">{u.email}</span>
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {u.erp_user_code ? u.erp_user_code : <span className="text-muted-foreground">—</span>}
+                    </TableCell>
+                    <TableCell>
+                      {isSuper ? (
+                        <span className="text-sm text-muted-foreground">Acceso total</span>
+                      ) : (
+                        <div className="flex flex-wrap items-center gap-2">
+                          {u.can_create_agreements && (
+                            <Badge color={incompleteCreator ? "warning" : "info"}>
+                              Crea acuerdos
+                            </Badge>
+                          )}
+                          {hasZeroClients ? (
+                            <span className="text-xs text-amber-700">Sin clientes</span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">
+                              {u.client_count === 1 ? "1 cliente" : `${u.client_count} clientes`}
+                            </span>
+                          )}
+                        </div>
                       )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {u.role === "super_admin" ? "Todos" : u.client_count}
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge
-                      status={u.status === "active" ? "active" : "neutral"}
-                      label={u.status === "active" ? "Activo" : "Inactivo"}
-                    />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button asChild size="sm" variant="ghost">
-                        <Link to="/setup/users/$userId" params={{ userId: u.user_id }}>
-                          Ver
-                        </Link>
-                      </Button>
-                      <Button asChild size="sm" variant="ghost">
-                        <Link to="/setup/users/$userId/edit" params={{ userId: u.user_id }}>
-                          Editar
-                        </Link>
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge
+                        status={u.status === "active" ? "active" : "neutral"}
+                        label={u.status === "active" ? "Activo" : "Inactivo"}
+                      />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button asChild size="sm" variant="ghost">
+                          <Link to="/setup/users/$userId" params={{ userId: u.user_id }}>
+                            Ver
+                          </Link>
+                        </Button>
+                        <Button asChild size="sm" variant="ghost">
+                          <Link to="/setup/users/$userId/edit" params={{ userId: u.user_id }}>
+                            Editar
+                          </Link>
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>
       </div>
     </div>
   );
+}
+
+type UserRow = {
+  user_id: string;
+  full_name: string | null;
+  email: string | null;
+  role: string;
+  status: string;
+  can_create_agreements: boolean | null;
+  erp_user_code: string | null;
+  client_count: number;
+};
+
+function getUserIssues(u: UserRow): string[] {
+  const issues: string[] = [];
+  if (u.role === "platform_user") {
+    if (u.can_create_agreements && u.client_count === 0) {
+      issues.push("Puede crear acuerdos pero no tiene clientes asignados");
+    } else if (u.client_count === 0) {
+      issues.push("Sin clientes asignados");
+    }
+  }
+  if (u.status === "inactive" && u.client_count > 0) {
+    issues.push("Usuario inactivo con accesos existentes");
+  }
+  return issues;
 }
