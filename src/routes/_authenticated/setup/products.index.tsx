@@ -292,7 +292,8 @@ function ProductsList() {
               {!isError && filtered.map((p) => (
                 <TableRow key={p.id}>
                   <TableCell>
-                    <div className="font-mono text-xs text-muted-foreground">{p.sku}</div>
+                    <div className="font-mono text-sm text-muted-foreground">{p.sku}</div>
+
                     <Link
                       to="/setup/products/$productId"
                       params={{ productId: p.id }}
