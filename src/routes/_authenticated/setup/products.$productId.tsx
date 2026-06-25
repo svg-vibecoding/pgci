@@ -58,16 +58,19 @@ function ProductDetail() {
     },
   });
 
-  const backBtn = (
-    <Button asChild size="sm" variant="ghost">
-      <Link to="/setup/products"><ArrowLeft className="mr-1 h-4 w-4" /> Volver a Productos</Link>
-    </Button>
+  const backLink = (
+    <Link
+      to="/setup/products"
+      className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+    >
+      <ArrowLeft className="h-3.5 w-3.5" /> Volver a Productos
+    </Link>
   );
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div>{backBtn}</div>
+      <div className="-mt-6 space-y-5">
+        {backLink}
         <p className="text-sm text-muted-foreground">Cargando producto…</p>
       </div>
     );
@@ -75,8 +78,8 @@ function ProductDetail() {
 
   if (isError) {
     return (
-      <div className="space-y-6">
-        <div>{backBtn}</div>
+      <div className="-mt-6 space-y-5">
+        {backLink}
         <p className="text-sm text-destructive">No fue posible cargar el producto. Intenta nuevamente.</p>
       </div>
     );
@@ -84,8 +87,8 @@ function ProductDetail() {
 
   if (!data) {
     return (
-      <div className="space-y-6">
-        <div>{backBtn}</div>
+      <div className="-mt-6 space-y-5">
+        {backLink}
         <p className="text-sm text-muted-foreground">Producto no encontrado o sin acceso.</p>
       </div>
     );
@@ -94,23 +97,29 @@ function ProductDetail() {
   const brand = data.commercial_brand || data.erp_brand || "—";
   const updatedAt = data.updated_at ? new Date(data.updated_at).toLocaleString("es-CO") : "—";
   const createdAt = data.created_at ? new Date(data.created_at).toLocaleString("es-CO") : "—";
+  const isActive = data.status === "active";
 
   return (
-    <div className="space-y-6">
-      <div>{backBtn}</div>
+    <div className="-mt-6 space-y-5">
+      {backLink}
 
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-1">
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
           <p className="font-mono text-xs text-muted-foreground">{val(data.sku)}</p>
-          <h1 className="text-2xl font-bold tracking-tight">{val(data.erp_description)}</h1>
-          <p className="text-sm text-muted-foreground">
-            Marca: <span className="text-foreground">{brand}</span> · Última actualización: <span className="text-foreground">{updatedAt}</span>
-          </p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight">{val(data.erp_description)}</h1>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <StatusBadge
+              status={isActive ? "active" : "neutral"}
+              label={isActive ? "Activo" : "Inactivo"}
+            />
+            <span className="text-xs text-muted-foreground">
+              Marca: <span className="font-medium text-foreground">{brand}</span>
+            </span>
+            <span className="text-xs text-muted-foreground">
+              Actualizado: <span className="font-medium text-foreground">{updatedAt}</span>
+            </span>
+          </div>
         </div>
-        <StatusBadge
-          status={data.status === "active" ? "active" : "neutral"}
-          label={data.status === "active" ? "Activo" : "Inactivo"}
-        />
       </header>
 
       <Card>
