@@ -155,7 +155,7 @@ function ImportPim() {
                   <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
                     {diff.errors.slice(0, 50).map((e) => (
                       <li key={e.rowNumber}>
-                        Fila {e.rowNumber}: {e.error}
+                        Fila {e.rowNumber}: {e.errors.map((er) => er.error).join(" · ")}
                       </li>
                     ))}
                   </ul>
