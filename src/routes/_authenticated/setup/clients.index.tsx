@@ -122,6 +122,26 @@ function ClientsList() {
     { key: "withAgreements", label: "Con acuerdos", value: withAgreementsCount },
   ];
 
+  const cardLabelByKey: Record<CardKey, string> = {
+    all: "Clientes",
+    holdings: "Holdings",
+    direct: "Directos",
+    withAgreements: "Con acuerdos",
+  };
+
+  const hasActiveFilters =
+    activeCard !== "all" ||
+    statusF !== "all" ||
+    holdingRelF !== "all" ||
+    search.trim() !== "";
+
+  const clearFilters = () => {
+    setActiveCard("all");
+    setStatusF("all");
+    setHoldingRelF("all");
+    setSearch("");
+  };
+
   return (
     <div className="space-y-6">
       <header className="flex items-center justify-between">
