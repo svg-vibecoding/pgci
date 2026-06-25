@@ -19,7 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { StatusBadge } from "@/components/sumatec";
+import { StatusBadge, Chip } from "@/components/sumatec";
 import { Upload, Download, ChevronDown, Search } from "lucide-react";
 import { exportProductsXlsx } from "@/lib/product-export";
 
@@ -216,63 +216,106 @@ function ProductsList() {
         </div>
       </div>
 
-      <div className="rounded-lg border border-border bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Producto</TableHead>
-              <TableHead>Marca</TableHead>
-              <TableHead className="text-center">Acuerdos</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead>Última actualización</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading && (
-              <TableRow><TableCell colSpan={5} className="text-center text-sm text-muted-foreground">Cargando…</TableCell></TableRow>
-            )}
-            {!isLoading && isError && (
+      <div className="space-y-2">
+        {hasFilters && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <p className="text-sm text-muted-foreground">
+              {filtered.length} de {totalCount} {totalCount === 1 ? "producto" : "productos"}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {activeCard !== "all" && (
+                <Chip
+                  size="small"
+                  variant="soft"
+                  color="neutral"
+                  onRemove={() => selectCard("all")}
+                >
+                  {activeCard === "active" ? "Activos" : activeCard === "inactive" ? "Inactivos" : "Con acuerdos"}
+                </Chip>
+              )}
+              {search.trim() && (
+                <Chip
+                  size="small"
+                  variant="soft"
+                  color="neutral"
+                  onRemove={() => setSearch("")}
+                >
+                  Búsqueda: {search.trim()}
+                </Chip>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setSearch("");
+                setStatusF("all");
+                setWithAgreementsOnly(false);
+              }}
+              className="text-sm font-medium text-primary hover:underline"
+            >
+              Limpiar filtros
+            </button>
+          </div>
+        )}
+
+        <div className="rounded-lg border border-border bg-card">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={5} className="py-8 text-center text-sm text-destructive">
-                  No fue posible cargar el catálogo de productos. Intenta de nuevo más tarde.
-                </TableCell>
+                <TableHead>Producto</TableHead>
+                <TableHead>Marca</TableHead>
+                <TableHead className="text-center">Acuerdos</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead>Última actualización</TableHead>
               </TableRow>
-            )}
-            {!isLoading && !isError && filtered.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">
-                  {all.length === 0
-                    ? "Aún no hay productos en el PIM. Impórtalos desde archivo para empezar."
-                    : "No hay productos que coincidan con los filtros."}
-                </TableCell>
-              </TableRow>
-            )}
-            {!isError && filtered.map((p) => (
-              <TableRow key={p.id}>
-                <TableCell>
-                  <div className="font-mono text-xs text-muted-foreground">{p.sku}</div>
-                  <Link
-                    to="/setup/products/$productId"
-                    params={{ productId: p.id }}
-                    className="hover:underline"
-                  >
-                    {p.erp_description}
-                  </Link>
-                </TableCell>
-                <TableCell className="text-muted-foreground">{getBrand(p)}</TableCell>
-                <TableCell className="text-center font-mono text-sm">
-                  {agreementCounts?.get(p.id) ?? 0}
-                </TableCell>
-                <TableCell>
-                  <StatusBadge status={p.status === "active" ? "active" : "neutral"} label={p.status === "active" ? "Activo" : "Inactivo"} />
-                </TableCell>
-                <TableCell className="text-muted-foreground text-xs">
-                  {p.updated_at ? new Date(p.updated_at).toLocaleDateString("es-CO") : "—"}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {isLoading && (
+                <TableRow><TableCell colSpan={5} className="text-center text-sm text-muted-foreground">Cargando…</TableCell></TableRow>
+              )}
+              {!isLoading && isError && (
+                <TableRow>
+                  <TableCell colSpan={5} className="py-8 text-center text-sm text-destructive">
+                    No fue posible cargar el catálogo de productos. Intenta de nuevo más tarde.
+                  </TableCell>
+                </TableRow>
+              )}
+              {!isLoading && !isError && filtered.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">
+                    {all.length === 0
+                      ? "Aún no hay productos en el PIM. Impórtalos desde archivo para empezar."
+                      : "No hay productos que coincidan con los filtros."}
+                  </TableCell>
+                </TableRow>
+              )}
+              {!isError && filtered.map((p) => (
+                <TableRow key={p.id}>
+                  <TableCell>
+                    <div className="font-mono text-xs text-muted-foreground">{p.sku}</div>
+                    <Link
+                      to="/setup/products/$productId"
+                      params={{ productId: p.id }}
+                      className="hover:underline"
+                    >
+                      {p.erp_description}
+                    </Link>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">{getBrand(p)}</TableCell>
+                  <TableCell className="text-center font-mono text-sm">
+                    {agreementCounts?.get(p.id) ?? 0}
+                  </TableCell>
+                  <TableCell>
+                    <StatusBadge status={p.status === "active" ? "active" : "neutral"} label={p.status === "active" ? "Activo" : "Inactivo"} />
+                  </TableCell>
+                  <TableCell className="text-muted-foreground text-xs">
+                    {p.updated_at ? new Date(p.updated_at).toLocaleDateString("es-CO") : "—"}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   );
