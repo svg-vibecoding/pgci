@@ -199,21 +199,6 @@ function ClientsList() {
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="status-select" className="text-xs text-muted-foreground">
-            Estado
-          </label>
-          <Select value={statusF} onValueChange={(v) => setStatusF(v as StatusFilter)}>
-            <SelectTrigger id="status-select" className="w-44">
-              <SelectValue placeholder="Estado" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="active">Activos</SelectItem>
-              <SelectItem value="inactive">Inactivos</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex flex-col gap-1.5">
           <label htmlFor="holding-rel-select" className="text-xs text-muted-foreground">
             Relación con holding
           </label>
@@ -225,6 +210,21 @@ function ClientsList() {
               <SelectItem value="all">Todos</SelectItem>
               <SelectItem value="linked">Asociados a holding</SelectItem>
               <SelectItem value="unlinked">Sin holding</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="status-select" className="text-xs text-muted-foreground">
+            Estado
+          </label>
+          <Select value={statusF} onValueChange={(v) => setStatusF(v as StatusFilter)}>
+            <SelectTrigger id="status-select" className="w-44">
+              <SelectValue placeholder="Estado" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="active">Activos</SelectItem>
+              <SelectItem value="inactive">Inactivos</SelectItem>
             </SelectContent>
           </Select>
         </div>
