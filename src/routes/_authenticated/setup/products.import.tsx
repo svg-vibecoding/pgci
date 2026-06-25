@@ -44,12 +44,19 @@ export const Route = createFileRoute("/_authenticated/setup/products/import")({
 });
 
 type FinalSummary = {
+  status: "confirmed" | "failed";
+  executedByEmail: string | null;
+  executedAt: string;
+  fileName: string | null;
+  totalRows: number;
   created: number;
   updated: number;
   unchanged: number;
   errors: number;
+  duplicateSkus: number;
   inactivated: number;
   cleared: number;
+  errorMessage?: string;
 };
 
 function ImportPim() {
@@ -61,6 +68,8 @@ function ImportPim() {
   const [fileError, setFileError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [finalSummary, setFinalSummary] = useState<FinalSummary | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
+
 
   const inactivations: Inactivation[] = useMemo(
     () => (diff ? getInactivations(diff) : []),
