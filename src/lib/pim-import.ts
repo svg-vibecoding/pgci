@@ -429,3 +429,67 @@ export function buildUpsertPayload(
   }
   return payload as Partial<PimRow> & { sku: string };
 }
+
+// ----------------------------------------------------------------------------
+// Etiquetas UI y derivaciones puras del diff (para previsualización)
+// ----------------------------------------------------------------------------
+
+export const FIELD_LABELS: Record<PimField, string> = {
+  sku: "Código Jaivaná",
+  erp_description: "Descripción Jaivaná",
+  commercial_description: "Descripción comercial",
+  erp_brand: "Marca Jaivaná",
+  commercial_brand: "Marca",
+  brand_reference: "Referencia",
+  product_classification: "Clasificación",
+  erp_product_category_n1: "Línea",
+  erp_product_category_n2: "Grupo",
+  erp_product_category_n3: "Subgrupo",
+  commercial_unit: "Unidad",
+  status: "Estado",
+};
+
+export function formatFieldValue(field: PimField, value: unknown): string {
+  if (value === null || value === undefined || value === "") return "—";
+  if (field === "status") {
+    if (value === "active") return "Activo";
+    if (value === "inactive") return "Inactivo";
+  }
+  return String(value);
+}
+
+export type Inactivation = { sku: string; erp_description: string };
+
+export function getInactivations(diff: DiffGroups): Inactivation[] {
+  const out: Inactivation[] = [];
+  for (const u of diff.toUpdate) {
+    if (u.current.status === "active" && u.next.status === "inactive") {
+      out.push({ sku: u.next.sku, erp_description: u.next.erp_description });
+    }
+  }
+  return out;
+}
+
+export type ClearedField = {
+  sku: string;
+  field: PimField;
+  before: string;
+};
+
+export function getClearedFields(diff: DiffGroups): ClearedField[] {
+  const presentSet = new Set<PimField>(diff.presentColumns);
+  const out: ClearedField[] = [];
+  for (const u of diff.toUpdate) {
+    for (const f of OPTIONAL_FIELDS) {
+      if (!presentSet.has(f)) continue;
+      const before = u.current[f];
+      const after = u.next[f];
+      const beforeStr = before === null || before === undefined ? "" : String(before);
+      if (after === null && beforeStr.length > 0) {
+        out.push({ sku: u.next.sku, field: f, before: beforeStr });
+      }
+    }
+  }
+  return out;
+}
+
