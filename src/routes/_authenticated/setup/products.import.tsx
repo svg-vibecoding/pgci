@@ -610,6 +610,16 @@ function ImportPim() {
   );
 }
 
+function Meta({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-border bg-muted/40 px-3 py-2">
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className="text-sm font-medium text-foreground break-words">{value}</dd>
+    </div>
+  );
+}
+
+
 function Stat({
   label,
   value,
