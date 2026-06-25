@@ -20,7 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge, StatusBadge } from "@/components/sumatec";
+import { Badge, Chip, StatusBadge } from "@/components/sumatec";
 import { Plus, Search } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/setup/clients/")({
@@ -122,6 +122,26 @@ function ClientsList() {
     { key: "withAgreements", label: "Con acuerdos", value: withAgreementsCount },
   ];
 
+  const cardLabelByKey: Record<CardKey, string> = {
+    all: "Clientes",
+    holdings: "Holdings",
+    direct: "Directos",
+    withAgreements: "Con acuerdos",
+  };
+
+  const hasActiveFilters =
+    activeCard !== "all" ||
+    statusF !== "all" ||
+    holdingRelF !== "all" ||
+    search.trim() !== "";
+
+  const clearFilters = () => {
+    setActiveCard("all");
+    setStatusF("all");
+    setHoldingRelF("all");
+    setSearch("");
+  };
+
   return (
     <div className="space-y-6">
       <header className="flex items-center justify-between">
@@ -168,7 +188,7 @@ function ClientsList() {
         })}
       </div>
 
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-3 items-end">
         <div className="relative w-full md:w-[calc(50%-0.375rem)]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -178,22 +198,79 @@ function ClientsList() {
             className="w-full pl-9"
           />
         </div>
-        <Select value={statusF} onValueChange={(v) => setStatusF(v as StatusFilter)}>
-          <SelectTrigger className="w-44"><SelectValue placeholder="Estado" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="active">Activos</SelectItem>
-            <SelectItem value="inactive">Inactivos</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={holdingRelF} onValueChange={(v) => setHoldingRelF(v as HoldingRelFilter)}>
-          <SelectTrigger className="w-56"><SelectValue placeholder="Relación con holding" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="linked">Asociados a holding</SelectItem>
-            <SelectItem value="unlinked">Sin holding</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="status-select" className="text-xs text-muted-foreground">
+            Estado
+          </label>
+          <Select value={statusF} onValueChange={(v) => setStatusF(v as StatusFilter)}>
+            <SelectTrigger id="status-select" className="w-44">
+              <SelectValue placeholder="Estado" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="active">Activos</SelectItem>
+              <SelectItem value="inactive">Inactivos</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="holding-rel-select" className="text-xs text-muted-foreground">
+            Relación con holding
+          </label>
+          <Select value={holdingRelF} onValueChange={(v) => setHoldingRelF(v as HoldingRelFilter)}>
+            <SelectTrigger id="holding-rel-select" className="w-56">
+              <SelectValue placeholder="Relación con holding" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="linked">Asociados a holding</SelectItem>
+              <SelectItem value="unlinked">Sin holding</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="text-sm text-muted-foreground">
+            {hasActiveFilters
+              ? `Mostrando ${filtered.length} de ${totalCount} ${totalCount === 1 ? "cliente" : "clientes"}`
+              : `Mostrando ${totalCount} ${totalCount === 1 ? "cliente" : "clientes"}`}
+          </p>
+          {hasActiveFilters && (
+            <>
+              <div className="flex flex-wrap gap-2">
+                {activeCard !== "all" && (
+                  <Chip size="small" variant="soft" color="neutral">
+                    {cardLabelByKey[activeCard]}
+                  </Chip>
+                )}
+                {statusF !== "all" && (
+                  <Chip size="small" variant="soft" color="neutral">
+                    {statusF === "active" ? "Activos" : "Inactivos"}
+                  </Chip>
+                )}
+                {holdingRelF !== "all" && (
+                  <Chip size="small" variant="soft" color="neutral">
+                    {holdingRelF === "linked" ? "Asociados a holding" : "Sin holding"}
+                  </Chip>
+                )}
+                {search.trim() && (
+                  <Chip size="small" variant="soft" color="neutral">
+                    Búsqueda: {search.trim()}
+                  </Chip>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="text-sm font-medium text-primary hover:underline"
+              >
+                Limpiar filtros
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="rounded-lg border border-border bg-card">
