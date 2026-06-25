@@ -25,6 +25,7 @@ function ImportPim() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [parsed, setParsed] = useState<ParsedRow[] | null>(null);
+  const [presentColumns, setPresentColumns] = useState<PimField[]>([]);
   const [diff, setDiff] = useState<DiffGroups | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -35,9 +36,9 @@ function ImportPim() {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
-      const rows = await parsePimFile(file);
+      const { rows, presentColumns: cols } = await parsePimFile(file);
       const skus = rows.filter((r) => r.data).map((r) => r.data!.sku);
-      const existing: any[] = [];
+      const existing: Array<Record<string, unknown>> = [];
       const CHUNK = 200;
       for (let i = 0; i < skus.length; i += CHUNK) {
         const slice = skus.slice(i, i + CHUNK);
@@ -46,10 +47,11 @@ function ImportPim() {
           .select("*")
           .in("sku", slice);
         if (error) throw error;
-        existing.push(...(data ?? []));
+        existing.push(...((data ?? []) as Array<Record<string, unknown>>));
       }
       setParsed(rows);
-      setDiff(diffAgainstExisting(rows, existing));
+      setPresentColumns(cols);
+      setDiff(diffAgainstExisting(rows, existing, cols));
     } catch (err: any) {
       if (err?.message === "FORMAT") setFileError("El archivo no tiene el formato esperado para PIM.");
       else setFileError("No fue posible importar el archivo. Revisa el formato e intenta nuevamente.");
@@ -60,11 +62,12 @@ function ImportPim() {
     mutationFn: async () => {
       if (!diff) return;
       const all = [...diff.toCreate, ...diff.toUpdate.map((u) => u.next)];
+      const payloads = all.map((r) => buildUpsertPayload(r, presentColumns));
       const CHUNK = 200;
-      for (let i = 0; i < all.length; i += CHUNK) {
+      for (let i = 0; i < payloads.length; i += CHUNK) {
         const { error } = await supabase
           .from("products")
-          .upsert(all.slice(i, i + CHUNK), { onConflict: "sku" });
+          .upsert(payloads.slice(i, i + CHUNK), { onConflict: "sku" });
         if (error) throw error;
       }
     },
@@ -72,6 +75,7 @@ function ImportPim() {
       qc.invalidateQueries({ queryKey: ["products"] });
       setSuccess("Importación completada correctamente.");
       setParsed(null);
+      setPresentColumns([]);
       setDiff(null);
     },
     onError: () =>
