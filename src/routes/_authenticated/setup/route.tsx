@@ -22,7 +22,7 @@ const NAV: NavItem[] = [
   { to: "/setup", label: "Inicio", icon: Home, exact: true },
   { to: "/setup/clients", label: "Clientes", icon: Building2 },
   { to: "/setup/products", label: "Productos", icon: Package },
-  { to: "/setup/users", label: "Usuarios", icon: Users, disabled: true },
+  { to: "/setup/users", label: "Usuarios", icon: Users },
 ];
 
 function SetupLayout() {

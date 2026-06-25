@@ -1,0 +1,25 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
+
+export const Route = createFileRoute("/_authenticated/setup/users/$userId/edit")({
+  head: () => ({ meta: [{ title: "Editar usuario · Setup · PGCI" }] }),
+  component: EditUserPlaceholder,
+});
+
+function EditUserPlaceholder() {
+  const { userId } = Route.useParams();
+  return (
+    <div className="space-y-6">
+      <Button asChild variant="ghost" size="sm">
+        <Link to="/setup/users/$userId" params={{ userId }}>
+          <ArrowLeft className="mr-2 h-4 w-4" /> Volver al detalle
+        </Link>
+      </Button>
+      <h1 className="text-2xl font-bold tracking-tight">Editar usuario</h1>
+      <p className="text-sm text-muted-foreground">
+        Formulario disponible en el siguiente paso.
+      </p>
+    </div>
+  );
+}
