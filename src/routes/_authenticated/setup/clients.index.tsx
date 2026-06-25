@@ -19,18 +19,24 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge, StatusBadge } from "@/components/sumatec";
-import { Plus } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/setup/clients/")({
   head: () => ({ meta: [{ title: "Clientes · Setup · PGCI" }] }),
   component: ClientsList,
 });
 
+type CardKey = "all" | "holdings" | "direct" | "withAgreements";
+type StatusFilter = "all" | "active" | "inactive";
+type HoldingRelFilter = "all" | "linked" | "unlinked";
+
 function ClientsList() {
   const [search, setSearch] = useState("");
-  const [statusF, setStatusF] = useState<"all" | "active" | "inactive">("all");
-  const [typeF, setTypeF] = useState<"all" | "holding" | "direct">("all");
+  const [statusF, setStatusF] = useState<StatusFilter>("all");
+  const [holdingRelF, setHoldingRelF] = useState<HoldingRelFilter>("all");
+  const [activeCard, setActiveCard] = useState<CardKey>("all");
 
   const { data, isLoading } = useQuery({
     queryKey: ["clients", "list"],
@@ -76,10 +82,29 @@ function ClientsList() {
     },
   });
 
+  const all = data ?? [];
 
-  const filtered = (data ?? []).filter((c) => {
+  const totalCount = all.length;
+  const holdingsCount = all.filter((c) => c.type === "holding").length;
+  const directCount = all.filter((c) => c.type === "direct").length;
+  const withAgreementsCount = all.filter((c) => c.agreement_count > 0).length;
+
+  const filtered = all.filter((c) => {
+    // Card filter
+    if (activeCard === "holdings" && c.type !== "holding") return false;
+    if (activeCard === "direct" && c.type !== "direct") return false;
+    if (activeCard === "withAgreements" && c.agreement_count === 0) return false;
+
+    // Status filter
     if (statusF !== "all" && c.status !== statusF) return false;
-    if (typeF !== "all" && c.type !== typeF) return false;
+
+    // Holding relation filter (applies only to direct clients)
+    if (holdingRelF === "linked") {
+      if (c.type !== "direct" || !c.parent_client_id) return false;
+    } else if (holdingRelF === "unlinked") {
+      if (c.type !== "direct" || c.parent_client_id) return false;
+    }
+
     if (search) {
       const s = search.toLowerCase();
       const hay = [c.commercial_name, c.legal_name, c.erp_name, c.tax_id]
@@ -89,6 +114,13 @@ function ClientsList() {
     }
     return true;
   });
+
+  const summaryCards: { key: CardKey; label: string; value: number }[] = [
+    { key: "all", label: "Clientes", value: totalCount },
+    { key: "holdings", label: "Holdings", value: holdingsCount },
+    { key: "direct", label: "Directos", value: directCount },
+    { key: "withAgreements", label: "Con acuerdos", value: withAgreementsCount },
+  ];
 
   return (
     <div className="space-y-6">
@@ -106,27 +138,60 @@ function ClientsList() {
         </Button>
       </header>
 
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {summaryCards.map((c) => {
+          const selected = activeCard === c.key;
+          return (
+            <button
+              key={c.key}
+              type="button"
+              onClick={() => setActiveCard(c.key)}
+              aria-pressed={selected}
+              className="text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
+            >
+              <Card
+                className={
+                  selected
+                    ? "border-l-2 border-l-primary/40 shadow-sm transition-colors"
+                    : "hover:border-muted-foreground/20 hover:bg-muted/30 transition-colors"
+                }
+              >
+                <CardContent className="p-4">
+                  <div className="text-xs text-muted-foreground">{c.label}</div>
+                  <div className="mt-1 text-2xl font-semibold tracking-tight">
+                    {isLoading ? "—" : c.value}
+                  </div>
+                </CardContent>
+              </Card>
+            </button>
+          );
+        })}
+      </div>
+
       <div className="flex flex-wrap gap-3">
-        <Input
-          placeholder="Buscar por nombre o NIT…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-xs"
-        />
-        <Select value={statusF} onValueChange={(v) => setStatusF(v as any)}>
-          <SelectTrigger className="w-40"><SelectValue placeholder="Estado" /></SelectTrigger>
+        <div className="relative w-full md:w-[calc(50%-0.375rem)]">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nombre o NIT…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9"
+          />
+        </div>
+        <Select value={statusF} onValueChange={(v) => setStatusF(v as StatusFilter)}>
+          <SelectTrigger className="w-44"><SelectValue placeholder="Estado" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos los estados</SelectItem>
-            <SelectItem value="active">Activo</SelectItem>
-            <SelectItem value="inactive">Inactivo</SelectItem>
+            <SelectItem value="all">Todos</SelectItem>
+            <SelectItem value="active">Activos</SelectItem>
+            <SelectItem value="inactive">Inactivos</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={typeF} onValueChange={(v) => setTypeF(v as any)}>
-          <SelectTrigger className="w-40"><SelectValue placeholder="Tipo" /></SelectTrigger>
+        <Select value={holdingRelF} onValueChange={(v) => setHoldingRelF(v as HoldingRelFilter)}>
+          <SelectTrigger className="w-56"><SelectValue placeholder="Relación con holding" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos los tipos</SelectItem>
-            <SelectItem value="holding">Holding</SelectItem>
-            <SelectItem value="direct">Directo</SelectItem>
+            <SelectItem value="all">Todos</SelectItem>
+            <SelectItem value="linked">Asociados a holding</SelectItem>
+            <SelectItem value="unlinked">Sin holding</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -150,7 +215,7 @@ function ClientsList() {
             {!isLoading && filtered.length === 0 && (
               <TableRow>
                 <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">
-                  {data?.length === 0
+                  {all.length === 0
                     ? "Aún no hay clientes creados. Crea los clientes piloto para continuar."
                     : "No hay clientes que coincidan con los filtros."}
                 </TableCell>
