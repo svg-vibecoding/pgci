@@ -188,7 +188,7 @@ function ProductsList() {
               <Card
                 className={
                   selected
-                    ? "border-l-2 border-l-primary/40 bg-primary/[0.03] shadow-sm transition-colors"
+                    ? "border-l-2 border-l-primary/40 shadow-sm transition-colors"
                     : "hover:border-muted-foreground/20 hover:bg-muted/30 transition-colors"
                 }
               >
