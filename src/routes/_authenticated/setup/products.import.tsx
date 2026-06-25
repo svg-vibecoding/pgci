@@ -67,7 +67,7 @@ function ImportPim() {
       for (let i = 0; i < payloads.length; i += CHUNK) {
         const { error } = await supabase
           .from("products")
-          .upsert(payloads.slice(i, i + CHUNK), { onConflict: "sku" });
+          .upsert(payloads.slice(i, i + CHUNK) as never, { onConflict: "sku" });
         if (error) throw error;
       }
     },
