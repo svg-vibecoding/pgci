@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -61,7 +61,6 @@ const roleLabel = (r: string) =>
 
 function UserDetail() {
   const { userId } = Route.useParams();
-  const navigate = useNavigate();
   const qc = useQueryClient();
   const { isSuperAdmin } = useIsSuperAdmin();
   const [confirmOpen, setConfirmOpen] = useState(false);
