@@ -19,7 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { StatusBadge } from "@/components/sumatec";
+import { StatusBadge, Chip } from "@/components/sumatec";
 import { Upload, Download, ChevronDown, Search } from "lucide-react";
 import { exportProductsXlsx } from "@/lib/product-export";
 
