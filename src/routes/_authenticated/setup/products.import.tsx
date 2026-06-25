@@ -86,6 +86,7 @@ function ImportPim() {
     setDiff(null);
     setFileError(null);
     setFinalSummary(null);
+    setFileName(null);
   }
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -93,6 +94,7 @@ function ImportPim() {
     setFinalSummary(null);
     const file = e.target.files?.[0];
     if (!file) return;
+    setFileName(file.name);
     try {
       const { rows, presentColumns: cols } = await parsePimFile(file);
       const skus = rows.filter((r) => r.data).map((r) => r.data!.sku);
@@ -133,14 +135,21 @@ function ImportPim() {
         if (error) throw error;
       }
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       if (!diff) return;
       qc.invalidateQueries({ queryKey: ["products"] });
+      const { data: userData } = await supabase.auth.getUser();
       setFinalSummary({
+        status: "confirmed",
+        executedByEmail: userData?.user?.email ?? null,
+        executedAt: new Date().toISOString(),
+        fileName,
+        totalRows: parsed?.length ?? 0,
         created: diff.toCreate.length,
         updated: diff.toUpdate.length,
         unchanged: diff.unchanged.length,
         errors: diff.errors.length,
+        duplicateSkus: 0,
         inactivated: inactivations.length,
         cleared: clearedFields.length,
       });
@@ -148,12 +157,31 @@ function ImportPim() {
       setPresentColumns([]);
       setDiff(null);
       setConfirmOpen(false);
+      setFileName(null);
     },
-    onError: () => {
+    onError: async (err: any) => {
+      if (!diff) return;
       setConfirmOpen(false);
-      setFileError(
-        "No fue posible importar el archivo. Revisa el formato e intenta nuevamente.",
-      );
+      const { data: userData } = await supabase.auth.getUser();
+      setFinalSummary({
+        status: "failed",
+        executedByEmail: userData?.user?.email ?? null,
+        executedAt: new Date().toISOString(),
+        fileName,
+        totalRows: parsed?.length ?? 0,
+        created: diff.toCreate.length,
+        updated: diff.toUpdate.length,
+        unchanged: diff.unchanged.length,
+        errors: diff.errors.length,
+        duplicateSkus: diff.duplicateSkus.length,
+        inactivated: inactivations.length,
+        cleared: clearedFields.length,
+        errorMessage:
+          err?.message ??
+          "No fue posible aplicar la importación. Revisa el archivo e intenta nuevamente.",
+      });
+      // Conservamos parsed / diff / presentColumns / fileName para permitir reintentar
+      // sin tener que volver a cargar el archivo.
     },
   });
 
@@ -166,6 +194,7 @@ function ImportPim() {
   };
   const blocked = !!(diff && diff.duplicateSkus.length > 0);
   const hasChanges = !!(diff && diff.toCreate.length + diff.toUpdate.length > 0);
+
 
   return (
     <div className="space-y-6">
