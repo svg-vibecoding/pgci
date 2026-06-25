@@ -127,13 +127,12 @@ function ProductDetail() {
           {FIELDS.map((f) => {
             const raw = (data as Record<string, unknown>)[f.k];
             const display = f.k === "commercial_brand" ? brand : val(raw);
-            const statusDisplay = data.status === "active" ? "Activo" : "Inactivo";
             return (
               <div key={f.k}>
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   {f.l}
                 </p>
-                <p className="mt-1 text-sm">{f.k === "status" ? statusDisplay : display}</p>
+                <p className="mt-1 text-sm">{display}</p>
               </div>
             );
           })}
