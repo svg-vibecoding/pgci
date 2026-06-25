@@ -230,52 +230,67 @@ function ClientsList() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <div className="flex flex-wrap items-center gap-3">
-          <p className="text-sm text-muted-foreground">
-            {hasActiveFilters
-              ? `Mostrando ${filtered.length} de ${totalCount} ${totalCount === 1 ? "cliente" : "clientes"}`
-              : `Mostrando ${totalCount} ${totalCount === 1 ? "cliente" : "clientes"}`}
-          </p>
-          {hasActiveFilters && (
-            <>
-              <div className="flex flex-wrap gap-2">
-                {activeCard !== "all" && (
-                  <Chip size="small" variant="soft" color="neutral">
-                    {cardLabelByKey[activeCard]}
-                  </Chip>
-                )}
-                {statusF !== "all" && (
-                  <Chip size="small" variant="soft" color="neutral">
-                    {statusF === "active" ? "Activos" : "Inactivos"}
-                  </Chip>
-                )}
-                {holdingRelF !== "all" && (
-                  <Chip size="small" variant="soft" color="neutral">
-                    {holdingRelF === "linked" ? "Asociados a holding" : "Sin holding"}
-                  </Chip>
-                )}
-                {search.trim() && (
-                  <Chip size="small" variant="soft" color="neutral">
-                    Búsqueda: {search.trim()}
-                  </Chip>
-                )}
-              </div>
-              <button
-                type="button"
-                onClick={clearFilters}
-                className="text-sm font-medium text-primary hover:underline"
-              >
-                Limpiar filtros
-              </button>
-            </>
-          )}
-        </div>
-      </div>
+      <div className="space-y-2">
+        {hasActiveFilters && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <p className="text-sm text-muted-foreground">
+              {filtered.length} de {totalCount} {totalCount === 1 ? "cliente" : "clientes"}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {activeCard !== "all" && (
+                <Chip
+                  size="small"
+                  variant="soft"
+                  color="neutral"
+                  onRemove={() => setActiveCard("all")}
+                >
+                  {cardLabelByKey[activeCard]}
+                </Chip>
+              )}
+              {statusF !== "all" && (
+                <Chip
+                  size="small"
+                  variant="soft"
+                  color="neutral"
+                  onRemove={() => setStatusF("all")}
+                >
+                  {statusF === "active" ? "Activos" : "Inactivos"}
+                </Chip>
+              )}
+              {holdingRelF !== "all" && (
+                <Chip
+                  size="small"
+                  variant="soft"
+                  color="neutral"
+                  onRemove={() => setHoldingRelF("all")}
+                >
+                  {holdingRelF === "linked" ? "Asociados a holding" : "Sin holding"}
+                </Chip>
+              )}
+              {search.trim() && (
+                <Chip
+                  size="small"
+                  variant="soft"
+                  color="neutral"
+                  onRemove={() => setSearch("")}
+                >
+                  Búsqueda: {search.trim()}
+                </Chip>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="text-sm font-medium text-primary hover:underline"
+            >
+              Limpiar filtros
+            </button>
+          </div>
+        )}
 
-      <div className="rounded-lg border border-border bg-card">
-        <Table>
-          <TableHeader>
+        <div className="rounded-lg border border-border bg-card">
+          <Table>
+            <TableHeader>
               <TableRow>
                 <TableHead>Cliente</TableHead>
                 <TableHead>NIT</TableHead>
@@ -284,62 +299,63 @@ function ClientsList() {
                 <TableHead>Estado</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading && (
-              <TableRow><TableCell colSpan={6} className="text-center text-sm text-muted-foreground">Cargando…</TableCell></TableRow>
-            )}
-            {!isLoading && filtered.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">
-                  {all.length === 0
-                    ? "Aún no hay clientes creados. Crea los clientes piloto para continuar."
-                    : "No hay clientes que coincidan con los filtros."}
-                </TableCell>
-              </TableRow>
-            )}
-            {filtered.map((c) => (
-              <TableRow key={c.id}>
-                <TableCell className="font-medium">
-                  <div className="flex items-center gap-2">
-                    <Link to="/setup/clients/$clientId" params={{ clientId: c.id }} className="hover:underline">
-                      {c.display_name}
-                    </Link>
-                    {c.type === "holding" && (
-                      <Badge color="info">Holding</Badge>
+            </TableHeader>
+            <TableBody>
+              {isLoading && (
+                <TableRow><TableCell colSpan={6} className="text-center text-sm text-muted-foreground">Cargando…</TableCell></TableRow>
+              )}
+              {!isLoading && filtered.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">
+                    {all.length === 0
+                      ? "Aún no hay clientes creados. Crea los clientes piloto para continuar."
+                      : "No hay clientes que coincidan con los filtros."}
+                  </TableCell>
+                </TableRow>
+              )}
+              {filtered.map((c) => (
+                <TableRow key={c.id}>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      <Link to="/setup/clients/$clientId" params={{ clientId: c.id }} className="hover:underline">
+                        {c.display_name}
+                      </Link>
+                      {c.type === "holding" && (
+                        <Badge color="info">Holding</Badge>
+                      )}
+                    </div>
+                    {c.parent_client_id && (
+                      <span
+                        className="block text-xs text-muted-foreground truncate max-w-[260px]"
+                        title={c.parent_name ?? undefined}
+                      >
+                        {c.parent_name ?? "—"}
+                      </span>
                     )}
-                  </div>
-                  {c.parent_client_id && (
-                    <span
-                      className="block text-xs text-muted-foreground truncate max-w-[260px]"
-                      title={c.parent_name ?? undefined}
-                    >
-                      {c.parent_name ?? "—"}
-                    </span>
-                  )}
-                </TableCell>
-                <TableCell className="text-muted-foreground">{c.tax_id ?? "—"}</TableCell>
-                <TableCell className="text-right">
-                  {c.type === "holding" ? c.company_count : "—"}
-                </TableCell>
-                <TableCell className="text-right">{c.agreement_count}</TableCell>
-                <TableCell>
-                  <StatusBadge status={c.status === "active" ? "active" : "neutral"} label={c.status === "active" ? "Activo" : "Inactivo"} />
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-1">
-                    <Button asChild size="sm" variant="ghost">
-                      <Link to="/setup/clients/$clientId" params={{ clientId: c.id }}>Ver</Link>
-                    </Button>
-                    <Button asChild size="sm" variant="ghost">
-                      <Link to="/setup/clients/$clientId/edit" params={{ clientId: c.id }}>Editar</Link>
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">{c.tax_id ?? "—"}</TableCell>
+                  <TableCell className="text-right">
+                    {c.type === "holding" ? c.company_count : "—"}
+                  </TableCell>
+                  <TableCell className="text-right">{c.agreement_count}</TableCell>
+                  <TableCell>
+                    <StatusBadge status={c.status === "active" ? "active" : "neutral"} label={c.status === "active" ? "Activo" : "Inactivo"} />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-1">
+                      <Button asChild size="sm" variant="ghost">
+                        <Link to="/setup/clients/$clientId" params={{ clientId: c.id }}>Ver</Link>
+                      </Button>
+                      <Button asChild size="sm" variant="ghost">
+                        <Link to="/setup/clients/$clientId/edit" params={{ clientId: c.id }}>Editar</Link>
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   );
