@@ -318,9 +318,13 @@ function ClientAccess() {
         <p className="text-sm text-muted-foreground">
           Configura qué clientes puede ver y en cuáles puede crear acuerdos.
         </p>
-        <p className="text-xs font-medium text-foreground">
-          {assignedCount} de {totalClients} clientes asignados
+        <p className="text-sm text-muted-foreground">
+          Activa un cliente para que el usuario pueda verlo en la plataforma. Si
+          además necesita crear acuerdos para ese cliente, activa también el
+          permiso de creación — eso le permitirá iniciar nuevos acuerdos y
+          quedar como responsable de ellos.
         </p>
+        <p className="text-xs text-muted-foreground">{summaryText}</p>
       </header>
 
       <Card>
