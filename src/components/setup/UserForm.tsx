@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { cn } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -381,7 +382,14 @@ export function UserForm({
       )}
 
       {!isSuper && (
-        <div className="rounded-lg border border-border bg-card p-4">
+        <div
+          className={cn(
+            "rounded-lg border p-4 transition-colors",
+            hasNoClients
+              ? "border-muted bg-muted/60"
+              : "border-border bg-card",
+          )}
+        >
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm font-medium">Puede crear acuerdos en clientes asignados</p>
