@@ -86,7 +86,7 @@ function NewUser() {
   return (
     <>
     <CreateViewShell
-      backLink={<BackLink to="/setup/users">Volver a usuarios</BackLink>}
+      backLink={<BackLink to="/setup/users" label="Volver a usuarios" />}
       title="Crear usuario"
       description="Se generará una contraseña temporal que deberás compartir manualmente con el usuario."
     >

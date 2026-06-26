@@ -28,10 +28,11 @@ export function CreateViewShell({
   );
 }
 
-export function BackLink({
-  children,
-  ...linkProps
-}: React.ComponentProps<typeof Link>) {
+// Generic-friendly wrapper: accepts any Link props and renders the back chevron + label.
+export function BackLink(props: {
+  label: string;
+} & React.ComponentProps<typeof Link>) {
+  const { label, ...linkProps } = props;
   return (
     <Button
       asChild
@@ -39,8 +40,9 @@ export function BackLink({
       size="sm"
       className="-ml-2 h-8 px-2 text-muted-foreground"
     >
+      {/* @ts-expect-error Link generic inference is too strict for spread props */}
       <Link {...linkProps}>
-        <ArrowLeft className="mr-1.5 h-4 w-4" /> {children}
+        <ArrowLeft className="mr-1.5 h-4 w-4" /> {label}
       </Link>
     </Button>
   );
