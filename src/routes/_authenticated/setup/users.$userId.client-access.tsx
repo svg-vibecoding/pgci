@@ -120,6 +120,16 @@ function ClientAccess() {
     return filteredClients.every((c) => stateMap.get(c.id)?.assigned);
   }, [filteredClients, stateMap]);
 
+  const visibleAssignedClients = useMemo(
+    () => filteredClients.filter((c) => stateMap.get(c.id)?.assigned),
+    [filteredClients, stateMap],
+  );
+
+  const visibleAllCanCreate = useMemo(() => {
+    if (visibleAssignedClients.length === 0) return false;
+    return visibleAssignedClients.every((c) => stateMap.get(c.id)?.can_create);
+  }, [visibleAssignedClients, stateMap]);
+
   const assignedClients = useMemo(() => {
     if (!clientsQ.data) return [];
     return clientsQ.data
@@ -130,6 +140,13 @@ function ClientAccess() {
         ),
       );
   }, [clientsQ.data, stateMap]);
+
+  const summaryText = useMemo(() => {
+    if (createCount === 0) {
+      return `${assignedCount} de ${totalClients} clientes asignados · Sin permiso de creación`;
+    }
+    return `${assignedCount} de ${totalClients} clientes asignados · ${createCount} con permiso de creación`;
+  }, [assignedCount, totalClients, createCount]);
 
   const diff = useMemo(() => {
     const toInsert: string[] = [];
