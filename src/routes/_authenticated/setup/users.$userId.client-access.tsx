@@ -447,7 +447,7 @@ function ClientAccess() {
                           !st.assigned && "opacity-40",
                         )}
                       >
-                        Crear acuerdos
+                        Crear&nbsp;
                         <Switch
                           checked={st.can_create}
                           disabled={!st.assigned}
