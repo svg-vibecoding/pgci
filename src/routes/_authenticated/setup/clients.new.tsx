@@ -1,9 +1,10 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { ClientForm, emptyClient, type ClientFormValues } from "@/components/setup/ClientForm";
-import { BackLink, CreateViewShell } from "@/components/setup/CreateViewShell";
+import { BackLinkChrome, CreateViewShell } from "@/components/setup/CreateViewShell";
+import { Button } from "@/components/ui/button";
 
 const searchSchema = z.object({
   parent: z.string().uuid().optional(),

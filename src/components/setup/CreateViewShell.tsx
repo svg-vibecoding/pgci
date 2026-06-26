@@ -1,6 +1,4 @@
-import { Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import type { ReactNode } from "react";
 
 export function CreateViewShell({
@@ -28,22 +26,10 @@ export function CreateViewShell({
   );
 }
 
-// Generic-friendly wrapper: accepts any Link props and renders the back chevron + label.
-export function BackLink(props: {
-  label: string;
-} & React.ComponentProps<typeof Link>) {
-  const { label, ...linkProps } = props;
+export function BackLinkChrome({ label }: { label: string }) {
   return (
-    <Button
-      asChild
-      variant="ghost"
-      size="sm"
-      className="-ml-2 h-8 px-2 text-muted-foreground"
-    >
-      {/* @ts-expect-error Link generic inference is too strict for spread props */}
-      <Link {...linkProps}>
-        <ArrowLeft className="mr-1.5 h-4 w-4" /> {label}
-      </Link>
-    </Button>
+    <>
+      <ArrowLeft className="mr-1.5 h-4 w-4" /> {label}
+    </>
   );
 }
