@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { StatusBadge, Badge } from "@/components/sumatec";
 import { useIsSuperAdmin } from "@/hooks/use-profile";
+import { cn } from "@/lib/utils";
 import {
   ArrowLeft,
   Pencil,
@@ -25,6 +26,7 @@ import {
   Building2,
   AlertTriangle,
   Info,
+  Lock,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/setup/users/$userId/")({
@@ -47,46 +49,65 @@ function IndicatorCard({
   label,
   value,
   hint,
+  dotColor = "muted",
   tone = "default",
   tag,
+  icon,
   children,
 }: {
   label: string;
   value: React.ReactNode;
   hint?: React.ReactNode;
+  dotColor?: "primary" | "accent" | "muted";
   tone?: "default" | "warning" | "muted";
   tag?: React.ReactNode;
+  icon?: React.ReactNode;
   children?: React.ReactNode;
 }) {
+  const dotClass = {
+    primary: "bg-primary",
+    accent: "bg-accent",
+    muted: "bg-muted-foreground",
+  }[dotColor];
+
   return (
-    <div className="rounded-lg border border-border bg-card p-3">
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          {label}
-        </p>
+    <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2">
+          {icon ? (
+            <span className="text-primary">{icon}</span>
+          ) : (
+            <span className={cn("h-2 w-2 shrink-0 rounded-full", dotClass)} />
+          )}
+          <p className="suma-overline text-[10px]">{label}</p>
+        </div>
         {tag}
       </div>
-      <p
-        className={
-          tone === "muted"
-            ? "mt-1 text-xl font-semibold text-muted-foreground"
-            : "mt-1 text-xl font-semibold text-foreground"
-        }
-      >
-        {value}
-      </p>
-      {hint && (
+      <div className="mt-3">
         <p
-          className={
-            tone === "warning"
-              ? "mt-1 text-xs font-medium text-[var(--status-warning-strong)]"
-              : "mt-1 text-xs text-muted-foreground"
-          }
+          className={cn(
+            "font-body text-xl font-semibold leading-tight text-foreground",
+            tone === "muted" && "text-muted-foreground"
+          )}
         >
-          {hint}
+          {value}
         </p>
+        {hint && (
+          <p
+            className={cn(
+              "mt-1 text-xs text-muted-foreground",
+              tone === "warning" && "font-medium text-warning-strong"
+            )}
+          >
+            {hint}
+          </p>
+        )}
+      </div>
+      {children && (
+        <div className="mt-3 space-y-1 text-xs text-muted-foreground">
+          {children}
+        </div>
       )}
-      {children && <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">{children}</div>}
     </div>
   );
 }
@@ -166,23 +187,6 @@ function UserDetail() {
   const adminCount = (memberships ?? []).filter((m) => ADMIN_ROLES.has(m.role)).length;
   const participantCount = totalAgreements - adminCount;
 
-  const clientsValue = isSuper
-    ? "Acceso total"
-    : `${assignedCount} ${assignedCount === 1 ? "cliente" : "clientes"}`;
-  const clientsHint = isSuper
-    ? "Todos los clientes"
-    : assignedCount === 0
-      ? "Requiere asignación"
-      : "Cartera asignada";
-
-  const agreementsValue = isSuper
-    ? "Acceso total"
-    : `${totalAgreements} ${totalAgreements === 1 ? "acuerdo" : "acuerdos"}`;
-  const agreementsHint = isSuper
-    ? "Todos los acuerdos"
-    : totalAgreements === 0
-      ? "Sin acuerdos asignados"
-      : "En gestión";
 
   // Alerts
   const alerts: string[] = [];
@@ -266,31 +270,31 @@ function UserDetail() {
       {/* Indicadores principales */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <IndicatorCard
-          label="Cartera de clientes"
-          value={clientsValue}
-          hint={clientsHint}
+          label="Cartera"
+          value={isSuper ? "Acceso total" : `${assignedCount} ${assignedCount === 1 ? "cliente" : "clientes"}`}
+          hint={isSuper ? "Todos los clientes" : assignedCount === 0 ? "Requiere asignación" : "Cartera asignada"}
+          dotColor="primary"
           tone={!isSuper && assignedCount === 0 ? "warning" : "default"}
         />
         <IndicatorCard
-          label="Acuerdos en gestión"
-          value={agreementsValue}
-          hint={agreementsHint}
+          label="Acuerdos"
+          value={isSuper ? "Acceso total" : `${totalAgreements} ${totalAgreements === 1 ? "acuerdo" : "acuerdos"}`}
+          hint={isSuper ? "Todos los acuerdos" : totalAgreements === 0 ? "Sin acuerdos asignados" : "En gestión"}
+          dotColor="accent"
         />
         <IndicatorCard
-          label="Capacidad comercial"
+          label="Capacidad"
           value={
-            <span className="text-sm font-medium">
-              {isSuper
-                ? "Admin total"
-                : user.can_create_agreements
-                  ? "Con creación habilitada"
-                  : "Sin creación"}
-            </span>
+            isSuper
+              ? "Admin total"
+              : user.can_create_agreements
+                ? "Con creación habilitada"
+                : "Sin creación"
           }
+          hint={isSuper ? "Crea, administra y consulta" : undefined}
+          dotColor="muted"
         >
-          {isSuper ? (
-            <p>Crea, administra y consulta</p>
-          ) : (
+          {!isSuper && (
             <>
               <p>Crear acuerdos: {user.can_create_agreements ? "Sí" : "No"}</p>
               <p>Administra: {adminCount > 0 ? adminCount : "Sin acuerdos"}</p>
@@ -300,9 +304,11 @@ function UserDetail() {
         </IndicatorCard>
         <IndicatorCard
           label="Datos sensibles"
-          value={<span className="text-sm font-medium">Próximamente</span>}
+          value="Pendiente"
           hint="Costos y márgenes"
+          dotColor="muted"
           tone="muted"
+          icon={<Lock className="h-3 w-3" />}
           tag={
             <Badge color="neutral" variant="soft">
               Próximamente
