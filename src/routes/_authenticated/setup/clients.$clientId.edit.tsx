@@ -1,10 +1,11 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Info } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ClientForm, emptyClient, type ClientFormValues } from "@/components/setup/ClientForm";
-import { Badge } from "@/components/sumatec/Badge";
-import { StatusBadge } from "@/components/sumatec";
-import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { BackLinkChrome, CreateViewShell } from "@/components/setup/CreateViewShell";
 
 export const Route = createFileRoute("/_authenticated/setup/clients/$clientId/edit")({
   head: () => ({ meta: [{ title: "Editar cliente · Setup · PGCI" }] }),
@@ -70,39 +71,27 @@ function EditClient() {
     belongs_to_holding: Boolean(data.parent_client_id),
   };
 
-  const displayName = data.commercial_name?.trim() || data.legal_name;
-  const isHolding = data.type === "holding";
-  const isActive = data.status === "active";
-
   return (
-    <div className="-mt-6 space-y-5">
-      {/* Volver */}
-      <Link
-        to="/setup/clients"
-        className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" /> Volver a clientes
-      </Link>
-
-      {/* Encabezado (igual al de Detalle) */}
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{displayName}</h1>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <Badge color={isHolding ? "accent" : "neutral"} variant="soft">
-              {isHolding ? "Holding" : "Directo"}
-            </Badge>
-            <StatusBadge
-              status={isActive ? "active" : "neutral"}
-              label={isActive ? "Activo" : "Inactivo"}
-            />
-            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              · Editando
-            </span>
-          </div>
-        </div>
-      </header>
-
+    <CreateViewShell
+      backLink={
+        <Button asChild variant="ghost" size="sm" className="-ml-2 h-8 px-2 text-muted-foreground">
+          <Link to="/setup/clients/$clientId" params={{ clientId }}>
+            <BackLinkChrome label="Volver al detalle" />
+          </Link>
+        </Button>
+      }
+      title="Editar cliente"
+      description="Actualiza los datos del cliente. El tipo y la relación con holding pueden modificarse."
+    >
+      {data.status === "inactive" && (
+        <Alert variant="info" className="mb-4">
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            Este cliente está inactivo. Los cambios se guardarán, pero no aparecerá en selectores
+            hasta que lo actives.
+          </AlertDescription>
+        </Alert>
+      )}
       <ClientForm
         initial={initial}
         submitting={m.isPending}
@@ -112,6 +101,6 @@ function EditClient() {
         }}
         onCancel={() => navigate({ to: "/setup/clients/$clientId", params: { clientId } })}
       />
-    </div>
+    </CreateViewShell>
   );
 }
