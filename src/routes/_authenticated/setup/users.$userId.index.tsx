@@ -216,7 +216,6 @@ function UserDetail() {
               status={isActive ? "active" : "neutral"}
               label={isActive ? "Activo" : "Inactivo"}
             />
-            <span className="text-xs text-muted-foreground">{user.email}</span>
           </div>
         </div>
 
