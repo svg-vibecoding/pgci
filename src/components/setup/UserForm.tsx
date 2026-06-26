@@ -120,6 +120,14 @@ export function UserForm({
 
   const showClientsSection = !!clients;
   const isSuper = v.role === "super_admin";
+  const hasNoClients = !isSuper && v.client_ids.length === 0;
+
+  // Auto-disable can_create_agreements when platform_user has no clients
+  useEffect(() => {
+    if (hasNoClients && v.can_create_agreements) {
+      setV((prev) => ({ ...prev, can_create_agreements: false }));
+    }
+  }, [hasNoClients, v.can_create_agreements]);
 
   return (
     <form
