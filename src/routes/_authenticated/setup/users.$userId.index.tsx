@@ -189,12 +189,12 @@ function UserDetail() {
       {/* Indicadores principales */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <IndicatorCard
-          label="Clientes asociados"
-          value={isSuper ? "Acceso total" : assignedCount}
-        />
-        <IndicatorCard
           label="Acuerdos asociados"
           value={isSuper ? "Acceso total" : totalAgreements}
+        />
+        <IndicatorCard
+          label="Clientes asociados"
+          value={isSuper ? "Acceso total" : assignedCount}
         />
       </div>
 
