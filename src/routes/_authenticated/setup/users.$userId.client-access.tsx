@@ -340,14 +340,29 @@ function ClientAccess() {
                 className="pl-9"
               />
             </div>
-            <label className="flex items-center gap-2 whitespace-nowrap text-xs font-medium text-muted-foreground">
-              {search.trim() ? "Seleccionar visibles" : "Todos"}
-              <Switch
-                checked={visibleAllAssigned}
-                disabled={filteredClients.length === 0}
-                onCheckedChange={toggleAllVisible}
-              />
-            </label>
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2 whitespace-nowrap text-xs font-medium text-muted-foreground">
+                {search.trim() ? "Asignar visibles" : "Asignar todos"}
+                <Switch
+                  checked={visibleAllAssigned}
+                  disabled={filteredClients.length === 0}
+                  onCheckedChange={toggleAllAssigned}
+                />
+              </label>
+              <label
+                className={cn(
+                  "flex items-center gap-2 whitespace-nowrap text-xs font-medium text-muted-foreground",
+                  visibleAssignedClients.length === 0 && "opacity-50",
+                )}
+              >
+                {search.trim() ? "Crear acuerdos a visibles" : "Crear acuerdos a todos"}
+                <Switch
+                  checked={visibleAllCanCreate}
+                  disabled={visibleAssignedClients.length === 0}
+                  onCheckedChange={toggleAllCanCreate}
+                />
+              </label>
+            </div>
           </div>
           {search.trim() !== "" && (
             <p className="text-xs text-muted-foreground">
