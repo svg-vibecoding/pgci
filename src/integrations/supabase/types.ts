@@ -401,6 +401,7 @@ export type Database = {
       user_client_access: {
         Row: {
           assigned_by: string | null
+          can_create_agreements: boolean
           client_id: string
           created_at: string
           id: string
@@ -408,6 +409,7 @@ export type Database = {
         }
         Insert: {
           assigned_by?: string | null
+          can_create_agreements?: boolean
           client_id: string
           created_at?: string
           id?: string
@@ -415,6 +417,7 @@ export type Database = {
         }
         Update: {
           assigned_by?: string | null
+          can_create_agreements?: boolean
           client_id?: string
           created_at?: string
           id?: string
