@@ -462,7 +462,7 @@ function ClientAccess() {
       <div className="sticky bottom-0 z-20 border-t border-border bg-background/95 backdrop-blur">
         <div className="flex flex-col gap-3 py-3">
           <div className="flex w-full items-center justify-between">
-            <p className="text-xs text-muted-foreground">{summaryText}</p>
+            <p className="text-sm font-medium text-foreground">{summaryText}</p>
             {assignedCount > 0 && (
               <Button
                 variant="link"
