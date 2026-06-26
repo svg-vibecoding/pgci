@@ -173,6 +173,20 @@ function ClientAccess() {
     });
   };
 
+  const toggleAllVisible = (on: boolean) => {
+    setStateMap((prev) => {
+      const next = new Map(prev);
+      filteredClients.forEach((c) => {
+        const curr = next.get(c.id) ?? { assigned: false, can_create: false };
+        next.set(c.id, {
+          assigned: on,
+          can_create: on ? curr.can_create : false,
+        });
+      });
+      return next;
+    });
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
