@@ -64,6 +64,7 @@ export function UserForm({
   const [v, setV] = useState<UserFormValues>(initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [clientSearch, setClientSearch] = useState("");
+  const [showAllChips, setShowAllChips] = useState(false);
 
   const set = <K extends keyof UserFormValues>(k: K, val: UserFormValues[K]) =>
     setV((prev) => ({ ...prev, [k]: val }));
@@ -76,6 +77,20 @@ export function UserForm({
         : prev.client_ids.filter((c) => c !== id),
     }));
   };
+
+  const clientById = useMemo(() => {
+    const map = new Map<string, ClientOption>();
+    (clients ?? []).forEach((c) => map.set(c.id, c));
+    return map;
+  }, [clients]);
+
+  const selectedClients = useMemo(
+    () =>
+      v.client_ids
+        .map((id) => clientById.get(id))
+        .filter((c): c is ClientOption => !!c),
+    [v.client_ids, clientById],
+  );
 
   const filteredClients = useMemo(() => {
     const q = clientSearch.trim().toLowerCase();
