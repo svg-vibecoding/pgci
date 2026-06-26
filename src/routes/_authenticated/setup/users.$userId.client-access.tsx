@@ -441,21 +441,10 @@ function ClientAccess() {
         </CardContent>
       </Card>
 
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-[1400px] flex-col gap-3 px-6 py-3">
+      <div className="sticky bottom-0 z-20 border-t border-border bg-background/95 backdrop-blur">
+        <div className="flex flex-col gap-3 py-3">
           <div className="flex w-full items-center justify-between">
-            <p
-              className={cn(
-                "text-sm",
-                assignedCount === 0 ? "text-muted-foreground" : "text-foreground",
-              )}
-            >
-              {assignedCount === 0
-                ? "Sin clientes asignados"
-                : createCount === 0
-                  ? `${assignedCount} clientes asignados · Sin permiso de creación`
-                  : `${assignedCount} clientes asignados · ${createCount} con permiso de creación`}
-            </p>
+            <p className="text-xs text-muted-foreground">{summaryText}</p>
             {assignedCount > 0 && (
               <Button
                 variant="link"
