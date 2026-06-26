@@ -6,7 +6,8 @@ export type SumatecChipColor =
   | "primary"
   | "accent"
   | "success"
-  | "warning";
+  | "warning"
+  | "info";
 export type SumatecChipVariant = "soft" | "solid" | "outline";
 export type SumatecChipSize = "small" | "medium" | "large";
 
@@ -50,6 +51,11 @@ const palette: Record<
     main: "var(--warning-strong)",
     soft: "var(--warning-soft)",
     border: "#f0d18a",
+  },
+  info: {
+    main: "var(--info-strong)",
+    soft: "var(--info-soft)",
+    border: "var(--blue-200)",
   },
 };
 
