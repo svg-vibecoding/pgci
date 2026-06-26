@@ -15,7 +15,7 @@ import {
 export type UserFormValues = {
   full_name: string;
   email: string;
-  role: "super_admin" | "platform_user" | "";
+  role: "super_admin" | "platform_user";
   can_create_agreements: boolean;
   erp_user_code: string;
   status: "active" | "inactive";
@@ -25,7 +25,7 @@ export type UserFormValues = {
 export const emptyUser: UserFormValues = {
   full_name: "",
   email: "",
-  role: "",
+  role: "platform_user",
   can_create_agreements: false,
   erp_user_code: "",
   status: "active",
@@ -107,7 +107,6 @@ export function UserForm({
     if (!v.full_name.trim()) e.full_name = "Requerido";
     if (!v.email.trim()) e.email = "Requerido";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.email.trim())) e.email = "Email inválido";
-    if (!v.role) e.role = "Requerido";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -159,22 +158,14 @@ export function UserForm({
         </div>
 
         <div>
-          <Label htmlFor="role">
-            Rol<Req />
-          </Label>
-          <Select
-            value={v.role || undefined}
-            onValueChange={(val) => set("role", val as UserFormValues["role"])}
-          >
-            <SelectTrigger id="role">
-              <SelectValue placeholder="Selecciona un rol" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="platform_user">Usuario plataforma</SelectItem>
-              <SelectItem value="super_admin">Super admin</SelectItem>
-            </SelectContent>
-          </Select>
-          {errors.role && <p className="mt-1 text-xs text-destructive">{errors.role}</p>}
+          <Label htmlFor="erp_user_code">Código de usuario ERP</Label>
+          <Input
+            id="erp_user_code"
+            value={v.erp_user_code}
+            onChange={(e) => set("erp_user_code", e.target.value)}
+            maxLength={40}
+            placeholder="Opcional"
+          />
         </div>
 
         <div>
@@ -194,26 +185,46 @@ export function UserForm({
         </div>
 
         <div className="md:col-span-2">
-          <Label htmlFor="erp_user_code">Código de usuario ERP</Label>
-          <Input
-            id="erp_user_code"
-            value={v.erp_user_code}
-            onChange={(e) => set("erp_user_code", e.target.value)}
-            maxLength={40}
-            placeholder="Opcional"
-          />
+          <div className="rounded-lg border border-border bg-card p-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-1">
+                <p className="text-sm font-semibold">Tipo de usuario</p>
+                <p className="text-sm text-muted-foreground">
+                  {isSuper ? "Super admin" : "Usuario plataforma"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {isSuper
+                    ? "Acceso total a la plataforma."
+                    : "Acceso según clientes asignados."}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="super_admin" className="text-sm font-medium">
+                  Super admin
+                </Label>
+                <Switch
+                  id="super_admin"
+                  checked={isSuper}
+                  onCheckedChange={(checked) =>
+                    set("role", checked ? "super_admin" : "platform_user")
+                  }
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      {showClientsSection && isSuper && (
+      {isSuper && (
         <div className="rounded-lg border border-border bg-muted/40 px-4 py-3">
           <p className="text-sm text-muted-foreground">
-            Los super admins tienen acceso total y no requieren asignación manual de clientes.
+            Los super admins tienen acceso total a la plataforma y no requieren asignación manual
+            de clientes.
           </p>
         </div>
       )}
 
-      {showClientsSection && v.role === "platform_user" && (
+      {showClientsSection && !isSuper && (
         <section className="rounded-lg border border-border bg-card">
           <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
             <div>
@@ -322,7 +333,7 @@ export function UserForm({
         </section>
       )}
 
-      {v.role === "platform_user" && (
+      {!isSuper && (
         <div className="flex items-center justify-between gap-4 rounded-lg border border-border bg-card p-4">
           <div>
             <p className="text-sm font-medium">Puede crear acuerdos en clientes asignados</p>
