@@ -1,10 +1,9 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { ClientForm, emptyClient, type ClientFormValues } from "@/components/setup/ClientForm";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { CreateViewShell } from "@/components/setup/CreateViewShell";
 
 const searchSchema = z.object({
   parent: z.string().uuid().optional(),
@@ -66,35 +65,36 @@ function NewClient() {
       }
     : emptyClient;
 
-  const cancelTo = parent
-    ? { to: "/setup/clients/$clientId" as const, params: { clientId: parent } }
-    : { to: "/setup/clients" as const };
+  const backTo = parent
+    ? ({ to: "/setup/clients/$clientId", params: { clientId: parent } } as const)
+    : ({ to: "/setup/clients" } as const);
+
+  const backLabel = parent ? "Volver al holding" : "Volver a clientes";
 
   return (
-    <div className="space-y-6">
-      {parent && (
-        <Button asChild variant="ghost" size="sm" className="-ml-2 h-8 px-2 text-muted-foreground">
-          <Link to="/setup/clients/$clientId" params={{ clientId: parent }}>
-            <ArrowLeft className="mr-1.5 h-4 w-4" /> Volver al holding
-          </Link>
-        </Button>
-      )}
-      <header>
-        <h1 className="text-2xl font-bold tracking-tight">Nuevo cliente</h1>
-        <p className="text-sm text-muted-foreground">
-          {parentClient
-            ? `Registra una nueva empresa asociada a ${parentClient.commercial_name?.trim() || parentClient.legal_name}.`
-            : "Registra clientes tipo holding o directos, como base para acuerdos, accesos y operación comercial."}
-        </p>
-      </header>
+    <CreateViewShell
+      backTo={backTo}
+      backLabel={backLabel}
+      title="Crear cliente"
+      description={
+        parentClient
+          ? `Registra una nueva empresa asociada a ${parentClient.commercial_name?.trim() || parentClient.legal_name}.`
+          : "Registra clientes tipo holding o directos, como base para acuerdos, accesos y operación comercial."
+      }
+    >
       <ClientForm
         initial={initial}
         submitting={m.isPending}
+        submitLabel="Crear cliente"
         onSubmit={async (v) => {
           await m.mutateAsync(v);
         }}
-        onCancel={() => navigate(cancelTo)}
+        onCancel={() =>
+          parent
+            ? navigate({ to: "/setup/clients/$clientId", params: { clientId: parent } })
+            : navigate({ to: "/setup/clients" })
+        }
       />
-    </div>
+    </CreateViewShell>
   );
 }

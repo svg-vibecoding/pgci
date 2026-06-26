@@ -49,12 +49,14 @@ function Req() {
 export function ClientForm({
   initial,
   submitting,
+  submitLabel = "Guardar",
   onSubmit,
   onCancel,
   excludeHoldingId,
 }: {
   initial: ClientFormValues;
   submitting: boolean;
+  submitLabel?: string;
   onSubmit: (v: ClientFormValues) => Promise<void> | void;
   onCancel: () => void;
   excludeHoldingId?: string;
@@ -123,7 +125,7 @@ export function ClientForm({
   }
 
   return (
-    <form onSubmit={handle} className="space-y-5 max-w-2xl">
+    <form onSubmit={handle} className="space-y-5">
       <div className="space-y-2">
         <Label htmlFor="legal_name">Razón social<Req /></Label>
         <Input
@@ -273,12 +275,12 @@ export function ClientForm({
         />
       </div>
       {serverError && <p className="text-sm text-destructive">{serverError}</p>}
-      <div className="flex gap-2">
-        <Button type="submit" disabled={submitting}>
-          {submitting ? "Guardando…" : "Guardar"}
-        </Button>
-        <Button type="button" variant="outline" onClick={onCancel}>
+      <div className="flex items-center justify-end gap-2 border-t border-border pt-4">
+        <Button type="button" variant="ghost" onClick={onCancel} disabled={submitting}>
           Cancelar
+        </Button>
+        <Button type="submit" disabled={submitting}>
+          {submitting ? "Guardando…" : submitLabel}
         </Button>
       </div>
     </form>
