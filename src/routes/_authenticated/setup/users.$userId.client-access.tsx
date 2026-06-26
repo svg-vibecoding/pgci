@@ -333,7 +333,7 @@ function ClientAccess() {
           </Badge>
         </div>
         <p className="text-sm text-muted-foreground">
-          Asigna clientes a este usuario para que pueda verlos en la plataforma. Si además podrá crear acuerdos sobre clientes asignados,&nbsp;
+          Asigna clientes a este usuario para que pueda verlos en la plataforma. Si además podrá crear acuerdos sobre clientes asignados,&nbsp;<br />
           activa también sus permisos de creación.
         </p>
         <p className="text-sm font-medium text-foreground">{initialSummaryText}</p>
