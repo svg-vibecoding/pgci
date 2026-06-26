@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
 import { Chip, StatusBadge } from "@/components/sumatec";
-import { Plus, Search, AlertTriangle } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/setup/users/")({
   head: () => ({ meta: [{ title: "Usuarios y accesos · Setup · PGCI" }] }),
@@ -273,14 +273,11 @@ function UsersList() {
                         </Link>
                         {isSuper && <Chip size="small" color="info">Super admin</Chip>}
                         {issues.length > 0 && (
-                          <Chip
-                            size="small"
-                            color="warning"
-                            icon={AlertTriangle}
+                          <StatusBadge
+                            status="warning"
+                            label="Alerta"
                             title={issues.join(" · ")}
-                          >
-                            Alerta
-                          </Chip>
+                          />
                         )}
                       </div>
                       <span className="block text-xs text-muted-foreground">{u.email}</span>
