@@ -218,14 +218,11 @@ function UserDetail() {
         <CardHeader>
           <CardTitle className="text-base">Información del usuario</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <InfoSection title="Identidad">
+        <CardContent>
+          <InfoSection>
             <InfoField label="Nombre completo">{user.full_name}</InfoField>
             <InfoField label="Email">{user.email}</InfoField>
             <InfoField label="Código ERP">{user.erp_user_code || "—"}</InfoField>
-          </InfoSection>
-
-          <InfoSection title="Rol y permisos">
             <InfoField label="Tipo de usuario">{roleLabel(user.role)}</InfoField>
             <InfoField label="Estado">
               <StatusBadge
@@ -236,18 +233,12 @@ function UserDetail() {
             <InfoField label="Creación de acuerdos">
               {isSuper ? "No aplica" : user.can_create_agreements ? "Sí" : "No"}
             </InfoField>
-          </InfoSection>
-
-          <InfoSection title="Alcance operativo">
             <InfoField label="Clientes asignados">
               {isSuper ? "Acceso total" : assignedCount}
             </InfoField>
             <InfoField label="Acuerdos en gestión">
               {isSuper ? "Acceso total" : totalAgreements}
             </InfoField>
-          </InfoSection>
-
-          <InfoSection title="Auditoría">
             <InfoField label="Fecha de creación">
               {new Date(user.created_at).toLocaleDateString()}
             </InfoField>
