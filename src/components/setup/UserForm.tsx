@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
-import { Search, X } from "lucide-react";
+import { Info, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Select,
   SelectContent,
@@ -184,18 +185,14 @@ export function UserForm({
           </Select>
         </div>
 
-        <div className="md:col-span-2">
+        <div className="md:col-span-2 space-y-2">
+          <h3 className="text-sm font-semibold">Tipo de usuario</h3>
           <div className="rounded-lg border border-border bg-card p-4">
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-1">
-                <p className="text-sm font-semibold">Tipo de usuario</p>
-                <p className="text-sm text-muted-foreground">
-                  {isSuper ? "Super admin" : "Usuario plataforma"}
-                </p>
+                <p className="text-sm font-semibold">Usuario plataforma</p>
                 <p className="text-xs text-muted-foreground">
-                  {isSuper
-                    ? "Acceso total a la plataforma."
-                    : "Acceso según clientes asignados."}
+                  Acceso según clientes asignados.
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -212,17 +209,18 @@ export function UserForm({
               </div>
             </div>
           </div>
+
+          {isSuper && (
+            <Alert variant="info">
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                Los super admins tienen acceso total a la plataforma y no requieren asignación
+                manual de clientes.
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
       </div>
-
-      {isSuper && (
-        <div className="rounded-lg border border-border bg-muted/40 px-4 py-3">
-          <p className="text-sm text-muted-foreground">
-            Los super admins tienen acceso total a la plataforma y no requieren asignación manual
-            de clientes.
-          </p>
-        </div>
-      )}
 
       {showClientsSection && !isSuper && (
         <section className="rounded-lg border border-border bg-card">
