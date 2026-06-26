@@ -100,6 +100,7 @@ function NewUser() {
       <UserForm
         initial={emptyUser}
         submitting={mutation.isPending}
+        clients={clientOptions ?? []}
         onSubmit={async (v) => {
           await mutation.mutateAsync(v);
         }}
