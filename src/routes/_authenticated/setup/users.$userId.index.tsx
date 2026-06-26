@@ -24,7 +24,6 @@ import {
   Power,
   Building2,
   AlertTriangle,
-  CheckCircle2,
   Info,
 } from "lucide-react";
 
@@ -44,23 +43,38 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function SummaryCard({
+function IndicatorCard({
   label,
   value,
   hint,
   tone = "default",
+  tag,
+  children,
 }: {
   label: string;
   value: React.ReactNode;
   hint?: React.ReactNode;
-  tone?: "default" | "warning";
+  tone?: "default" | "warning" | "muted";
+  tag?: React.ReactNode;
+  children?: React.ReactNode;
 }) {
   return (
     <div className="rounded-lg border border-border bg-card p-3">
-      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-        {label}
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {label}
+        </p>
+        {tag}
+      </div>
+      <p
+        className={
+          tone === "muted"
+            ? "mt-1 text-xl font-semibold text-muted-foreground"
+            : "mt-1 text-xl font-semibold text-foreground"
+        }
+      >
+        {value}
       </p>
-      <p className="mt-1 text-xl font-semibold text-foreground">{value}</p>
       {hint && (
         <p
           className={
@@ -72,12 +86,15 @@ function SummaryCard({
           {hint}
         </p>
       )}
+      {children && <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">{children}</div>}
     </div>
   );
 }
 
 const roleLabel = (r: string) =>
   r === "super_admin" ? "Super admin" : "Usuario plataforma";
+
+const ADMIN_ROLES = new Set(["agreement_admin", "super_admin"]);
 
 function UserDetail() {
   const { userId } = Route.useParams();
@@ -110,6 +127,18 @@ function UserDetail() {
     },
   });
 
+  const { data: memberships } = useQuery({
+    queryKey: ["users", userId, "agreement_members"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("agreement_members")
+        .select("id, agreement_id, role")
+        .eq("user_id", userId);
+      if (error) return [];
+      return data ?? [];
+    },
+  });
+
   const toggleStatus = useMutation({
     mutationFn: async (next: "active" | "inactive") => {
       const { error } = await supabase
@@ -133,17 +162,38 @@ function UserDetail() {
   const isActive = user.status === "active";
   const isSuper = user.role === "super_admin";
   const assignedCount = access?.length ?? 0;
+  const totalAgreements = memberships?.length ?? 0;
+  const adminCount = (memberships ?? []).filter((m) => ADMIN_ROLES.has(m.role)).length;
+  const participantCount = totalAgreements - adminCount;
 
-  // Diagnostics
-  const diagnostics: string[] = [];
+  const clientsValue = isSuper
+    ? "Acceso total"
+    : `${assignedCount} ${assignedCount === 1 ? "cliente" : "clientes"}`;
+  const clientsHint = isSuper
+    ? "Todos los clientes"
+    : assignedCount === 0
+      ? "Requiere asignación"
+      : "Cartera asignada";
+
+  const agreementsValue = isSuper
+    ? "Acceso total"
+    : `${totalAgreements} ${totalAgreements === 1 ? "acuerdo" : "acuerdos"}`;
+  const agreementsHint = isSuper
+    ? "Todos los acuerdos"
+    : totalAgreements === 0
+      ? "Sin acuerdos asignados"
+      : "En gestión";
+
+  // Alerts
+  const alerts: string[] = [];
   if (!isSuper && assignedCount === 0) {
-    diagnostics.push("Usuario sin clientes asignados.");
+    alerts.push("Usuario sin clientes asignados.");
   }
   if (!isSuper && user.can_create_agreements && assignedCount === 0) {
-    diagnostics.push("Puede crear acuerdos, pero no tiene clientes asignados.");
+    alerts.push("Puede crear acuerdos, pero no tiene clientes asignados.");
   }
   if (!isActive && assignedCount > 0) {
-    diagnostics.push("Usuario inactivo con accesos existentes.");
+    alerts.push("Usuario inactivo con accesos existentes.");
   }
 
   return (
@@ -166,9 +216,6 @@ function UserDetail() {
               status={isActive ? "active" : "neutral"}
               label={isActive ? "Activo" : "Inactivo"}
             />
-            {user.can_create_agreements && !isSuper && (
-              <Badge color="info" variant="soft">Crea acuerdos</Badge>
-            )}
             <span className="text-xs text-muted-foreground">{user.email}</span>
           </div>
         </div>
@@ -217,61 +264,69 @@ function UserDetail() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Indicadores principales */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <SummaryCard
-          label="Clientes asignados"
-          value={isSuper ? "Acceso total" : assignedCount}
-          hint={
-            !isSuper && assignedCount === 0 ? "Requiere asignación" : undefined
-          }
+        <IndicatorCard
+          label="Cartera de clientes"
+          value={clientsValue}
+          hint={clientsHint}
           tone={!isSuper && assignedCount === 0 ? "warning" : "default"}
         />
-        <SummaryCard
-          label="Tipo de usuario"
-          value={<span className="text-sm font-medium">{roleLabel(user.role)}</span>}
+        <IndicatorCard
+          label="Acuerdos en gestión"
+          value={agreementsValue}
+          hint={agreementsHint}
         />
-        <SummaryCard
-          label="Creación de acuerdos"
+        <IndicatorCard
+          label="Capacidad comercial"
           value={
             <span className="text-sm font-medium">
-              {isSuper ? "No aplica" : user.can_create_agreements ? "Sí" : "No"}
+              {isSuper ? "Admin total" : user.can_create_agreements ? "Operativa" : "Limitada"}
             </span>
           }
-        />
-        <SummaryCard
-          label="Creado"
-          value={
-            <span className="text-sm font-medium">
-              {new Date(user.created_at).toLocaleDateString()}
-            </span>
+        >
+          {isSuper ? (
+            <p>Crea, administra y consulta</p>
+          ) : (
+            <>
+              <p>Crear acuerdos: {user.can_create_agreements ? "Sí" : "No"}</p>
+              <p>Administra: {adminCount > 0 ? adminCount : "Sin acuerdos"}</p>
+              <p>Participa: {participantCount > 0 ? participantCount : "Sin acuerdos"}</p>
+            </>
+          )}
+        </IndicatorCard>
+        <IndicatorCard
+          label="Datos sensibles"
+          value={<span className="text-sm font-medium">Próximamente</span>}
+          hint="Costos y márgenes"
+          tone="muted"
+          tag={
+            <Badge color="neutral" variant="soft">
+              Próximamente
+            </Badge>
           }
         />
       </div>
 
-      {/* Diagnóstico de acceso */}
-      {diagnostics.length > 0 ? (
+      {/* Alertas */}
+      {alerts.length > 0 && (
         <Alert variant="warning">
           <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Diagnóstico de acceso</AlertTitle>
+          <AlertTitle>Alertas de configuración</AlertTitle>
           <AlertDescription>
             <ul className="mt-1 list-disc space-y-1 pl-4">
-              {diagnostics.map((m) => (
+              {alerts.map((m) => (
                 <li key={m}>{m}</li>
               ))}
             </ul>
           </AlertDescription>
         </Alert>
-      ) : (
-        <Alert variant="success">
-          <CheckCircle2 className="h-4 w-4" />
-          <AlertTitle>Diagnóstico de acceso</AlertTitle>
-          <AlertDescription>Configuración operativa válida.</AlertDescription>
-        </Alert>
       )}
 
+      {/* Información del usuario */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Información general</CardTitle>
+          <CardTitle className="text-base">Información del usuario</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           <Field label="Nombre completo">{user.full_name}</Field>
@@ -287,33 +342,40 @@ function UserDetail() {
           <Field label="Creación de acuerdos">
             {isSuper ? "No aplica" : user.can_create_agreements ? "Sí" : "No"}
           </Field>
+          <Field label="Clientes asignados">
+            {isSuper ? "Acceso total" : assignedCount}
+          </Field>
+          <Field label="Acuerdos en gestión">
+            {isSuper ? "Acceso total" : totalAgreements}
+          </Field>
+          <Field label="Fecha de creación">
+            {new Date(user.created_at).toLocaleDateString()}
+          </Field>
+          {user.updated_at && (
+            <Field label="Última actualización">
+              {new Date(user.updated_at).toLocaleDateString()}
+            </Field>
+          )}
         </CardContent>
       </Card>
 
+      {/* Cartera de clientes */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Accesos a clientes</CardTitle>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {isSuper
-              ? "Vista de solo lectura."
-              : "Clientes a los que este usuario puede acceder en la plataforma. Edita la configuración para ajustar sus accesos."}
-          </p>
+          <CardTitle className="text-base">Cartera de clientes</CardTitle>
         </CardHeader>
         <CardContent>
           {isSuper ? (
             <Alert variant="info">
               <Info className="h-4 w-4" />
               <AlertDescription>
-                Los super admins tienen acceso total a la plataforma y no requieren asignación manual de clientes.
+                Los super admins tienen acceso total a todos los clientes y no requieren asignación manual.
               </AlertDescription>
             </Alert>
           ) : assignedCount === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-md border border-dashed border-border py-8 text-center">
               <Building2 className="mb-2 h-6 w-6 text-muted-foreground" />
               <p className="text-sm font-medium">Este usuario aún no tiene clientes asignados.</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Edita la configuración para ajustar sus accesos.
-              </p>
               {isSuperAdmin && (
                 <Button asChild variant="outline" size="sm" className="mt-3">
                   <Link to="/setup/users/$userId/edit" params={{ userId }}>
@@ -353,6 +415,21 @@ function UserDetail() {
               })}
             </ul>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Acuerdos en gestión */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Acuerdos en gestión</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert variant="info">
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              Los acuerdos en gestión se mostrarán cuando el módulo de Acuerdos esté activo.
+            </AlertDescription>
+          </Alert>
         </CardContent>
       </Card>
     </div>
