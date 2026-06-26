@@ -198,20 +198,31 @@ function UserDetail() {
       {/* Indicadores principales */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <IndicatorCard
-          label="CLIENTES"
-          value={isSuper ? "Acceso total" : `${assignedCount} ${assignedCount === 1 ? "cliente" : "clientes"}`}
+          label="Clientes"
+          value={isSuper ? "Acceso total" : assignedCount}
+          hint={isSuper ? undefined : assignedCount === 1 ? "cliente" : "clientes"}
         />
         <IndicatorCard
-          label="ACUERDOS"
-          value={isSuper ? "Acceso total" : `${totalAgreements} ${totalAgreements === 1 ? "acuerdo" : "acuerdos"}`}
+          label="Acuerdos"
+          value={isSuper ? "Acceso total" : totalAgreements}
+          hint={isSuper ? undefined : totalAgreements === 1 ? "acuerdo" : "acuerdos"}
         />
         <IndicatorCard
-          label="ALCANCES EN PGCI"
+          label="Alcances en PGCI"
           value={isSuper ? "Administración" : user.can_create_agreements ? "Sí" : "No"}
-        />
+          hint={isSuper ? undefined : "crea acuerdos"}
+        >
+          {!isSuper && (
+            <>
+              <p>Administra: {assignedCount > 0 ? `${assignedCount} clientes` : "No"}</p>
+              <p>Participa: {totalAgreements > 0 ? `${totalAgreements} clientes` : "No"}</p>
+            </>
+          )}
+        </IndicatorCard>
         <IndicatorCard
-          label="VISIBILIDAD"
+          label="Visibilidad"
           value="Versión II"
+          hint="Pendiente"
         />
       </div>
 
