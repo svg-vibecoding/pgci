@@ -200,12 +200,10 @@ function UserDetail() {
         <IndicatorCard
           label="Clientes asociados"
           value={isSuper ? "Acceso total" : assignedCount}
-          hint={isSuper ? undefined : assignedCount === 1 ? "cliente" : "clientes"}
         />
         <IndicatorCard
           label="Acuerdos asociados"
           value={isSuper ? "Acceso total" : totalAgreements}
-          hint={isSuper ? undefined : totalAgreements === 1 ? "acuerdo" : "acuerdos"}
         />
       </div>
 
