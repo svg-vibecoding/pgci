@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -20,23 +20,35 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Chip, StatusBadge, Badge } from "@/components/sumatec";
 import { Plus, Search, AlertTriangle } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/setup/users/")({
   head: () => ({ meta: [{ title: "Usuarios y accesos · Setup · PGCI" }] }),
   component: UsersList,
 });
 
-type CardKey = "all" | "active" | "inactive" | "superAdmins";
-type StatusFilter = "all" | "active" | "inactive";
+type CardKey = "all" | "active" | "inactive" | "alerts";
 type RoleFilter = "all" | "super_admin" | "platform_user";
 
 function UsersList() {
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
-  const [statusF, setStatusF] = useState<StatusFilter>("all");
   const [roleF, setRoleF] = useState<RoleFilter>("all");
   const [activeCard, setActiveCard] = useState<CardKey>("all");
+  const [confirmUser, setConfirmUser] = useState<UserRow | null>(null);
+  const [pending, setPending] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["users", "list"],
@@ -64,7 +76,7 @@ function UsersList() {
       return (profiles ?? []).map((p) => ({
         ...p,
         client_count: accessCounts.get(p.user_id) ?? 0,
-      }));
+      })) as UserRow[];
     },
   });
 
@@ -72,14 +84,13 @@ function UsersList() {
   const totalCount = all.length;
   const activeCount = all.filter((u) => u.status === "active").length;
   const inactiveCount = all.filter((u) => u.status === "inactive").length;
-  const superAdminsCount = all.filter((u) => u.role === "super_admin").length;
+  const alertsCount = all.filter((u) => getUserIssues(u).length > 0).length;
 
   const filtered = all.filter((u) => {
     if (activeCard === "active" && u.status !== "active") return false;
     if (activeCard === "inactive" && u.status !== "inactive") return false;
-    if (activeCard === "superAdmins" && u.role !== "super_admin") return false;
+    if (activeCard === "alerts" && getUserIssues(u).length === 0) return false;
 
-    if (statusF !== "all" && u.status !== statusF) return false;
     if (roleF !== "all" && u.role !== roleF) return false;
 
     if (search) {
@@ -96,31 +107,47 @@ function UsersList() {
     { key: "all", label: "Usuarios", value: totalCount },
     { key: "active", label: "Activos", value: activeCount },
     { key: "inactive", label: "Inactivos", value: inactiveCount },
-    { key: "superAdmins", label: "Super admins", value: superAdminsCount },
+    { key: "alerts", label: "Alertas", value: alertsCount },
   ];
 
   const cardLabelByKey: Record<CardKey, string> = {
     all: "Usuarios",
     active: "Activos",
     inactive: "Inactivos",
-    superAdmins: "Super admins",
+    alerts: "Alertas",
   };
 
   const hasActiveFilters =
-    activeCard !== "all" ||
-    statusF !== "all" ||
-    roleF !== "all" ||
-    search.trim() !== "";
+    activeCard !== "all" || roleF !== "all" || search.trim() !== "";
 
   const clearFilters = () => {
     setActiveCard("all");
-    setStatusF("all");
     setRoleF("all");
     setSearch("");
   };
 
   const roleLabel = (r: string) =>
     r === "super_admin" ? "Super admin" : "Usuario plataforma";
+
+  const handleToggleStatus = async () => {
+    if (!confirmUser) return;
+    setPending(true);
+    const newStatus = confirmUser.status === "active" ? "inactive" : "active";
+    const { error } = await supabase
+      .from("profiles")
+      .update({ status: newStatus })
+      .eq("user_id", confirmUser.user_id);
+    setPending(false);
+    if (error) {
+      toast.error("No se pudo actualizar el estado");
+      return;
+    }
+    toast.success(newStatus === "active" ? "Usuario activado" : "Usuario inactivado");
+    setConfirmUser(null);
+    queryClient.invalidateQueries({ queryKey: ["users", "list"] });
+  };
+
+  const isInactivating = confirmUser?.status === "active";
 
   return (
     <div className="space-y-6">
@@ -193,21 +220,6 @@ function UsersList() {
             </SelectContent>
           </Select>
         </div>
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="status-select" className="text-xs text-muted-foreground">
-            Estado
-          </label>
-          <Select value={statusF} onValueChange={(v) => setStatusF(v as StatusFilter)}>
-            <SelectTrigger id="status-select" className="w-44">
-              <SelectValue placeholder="Estado" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="active">Activos</SelectItem>
-              <SelectItem value="inactive">Inactivos</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
       </div>
 
       <div className="space-y-2">
@@ -225,11 +237,6 @@ function UsersList() {
               {roleF !== "all" && (
                 <Chip size="small" variant="soft" color="neutral" onRemove={() => setRoleF("all")}>
                   {roleLabel(roleF)}
-                </Chip>
-              )}
-              {statusF !== "all" && (
-                <Chip size="small" variant="soft" color="neutral" onRemove={() => setStatusF("all")}>
-                  {statusF === "active" ? "Activos" : "Inactivos"}
                 </Chip>
               )}
               {search.trim() && (
@@ -282,6 +289,7 @@ function UsersList() {
                 const hasZeroClients = !isSuper && u.client_count === 0;
                 const incompleteCreator =
                   !isSuper && u.can_create_agreements && u.client_count === 0;
+                const isActive = u.status === "active";
                 return (
                   <TableRow key={u.user_id}>
                     <TableCell className="font-medium">
@@ -330,8 +338,8 @@ function UsersList() {
                     </TableCell>
                     <TableCell>
                       <StatusBadge
-                        status={u.status === "active" ? "active" : "neutral"}
-                        label={u.status === "active" ? "Activo" : "Inactivo"}
+                        status={isActive ? "active" : "neutral"}
+                        label={isActive ? "Activo" : "Inactivo"}
                       />
                     </TableCell>
                     <TableCell className="text-right">
@@ -346,6 +354,13 @@ function UsersList() {
                             Editar
                           </Link>
                         </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setConfirmUser(u)}
+                        >
+                          {isActive ? "Inactivar" : "Activar"}
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -355,6 +370,45 @@ function UsersList() {
           </Table>
         </div>
       </div>
+
+      <AlertDialog open={!!confirmUser} onOpenChange={(o) => !o && setConfirmUser(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {isInactivating ? "Inactivar usuario" : "Activar usuario"}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                {isInactivating ? (
+                  <>
+                    <p>
+                      El usuario no podrá operar en la plataforma. Sus accesos y
+                      configuraciones se conservarán.
+                    </p>
+                    {confirmUser && confirmUser.client_count > 0 && (
+                      <p>
+                        Este usuario tiene clientes asignados. Al inactivarlo no se
+                        eliminarán sus accesos, pero no podrá usarlos mientras esté
+                        inactivo.
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p>
+                    El usuario podrá volver a operar según sus accesos configurados.
+                  </p>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={pending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleToggleStatus} disabled={pending}>
+              {isInactivating ? "Inactivar" : "Activar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -367,6 +421,7 @@ type UserRow = {
   status: string;
   can_create_agreements: boolean | null;
   erp_user_code: string | null;
+  updated_at: string | null;
   client_count: number;
 };
 
