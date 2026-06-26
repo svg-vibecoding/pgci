@@ -24,14 +24,16 @@ export function InfoSection({
   title,
   children,
 }: {
-  title: string;
+  title?: string;
   children: React.ReactNode;
 }) {
   return (
     <section>
-      <h3 className="mb-3 border-b border-border/60 pb-2 text-xs font-semibold uppercase tracking-wider text-foreground/70">
-        {title}
-      </h3>
+      {title && (
+        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-foreground/70">
+          {title}
+        </h3>
+      )}
       <div className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
         {children}
       </div>
