@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { UserForm, emptyUser, type UserFormValues } from "@/components/setup/UserForm";
 import { createUser } from "@/lib/users.functions";
-import { BackLink, CreateViewShell } from "@/components/setup/CreateViewShell";
+import { BackLinkChrome, CreateViewShell } from "@/components/setup/CreateViewShell";
 
 export const Route = createFileRoute("/_authenticated/setup/users/new")({
   head: () => ({ meta: [{ title: "Crear usuario · Setup · PGCI" }] }),
@@ -86,7 +86,13 @@ function NewUser() {
   return (
     <>
     <CreateViewShell
-      backLink={<BackLink to="/setup/users" label="Volver a usuarios" />}
+      backLink={
+        <Button asChild variant="ghost" size="sm" className="-ml-2 h-8 px-2 text-muted-foreground">
+          <Link to="/setup/users">
+            <BackLinkChrome label="Volver a usuarios" />
+          </Link>
+        </Button>
+      }
       title="Crear usuario"
       description="Se generará una contraseña temporal que deberás compartir manualmente con el usuario."
     >

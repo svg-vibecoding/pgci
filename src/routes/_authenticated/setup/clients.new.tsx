@@ -67,9 +67,17 @@ function NewClient() {
     : emptyClient;
 
   const backLink = parent ? (
-    <BackLink to="/setup/clients/$clientId" params={{ clientId: parent }} label="Volver al holding" />
+    <Button asChild variant="ghost" size="sm" className="-ml-2 h-8 px-2 text-muted-foreground">
+      <Link to="/setup/clients/$clientId" params={{ clientId: parent }}>
+        <BackLinkChrome label="Volver al holding" />
+      </Link>
+    </Button>
   ) : (
-    <BackLink to="/setup/clients" label="Volver a clientes" />
+    <Button asChild variant="ghost" size="sm" className="-ml-2 h-8 px-2 text-muted-foreground">
+      <Link to="/setup/clients">
+        <BackLinkChrome label="Volver a clientes" />
+      </Link>
+    </Button>
   );
 
   return (
