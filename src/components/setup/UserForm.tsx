@@ -269,7 +269,7 @@ export function UserForm({
                 return (
                   <label className="flex shrink-0 items-center gap-2 text-sm">
                     <span className="text-muted-foreground">
-                      {clientSearch.trim() ? "Seleccionar visibles" : "Seleccionar todos"}
+                      {clientSearch.trim() ? "Seleccionar visibles" : "Todos"}
                     </span>
                     <Switch
                       checked={allSelected}
