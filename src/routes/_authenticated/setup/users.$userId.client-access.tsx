@@ -344,7 +344,7 @@ function ClientAccess() {
       <Card>
         <CardHeader className="space-y-3">
           <CardTitle className="text-base">Clientes</CardTitle>
-          <div className="flex items-center gap-3">
+          <div className="flex items-start gap-3">
             <div className="relative flex-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -354,28 +354,32 @@ function ClientAccess() {
                 className="pl-9"
               />
             </div>
-            <div className="flex items-center gap-4">
-              <label className="flex items-center gap-2 whitespace-nowrap text-xs font-medium text-muted-foreground">
-                {search.trim() ? "Asignar visibles" : "Asignar todos"}
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-end gap-3">
+                <span className="text-right text-xs font-medium text-muted-foreground">
+                  Asignar clientes {search.trim() ? "(Visibles)" : "(Todos)"}
+                </span>
                 <Switch
                   checked={visibleAllAssigned}
                   disabled={filteredClients.length === 0}
                   onCheckedChange={toggleAllAssigned}
                 />
-              </label>
-              <label
+              </div>
+              <div
                 className={cn(
-                  "flex items-center gap-2 whitespace-nowrap text-xs font-medium text-muted-foreground",
+                  "flex items-center justify-end gap-3",
                   visibleAssignedClients.length === 0 && "opacity-50",
                 )}
               >
-                {search.trim() ? "Crear acuerdos a visibles" : "Crear acuerdos a todos"}
+                <span className="text-right text-xs font-medium text-muted-foreground">
+                  Crear acuerdos {search.trim() ? "(Visibles)" : "(Todos)"}
+                </span>
                 <Switch
                   checked={visibleAllCanCreate}
                   disabled={visibleAssignedClients.length === 0}
                   onCheckedChange={toggleAllCanCreate}
                 />
-              </label>
+              </div>
             </div>
           </div>
           {search.trim() !== "" && (
