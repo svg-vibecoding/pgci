@@ -148,6 +148,23 @@ function ClientAccess() {
     return `${assignedCount} de ${totalClients} clientes asignados · ${createCount} con permiso de creación`;
   }, [assignedCount, totalClients, createCount]);
 
+  const initialAssignedCount = useMemo(
+    () => [...initialMap.values()].filter((s) => s.assigned).length,
+    [initialMap],
+  );
+
+  const initialCreateCount = useMemo(
+    () => [...initialMap.values()].filter((s) => s.assigned && s.can_create).length,
+    [initialMap],
+  );
+
+  const initialSummaryText = useMemo(() => {
+    if (initialCreateCount === 0) {
+      return `${initialAssignedCount} de ${totalClients} clientes asignados · Sin permiso de creación`;
+    }
+    return `${initialAssignedCount} de ${totalClients} clientes asignados · ${initialCreateCount} con permiso de creación`;
+  }, [initialAssignedCount, totalClients, initialCreateCount]);
+
   const diff = useMemo(() => {
     const toInsert: string[] = [];
     const toDelete: string[] = [];
