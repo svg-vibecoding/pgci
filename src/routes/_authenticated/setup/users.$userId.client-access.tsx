@@ -101,22 +101,6 @@ function ClientAccess() {
     [stateMap],
   );
 
-  const visibleAllAssigned = useMemo(() => {
-    if (filteredClients.length === 0) return false;
-    return filteredClients.every((c) => stateMap.get(c.id)?.assigned);
-  }, [filteredClients, stateMap]);
-
-  const assignedClients = useMemo(() => {
-    if (!clientsQ.data) return [];
-    return clientsQ.data
-      .filter((c) => stateMap.get(c.id)?.assigned)
-      .sort((a, b) =>
-        (a.commercial_name || a.legal_name || "—").localeCompare(
-          b.commercial_name || b.legal_name || "—",
-        ),
-      );
-  }, [clientsQ.data, stateMap]);
-
   const totalClients = clientsQ.data?.length ?? 0;
 
   const filteredClients = useMemo(() => {
