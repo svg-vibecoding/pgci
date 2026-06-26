@@ -26,7 +26,6 @@ import {
   Building2,
   AlertTriangle,
   Info,
-  Lock,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/setup/users/$userId/")({
@@ -307,8 +306,6 @@ function UserDetail() {
           value="Versión II"
           hint="Costos y márgenes"
           dotColor="muted"
-          tone="muted"
-          icon={<Lock className="h-3 w-3" />}
           tag={
             <Badge color="neutral" variant="soft">
               V2
