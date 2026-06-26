@@ -218,20 +218,14 @@ function ViewClient() {
         <CardHeader>
           <CardTitle className="text-base">Información del cliente</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <InfoSection title="Identificación">
+        <CardContent>
+          <InfoSection>
             <InfoField label="Razón social">{data.legal_name || "—"}</InfoField>
             <InfoField label="Nombre comercial">{data.commercial_name?.trim() || "—"}</InfoField>
             <InfoField label="Nombre ERP">{data.erp_name?.trim() || "—"}</InfoField>
-          </InfoSection>
-
-          <InfoSection title="Documento">
             <InfoField label="Tipo ID">{data.tax_id_type || "NIT"}</InfoField>
             <InfoField label="NIT">{data.tax_id || "—"}</InfoField>
             <InfoField label="Tipo de cliente">{isHolding ? "Holding" : "Directo"}</InfoField>
-          </InfoSection>
-
-          <InfoSection title="Estado y relaciones">
             <InfoField label="Estado">
               <StatusBadge
                 status={isActive ? "active" : "neutral"}
