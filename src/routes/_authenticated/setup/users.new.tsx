@@ -158,6 +158,6 @@ function NewUser() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }
