@@ -186,11 +186,8 @@ function ClientAccess() {
         );
       });
 
-      const results = (await Promise.all(ops)) as Array<{ error: unknown } | unknown>;
-      const firstError = results.find(
-        (r): r is { error: unknown } =>
-          !!r && typeof r === "object" && "error" in (r as object) && !!(r as { error: unknown }).error,
-      );
+      const results = await Promise.all(ops);
+      const firstError = results.find((r) => r && r.error);
       if (firstError) throw firstError.error;
 
       toast.success("Accesos actualizados.");
