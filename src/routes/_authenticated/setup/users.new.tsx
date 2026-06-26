@@ -1,9 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, Copy, Check } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -33,6 +34,19 @@ function NewUser() {
   } | null>(null);
   const [copied, setCopied] = useState(false);
 
+  const { data: clientOptions } = useQuery({
+    queryKey: ["clients", "active-options"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("clients")
+        .select("id, commercial_name, legal_name, type, status")
+        .eq("status", "active")
+        .order("commercial_name");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   const mutation = useMutation({
     mutationFn: (v: UserFormValues) =>
       createUserFn({
@@ -43,12 +57,17 @@ function NewUser() {
           can_create_agreements: v.can_create_agreements,
           erp_user_code: v.erp_user_code.trim() || undefined,
           status: v.status,
+          client_ids: v.role === "platform_user" ? v.client_ids : [],
         },
       }),
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["users"] });
       setCredentials(res);
-      toast.success("Usuario creado correctamente");
+      if ("access_error" in res && res.access_error) {
+        toast.warning("Usuario creado, pero no se asignaron los clientes.");
+      } else {
+        toast.success("Usuario creado correctamente");
+      }
     },
     onError: (err: Error) => {
       toast.error(err.message || "No se pudo crear el usuario");
@@ -81,6 +100,7 @@ function NewUser() {
       <UserForm
         initial={emptyUser}
         submitting={mutation.isPending}
+        clients={clientOptions ?? []}
         onSubmit={async (v) => {
           await mutation.mutateAsync(v);
         }}

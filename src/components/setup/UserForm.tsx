@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +19,7 @@ export type UserFormValues = {
   can_create_agreements: boolean;
   erp_user_code: string;
   status: "active" | "inactive";
+  client_ids: string[];
 };
 
 export const emptyUser: UserFormValues = {
@@ -27,6 +29,14 @@ export const emptyUser: UserFormValues = {
   can_create_agreements: false,
   erp_user_code: "",
   status: "active",
+  client_ids: [],
+};
+
+export type ClientOption = {
+  id: string;
+  commercial_name: string | null;
+  legal_name: string;
+  type: string;
 };
 
 function Req() {
@@ -38,6 +48,7 @@ export function UserForm({
   submitting,
   submitLabel = "Crear usuario",
   emailLocked = false,
+  clients,
   onSubmit,
   onCancel,
 }: {
@@ -45,14 +56,36 @@ export function UserForm({
   submitting: boolean;
   submitLabel?: string;
   emailLocked?: boolean;
+  /** When provided, renders the "Clientes asignados" section. */
+  clients?: ClientOption[];
   onSubmit: (v: UserFormValues) => Promise<void> | void;
   onCancel: () => void;
 }) {
   const [v, setV] = useState<UserFormValues>(initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [clientSearch, setClientSearch] = useState("");
 
   const set = <K extends keyof UserFormValues>(k: K, val: UserFormValues[K]) =>
     setV((prev) => ({ ...prev, [k]: val }));
+
+  const toggleClient = (id: string, checked: boolean) => {
+    setV((prev) => ({
+      ...prev,
+      client_ids: checked
+        ? Array.from(new Set([...prev.client_ids, id]))
+        : prev.client_ids.filter((c) => c !== id),
+    }));
+  };
+
+  const filteredClients = useMemo(() => {
+    const q = clientSearch.trim().toLowerCase();
+    const list = clients ?? [];
+    if (!q) return list;
+    return list.filter((c) => {
+      const name = (c.commercial_name?.trim() || c.legal_name).toLowerCase();
+      return name.includes(q) || c.legal_name.toLowerCase().includes(q);
+    });
+  }, [clients, clientSearch]);
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -63,6 +96,9 @@ export function UserForm({
     setErrors(e);
     return Object.keys(e).length === 0;
   };
+
+  const showClientsSection = !!clients;
+  const isSuper = v.role === "super_admin";
 
   return (
     <form
@@ -152,22 +188,93 @@ export function UserForm({
             placeholder="Opcional"
           />
         </div>
+      </div>
 
-        {v.role === "platform_user" && (
-          <div className="md:col-span-2 flex items-center justify-between rounded-lg border border-border bg-card p-4">
+      {showClientsSection && (
+        <section className="rounded-lg border border-border bg-card">
+          <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
             <div>
-              <p className="text-sm font-medium">Puede crear acuerdos</p>
+              <h2 className="text-sm font-semibold">Clientes asignados</h2>
               <p className="text-xs text-muted-foreground">
-                Permite a este usuario crear acuerdos para los clientes a los que tiene acceso.
+                {isSuper
+                  ? "No requiere asignación manual."
+                  : "Selecciona los clientes a los que tendrá acceso este usuario."}
               </p>
             </div>
-            <Switch
-              checked={v.can_create_agreements}
-              onCheckedChange={(checked) => set("can_create_agreements", checked)}
-            />
+            {!isSuper && (
+              <span className="rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
+                {v.client_ids.length} seleccionado{v.client_ids.length === 1 ? "" : "s"}
+              </span>
+            )}
+          </header>
+
+          {isSuper ? (
+            <div className="px-4 py-4">
+              <p className="text-sm text-muted-foreground">
+                Los super admins tienen acceso total y no requieren asignación manual de clientes.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3 p-4">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={clientSearch}
+                  onChange={(e) => setClientSearch(e.target.value)}
+                  placeholder="Buscar cliente…"
+                  className="pl-9"
+                />
+              </div>
+              <div className="max-h-72 divide-y divide-border overflow-y-auto rounded-md border border-border">
+                {filteredClients.length === 0 ? (
+                  <p className="px-4 py-6 text-center text-sm text-muted-foreground">
+                    {(clients?.length ?? 0) === 0
+                      ? "No hay clientes activos disponibles."
+                      : "Sin resultados."}
+                  </p>
+                ) : (
+                  filteredClients.map((c) => {
+                    const name = c.commercial_name?.trim() || c.legal_name;
+                    const checked = v.client_ids.includes(c.id);
+                    return (
+                      <label
+                        key={c.id}
+                        className="flex cursor-pointer items-center justify-between gap-3 px-4 py-2.5 hover:bg-muted/50"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium">{name}</p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {c.type === "holding" ? "Holding" : "Directo"}
+                          </p>
+                        </div>
+                        <Switch
+                          checked={checked}
+                          onCheckedChange={(val) => toggleClient(c.id, val)}
+                        />
+                      </label>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
+      {v.role === "platform_user" && (
+        <div className="flex items-center justify-between gap-4 rounded-lg border border-border bg-card p-4">
+          <div>
+            <p className="text-sm font-medium">Puede crear acuerdos en clientes asignados</p>
+            <p className="text-xs text-muted-foreground">
+              Permite a este usuario crear acuerdos para todos los clientes que tenga asignados.
+            </p>
           </div>
-        )}
-      </div>
+          <Switch
+            checked={v.can_create_agreements}
+            onCheckedChange={(checked) => set("can_create_agreements", checked)}
+          />
+        </div>
+      )}
 
       <div className="flex items-center justify-end gap-2 pt-2">
         <Button type="button" variant="ghost" onClick={onCancel} disabled={submitting}>
