@@ -187,23 +187,6 @@ function UserDetail() {
   const adminCount = (memberships ?? []).filter((m) => ADMIN_ROLES.has(m.role)).length;
   const participantCount = totalAgreements - adminCount;
 
-  const clientsValue = isSuper
-    ? "Acceso total"
-    : `${assignedCount} ${assignedCount === 1 ? "cliente" : "clientes"}`;
-  const clientsHint = isSuper
-    ? "Todos los clientes"
-    : assignedCount === 0
-      ? "Requiere asignación"
-      : "Cartera asignada";
-
-  const agreementsValue = isSuper
-    ? "Acceso total"
-    : `${totalAgreements} ${totalAgreements === 1 ? "acuerdo" : "acuerdos"}`;
-  const agreementsHint = isSuper
-    ? "Todos los acuerdos"
-    : totalAgreements === 0
-      ? "Sin acuerdos asignados"
-      : "En gestión";
 
   // Alerts
   const alerts: string[] = [];
