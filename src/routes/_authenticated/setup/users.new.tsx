@@ -1,9 +1,9 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Copy, Check } from "lucide-react";
+import { Copy, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { UserForm, emptyUser, type UserFormValues } from "@/components/setup/UserForm";
 import { createUser } from "@/lib/users.functions";
+import { BackLink, CreateViewShell } from "@/components/setup/CreateViewShell";
 
 export const Route = createFileRoute("/_authenticated/setup/users/new")({
   head: () => ({ meta: [{ title: "Crear usuario · Setup · PGCI" }] }),
@@ -83,29 +84,23 @@ function NewUser() {
   };
 
   return (
-    <div className="space-y-6">
-      <Button asChild variant="ghost" size="sm">
-        <Link to="/setup/users">
-          <ArrowLeft className="mr-2 h-4 w-4" /> Volver a usuarios
-        </Link>
-      </Button>
-
-      <header>
-        <h1 className="text-2xl font-bold tracking-tight">Crear usuario</h1>
-        <p className="text-sm text-muted-foreground">
-          Se generará una contraseña temporal que deberás compartir manualmente con el usuario.
-        </p>
-      </header>
-
+    <>
+    <CreateViewShell
+      backLink={<BackLink to="/setup/users">Volver a usuarios</BackLink>}
+      title="Crear usuario"
+      description="Se generará una contraseña temporal que deberás compartir manualmente con el usuario."
+    >
       <UserForm
         initial={emptyUser}
         submitting={mutation.isPending}
+        submitLabel="Crear usuario"
         clients={clientOptions ?? []}
         onSubmit={async (v) => {
           await mutation.mutateAsync(v);
         }}
         onCancel={() => navigate({ to: "/setup/users" })}
       />
+    </CreateViewShell>
 
       <Dialog
         open={!!credentials}

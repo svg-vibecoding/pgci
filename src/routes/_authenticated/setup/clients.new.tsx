@@ -3,7 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { ClientForm, emptyClient, type ClientFormValues } from "@/components/setup/ClientForm";
-import { CreateViewShell } from "@/components/setup/CreateViewShell";
+import { BackLink, CreateViewShell } from "@/components/setup/CreateViewShell";
 
 const searchSchema = z.object({
   parent: z.string().uuid().optional(),
@@ -65,16 +65,17 @@ function NewClient() {
       }
     : emptyClient;
 
-  const backTo = parent
-    ? ({ to: "/setup/clients/$clientId", params: { clientId: parent } } as const)
-    : ({ to: "/setup/clients" } as const);
-
-  const backLabel = parent ? "Volver al holding" : "Volver a clientes";
+  const backLink = parent ? (
+    <BackLink to="/setup/clients/$clientId" params={{ clientId: parent }}>
+      Volver al holding
+    </BackLink>
+  ) : (
+    <BackLink to="/setup/clients">Volver a clientes</BackLink>
+  );
 
   return (
     <CreateViewShell
-      backTo={backTo}
-      backLabel={backLabel}
+      backLink={backLink}
       title="Crear cliente"
       description={
         parentClient
