@@ -26,6 +26,7 @@ import { Route as AuthenticatedSetupClientsClientIdRouteImport } from './routes/
 import { Route as AuthenticatedSetupUsersUserIdIndexRouteImport } from './routes/_authenticated/setup/users.$userId.index'
 import { Route as AuthenticatedSetupClientsClientIdIndexRouteImport } from './routes/_authenticated/setup/clients.$clientId.index'
 import { Route as AuthenticatedSetupUsersUserIdEditRouteImport } from './routes/_authenticated/setup/users.$userId.edit'
+import { Route as AuthenticatedSetupUsersUserIdClientAccessRouteImport } from './routes/_authenticated/setup/users.$userId.client-access'
 import { Route as AuthenticatedSetupClientsClientIdEditRouteImport } from './routes/_authenticated/setup/clients.$clientId.edit'
 import { Route as AuthenticatedSetupClientsClientIdCompaniesRouteImport } from './routes/_authenticated/setup/clients.$clientId.companies'
 
@@ -125,6 +126,12 @@ const AuthenticatedSetupUsersUserIdEditRoute =
     path: '/edit',
     getParentRoute: () => AuthenticatedSetupUsersUserIdRoute,
   } as any)
+const AuthenticatedSetupUsersUserIdClientAccessRoute =
+  AuthenticatedSetupUsersUserIdClientAccessRouteImport.update({
+    id: '/client-access',
+    path: '/client-access',
+    getParentRoute: () => AuthenticatedSetupUsersUserIdRoute,
+  } as any)
 const AuthenticatedSetupClientsClientIdEditRoute =
   AuthenticatedSetupClientsClientIdEditRouteImport.update({
     id: '/edit',
@@ -154,6 +161,7 @@ export interface FileRoutesByFullPath {
   '/setup/users/': typeof AuthenticatedSetupUsersIndexRoute
   '/setup/clients/$clientId/companies': typeof AuthenticatedSetupClientsClientIdCompaniesRoute
   '/setup/clients/$clientId/edit': typeof AuthenticatedSetupClientsClientIdEditRoute
+  '/setup/users/$userId/client-access': typeof AuthenticatedSetupUsersUserIdClientAccessRoute
   '/setup/users/$userId/edit': typeof AuthenticatedSetupUsersUserIdEditRoute
   '/setup/clients/$clientId/': typeof AuthenticatedSetupClientsClientIdIndexRoute
   '/setup/users/$userId/': typeof AuthenticatedSetupUsersUserIdIndexRoute
@@ -171,6 +179,7 @@ export interface FileRoutesByTo {
   '/setup/users': typeof AuthenticatedSetupUsersIndexRoute
   '/setup/clients/$clientId/companies': typeof AuthenticatedSetupClientsClientIdCompaniesRoute
   '/setup/clients/$clientId/edit': typeof AuthenticatedSetupClientsClientIdEditRoute
+  '/setup/users/$userId/client-access': typeof AuthenticatedSetupUsersUserIdClientAccessRoute
   '/setup/users/$userId/edit': typeof AuthenticatedSetupUsersUserIdEditRoute
   '/setup/clients/$clientId': typeof AuthenticatedSetupClientsClientIdIndexRoute
   '/setup/users/$userId': typeof AuthenticatedSetupUsersUserIdIndexRoute
@@ -193,6 +202,7 @@ export interface FileRoutesById {
   '/_authenticated/setup/users/': typeof AuthenticatedSetupUsersIndexRoute
   '/_authenticated/setup/clients/$clientId/companies': typeof AuthenticatedSetupClientsClientIdCompaniesRoute
   '/_authenticated/setup/clients/$clientId/edit': typeof AuthenticatedSetupClientsClientIdEditRoute
+  '/_authenticated/setup/users/$userId/client-access': typeof AuthenticatedSetupUsersUserIdClientAccessRoute
   '/_authenticated/setup/users/$userId/edit': typeof AuthenticatedSetupUsersUserIdEditRoute
   '/_authenticated/setup/clients/$clientId/': typeof AuthenticatedSetupClientsClientIdIndexRoute
   '/_authenticated/setup/users/$userId/': typeof AuthenticatedSetupUsersUserIdIndexRoute
@@ -215,6 +225,7 @@ export interface FileRouteTypes {
     | '/setup/users/'
     | '/setup/clients/$clientId/companies'
     | '/setup/clients/$clientId/edit'
+    | '/setup/users/$userId/client-access'
     | '/setup/users/$userId/edit'
     | '/setup/clients/$clientId/'
     | '/setup/users/$userId/'
@@ -232,6 +243,7 @@ export interface FileRouteTypes {
     | '/setup/users'
     | '/setup/clients/$clientId/companies'
     | '/setup/clients/$clientId/edit'
+    | '/setup/users/$userId/client-access'
     | '/setup/users/$userId/edit'
     | '/setup/clients/$clientId'
     | '/setup/users/$userId'
@@ -253,6 +265,7 @@ export interface FileRouteTypes {
     | '/_authenticated/setup/users/'
     | '/_authenticated/setup/clients/$clientId/companies'
     | '/_authenticated/setup/clients/$clientId/edit'
+    | '/_authenticated/setup/users/$userId/client-access'
     | '/_authenticated/setup/users/$userId/edit'
     | '/_authenticated/setup/clients/$clientId/'
     | '/_authenticated/setup/users/$userId/'
@@ -385,6 +398,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSetupUsersUserIdEditRouteImport
       parentRoute: typeof AuthenticatedSetupUsersUserIdRoute
     }
+    '/_authenticated/setup/users/$userId/client-access': {
+      id: '/_authenticated/setup/users/$userId/client-access'
+      path: '/client-access'
+      fullPath: '/setup/users/$userId/client-access'
+      preLoaderRoute: typeof AuthenticatedSetupUsersUserIdClientAccessRouteImport
+      parentRoute: typeof AuthenticatedSetupUsersUserIdRoute
+    }
     '/_authenticated/setup/clients/$clientId/edit': {
       id: '/_authenticated/setup/clients/$clientId/edit'
       path: '/edit'
@@ -424,12 +444,15 @@ const AuthenticatedSetupClientsClientIdRouteWithChildren =
   )
 
 interface AuthenticatedSetupUsersUserIdRouteChildren {
+  AuthenticatedSetupUsersUserIdClientAccessRoute: typeof AuthenticatedSetupUsersUserIdClientAccessRoute
   AuthenticatedSetupUsersUserIdEditRoute: typeof AuthenticatedSetupUsersUserIdEditRoute
   AuthenticatedSetupUsersUserIdIndexRoute: typeof AuthenticatedSetupUsersUserIdIndexRoute
 }
 
 const AuthenticatedSetupUsersUserIdRouteChildren: AuthenticatedSetupUsersUserIdRouteChildren =
   {
+    AuthenticatedSetupUsersUserIdClientAccessRoute:
+      AuthenticatedSetupUsersUserIdClientAccessRoute,
     AuthenticatedSetupUsersUserIdEditRoute:
       AuthenticatedSetupUsersUserIdEditRoute,
     AuthenticatedSetupUsersUserIdIndexRoute:
@@ -496,13 +519,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
