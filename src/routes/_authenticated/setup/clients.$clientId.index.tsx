@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/table";
 import { StatusBadge } from "@/components/sumatec";
 import { Badge } from "@/components/sumatec/Badge";
+import { IndicatorCard } from "@/components/setup/IndicatorCard";
 import { useIsSuperAdmin } from "@/hooks/use-profile";
 import { toast } from "sonner";
 import { ArrowLeft, Building2, Pencil, Power, FileText, Users } from "lucide-react";
@@ -213,30 +214,11 @@ function ViewClient() {
       </AlertDialog>
 
       {/* Resumen */}
-      <div
-        className={`grid grid-cols-1 gap-3 ${isHolding ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}
-      >
-        <div className="rounded-lg border border-border bg-card p-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Acuerdos asociados
-          </p>
-          <p className="mt-1 text-xl font-semibold text-foreground">{agreements?.length ?? 0}</p>
-        </div>
-        <div className="rounded-lg border border-border bg-card p-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Usuarios asociados
-          </p>
-          <p className="mt-1 text-xl font-semibold text-foreground">0</p>
-        </div>
+      <div className={`grid grid-cols-1 gap-3 ${isHolding ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
+        <IndicatorCard label="Acuerdos asociados" value={agreements?.length ?? 0} />
+        <IndicatorCard label="Usuarios asociados" value={0} />
         {isHolding && (
-          <div className="rounded-lg border border-border bg-card p-3">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Empresas asociadas
-            </p>
-            <p className="mt-1 text-xl font-semibold text-foreground">
-              {children?.length ?? 0}
-            </p>
-          </div>
+          <IndicatorCard label="Empresas asociadas" value={children?.length ?? 0} />
         )}
       </div>
 
