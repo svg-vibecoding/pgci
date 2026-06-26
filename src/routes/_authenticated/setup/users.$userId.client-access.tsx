@@ -154,7 +154,7 @@ function ClientAccess() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const ops: Promise<unknown>[] = [];
+      const ops: PromiseLike<{ error: unknown }>[] = [];
 
       if (diff.toInsert.length) {
         ops.push(
