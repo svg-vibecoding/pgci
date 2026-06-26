@@ -393,19 +393,71 @@ function ClientAccess() {
       </Card>
 
       <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-end gap-2 px-6 py-3">
-          <Button
-            variant="outline"
-            disabled={saving}
-            onClick={() =>
-              navigate({ to: "/setup/users/$userId", params: { userId } })
-            }
-          >
-            Cancelar
-          </Button>
-          <Button onClick={handleSave} disabled={!hasChanges || saving}>
-            {saving ? "Guardando…" : "Guardar cambios"}
-          </Button>
+        <div className="mx-auto flex max-w-[1400px] flex-col gap-3 px-6 py-3">
+          <div className="flex w-full items-center justify-between">
+            <p
+              className={cn(
+                "text-sm",
+                assignedCount === 0 ? "text-muted-foreground" : "text-foreground",
+              )}
+            >
+              {assignedCount === 0
+                ? "Sin clientes asignados"
+                : createCount === 0
+                  ? `${assignedCount} clientes asignados · Sin permiso de creación`
+                  : `${assignedCount} clientes asignados · ${createCount} con permiso de creación`}
+            </p>
+            {assignedCount > 0 && (
+              <Button
+                variant="link"
+                size="sm"
+                className="h-auto px-0 py-0 text-xs font-medium"
+                onClick={() => setShowDetail((v) => !v)}
+              >
+                {showDetail ? "Ocultar" : "Ver detalle"}
+              </Button>
+            )}
+          </div>
+
+          {showDetail && assignedCount > 0 && (
+            <div className="max-h-48 overflow-y-auto rounded-md border border-border bg-surface p-3">
+              <div className="flex flex-wrap gap-2">
+                {assignedClients.map((c) => {
+                  const st = stateMap.get(c.id) ?? {
+                    assigned: false,
+                    can_create: false,
+                  };
+                  const name = c.commercial_name?.trim() || c.legal_name || "—";
+                  return (
+                    <Chip
+                      key={c.id}
+                      color={st.can_create ? "primary" : "neutral"}
+                      variant="soft"
+                      size="small"
+                      icon={st.can_create ? Check : undefined}
+                    >
+                      {name}
+                    </Chip>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <div className="flex w-full items-center justify-end gap-2 border-t border-border pt-3">
+            <Button
+              variant="outline"
+              disabled={saving}
+              onClick={() =>
+                navigate({ to: "/setup/users/$userId", params: { userId } })
+              }
+            >
+              Cancelar
+            </Button>
+            <Button onClick={handleSave} disabled={!hasChanges || saving}>
+              {saving ? "Guardando…" : "Guardar cambios"}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
