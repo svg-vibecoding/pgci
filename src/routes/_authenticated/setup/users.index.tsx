@@ -273,13 +273,14 @@ function UsersList() {
                         </Link>
                         {isSuper && <Chip size="small" color="info">Super admin</Chip>}
                         {issues.length > 0 && (
-                          <div
-                            className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5"
+                          <Chip
+                            size="small"
+                            color="warning"
+                            icon={AlertTriangle}
                             title={issues.join(" · ")}
                           >
-                            <AlertTriangle className="h-3 w-3 text-amber-500" aria-hidden="true" />
-                            <span className="text-xs font-medium text-amber-700">Alerta</span>
-                          </div>
+                            Alerta
+                          </Chip>
                         )}
                       </div>
                       <span className="block text-xs text-muted-foreground">{u.email}</span>
