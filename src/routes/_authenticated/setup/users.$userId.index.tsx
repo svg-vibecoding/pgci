@@ -304,7 +304,7 @@ function UserDetail() {
         </IndicatorCard>
         <IndicatorCard
           label="VISIBILIDAD"
-          value="Pendiente"
+          value="Versión II"
           hint="Costos y márgenes"
           dotColor="muted"
           tone="muted"
