@@ -1,10 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Copy, Check } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -35,40 +34,21 @@ function NewUser() {
   } | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const { data: clientOptions } = useQuery({
-    queryKey: ["clients", "active-options"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("clients")
-        .select("id, commercial_name, legal_name, type, status, parent_client_id, parent:parent_client_id(commercial_name, legal_name)")
-        .eq("status", "active")
-        .order("commercial_name");
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
-
   const mutation = useMutation({
     mutationFn: (v: UserFormValues) =>
       createUserFn({
         data: {
           full_name: v.full_name.trim(),
           email: v.email.trim(),
-          role: v.role as "super_admin" | "platform_user",
-          can_create_agreements: v.can_create_agreements,
+          role: v.role,
           erp_user_code: v.erp_user_code.trim() || undefined,
           status: v.status,
-          client_ids: v.role === "platform_user" ? v.client_ids : [],
         },
       }),
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["users"] });
       setCredentials(res);
-      if ("access_error" in res && res.access_error) {
-        toast.warning("Usuario creado, pero no se asignaron los clientes.");
-      } else {
-        toast.success("Usuario creado correctamente");
-      }
+      toast.success("Usuario creado correctamente");
     },
     onError: (err: Error) => {
       toast.error(err.message || "No se pudo crear el usuario");
@@ -100,7 +80,6 @@ function NewUser() {
         initial={emptyUser}
         submitting={mutation.isPending}
         submitLabel="Crear usuario"
-        clients={clientOptions ?? []}
         onSubmit={async (v) => {
           await mutation.mutateAsync(v);
         }}
