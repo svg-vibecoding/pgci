@@ -196,33 +196,16 @@ function UserDetail() {
       </AlertDialog>
 
       {/* Indicadores principales */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <IndicatorCard
-          label="Clientes"
+          label="Clientes asociados"
           value={isSuper ? "Acceso total" : assignedCount}
           hint={isSuper ? undefined : assignedCount === 1 ? "cliente" : "clientes"}
         />
         <IndicatorCard
-          label="Acuerdos"
+          label="Acuerdos asociados"
           value={isSuper ? "Acceso total" : totalAgreements}
           hint={isSuper ? undefined : totalAgreements === 1 ? "acuerdo" : "acuerdos"}
-        />
-        <IndicatorCard
-          label="Alcances en PGCI"
-          value={isSuper ? "Administración" : user.can_create_agreements ? "Sí" : "No"}
-          hint={isSuper ? undefined : "crea acuerdos"}
-        >
-          {!isSuper && (
-            <>
-              <p>Administra: {assignedCount > 0 ? `${assignedCount} clientes` : "No"}</p>
-              <p>Participa: {totalAgreements > 0 ? `${totalAgreements} clientes` : "No"}</p>
-            </>
-          )}
-        </IndicatorCard>
-        <IndicatorCard
-          label="Visibilidad"
-          value="Versión II"
-          hint="Pendiente"
         />
       </div>
 
