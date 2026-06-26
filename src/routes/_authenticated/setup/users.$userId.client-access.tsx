@@ -296,7 +296,7 @@ function ClientAccess() {
   const user = profileQ.data;
 
   return (
-    <div className="-mt-6 space-y-5 pb-24">
+    <div className="-mt-6 space-y-5">
       <Link
         to="/setup/users/$userId"
         params={{ userId }}
