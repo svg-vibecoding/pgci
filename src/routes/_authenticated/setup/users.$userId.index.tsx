@@ -270,7 +270,7 @@ function UserDetail() {
       {/* Indicadores principales */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <IndicatorCard
-          label="Cartera"
+          label="CLIENTES"
           value={isSuper ? "Acceso total" : `${assignedCount} ${assignedCount === 1 ? "cliente" : "clientes"}`}
           hint={isSuper ? "Todos los clientes" : assignedCount === 0 ? "Requiere asignación" : "Cartera asignada"}
           dotColor="primary"
@@ -303,7 +303,7 @@ function UserDetail() {
           )}
         </IndicatorCard>
         <IndicatorCard
-          label="Datos sensibles"
+          label="VISIBILIDAD"
           value="Pendiente"
           hint="Costos y márgenes"
           dotColor="muted"
@@ -311,7 +311,7 @@ function UserDetail() {
           icon={<Lock className="h-3 w-3" />}
           tag={
             <Badge color="neutral" variant="soft">
-              Próximamente
+              V2
             </Badge>
           }
         />
