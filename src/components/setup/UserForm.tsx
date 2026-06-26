@@ -222,7 +222,6 @@ export function UserForm({
         </div>
       </div>
 
-
       {showClientsSection && !isSuper && (
         <section className="rounded-lg border border-border bg-card">
           <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
