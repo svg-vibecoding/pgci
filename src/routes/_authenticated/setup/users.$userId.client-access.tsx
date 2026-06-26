@@ -148,6 +148,23 @@ function ClientAccess() {
     return `${assignedCount} de ${totalClients} clientes asignados · ${createCount} con permiso de creación`;
   }, [assignedCount, totalClients, createCount]);
 
+  const initialAssignedCount = useMemo(
+    () => [...initialMap.values()].filter((s) => s.assigned).length,
+    [initialMap],
+  );
+
+  const initialCreateCount = useMemo(
+    () => [...initialMap.values()].filter((s) => s.assigned && s.can_create).length,
+    [initialMap],
+  );
+
+  const initialSummaryText = useMemo(() => {
+    if (initialCreateCount === 0) {
+      return `${initialAssignedCount} de ${totalClients} clientes asignados · Sin permiso de creación`;
+    }
+    return `${initialAssignedCount} de ${totalClients} clientes asignados · ${initialCreateCount} con permiso de creación`;
+  }, [initialAssignedCount, totalClients, initialCreateCount]);
+
   const diff = useMemo(() => {
     const toInsert: string[] = [];
     const toDelete: string[] = [];
@@ -316,21 +333,18 @@ function ClientAccess() {
           </Badge>
         </div>
         <p className="text-sm text-muted-foreground">
-          Configura qué clientes puede ver y en cuáles puede crear acuerdos.
-        </p>
-        <p className="text-sm text-muted-foreground">
           Activa un cliente para que el usuario pueda verlo en la plataforma. Si
           además necesita crear acuerdos para ese cliente, activa también el
           permiso de creación — eso le permitirá iniciar nuevos acuerdos y
           quedar como responsable de ellos.
         </p>
-        <p className="text-xs text-muted-foreground">{summaryText}</p>
+        <p className="text-sm font-medium text-foreground">{initialSummaryText}</p>
       </header>
 
       <Card>
         <CardHeader className="space-y-3">
           <CardTitle className="text-base">Clientes</CardTitle>
-          <div className="flex items-center gap-3">
+          <div className="flex items-start gap-3">
             <div className="relative flex-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -340,28 +354,32 @@ function ClientAccess() {
                 className="pl-9"
               />
             </div>
-            <div className="flex items-center gap-4">
-              <label className="flex items-center gap-2 whitespace-nowrap text-xs font-medium text-muted-foreground">
-                {search.trim() ? "Asignar visibles" : "Asignar todos"}
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-end gap-3">
+                <span className="text-right text-xs font-medium text-muted-foreground">
+                  Asignar clientes {search.trim() ? "(Visibles)" : "(Todos)"}
+                </span>
                 <Switch
                   checked={visibleAllAssigned}
                   disabled={filteredClients.length === 0}
                   onCheckedChange={toggleAllAssigned}
                 />
-              </label>
-              <label
+              </div>
+              <div
                 className={cn(
-                  "flex items-center gap-2 whitespace-nowrap text-xs font-medium text-muted-foreground",
+                  "flex items-center justify-end gap-3",
                   visibleAssignedClients.length === 0 && "opacity-50",
                 )}
               >
-                {search.trim() ? "Crear acuerdos a visibles" : "Crear acuerdos a todos"}
+                <span className="text-right text-xs font-medium text-muted-foreground">
+                  Crear acuerdos {search.trim() ? "(Visibles)" : "(Todos)"}
+                </span>
                 <Switch
                   checked={visibleAllCanCreate}
                   disabled={visibleAssignedClients.length === 0}
                   onCheckedChange={toggleAllCanCreate}
                 />
-              </label>
+              </div>
             </div>
           </div>
           {search.trim() !== "" && (
@@ -412,7 +430,7 @@ function ClientAccess() {
                     </div>
 
                     <div className="flex items-center gap-6">
-                      <label className="flex flex-col items-center gap-1 text-xs font-normal text-muted-foreground">
+                      <label className="flex flex-col items-center gap-1 text-xs font-medium text-muted-foreground">
                         Asignar
                         <Switch
                           checked={st.assigned}
@@ -421,7 +439,7 @@ function ClientAccess() {
                       </label>
                       <label
                         className={cn(
-                          "flex flex-col items-center gap-1 text-xs font-normal text-muted-foreground",
+                          "flex flex-col items-center gap-1 text-xs font-medium text-muted-foreground",
                           !st.assigned && "opacity-40",
                         )}
                       >
@@ -444,7 +462,7 @@ function ClientAccess() {
       <div className="sticky bottom-0 z-20 border-t border-border bg-background/95 backdrop-blur">
         <div className="flex flex-col gap-3 py-3">
           <div className="flex w-full items-center justify-between">
-            <p className="text-xs text-muted-foreground">{summaryText}</p>
+            <p className="text-sm font-medium text-foreground">{summaryText}</p>
             {assignedCount > 0 && (
               <Button
                 variant="link"
