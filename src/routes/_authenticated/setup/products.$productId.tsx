@@ -138,28 +138,19 @@ function ProductDetail() {
         <CardHeader>
           <CardTitle className="text-base">Información del producto</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <InfoSection title="Identificación">
+        <CardContent>
+          <InfoSection>
             <InfoField label="Código Jaivaná">{val(data.sku)}</InfoField>
             <InfoField label="Descripción Jaivaná">{val(data.erp_description)}</InfoField>
             <InfoField label="Descripción comercial">{val(data.commercial_description)}</InfoField>
-          </InfoSection>
-
-          <InfoSection title="Marca y referencia">
             <InfoField label="Marca Jaivaná">{val(data.erp_brand)}</InfoField>
             <InfoField label="Marca">{brand}</InfoField>
             <InfoField label="Referencia">{val(data.brand_reference)}</InfoField>
-          </InfoSection>
-
-          <InfoSection title="Clasificación ERP">
             <InfoField label="Clasificación">{val(data.product_classification)}</InfoField>
             <InfoField label="Línea">{val(data.erp_product_category_n1)}</InfoField>
             <InfoField label="Grupo">{val(data.erp_product_category_n2)}</InfoField>
             <InfoField label="Subgrupo">{val(data.erp_product_category_n3)}</InfoField>
             <InfoField label="Unidad">{val(data.commercial_unit)}</InfoField>
-          </InfoSection>
-
-          <InfoSection title="Estado y auditoría">
             <InfoField label="Estado">
               <StatusBadge
                 status={isActive ? "active" : "neutral"}
