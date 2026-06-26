@@ -82,7 +82,7 @@ export const createUser = createServerFn({ method: "POST" })
       const rows = data.client_ids.map((client_id) => ({
         user_id: newUserId,
         client_id,
-        granted_by: userId,
+        assigned_by: userId,
       }));
       const { error: accessErr } = await supabaseAdmin
         .from("user_client_access")
