@@ -86,6 +86,7 @@ export const createUser = createServerFn({ method: "POST" })
 const updateUserSchema = z.object({
   user_id: z.string().uuid(),
   full_name: z.string().trim().min(1, "Nombre requerido").max(120),
+  email: z.string().trim().toLowerCase().email("Email inválido").max(255).optional(),
   role: z.enum(["super_admin", "platform_user"]),
   erp_user_code: z
     .string()
@@ -94,6 +95,7 @@ const updateUserSchema = z.object({
     .optional()
     .transform((v) => (v && v.length ? v : null)),
   status: z.enum(["active", "inactive"]).default("active"),
+  new_password: z.string().min(8, "Mínimo 8 caracteres").optional(),
 });
 
 export type UpdateUserInput = z.input<typeof updateUserSchema>;
@@ -110,6 +112,34 @@ export const updateUser = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    let emailToPersist: string | undefined;
+
+    if (data.email) {
+      const { data: current, error: curErr } = await supabaseAdmin
+        .from("profiles")
+        .select("email")
+        .eq("user_id", data.user_id)
+        .single();
+      if (curErr) throw new Error("No se pudo leer el usuario actual");
+
+      if (current.email !== data.email) {
+        const { data: dup } = await supabaseAdmin
+          .from("profiles")
+          .select("user_id")
+          .eq("email", data.email)
+          .neq("user_id", data.user_id)
+          .maybeSingle();
+        if (dup) throw new Error("Ya existe un usuario con ese email.");
+
+        const { error: authErr } = await supabaseAdmin.auth.admin.updateUserById(data.user_id, {
+          email: data.email,
+        });
+        if (authErr) throw new Error(`No se pudo actualizar el email: ${authErr.message}`);
+
+        emailToPersist = data.email;
+      }
+    }
+
     const { error: profileErr } = await supabaseAdmin
       .from("profiles")
       .update({
@@ -117,10 +147,19 @@ export const updateUser = createServerFn({ method: "POST" })
         role: data.role,
         status: data.status,
         erp_user_code: data.erp_user_code,
+        ...(emailToPersist ? { email: emailToPersist } : {}),
       })
       .eq("user_id", data.user_id);
 
     if (profileErr) throw new Error(`No se pudo actualizar el perfil: ${profileErr.message}`);
 
+    if (data.new_password) {
+      const { error: pwErr } = await supabaseAdmin.auth.admin.updateUserById(data.user_id, {
+        password: data.new_password,
+      });
+      if (pwErr) throw new Error(`No se pudo actualizar la contraseña: ${pwErr.message}`);
+    }
+
     return { user_id: data.user_id };
   });
+

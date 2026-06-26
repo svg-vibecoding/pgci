@@ -84,7 +84,7 @@ function EditUser() {
         </Button>
       }
       title="Editar usuario"
-      description="Actualiza los datos del usuario. El email no se puede modificar."
+      description="Actualiza los datos del usuario. Si cambias el email, el usuario deberá iniciar sesión con el nuevo correo."
     >
       {profile.status === "inactive" && (
         <Alert variant="info" className="mb-4">
@@ -97,9 +97,10 @@ function EditUser() {
       )}
       <UserForm
         initial={initial}
-        emailLocked
+        showPasswordSection
         submitting={mutation.isPending}
         submitLabel="Guardar cambios"
+
         onSubmit={async (v) => {
           await mutation.mutateAsync(v);
         }}
