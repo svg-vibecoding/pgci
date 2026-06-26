@@ -202,46 +202,18 @@ function UserDetail() {
         <IndicatorCard
           label="CLIENTES"
           value={isSuper ? "Acceso total" : `${assignedCount} ${assignedCount === 1 ? "cliente" : "clientes"}`}
-          hint={isSuper ? "Todos los clientes" : assignedCount === 0 ? "Requiere asignación" : "Cartera asignada"}
-          dotColor="primary"
-          tone={!isSuper && assignedCount === 0 ? "warning" : "default"}
         />
         <IndicatorCard
-          label="Acuerdos"
+          label="ACUERDOS"
           value={isSuper ? "Acceso total" : `${totalAgreements} ${totalAgreements === 1 ? "acuerdo" : "acuerdos"}`}
-          hint={isSuper ? "Todos los acuerdos" : totalAgreements === 0 ? "Sin acuerdos asignados" : "En gestión"}
-          dotColor="accent"
         />
         <IndicatorCard
           label="ALCANCES EN PGCI"
-          value={
-            isSuper
-              ? "Administración"
-              : user.can_create_agreements
-                ? "SÍ"
-                : "NO"
-          }
-          hint={isSuper ? "Crea, administra y consulta" : "crea acuerdos"}
-          dotColor="muted"
-          tone={!isSuper && !user.can_create_agreements ? "muted" : "default"}
-        >
-          {!isSuper && (
-            <>
-              <p>Administra: {adminCount > 0 ? `${adminCount} clientes` : "No"}</p>
-              <p>Participa: {participantCount > 0 ? `${participantCount} clientes` : "No"}</p>
-            </>
-          )}
-        </IndicatorCard>
+          value={isSuper ? "Administración" : user.can_create_agreements ? "Sí" : "No"}
+        />
         <IndicatorCard
           label="VISIBILIDAD"
           value="Versión II"
-          hint="Costos y márgenes"
-          dotColor="muted"
-          tag={
-            <Badge color="neutral" variant="soft">
-              V2
-            </Badge>
-          }
         />
       </div>
 
