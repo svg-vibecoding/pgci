@@ -258,7 +258,7 @@ function UserDetail() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
           <CardTitle className="text-base">Cartera de clientes</CardTitle>
-          {isSuperAdmin && (
+          {isSuperAdmin && assignedCount > 0 && (
             <Button asChild variant="outline" size="sm">
               <Link
                 to="/setup/users/$userId/client-access"
@@ -283,8 +283,11 @@ function UserDetail() {
               <p className="text-sm font-medium">Este usuario aún no tiene clientes asignados.</p>
               {isSuperAdmin && (
                 <Button asChild variant="outline" size="sm" className="mt-3">
-                  <Link to="/setup/users/$userId/edit" params={{ userId }}>
-                    <Pencil className="mr-2 h-4 w-4" /> Editar configuración
+                  <Link
+                    to="/setup/users/$userId/client-access"
+                    params={{ userId }}
+                  >
+                    Gestionar acceso
                   </Link>
                 </Button>
               )}
