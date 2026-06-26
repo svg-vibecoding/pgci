@@ -420,7 +420,7 @@ function ClientAccess() {
           </div>
 
           {showDetail && assignedCount > 0 && (
-            <div className="max-h-48 overflow-y-auto rounded-md border border-border bg-surface p-3">
+            <div className="max-h-48 overflow-y-auto rounded-md border border-border bg-background p-3">
               <div className="flex flex-wrap gap-2">
                 {assignedClients.map((c) => {
                   const st = stateMap.get(c.id) ?? {
