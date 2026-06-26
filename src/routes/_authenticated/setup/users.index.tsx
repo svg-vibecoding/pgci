@@ -56,26 +56,32 @@ function UsersList() {
       const { data: profiles, error } = await supabase
         .from("profiles")
         .select(
-          "user_id, full_name, email, role, status, can_create_agreements, erp_user_code, updated_at",
+          "user_id, full_name, email, role, status, erp_user_code, updated_at",
         )
         .order("full_name");
       if (error) throw error;
 
       const ids = (profiles ?? []).map((p) => p.user_id);
       const accessCounts = new Map<string, number>();
+      const createCounts = new Map<string, number>();
       if (ids.length) {
         const { data: access } = await supabase
           .from("user_client_access")
-          .select("user_id")
+          .select("user_id, can_create_agreements")
           .in("user_id", ids);
         (access ?? []).forEach((a) => {
-          if (a.user_id)
+          if (a.user_id) {
             accessCounts.set(a.user_id, (accessCounts.get(a.user_id) ?? 0) + 1);
+            if (a.can_create_agreements) {
+              createCounts.set(a.user_id, (createCounts.get(a.user_id) ?? 0) + 1);
+            }
+          }
         });
       }
       return (profiles ?? []).map((p) => ({
         ...p,
         client_count: accessCounts.get(p.user_id) ?? 0,
+        create_count: createCounts.get(p.user_id) ?? 0,
       })) as UserRow[];
     },
   });
@@ -287,8 +293,6 @@ function UsersList() {
                 const issues = getUserIssues(u);
                 const isSuper = u.role === "super_admin";
                 const hasZeroClients = !isSuper && u.client_count === 0;
-                const incompleteCreator =
-                  !isSuper && u.can_create_agreements && u.client_count === 0;
                 const isActive = u.status === "active";
                 return (
                   <TableRow key={u.user_id}>
@@ -319,21 +323,16 @@ function UsersList() {
                     <TableCell>
                       {isSuper ? (
                         <span className="text-sm text-muted-foreground">Acceso total</span>
+                      ) : hasZeroClients ? (
+                        <span className="text-xs text-amber-700">Sin clientes</span>
+                      ) : u.create_count > 0 ? (
+                        <Badge color={u.create_count === u.client_count ? "info" : "warning"}>
+                          Crea acuerdos en {u.create_count} de {u.client_count}
+                        </Badge>
                       ) : (
-                        <div className="flex flex-wrap items-center gap-2">
-                          {u.can_create_agreements && (
-                            <Badge color={incompleteCreator ? "warning" : "info"}>
-                              Crea acuerdos
-                            </Badge>
-                          )}
-                          {hasZeroClients ? (
-                            <span className="text-xs text-amber-700">Sin clientes</span>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">
-                              {u.client_count === 1 ? "1 cliente" : `${u.client_count} clientes`}
-                            </span>
-                          )}
-                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {u.client_count === 1 ? "1 cliente" : `${u.client_count} clientes`}
+                        </span>
                       )}
                     </TableCell>
                     <TableCell>
@@ -419,20 +418,16 @@ type UserRow = {
   email: string | null;
   role: string;
   status: string;
-  can_create_agreements: boolean | null;
   erp_user_code: string | null;
   updated_at: string | null;
   client_count: number;
+  create_count: number;
 };
 
 function getUserIssues(u: UserRow): string[] {
   const issues: string[] = [];
-  if (u.role === "platform_user") {
-    if (u.can_create_agreements && u.client_count === 0) {
-      issues.push("Puede crear acuerdos pero no tiene clientes asignados");
-    } else if (u.client_count === 0) {
-      issues.push("Sin clientes asignados");
-    }
+  if (u.role === "platform_user" && u.client_count === 0) {
+    issues.push("Sin clientes asignados");
   }
   if (u.status === "inactive" && u.client_count > 0) {
     issues.push("Usuario inactivo con accesos existentes");
