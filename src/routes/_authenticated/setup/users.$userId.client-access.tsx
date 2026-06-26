@@ -191,7 +191,7 @@ function ClientAccess() {
     });
   };
 
-  const toggleAllVisible = (on: boolean) => {
+  const toggleAllAssigned = (on: boolean) => {
     setStateMap((prev) => {
       const next = new Map(prev);
       filteredClients.forEach((c) => {
@@ -200,6 +200,18 @@ function ClientAccess() {
           assigned: on,
           can_create: on ? curr.can_create : false,
         });
+      });
+      return next;
+    });
+  };
+
+  const toggleAllCanCreate = (on: boolean) => {
+    setStateMap((prev) => {
+      const next = new Map(prev);
+      filteredClients.forEach((c) => {
+        const curr = next.get(c.id) ?? { assigned: false, can_create: false };
+        if (!curr.assigned) return;
+        next.set(c.id, { ...curr, can_create: on });
       });
       return next;
     });
