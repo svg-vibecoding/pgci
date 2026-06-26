@@ -142,7 +142,10 @@ function ProductDetail() {
         </div>
       </header>
 
-      <IndicatorCard label="Acuerdos asociados" value={agreementCount} />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <IndicatorCard label="Acuerdos asociados" value={agreementCount} />
+        <IndicatorCard label="Clientes asociados" value={associatedClients} />
+      </div>
 
       <Card>
         <CardContent className="grid grid-cols-1 gap-x-8 gap-y-4 py-6 sm:grid-cols-2">
