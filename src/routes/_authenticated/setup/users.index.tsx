@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -20,19 +20,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Chip, StatusBadge, Badge } from "@/components/sumatec";
+import { Chip, StatusBadge } from "@/components/sumatec";
 import { Plus, Search, AlertTriangle } from "lucide-react";
-import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/setup/users/")({
   head: () => ({ meta: [{ title: "Usuarios y accesos · Setup · PGCI" }] }),
@@ -43,12 +32,9 @@ type CardKey = "all" | "active" | "inactive" | "alerts";
 type RoleFilter = "all" | "super_admin" | "platform_user";
 
 function UsersList() {
-  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [roleF, setRoleF] = useState<RoleFilter>("all");
   const [activeCard, setActiveCard] = useState<CardKey>("all");
-  const [confirmUser, setConfirmUser] = useState<UserRow | null>(null);
-  const [pending, setPending] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["users", "list"],
@@ -134,26 +120,6 @@ function UsersList() {
 
   const roleLabel = (r: string) =>
     r === "super_admin" ? "Super admin" : "Usuario plataforma";
-
-  const handleToggleStatus = async () => {
-    if (!confirmUser) return;
-    setPending(true);
-    const newStatus = confirmUser.status === "active" ? "inactive" : "active";
-    const { error } = await supabase
-      .from("profiles")
-      .update({ status: newStatus })
-      .eq("user_id", confirmUser.user_id);
-    setPending(false);
-    if (error) {
-      toast.error("No se pudo actualizar el estado");
-      return;
-    }
-    toast.success(newStatus === "active" ? "Usuario activado" : "Usuario inactivado");
-    setConfirmUser(null);
-    queryClient.invalidateQueries({ queryKey: ["users", "list"] });
-  };
-
-  const isInactivating = confirmUser?.status === "active";
 
   return (
     <div className="space-y-6">
@@ -266,8 +232,9 @@ function UsersList() {
             <TableHeader>
               <TableRow>
                 <TableHead>Usuario</TableHead>
-                <TableHead>Código ERP</TableHead>
-                <TableHead>Capacidades</TableHead>
+                <TableHead>Código</TableHead>
+                <TableHead>Cartera</TableHead>
+                <TableHead>Crea acuerdos</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
@@ -275,14 +242,14 @@ function UsersList() {
             <TableBody>
               {isLoading && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-sm text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center text-sm text-muted-foreground">
                     Cargando…
                   </TableCell>
                 </TableRow>
               )}
               {!isLoading && filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-8">
+                  <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">
                     {all.length === 0
                       ? "Aún no hay usuarios creados."
                       : "No hay usuarios que coincidan con los filtros."}
@@ -292,12 +259,11 @@ function UsersList() {
               {filtered.map((u) => {
                 const issues = getUserIssues(u);
                 const isSuper = u.role === "super_admin";
-                const hasZeroClients = !isSuper && u.client_count === 0;
                 const isActive = u.status === "active";
                 return (
                   <TableRow key={u.user_id}>
                     <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Link
                           to="/setup/users/$userId"
                           params={{ userId: u.user_id }}
@@ -305,14 +271,15 @@ function UsersList() {
                         >
                           {u.full_name}
                         </Link>
-                        {isSuper && <Badge color="info">Super admin</Badge>}
+                        {isSuper && <Chip size="small" color="info">Super admin</Chip>}
                         {issues.length > 0 && (
-                          <AlertTriangle
-                            className="h-4 w-4 text-amber-600"
-                            aria-label={issues.join(" · ")}
+                          <div
+                            className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5"
+                            title={issues.join(" · ")}
                           >
-                            <title>{issues.join(" · ")}</title>
-                          </AlertTriangle>
+                            <AlertTriangle className="h-3 w-3 text-amber-500" aria-hidden="true" />
+                            <span className="text-xs font-medium text-amber-700">Alerta</span>
+                          </div>
                         )}
                       </div>
                       <span className="block text-xs text-muted-foreground">{u.email}</span>
@@ -320,19 +287,24 @@ function UsersList() {
                     <TableCell className="text-sm">
                       {u.erp_user_code ? u.erp_user_code : <span className="text-muted-foreground">—</span>}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-sm">
                       {isSuper ? (
-                        <span className="text-sm text-muted-foreground">Acceso total</span>
-                      ) : hasZeroClients ? (
-                        <span className="text-xs text-amber-700">Sin clientes</span>
-                      ) : u.create_count > 0 ? (
-                        <Badge color={u.create_count === u.client_count ? "info" : "warning"}>
-                          Crea acuerdos en {u.create_count} de {u.client_count}
-                        </Badge>
+                        <span className="text-muted-foreground">—</span>
                       ) : (
-                        <span className="text-xs text-muted-foreground">
-                          {u.client_count === 1 ? "1 cliente" : `${u.client_count} clientes`}
+                        <span>
+                          {u.client_count} {u.client_count === 1 ? "cliente" : "clientes"}
                         </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {isSuper ? (
+                        <span className="text-muted-foreground">—</span>
+                      ) : u.create_count > 0 ? (
+                        <span>
+                          {u.create_count} de {u.client_count}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
                       )}
                     </TableCell>
                     <TableCell>
@@ -353,13 +325,6 @@ function UsersList() {
                             Editar
                           </Link>
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setConfirmUser(u)}
-                        >
-                          {isActive ? "Inactivar" : "Activar"}
-                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -369,45 +334,6 @@ function UsersList() {
           </Table>
         </div>
       </div>
-
-      <AlertDialog open={!!confirmUser} onOpenChange={(o) => !o && setConfirmUser(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {isInactivating ? "Inactivar usuario" : "Activar usuario"}
-            </AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-2">
-                {isInactivating ? (
-                  <>
-                    <p>
-                      El usuario no podrá operar en la plataforma. Sus accesos y
-                      configuraciones se conservarán.
-                    </p>
-                    {confirmUser && confirmUser.client_count > 0 && (
-                      <p>
-                        Este usuario tiene clientes asignados. Al inactivarlo no se
-                        eliminarán sus accesos, pero no podrá usarlos mientras esté
-                        inactivo.
-                      </p>
-                    )}
-                  </>
-                ) : (
-                  <p>
-                    El usuario podrá volver a operar según sus accesos configurados.
-                  </p>
-                )}
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={pending}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleToggleStatus} disabled={pending}>
-              {isInactivating ? "Inactivar" : "Activar"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
