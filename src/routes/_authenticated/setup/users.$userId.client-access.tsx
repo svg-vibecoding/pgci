@@ -296,15 +296,30 @@ function ClientAccess() {
       <Card>
         <CardHeader className="space-y-3">
           <CardTitle className="text-base">Clientes</CardTitle>
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar cliente…"
-              className="pl-9"
-            />
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar cliente…"
+                className="pl-9"
+              />
+            </div>
+            <label className="flex items-center gap-2 whitespace-nowrap text-xs font-medium text-muted-foreground">
+              {search.trim() ? "Seleccionar visibles" : "Todos"}
+              <Switch
+                checked={visibleAllAssigned}
+                disabled={filteredClients.length === 0}
+                onCheckedChange={toggleAllVisible}
+              />
+            </label>
           </div>
+          {search.trim() !== "" && (
+            <p className="text-xs text-muted-foreground">
+              {filteredClients.length} de {totalClients} clientes
+            </p>
+          )}
         </CardHeader>
         <CardContent>
           {totalClients === 0 ? (
