@@ -39,7 +39,7 @@ function NewUser() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("clients")
-        .select("id, commercial_name, legal_name, type, status")
+        .select("id, commercial_name, legal_name, type, status, parent_client_id, parent:parent_client_id(commercial_name, legal_name)")
         .eq("status", "active")
         .order("commercial_name");
       if (error) throw error;

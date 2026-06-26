@@ -38,6 +38,8 @@ export type ClientOption = {
   commercial_name: string | null;
   legal_name: string;
   type: string;
+  parent_client_id?: string | null;
+  parent?: { commercial_name: string | null; legal_name: string } | null;
 };
 
 function Req() {
@@ -307,16 +309,25 @@ export function UserForm({
                 filteredClients.map((c) => {
                   const name = c.commercial_name?.trim() || c.legal_name;
                   const checked = v.client_ids.includes(c.id);
+                  const isHolding = c.type === "holding";
+                  const parentName = c.parent?.commercial_name?.trim() || c.parent?.legal_name || null;
                   return (
                     <label
                       key={c.id}
                       className="flex cursor-pointer items-center justify-between gap-3 px-4 py-2.5 hover:bg-muted/50"
                     >
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-medium">{name}</p>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {c.type === "holding" ? "Holding" : "Directo"}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="truncate text-sm font-medium">{name}</p>
+                          {isHolding && (
+                            <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue-700">
+                              Holding
+                            </span>
+                          )}
+                        </div>
+                        {!isHolding && parentName && (
+                          <p className="truncate text-xs text-muted-foreground">{parentName}</p>
+                        )}
                       </div>
                       <Switch
                         checked={checked}
