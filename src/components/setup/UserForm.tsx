@@ -222,14 +222,6 @@ export function UserForm({
         </div>
       </div>
 
-      {isSuper && (
-        <div className="rounded-lg border border-border bg-muted/40 px-4 py-3">
-          <p className="text-sm text-muted-foreground">
-            Los super admins tienen acceso total a la plataforma y no requieren asignación manual
-            de clientes.
-          </p>
-        </div>
-      )}
 
       {showClientsSection && !isSuper && (
         <section className="rounded-lg border border-border bg-card">
