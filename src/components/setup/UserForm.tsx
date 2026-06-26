@@ -357,7 +357,7 @@ export function UserForm({
         </div>
       )}
 
-      <div className="flex items-center justify-end gap-2 pt-2">
+      <div className="flex items-center justify-end gap-2 border-t border-border pt-4">
         <Button type="button" variant="ghost" onClick={onCancel} disabled={submitting}>
           Cancelar
         </Button>
