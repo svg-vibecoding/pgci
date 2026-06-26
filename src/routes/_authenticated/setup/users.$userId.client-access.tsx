@@ -3,13 +3,14 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/sumatec";
+import { Badge, Chip } from "@/components/sumatec";
 import { useIsSuperAdmin } from "@/hooks/use-profile";
-import { ArrowLeft, Search } from "lucide-react";
+import { ArrowLeft, Check, Search } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/setup/users/$userId/client-access")({
   head: () => ({ meta: [{ title: "Acceso a clientes · Setup · PGCI" }] }),
@@ -31,6 +32,7 @@ function ClientAccess() {
   const [stateMap, setStateMap] = useState<Map<string, AccessState>>(new Map());
   const [initialMap, setInitialMap] = useState<Map<string, AccessState>>(new Map());
   const [saving, setSaving] = useState(false);
+  const [showDetail, setShowDetail] = useState(false);
 
   const profileQ = useQuery({
     queryKey: ["users", userId, "profile-min"],
@@ -95,6 +97,11 @@ function ClientAccess() {
     [stateMap],
   );
 
+  const createCount = useMemo(
+    () => [...stateMap.values()].filter((s) => s.assigned && s.can_create).length,
+    [stateMap],
+  );
+
   const totalClients = clientsQ.data?.length ?? 0;
 
   const filteredClients = useMemo(() => {
@@ -107,6 +114,22 @@ function ClientAccess() {
       return name.includes(q) || legal.includes(q);
     });
   }, [clientsQ.data, search]);
+
+  const visibleAllAssigned = useMemo(() => {
+    if (filteredClients.length === 0) return false;
+    return filteredClients.every((c) => stateMap.get(c.id)?.assigned);
+  }, [filteredClients, stateMap]);
+
+  const assignedClients = useMemo(() => {
+    if (!clientsQ.data) return [];
+    return clientsQ.data
+      .filter((c) => stateMap.get(c.id)?.assigned)
+      .sort((a, b) =>
+        (a.commercial_name || a.legal_name || "—").localeCompare(
+          b.commercial_name || b.legal_name || "—",
+        ),
+      );
+  }, [clientsQ.data, stateMap]);
 
   const diff = useMemo(() => {
     const toInsert: string[] = [];
@@ -147,6 +170,20 @@ function ClientAccess() {
       const curr = next.get(id) ?? { assigned: false, can_create: false };
       if (!curr.assigned) return prev;
       next.set(id, { ...curr, can_create });
+      return next;
+    });
+  };
+
+  const toggleAllVisible = (on: boolean) => {
+    setStateMap((prev) => {
+      const next = new Map(prev);
+      filteredClients.forEach((c) => {
+        const curr = next.get(c.id) ?? { assigned: false, can_create: false };
+        next.set(c.id, {
+          assigned: on,
+          can_create: on ? curr.can_create : false,
+        });
+      });
       return next;
     });
   };
@@ -260,15 +297,30 @@ function ClientAccess() {
       <Card>
         <CardHeader className="space-y-3">
           <CardTitle className="text-base">Clientes</CardTitle>
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar cliente…"
-              className="pl-9"
-            />
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar cliente…"
+                className="pl-9"
+              />
+            </div>
+            <label className="flex items-center gap-2 whitespace-nowrap text-xs font-medium text-muted-foreground">
+              {search.trim() ? "Seleccionar visibles" : "Todos"}
+              <Switch
+                checked={visibleAllAssigned}
+                disabled={filteredClients.length === 0}
+                onCheckedChange={toggleAllVisible}
+              />
+            </label>
           </div>
+          {search.trim() !== "" && (
+            <p className="text-xs text-muted-foreground">
+              {filteredClients.length} de {totalClients} clientes
+            </p>
+          )}
         </CardHeader>
         <CardContent>
           {totalClients === 0 ? (
@@ -341,19 +393,71 @@ function ClientAccess() {
       </Card>
 
       <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-end gap-2 px-6 py-3">
-          <Button
-            variant="outline"
-            disabled={saving}
-            onClick={() =>
-              navigate({ to: "/setup/users/$userId", params: { userId } })
-            }
-          >
-            Cancelar
-          </Button>
-          <Button onClick={handleSave} disabled={!hasChanges || saving}>
-            {saving ? "Guardando…" : "Guardar cambios"}
-          </Button>
+        <div className="mx-auto flex max-w-[1400px] flex-col gap-3 px-6 py-3">
+          <div className="flex w-full items-center justify-between">
+            <p
+              className={cn(
+                "text-sm",
+                assignedCount === 0 ? "text-muted-foreground" : "text-foreground",
+              )}
+            >
+              {assignedCount === 0
+                ? "Sin clientes asignados"
+                : createCount === 0
+                  ? `${assignedCount} clientes asignados · Sin permiso de creación`
+                  : `${assignedCount} clientes asignados · ${createCount} con permiso de creación`}
+            </p>
+            {assignedCount > 0 && (
+              <Button
+                variant="link"
+                size="sm"
+                className="h-auto px-0 py-0 text-xs font-medium"
+                onClick={() => setShowDetail((v) => !v)}
+              >
+                {showDetail ? "Ocultar" : "Ver detalle"}
+              </Button>
+            )}
+          </div>
+
+          {showDetail && assignedCount > 0 && (
+            <div className="max-h-48 overflow-y-auto rounded-md border border-border bg-background p-3">
+              <div className="flex flex-wrap gap-2">
+                {assignedClients.map((c) => {
+                  const st = stateMap.get(c.id) ?? {
+                    assigned: false,
+                    can_create: false,
+                  };
+                  const name = c.commercial_name?.trim() || c.legal_name || "—";
+                  return (
+                    <Chip
+                      key={c.id}
+                      color={st.can_create ? "primary" : "neutral"}
+                      variant="soft"
+                      size="small"
+                      icon={st.can_create ? Check : undefined}
+                    >
+                      {name}
+                    </Chip>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <div className="flex w-full items-center justify-end gap-2 border-t border-border pt-3">
+            <Button
+              variant="outline"
+              disabled={saving}
+              onClick={() =>
+                navigate({ to: "/setup/users/$userId", params: { userId } })
+              }
+            >
+              Cancelar
+            </Button>
+            <Button onClick={handleSave} disabled={!hasChanges || saving}>
+              {saving ? "Guardando…" : "Guardar cambios"}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
