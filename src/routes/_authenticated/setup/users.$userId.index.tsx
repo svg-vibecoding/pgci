@@ -303,7 +303,7 @@ function UserDetail() {
           )}
         </IndicatorCard>
         <IndicatorCard
-          label="Datos sensibles"
+          label="VISIBILIDAD"
           value="Pendiente"
           hint="Costos y márgenes"
           dotColor="muted"
@@ -311,7 +311,7 @@ function UserDetail() {
           icon={<Lock className="h-3 w-3" />}
           tag={
             <Badge color="neutral" variant="soft">
-              Próximamente
+              V2
             </Badge>
           }
         />
