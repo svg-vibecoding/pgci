@@ -17,8 +17,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { StatusBadge, Badge } from "@/components/sumatec";
+import { IndicatorCard } from "@/components/setup/IndicatorCard";
 import { useIsSuperAdmin } from "@/hooks/use-profile";
-import { cn } from "@/lib/utils";
 import {
   ArrowLeft,
   Pencil,
@@ -40,73 +40,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
         {label}
       </p>
       <div className="mt-1 text-sm text-foreground">{children}</div>
-    </div>
-  );
-}
-
-function IndicatorCard({
-  label,
-  value,
-  hint,
-  dotColor = "muted",
-  tone = "default",
-  tag,
-  icon,
-  children,
-}: {
-  label: string;
-  value: React.ReactNode;
-  hint?: React.ReactNode;
-  dotColor?: "primary" | "accent" | "muted";
-  tone?: "default" | "warning" | "muted";
-  tag?: React.ReactNode;
-  icon?: React.ReactNode;
-  children?: React.ReactNode;
-}) {
-  const dotClass = {
-    primary: "bg-primary",
-    accent: "bg-accent",
-    muted: "bg-muted-foreground",
-  }[dotColor];
-
-  return (
-    <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2">
-          {icon ? (
-            <span className="text-primary">{icon}</span>
-          ) : (
-            <span className={cn("h-2 w-2 shrink-0 rounded-full", dotClass)} />
-          )}
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
-        </div>
-        {tag}
-      </div>
-      <div className="mt-3">
-        <p
-          className={cn(
-            "font-body text-xl font-semibold leading-tight text-foreground",
-            tone === "muted" && "text-muted-foreground"
-          )}
-        >
-          {value}
-        </p>
-        {hint && (
-          <p
-            className={cn(
-              "mt-1 text-xs text-muted-foreground",
-              tone === "warning" && "font-medium text-warning-strong"
-            )}
-          >
-            {hint}
-          </p>
-        )}
-      </div>
-      {children && (
-        <div className="mt-3 space-y-1 text-xs text-muted-foreground">
-          {children}
-        </div>
-      )}
     </div>
   );
 }
