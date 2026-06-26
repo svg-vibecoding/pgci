@@ -62,7 +62,7 @@ function UserDetail() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("user_client_access")
-        .select("id, client_id, created_at, clients ( id, commercial_name, legal_name, type, status )")
+        .select("id, client_id, can_create_agreements, created_at, clients ( id, commercial_name, legal_name, type, status )")
         .eq("user_id", userId);
       if (error) throw error;
       return data ?? [];
@@ -104,6 +104,7 @@ function UserDetail() {
   const isActive = user.status === "active";
   const isSuper = user.role === "super_admin";
   const assignedCount = access?.length ?? 0;
+  const createCount = (access ?? []).filter((a) => a.can_create_agreements).length;
   const totalAgreements = memberships?.length ?? 0;
 
 
@@ -111,9 +112,6 @@ function UserDetail() {
   const alerts: string[] = [];
   if (!isSuper && assignedCount === 0) {
     alerts.push("Usuario sin clientes asignados.");
-  }
-  if (!isSuper && user.can_create_agreements && assignedCount === 0) {
-    alerts.push("Puede crear acuerdos, pero no tiene clientes asignados.");
   }
   if (!isActive && assignedCount > 0) {
     alerts.push("Usuario inactivo con accesos existentes.");
@@ -231,7 +229,11 @@ function UserDetail() {
               />
             </InfoField>
             <InfoField label="Creación de acuerdos">
-              {isSuper ? "No aplica" : user.can_create_agreements ? "Sí" : "No"}
+              {isSuper
+                ? "No aplica"
+                : createCount === 0
+                  ? "Sin permiso de creación"
+                  : `Puede crear acuerdos en ${createCount} de ${assignedCount} clientes`}
             </InfoField>
             <InfoField label="Clientes asignados">
               {isSuper ? "Acceso total" : assignedCount}
