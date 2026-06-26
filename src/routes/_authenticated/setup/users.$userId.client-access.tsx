@@ -1,0 +1,364 @@
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/sumatec";
+import { useIsSuperAdmin } from "@/hooks/use-profile";
+import { ArrowLeft, Search } from "lucide-react";
+
+export const Route = createFileRoute("/_authenticated/setup/users/$userId/client-access")({
+  head: () => ({ meta: [{ title: "Acceso a clientes · Setup · PGCI" }] }),
+  component: ClientAccess,
+});
+
+type AccessState = { assigned: boolean; can_create: boolean };
+
+const roleLabel = (r: string) =>
+  r === "super_admin" ? "Super admin" : "Usuario plataforma";
+
+function ClientAccess() {
+  const { userId } = Route.useParams();
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const { isSuperAdmin, isLoading: loadingAuth } = useIsSuperAdmin();
+
+  const [search, setSearch] = useState("");
+  const [stateMap, setStateMap] = useState<Map<string, AccessState>>(new Map());
+  const [initialMap, setInitialMap] = useState<Map<string, AccessState>>(new Map());
+  const [saving, setSaving] = useState(false);
+
+  const profileQ = useQuery({
+    queryKey: ["users", userId, "profile-min"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, role, status")
+        .eq("user_id", userId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const clientsQ = useQuery({
+    queryKey: ["clients", "active-with-parent"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("clients")
+        .select(
+          "id, commercial_name, legal_name, type, status, parent_client_id, parent:parent_client_id(id, commercial_name, legal_name)",
+        )
+        .eq("status", "active")
+        .order("commercial_name");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const accessQ = useQuery({
+    queryKey: ["users", userId, "access"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_client_access")
+        .select("client_id, can_create_agreements")
+        .eq("user_id", userId);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  // Hydrate local state once both clients + access are loaded
+  useEffect(() => {
+    if (!clientsQ.data || !accessQ.data) return;
+    const next = new Map<string, AccessState>();
+    const accessByClient = new Map(
+      accessQ.data.map((a) => [a.client_id, !!a.can_create_agreements]),
+    );
+    clientsQ.data.forEach((c) => {
+      const assigned = accessByClient.has(c.id);
+      next.set(c.id, {
+        assigned,
+        can_create: assigned ? !!accessByClient.get(c.id) : false,
+      });
+    });
+    setStateMap(next);
+    setInitialMap(new Map([...next].map(([k, v]) => [k, { ...v }])));
+  }, [clientsQ.data, accessQ.data]);
+
+  const assignedCount = useMemo(
+    () => [...stateMap.values()].filter((s) => s.assigned).length,
+    [stateMap],
+  );
+
+  const totalClients = clientsQ.data?.length ?? 0;
+
+  const filteredClients = useMemo(() => {
+    if (!clientsQ.data) return [];
+    const q = search.trim().toLowerCase();
+    if (!q) return clientsQ.data;
+    return clientsQ.data.filter((c) => {
+      const name = (c.commercial_name || c.legal_name || "").toLowerCase();
+      const legal = (c.legal_name || "").toLowerCase();
+      return name.includes(q) || legal.includes(q);
+    });
+  }, [clientsQ.data, search]);
+
+  const diff = useMemo(() => {
+    const toInsert: string[] = [];
+    const toDelete: string[] = [];
+    const toUpdate: { client_id: string; can_create_agreements: boolean }[] = [];
+    stateMap.forEach((curr, id) => {
+      const init = initialMap.get(id);
+      const wasAssigned = !!init?.assigned;
+      if (curr.assigned && !wasAssigned) {
+        toInsert.push(id);
+      } else if (!curr.assigned && wasAssigned) {
+        toDelete.push(id);
+      } else if (curr.assigned && wasAssigned && curr.can_create !== init?.can_create) {
+        toUpdate.push({ client_id: id, can_create_agreements: curr.can_create });
+      }
+    });
+    return { toInsert, toDelete, toUpdate };
+  }, [stateMap, initialMap]);
+
+  const hasChanges =
+    diff.toInsert.length > 0 || diff.toDelete.length > 0 || diff.toUpdate.length > 0;
+
+  const setAssigned = (id: string, assigned: boolean) => {
+    setStateMap((prev) => {
+      const next = new Map(prev);
+      const curr = next.get(id) ?? { assigned: false, can_create: false };
+      next.set(id, {
+        assigned,
+        can_create: assigned ? curr.can_create : false,
+      });
+      return next;
+    });
+  };
+
+  const setCanCreate = (id: string, can_create: boolean) => {
+    setStateMap((prev) => {
+      const next = new Map(prev);
+      const curr = next.get(id) ?? { assigned: false, can_create: false };
+      if (!curr.assigned) return prev;
+      next.set(id, { ...curr, can_create });
+      return next;
+    });
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const ops: Promise<unknown>[] = [];
+
+      if (diff.toInsert.length) {
+        ops.push(
+          supabase.from("user_client_access").insert(
+            diff.toInsert.map((client_id) => ({
+              user_id: userId,
+              client_id,
+              can_create_agreements: stateMap.get(client_id)?.can_create ?? false,
+            })),
+          ),
+        );
+      }
+      if (diff.toDelete.length) {
+        ops.push(
+          supabase
+            .from("user_client_access")
+            .delete()
+            .eq("user_id", userId)
+            .in("client_id", diff.toDelete),
+        );
+      }
+      diff.toUpdate.forEach((u) => {
+        ops.push(
+          supabase
+            .from("user_client_access")
+            .update({ can_create_agreements: u.can_create_agreements })
+            .eq("user_id", userId)
+            .eq("client_id", u.client_id),
+        );
+      });
+
+      const results = (await Promise.all(ops)) as Array<{ error: unknown } | unknown>;
+      const firstError = results.find(
+        (r): r is { error: unknown } =>
+          !!r && typeof r === "object" && "error" in (r as object) && !!(r as { error: unknown }).error,
+      );
+      if (firstError) throw firstError.error;
+
+      toast.success("Accesos actualizados.");
+      await qc.invalidateQueries({ queryKey: ["users"] });
+      await qc.invalidateQueries({ queryKey: ["users", userId, "access"] });
+      navigate({ to: "/setup/users/$userId", params: { userId } });
+    } catch (e) {
+      console.error(e);
+      toast.error("No fue posible guardar los accesos.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loadingAuth) {
+    return <p className="text-sm text-muted-foreground">Cargando…</p>;
+  }
+  if (!isSuperAdmin) {
+    return (
+      <div className="space-y-3">
+        <p className="text-sm text-muted-foreground">
+          No tienes permisos para gestionar accesos.
+        </p>
+        <Button asChild variant="outline" size="sm">
+          <Link to="/setup/users/$userId" params={{ userId }}>
+            <ArrowLeft className="mr-2 h-4 w-4" /> Volver al perfil
+          </Link>
+        </Button>
+      </div>
+    );
+  }
+
+  if (profileQ.isLoading || clientsQ.isLoading || accessQ.isLoading) {
+    return <p className="text-sm text-muted-foreground">Cargando…</p>;
+  }
+  if (!profileQ.data) {
+    return <p className="text-sm text-muted-foreground">Usuario no encontrado.</p>;
+  }
+
+  const user = profileQ.data;
+
+  return (
+    <div className="-mt-6 space-y-5 pb-24">
+      <Link
+        to="/setup/users/$userId"
+        params={{ userId }}
+        className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" /> Volver al perfil
+      </Link>
+
+      <header className="space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="text-2xl font-bold tracking-tight">{user.full_name}</h1>
+          <Badge
+            color={user.role === "super_admin" ? "accent" : "neutral"}
+            variant="soft"
+          >
+            {roleLabel(user.role)}
+          </Badge>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Configura qué clientes puede ver y en cuáles puede crear acuerdos.
+        </p>
+        <p className="text-xs font-medium text-foreground">
+          {assignedCount} de {totalClients} clientes asignados
+        </p>
+      </header>
+
+      <Card>
+        <CardHeader className="space-y-3">
+          <CardTitle className="text-base">Clientes</CardTitle>
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar cliente…"
+              className="pl-9"
+            />
+          </div>
+        </CardHeader>
+        <CardContent>
+          {totalClients === 0 ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              No hay clientes activos disponibles.
+            </p>
+          ) : filteredClients.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              Sin resultados para esa búsqueda.
+            </p>
+          ) : (
+            <ul className="divide-y divide-border rounded-md border border-border">
+              {filteredClients.map((c) => {
+                const st = stateMap.get(c.id) ?? { assigned: false, can_create: false };
+                const name = c.commercial_name?.trim() || c.legal_name || "—";
+                const parent = c.parent as
+                  | { id: string; commercial_name: string | null; legal_name: string }
+                  | null;
+                const parentName = parent
+                  ? parent.commercial_name?.trim() || parent.legal_name
+                  : null;
+                return (
+                  <li
+                    key={c.id}
+                    className="flex items-center justify-between gap-4 px-4 py-3"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="truncate font-medium">{name}</span>
+                        {c.type === "holding" && (
+                          <Badge color="accent" variant="soft">
+                            Holding
+                          </Badge>
+                        )}
+                      </div>
+                      {parentName && (
+                        <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                          {parentName}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-6">
+                      <label className="flex flex-col items-center gap-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                        Asignado
+                        <Switch
+                          checked={st.assigned}
+                          onCheckedChange={(v) => setAssigned(c.id, v)}
+                        />
+                      </label>
+                      <label
+                        className={`flex flex-col items-center gap-1 text-[11px] font-medium uppercase tracking-wide ${
+                          st.assigned ? "text-muted-foreground" : "text-muted-foreground/40"
+                        }`}
+                      >
+                        Crea acuerdos
+                        <Switch
+                          checked={st.can_create}
+                          disabled={!st.assigned}
+                          onCheckedChange={(v) => setCanCreate(c.id, v)}
+                        />
+                      </label>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/95 backdrop-blur">
+        <div className="mx-auto flex max-w-[1400px] items-center justify-end gap-2 px-6 py-3">
+          <Button
+            variant="outline"
+            disabled={saving}
+            onClick={() =>
+              navigate({ to: "/setup/users/$userId", params: { userId } })
+            }
+          >
+            Cancelar
+          </Button>
+          <Button onClick={handleSave} disabled={!hasChanges || saving}>
+            {saving ? "Guardando…" : "Guardar cambios"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
