@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 import { Card, CardContent } from "@/components/ui/card";
+import { IndicatorCard } from "@/components/setup/IndicatorCard";
 import { StatusBadge } from "@/components/sumatec";
 import { ArrowLeft } from "lucide-react";
 
@@ -122,14 +123,7 @@ function ProductDetail() {
         </div>
       </header>
 
-      <Card>
-        <CardContent className="py-6">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Acuerdos asociados
-          </p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums">{agreementCount}</p>
-        </CardContent>
-      </Card>
+      <IndicatorCard label="Acuerdos asociados" value={agreementCount} />
 
       <Card>
         <CardContent className="grid grid-cols-1 gap-x-8 gap-y-4 py-6 sm:grid-cols-2">

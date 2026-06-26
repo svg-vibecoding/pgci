@@ -17,8 +17,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { StatusBadge, Badge } from "@/components/sumatec";
+import { IndicatorCard } from "@/components/setup/IndicatorCard";
 import { useIsSuperAdmin } from "@/hooks/use-profile";
-import { cn } from "@/lib/utils";
 import {
   ArrowLeft,
   Pencil,
@@ -44,77 +44,8 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function IndicatorCard({
-  label,
-  value,
-  hint,
-  dotColor = "muted",
-  tone = "default",
-  tag,
-  icon,
-  children,
-}: {
-  label: string;
-  value: React.ReactNode;
-  hint?: React.ReactNode;
-  dotColor?: "primary" | "accent" | "muted";
-  tone?: "default" | "warning" | "muted";
-  tag?: React.ReactNode;
-  icon?: React.ReactNode;
-  children?: React.ReactNode;
-}) {
-  const dotClass = {
-    primary: "bg-primary",
-    accent: "bg-accent",
-    muted: "bg-muted-foreground",
-  }[dotColor];
-
-  return (
-    <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2">
-          {icon ? (
-            <span className="text-primary">{icon}</span>
-          ) : (
-            <span className={cn("h-2 w-2 shrink-0 rounded-full", dotClass)} />
-          )}
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
-        </div>
-        {tag}
-      </div>
-      <div className="mt-3">
-        <p
-          className={cn(
-            "font-body text-xl font-semibold leading-tight text-foreground",
-            tone === "muted" && "text-muted-foreground"
-          )}
-        >
-          {value}
-        </p>
-        {hint && (
-          <p
-            className={cn(
-              "mt-1 text-xs text-muted-foreground",
-              tone === "warning" && "font-medium text-warning-strong"
-            )}
-          >
-            {hint}
-          </p>
-        )}
-      </div>
-      {children && (
-        <div className="mt-3 space-y-1 text-xs text-muted-foreground">
-          {children}
-        </div>
-      )}
-    </div>
-  );
-}
-
 const roleLabel = (r: string) =>
   r === "super_admin" ? "Super admin" : "Usuario plataforma";
-
-const ADMIN_ROLES = new Set(["agreement_admin", "super_admin"]);
 
 function UserDetail() {
   const { userId } = Route.useParams();
@@ -183,8 +114,6 @@ function UserDetail() {
   const isSuper = user.role === "super_admin";
   const assignedCount = access?.length ?? 0;
   const totalAgreements = memberships?.length ?? 0;
-  const adminCount = (memberships ?? []).filter((m) => ADMIN_ROLES.has(m.role)).length;
-  const participantCount = totalAgreements - adminCount;
 
 
   // Alerts
@@ -271,46 +200,18 @@ function UserDetail() {
         <IndicatorCard
           label="CLIENTES"
           value={isSuper ? "Acceso total" : `${assignedCount} ${assignedCount === 1 ? "cliente" : "clientes"}`}
-          hint={isSuper ? "Todos los clientes" : assignedCount === 0 ? "Requiere asignación" : "Cartera asignada"}
-          dotColor="primary"
-          tone={!isSuper && assignedCount === 0 ? "warning" : "default"}
         />
         <IndicatorCard
-          label="Acuerdos"
+          label="ACUERDOS"
           value={isSuper ? "Acceso total" : `${totalAgreements} ${totalAgreements === 1 ? "acuerdo" : "acuerdos"}`}
-          hint={isSuper ? "Todos los acuerdos" : totalAgreements === 0 ? "Sin acuerdos asignados" : "En gestión"}
-          dotColor="accent"
         />
         <IndicatorCard
           label="ALCANCES EN PGCI"
-          value={
-            isSuper
-              ? "Administración"
-              : user.can_create_agreements
-                ? "SÍ"
-                : "NO"
-          }
-          hint={isSuper ? "Crea, administra y consulta" : "crea acuerdos"}
-          dotColor="muted"
-          tone={!isSuper && !user.can_create_agreements ? "muted" : "default"}
-        >
-          {!isSuper && (
-            <>
-              <p>Administra: {adminCount > 0 ? `${adminCount} clientes` : "No"}</p>
-              <p>Participa: {participantCount > 0 ? `${participantCount} clientes` : "No"}</p>
-            </>
-          )}
-        </IndicatorCard>
+          value={isSuper ? "Administración" : user.can_create_agreements ? "Sí" : "No"}
+        />
         <IndicatorCard
           label="VISIBILIDAD"
           value="Versión II"
-          hint="Costos y márgenes"
-          dotColor="muted"
-          tag={
-            <Badge color="neutral" variant="soft">
-              V2
-            </Badge>
-          }
         />
       </div>
 
