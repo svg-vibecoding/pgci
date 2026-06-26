@@ -107,11 +107,17 @@ function ClientAccess() {
   const filteredClients = useMemo(() => {
     if (!clientsQ.data) return [];
     const q = search.trim().toLowerCase();
-    if (!q) return clientsQ.data;
-    return clientsQ.data.filter((c) => {
-      const name = (c.commercial_name || c.legal_name || "").toLowerCase();
-      const legal = (c.legal_name || "").toLowerCase();
-      return name.includes(q) || legal.includes(q);
+    const list = q
+      ? clientsQ.data.filter((c) => {
+          const name = (c.commercial_name || c.legal_name || "").toLowerCase();
+          const legal = (c.legal_name || "").toLowerCase();
+          return name.includes(q) || legal.includes(q);
+        })
+      : clientsQ.data;
+    return [...list].sort((a, b) => {
+      const nameA = (a.commercial_name || a.legal_name || "").toLowerCase();
+      const nameB = (b.commercial_name || b.legal_name || "").toLowerCase();
+      return nameA.localeCompare(nameB);
     });
   }, [clientsQ.data, search]);
 
