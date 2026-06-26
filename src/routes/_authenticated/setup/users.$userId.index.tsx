@@ -307,8 +307,6 @@ function UserDetail() {
           value="Versión II"
           hint="Costos y márgenes"
           dotColor="muted"
-          tone="muted"
-          icon={<Lock className="h-3 w-3" />}
           tag={
             <Badge color="neutral" variant="soft">
               V2
