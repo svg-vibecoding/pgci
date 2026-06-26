@@ -252,14 +252,40 @@ export function UserForm({
           </header>
 
           <div className="space-y-3 p-4">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={clientSearch}
-                onChange={(e) => setClientSearch(e.target.value)}
-                placeholder="Buscar cliente…"
-                className="pl-9"
-              />
+            <div className="flex items-center gap-3">
+              <div className="relative flex-1">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={clientSearch}
+                  onChange={(e) => setClientSearch(e.target.value)}
+                  placeholder="Buscar cliente…"
+                  className="pl-9"
+                />
+              </div>
+              {(() => {
+                const visibleIds = filteredClients.map((c) => c.id);
+                const allSelected =
+                  visibleIds.length > 0 && visibleIds.every((id) => v.client_ids.includes(id));
+                return (
+                  <label className="flex shrink-0 items-center gap-2 text-sm">
+                    <span className="text-muted-foreground">
+                      {clientSearch.trim() ? "Seleccionar visibles" : "Seleccionar todos"}
+                    </span>
+                    <Switch
+                      checked={allSelected}
+                      disabled={visibleIds.length === 0}
+                      onCheckedChange={(checked) =>
+                        setV((prev) => ({
+                          ...prev,
+                          client_ids: checked
+                            ? Array.from(new Set([...prev.client_ids, ...visibleIds]))
+                            : prev.client_ids.filter((id) => !visibleIds.includes(id)),
+                        }))
+                      }
+                    />
+                  </label>
+                );
+              })()}
             </div>
 
             {selectedClients.length > 0 && (
