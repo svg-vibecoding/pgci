@@ -51,9 +51,9 @@ function SetupLayout() {
   }
 
   return (
-    <div className="flex h-screen bg-[var(--surface-page)]">
+    <div className="flex h-screen overflow-hidden bg-[var(--surface-page)]">
       <aside
-        className="sticky top-0 flex h-screen w-[264px] flex-shrink-0 flex-col border-r border-[var(--border-subtle)] bg-[var(--surface-sidebar)]"
+        className="flex h-screen w-[264px] flex-shrink-0 flex-col border-r border-[var(--border-subtle)] bg-[var(--surface-sidebar)]"
       >
         {/* Marca */}
         <div className="px-6 pt-5 pb-2">
