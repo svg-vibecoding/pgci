@@ -412,19 +412,20 @@ function ClientAccess() {
                     </div>
 
                     <div className="flex items-center gap-6">
-                      <label className="flex flex-col items-center gap-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                        Asignado
+                      <label className="flex flex-col items-center gap-1 text-xs font-normal text-muted-foreground">
+                        Asignar
                         <Switch
                           checked={st.assigned}
                           onCheckedChange={(v) => setAssigned(c.id, v)}
                         />
                       </label>
                       <label
-                        className={`flex flex-col items-center gap-1 text-[11px] font-medium uppercase tracking-wide ${
-                          st.assigned ? "text-muted-foreground" : "text-muted-foreground/40"
-                        }`}
+                        className={cn(
+                          "flex flex-col items-center gap-1 text-xs font-normal text-muted-foreground",
+                          !st.assigned && "opacity-40",
+                        )}
                       >
-                        Crea acuerdos
+                        Crear acuerdos
                         <Switch
                           checked={st.can_create}
                           disabled={!st.assigned}
