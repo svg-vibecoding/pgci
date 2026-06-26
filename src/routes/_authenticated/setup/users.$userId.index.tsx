@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { StatusBadge, Badge } from "@/components/sumatec";
 import { IndicatorCard } from "@/components/setup/IndicatorCard";
+import { InfoField, InfoSection } from "@/components/setup/InfoSection";
 import { useIsSuperAdmin } from "@/hooks/use-profile";
 import {
   ArrowLeft,
@@ -33,16 +34,6 @@ export const Route = createFileRoute("/_authenticated/setup/users/$userId/")({
   component: UserDetail,
 });
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-        {label}
-      </p>
-      <div className="mt-1 text-sm text-foreground">{children}</div>
-    </div>
-  );
-}
 
 const roleLabel = (r: string) =>
   r === "super_admin" ? "Super admin" : "Usuario plataforma";
@@ -227,36 +218,48 @@ function UserDetail() {
         <CardHeader>
           <CardTitle className="text-base">Información del usuario</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          <Field label="Nombre completo">{user.full_name}</Field>
-          <Field label="Email">{user.email}</Field>
-          <Field label="Código ERP">{user.erp_user_code || "—"}</Field>
-          <Field label="Tipo de usuario">{roleLabel(user.role)}</Field>
-          <Field label="Estado">
-            <StatusBadge
-              status={isActive ? "active" : "neutral"}
-              label={isActive ? "Activo" : "Inactivo"}
-            />
-          </Field>
-          <Field label="Creación de acuerdos">
-            {isSuper ? "No aplica" : user.can_create_agreements ? "Sí" : "No"}
-          </Field>
-          <Field label="Clientes asignados">
-            {isSuper ? "Acceso total" : assignedCount}
-          </Field>
-          <Field label="Acuerdos en gestión">
-            {isSuper ? "Acceso total" : totalAgreements}
-          </Field>
-          <Field label="Fecha de creación">
-            {new Date(user.created_at).toLocaleDateString()}
-          </Field>
-          {user.updated_at && (
-            <Field label="Última actualización">
-              {new Date(user.updated_at).toLocaleDateString()}
-            </Field>
-          )}
+        <CardContent className="space-y-6">
+          <InfoSection title="Identidad">
+            <InfoField label="Nombre completo">{user.full_name}</InfoField>
+            <InfoField label="Email">{user.email}</InfoField>
+            <InfoField label="Código ERP">{user.erp_user_code || "—"}</InfoField>
+          </InfoSection>
+
+          <InfoSection title="Rol y permisos">
+            <InfoField label="Tipo de usuario">{roleLabel(user.role)}</InfoField>
+            <InfoField label="Estado">
+              <StatusBadge
+                status={isActive ? "active" : "neutral"}
+                label={isActive ? "Activo" : "Inactivo"}
+              />
+            </InfoField>
+            <InfoField label="Creación de acuerdos">
+              {isSuper ? "No aplica" : user.can_create_agreements ? "Sí" : "No"}
+            </InfoField>
+          </InfoSection>
+
+          <InfoSection title="Alcance operativo">
+            <InfoField label="Clientes asignados">
+              {isSuper ? "Acceso total" : assignedCount}
+            </InfoField>
+            <InfoField label="Acuerdos en gestión">
+              {isSuper ? "Acceso total" : totalAgreements}
+            </InfoField>
+          </InfoSection>
+
+          <InfoSection title="Auditoría">
+            <InfoField label="Fecha de creación">
+              {new Date(user.created_at).toLocaleDateString()}
+            </InfoField>
+            {user.updated_at && (
+              <InfoField label="Última actualización">
+                {new Date(user.updated_at).toLocaleDateString()}
+              </InfoField>
+            )}
+          </InfoSection>
         </CardContent>
       </Card>
+
 
       {/* Cartera de clientes */}
       <Card>

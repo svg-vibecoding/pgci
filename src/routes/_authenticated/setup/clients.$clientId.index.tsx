@@ -24,6 +24,7 @@ import {
 import { StatusBadge } from "@/components/sumatec";
 import { Badge } from "@/components/sumatec/Badge";
 import { IndicatorCard } from "@/components/setup/IndicatorCard";
+import { InfoField, InfoSection } from "@/components/setup/InfoSection";
 import { useIsSuperAdmin } from "@/hooks/use-profile";
 import { toast } from "sonner";
 import { ArrowLeft, Building2, Pencil, Power, FileText, Users } from "lucide-react";
@@ -34,16 +35,6 @@ export const Route = createFileRoute("/_authenticated/setup/clients/$clientId/")
   component: ViewClient,
 });
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-        {label}
-      </p>
-      <div className="mt-1 text-sm text-foreground">{children}</div>
-    </div>
-  );
-}
 
 function ViewClient() {
   const { clientId } = Route.useParams();
@@ -222,41 +213,50 @@ function ViewClient() {
         )}
       </div>
 
-      {/* Información general */}
+      {/* Información del cliente */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Información general</CardTitle>
+          <CardTitle className="text-base">Información del cliente</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          <Field label="Razón social">{data.legal_name || "—"}</Field>
-          <Field label="Nombre comercial">{data.commercial_name?.trim() || "—"}</Field>
-          <Field label="Nombre ERP">{data.erp_name?.trim() || "—"}</Field>
-          <Field label="Tipo ID">{data.tax_id_type || "NIT"}</Field>
-          <Field label="NIT">{data.tax_id || "—"}</Field>
-          <Field label="Tipo de cliente">{isHolding ? "Holding" : "Directo"}</Field>
-          <Field label="Estado">
-            <StatusBadge
-              status={isActive ? "active" : "neutral"}
-              label={isActive ? "Activo" : "Inactivo"}
-            />
-          </Field>
-          {data.type === "direct" && (
-            <Field label="Holding asociado">
-              {parentName ? (
-                <Link
-                  to="/setup/clients/$clientId"
-                  params={{ clientId: parent!.id }}
-                  className="text-foreground hover:underline"
-                >
-                  {parentName}
-                </Link>
-              ) : (
-                "—"
-              )}
-            </Field>
-          )}
+        <CardContent className="space-y-6">
+          <InfoSection title="Identificación">
+            <InfoField label="Razón social">{data.legal_name || "—"}</InfoField>
+            <InfoField label="Nombre comercial">{data.commercial_name?.trim() || "—"}</InfoField>
+            <InfoField label="Nombre ERP">{data.erp_name?.trim() || "—"}</InfoField>
+          </InfoSection>
+
+          <InfoSection title="Documento">
+            <InfoField label="Tipo ID">{data.tax_id_type || "NIT"}</InfoField>
+            <InfoField label="NIT">{data.tax_id || "—"}</InfoField>
+            <InfoField label="Tipo de cliente">{isHolding ? "Holding" : "Directo"}</InfoField>
+          </InfoSection>
+
+          <InfoSection title="Estado y relaciones">
+            <InfoField label="Estado">
+              <StatusBadge
+                status={isActive ? "active" : "neutral"}
+                label={isActive ? "Activo" : "Inactivo"}
+              />
+            </InfoField>
+            {data.type === "direct" && (
+              <InfoField label="Holding asociado">
+                {parentName ? (
+                  <Link
+                    to="/setup/clients/$clientId"
+                    params={{ clientId: parent!.id }}
+                    className="text-foreground hover:underline"
+                  >
+                    {parentName}
+                  </Link>
+                ) : (
+                  "—"
+                )}
+              </InfoField>
+            )}
+          </InfoSection>
         </CardContent>
       </Card>
+
 
       {/* Notas internas */}
       {data.notes?.trim() && (
