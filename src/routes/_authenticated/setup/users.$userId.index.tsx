@@ -256,8 +256,18 @@ function UserDetail() {
 
       {/* Cartera de clientes */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
           <CardTitle className="text-base">Cartera de clientes</CardTitle>
+          {isSuperAdmin && (
+            <Button asChild variant="outline" size="sm">
+              <Link
+                to="/setup/users/$userId/client-access"
+                params={{ userId }}
+              >
+                Gestionar acceso
+              </Link>
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           {isSuper ? (
