@@ -40,9 +40,11 @@ function EditUser() {
         data: {
           user_id: userId,
           full_name: v.full_name.trim(),
+          email: v.email.trim(),
           role: v.role,
           erp_user_code: v.erp_user_code.trim() || undefined,
           status: v.status,
+          new_password: v.new_password?.trim() ? v.new_password.trim() : undefined,
         },
       }),
     onSuccess: () => {
@@ -52,6 +54,7 @@ function EditUser() {
     },
     onError: (err: Error) => toast.error(err.message || "No se pudo actualizar el usuario."),
   });
+
 
   if (profileQ.isLoading) {
     return <p className="text-sm text-muted-foreground">Cargando…</p>;
@@ -67,7 +70,9 @@ function EditUser() {
     role: (profile.role as UserFormValues["role"]) || "platform_user",
     erp_user_code: profile.erp_user_code ?? "",
     status: (profile.status as "active" | "inactive") ?? "active",
+    new_password: "",
   };
+
 
   return (
     <CreateViewShell
@@ -79,7 +84,7 @@ function EditUser() {
         </Button>
       }
       title="Editar usuario"
-      description="Actualiza los datos del usuario. El email no se puede modificar."
+      description="Actualiza los datos del usuario. Si cambias el email, el usuario deberá iniciar sesión con el nuevo correo."
     >
       {profile.status === "inactive" && (
         <Alert variant="info" className="mb-4">
@@ -92,9 +97,10 @@ function EditUser() {
       )}
       <UserForm
         initial={initial}
-        emailLocked
+        showPasswordSection
         submitting={mutation.isPending}
         submitLabel="Guardar cambios"
+
         onSubmit={async (v) => {
           await mutation.mutateAsync(v);
         }}

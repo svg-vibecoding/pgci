@@ -1,68 +1,71 @@
-Plan de cambios para `src/routes/_authenticated/setup/users.$userId.client-access.tsx` (único archivo a modificar).
+Implementación de dos capacidades en la edición de usuario. Tres archivos modificados.
 
-### Ajuste 1 — Texto explicativo
+## Archivo 1 — `src/components/setup/UserForm.tsx`
 
-Agregar un párrafo debajo del subtítulo `Configura qué clientes puede ver y en cuáles puede crear acuerdos.`:
+**Cambios:**
 
-> "Asigna para este usaurio los clientes que podrá ver en la plataforma. Si además puede crear acuerdos para esos clientes, activa también el permiso de creación"
+1. Extender `UserFormValues` con campo opcional:
+   ```ts
+   new_password?: string;
+   ```
+   Agregar `new_password: ""` a `emptyUser`.
 
-Estilo: `text-sm text-muted-foreground`, con un pequeño margen que lo separe del párrafo anterior.
+2. Eliminar prop `emailLocked` y toda su lógica (incluyendo el `disabled` y el mensaje "El email no se puede modificar").
 
-### Ajuste 2 — Layout del footer sticky
+3. Agregar prop opcional `showPasswordSection?: boolean` (default `false`).
 
-- Reemplazar el footer `fixed inset-x-0 bottom-0` por un bloque posicionado dentro del flujo del área de contenido principal.
-- Debe respetar el ancho y la posición del contenido de `/setup`, sin cubrir el menú lateral.
-- El panel expandido de chips debe quedar dentro de esa misma área de contenido, no ocupar todo el viewport.
+4. Extender validación en `validate()`:
+   - Si `v.new_password` tiene valor y longitud < 8 → `errors.new_password = "Mínimo 8 caracteres"`.
 
-### Ajuste 3 — Switch general reemplazado por dos switches
+5. Renderizar nueva sección al final del grid (antes del bloque de botones), solo si `showPasswordSection`:
+   - Contenedor `md:col-span-2 space-y-2` con borde superior tipo separador suave.
+   - Título `h3` "Contraseña" (`text-sm font-semibold`).
+   - Descripción: "Asigna una nueva contraseña temporal a este usuario. Deberás compartirla manualmente." (`text-xs text-muted-foreground`).
+   - Label "Nueva contraseña temporal" + `Input type="text"` (visible), `value={v.new_password ?? ""}`, `onChange` actualiza `new_password`, `placeholder="Opcional"`.
+   - Error inline si aplica.
 
-En la misma fila del buscador, a la derecha, dos switches con labels dinámicos:
+## Archivo 2 — `src/routes/_authenticated/setup/users.$userId.edit.tsx`
 
-**Switch 1 — Asignar**
+**Cambios:**
 
-- Label: `Asignar todos` (sin búsqueda) / `Asignar visibles` (con búsqueda).
-- `on` solo si todos los clientes visibles (`filteredClients`) están asignados.
-- Al encender: `assigned: true` en visibles (preserva `can_create` de los ya asignados).
-- Al apagar: `assigned: false` y `can_create: false` en visibles.
+1. Eliminar prop `emailLocked` del `<UserForm />`.
+2. Agregar `showPasswordSection={true}`.
+3. Actualizar `description` del `CreateViewShell` a:
+   > "Actualiza los datos del usuario. Si cambias el email, el usuario deberá iniciar sesión con el nuevo correo."
+4. Extender `initial` con `new_password: ""`.
+5. En la `mutationFn`, incluir en el payload:
+   - `email: v.email.trim()`
+   - `new_password: v.new_password?.trim() || undefined`
 
-**Switch 2 — Crear acuerdos**
+## Archivo 3 — `src/lib/users.functions.ts`
 
-- Solo habilitado cuando al menos un cliente visible está asignado.
-- Label: `Crear acuerdos a todos` (sin búsqueda) / `Crear acuerdos a visibles` (con búsqueda).
-- `on` solo si todos los clientes visibles asignados tienen `can_create: true`.
-- Al encender: `can_create: true` en visibles asignados.
-- Al apagar: `can_create: false` en visibles asignados.
-- Cuando está deshabilitado, se muestra con opacidad reducida.
+**Cambios a `updateUserSchema`:**
 
-### Ajuste 4 — Labels por fila
+```ts
+email: z.string().trim().toLowerCase().email().max(255).optional(),
+new_password: z.string().min(8).optional(),
+```
 
-Cambiar los labels de los switches en cada fila de cliente:
+**Cambios al handler `updateUser`:**
 
-- `ASIGNADO` → `Asignar`
-- `CREA ACUERDOS` → `Crear acuerdos`
+Orden de operaciones tras la verificación `is_super_admin`:
 
-Estilo: `text-xs text-muted-foreground font-normal` (no mayúsculas, no negrilla).
+1. **Email**: si `data.email` viene en el payload:
+   - Leer email actual: `supabaseAdmin.from("profiles").select("email").eq("user_id", data.user_id).single()`.
+   - Si difiere del actual:
+     - Verificar no-duplicado: `supabaseAdmin.from("profiles").select("user_id").eq("email", data.email).neq("user_id", data.user_id).maybeSingle()`. Si existe → `throw new Error("Ya existe un usuario con ese email.")`.
+     - `supabaseAdmin.auth.admin.updateUserById(data.user_id, { email: data.email })`. Si error → `throw new Error("No se pudo actualizar el email: ${err.message}")`.
 
-### Ajuste 5 — Contador superior y contador del footer unificados
+2. **Update profile** (existente): incluir `email: data.email` en el `.update({...})` cuando viene en payload.
 
-Ambos contadores usarán el mismo formato calculado desde el `stateMap` local:
+3. **Password**: si `data.new_password`:
+   - `supabaseAdmin.auth.admin.updateUserById(data.user_id, { password: data.new_password })`. Si error → `throw new Error("No se pudo actualizar la contraseña: ${err.message}")`.
 
-- `X` = clientes asignados (`assigned: true`).
-- `N` = total de clientes disponibles (`totalClients`).
-- `Y` = clientes con permiso de creación (`can_create: true`).
+## No se toca
 
-Formato:
-
-- `X de N clientes asignados · Y con permiso de creación` (cuando Y > 0).
-- `X de N clientes asignados · Sin permiso de creación` (cuando Y = 0).
-
-El contador superior se ubicará bajo el texto explicativo. El contador del footer reemplaza el resumen actual y mantiene el botón `Ver detalle` / `Ocultar` junto a él.
-
-### Lo que NO se toca
-
-- Lógica de guardado (diff + operaciones en Supabase).
-- Switches por fila (solo cambian labels).
-- Breadcrumb, header con nombre y chip de rol del usuario.
-- Chips del panel expandido en el footer.
-- Buscador y contador de resultados filtrados.
-- Ningún otro archivo del proyecto.
+- Lógica activar/inactivar usuario.
+- Flujo de creación y modal de credenciales.
+- Vista de detalle.
+- Vista de acceso a clientes.
+- Toast de éxito existente ("Usuario actualizado.").
+- Ningún otro archivo.
