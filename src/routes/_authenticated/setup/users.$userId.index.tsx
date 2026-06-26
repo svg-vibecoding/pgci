@@ -49,46 +49,65 @@ function IndicatorCard({
   label,
   value,
   hint,
+  dotColor = "muted",
   tone = "default",
   tag,
+  icon,
   children,
 }: {
   label: string;
   value: React.ReactNode;
   hint?: React.ReactNode;
+  dotColor?: "primary" | "accent" | "muted";
   tone?: "default" | "warning" | "muted";
   tag?: React.ReactNode;
+  icon?: React.ReactNode;
   children?: React.ReactNode;
 }) {
+  const dotClass = {
+    primary: "bg-primary",
+    accent: "bg-accent",
+    muted: "bg-muted-foreground",
+  }[dotColor];
+
   return (
-    <div className="rounded-lg border border-border bg-card p-3">
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          {label}
-        </p>
+    <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2">
+          {icon ? (
+            <span className="text-primary">{icon}</span>
+          ) : (
+            <span className={cn("h-2 w-2 shrink-0 rounded-full", dotClass)} />
+          )}
+          <p className="suma-overline text-[10px]">{label}</p>
+        </div>
         {tag}
       </div>
-      <p
-        className={
-          tone === "muted"
-            ? "mt-1 text-xl font-semibold text-muted-foreground"
-            : "mt-1 text-xl font-semibold text-foreground"
-        }
-      >
-        {value}
-      </p>
-      {hint && (
+      <div className="mt-3">
         <p
-          className={
-            tone === "warning"
-              ? "mt-1 text-xs font-medium text-[var(--status-warning-strong)]"
-              : "mt-1 text-xs text-muted-foreground"
-          }
+          className={cn(
+            "font-body text-xl font-semibold leading-tight text-foreground",
+            tone === "muted" && "text-muted-foreground"
+          )}
         >
-          {hint}
+          {value}
         </p>
+        {hint && (
+          <p
+            className={cn(
+              "mt-1 text-xs text-muted-foreground",
+              tone === "warning" && "font-medium text-warning-strong"
+            )}
+          >
+            {hint}
+          </p>
+        )}
+      </div>
+      {children && (
+        <div className="mt-3 space-y-1 text-xs text-muted-foreground">
+          {children}
+        </div>
       )}
-      {children && <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">{children}</div>}
     </div>
   );
 }
