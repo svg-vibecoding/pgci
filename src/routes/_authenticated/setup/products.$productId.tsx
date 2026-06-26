@@ -2,8 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { IndicatorCard } from "@/components/setup/IndicatorCard";
+import { InfoField, InfoSection } from "@/components/setup/InfoSection";
 import { StatusBadge } from "@/components/sumatec";
 import { ArrowLeft } from "lucide-react";
 
@@ -12,24 +13,11 @@ export const Route = createFileRoute("/_authenticated/setup/products/$productId"
   component: ProductDetail,
 });
 
-const FIELDS: { k: string; l: string }[] = [
-  { k: "sku", l: "Código Jaivaná" },
-  { k: "erp_description", l: "Descripción Jaivaná" },
-  { k: "commercial_description", l: "Descripción comercial" },
-  { k: "erp_brand", l: "Marca Jaivaná" },
-  { k: "commercial_brand", l: "Marca" },
-  { k: "brand_reference", l: "Referencia" },
-  { k: "product_classification", l: "Clasificación" },
-  { k: "erp_product_category_n1", l: "Línea" },
-  { k: "erp_product_category_n2", l: "Grupo" },
-  { k: "erp_product_category_n3", l: "Subgrupo" },
-  { k: "commercial_unit", l: "Unidad" },
-];
-
 function val(v: unknown) {
   if (v === null || v === undefined || v === "") return "—";
   return String(v);
 }
+
 
 function ProductDetail() {
   const { productId } = Route.useParams();
@@ -147,33 +135,43 @@ function ProductDetail() {
       </div>
 
       <Card>
-        <CardContent className="grid grid-cols-1 gap-x-8 gap-y-4 py-6 sm:grid-cols-2">
-          {FIELDS.map((f) => {
-            const raw = (data as Record<string, unknown>)[f.k];
-            const display = f.k === "commercial_brand" ? brand : val(raw);
-            return (
-              <div key={f.k}>
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {f.l}
-                </p>
-                <p className="mt-1 text-sm">{display}</p>
-              </div>
-            );
-          })}
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Estado</p>
-            <p className="mt-1 text-sm">{data.status === "active" ? "Activo" : "Inactivo"}</p>
-          </div>
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Fecha de creación</p>
-            <p className="mt-1 text-sm">{createdAt}</p>
-          </div>
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Última actualización</p>
-            <p className="mt-1 text-sm">{updatedAt}</p>
-          </div>
+        <CardHeader>
+          <CardTitle className="text-base">Información del producto</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <InfoSection title="Identificación">
+            <InfoField label="Código Jaivaná">{val(data.sku)}</InfoField>
+            <InfoField label="Descripción Jaivaná">{val(data.erp_description)}</InfoField>
+            <InfoField label="Descripción comercial">{val(data.commercial_description)}</InfoField>
+          </InfoSection>
+
+          <InfoSection title="Marca y referencia">
+            <InfoField label="Marca Jaivaná">{val(data.erp_brand)}</InfoField>
+            <InfoField label="Marca">{brand}</InfoField>
+            <InfoField label="Referencia">{val(data.brand_reference)}</InfoField>
+          </InfoSection>
+
+          <InfoSection title="Clasificación ERP">
+            <InfoField label="Clasificación">{val(data.product_classification)}</InfoField>
+            <InfoField label="Línea">{val(data.erp_product_category_n1)}</InfoField>
+            <InfoField label="Grupo">{val(data.erp_product_category_n2)}</InfoField>
+            <InfoField label="Subgrupo">{val(data.erp_product_category_n3)}</InfoField>
+            <InfoField label="Unidad">{val(data.commercial_unit)}</InfoField>
+          </InfoSection>
+
+          <InfoSection title="Estado y auditoría">
+            <InfoField label="Estado">
+              <StatusBadge
+                status={isActive ? "active" : "neutral"}
+                label={isActive ? "Activo" : "Inactivo"}
+              />
+            </InfoField>
+            <InfoField label="Fecha de creación">{createdAt}</InfoField>
+            <InfoField label="Última actualización">{updatedAt}</InfoField>
+          </InfoSection>
         </CardContent>
       </Card>
+
     </div>
   );
 }
