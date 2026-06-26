@@ -260,12 +260,7 @@ function UserDetail() {
           <CardTitle className="text-base">Cartera de clientes</CardTitle>
           {isSuperAdmin && (
             <Button asChild variant="outline" size="sm">
-              <Link
-                to="/setup/users/$userId/client-access"
-                params={{ userId }}
-              >
-                Gestionar acceso
-              </Link>
+              <a href={`/setup/users/${userId}/client-access`}>Gestionar acceso</a>
             </Button>
           )}
         </CardHeader>
