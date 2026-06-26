@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { StatusBadge, Badge } from "@/components/sumatec";
 import { useIsSuperAdmin } from "@/hooks/use-profile";
+import { cn } from "@/lib/utils";
 import {
   ArrowLeft,
   Pencil,
@@ -25,6 +26,7 @@ import {
   Building2,
   AlertTriangle,
   Info,
+  Lock,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/setup/users/$userId/")({
