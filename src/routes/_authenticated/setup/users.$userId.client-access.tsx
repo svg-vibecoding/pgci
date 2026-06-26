@@ -333,10 +333,8 @@ function ClientAccess() {
           </Badge>
         </div>
         <p className="text-sm text-muted-foreground">
-          Activa un cliente para que el usuario pueda verlo en la plataforma. Si
-          además necesita crear acuerdos para ese cliente, activa también el
-          permiso de creación — eso le permitirá iniciar nuevos acuerdos y
-          quedar como responsable de ellos.
+          Asigna clientes a este usuario para que pueda verlos en la plataforma. Si además podrá crear acuerdos sobre clientes asignados,&nbsp;<br />
+          activa también sus permisos de creación.
         </p>
         <p className="text-sm font-medium text-foreground">{initialSummaryText}</p>
       </header>
