@@ -286,7 +286,7 @@ function UserDetail() {
           label="Capacidad"
           value={
             isSuper
-              ? "Admin total"
+              ? "Administración"
               : user.can_create_agreements
                 ? "Con creación habilitada"
                 : "Sin creación"
