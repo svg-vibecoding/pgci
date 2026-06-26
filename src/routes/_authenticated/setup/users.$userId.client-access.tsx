@@ -120,6 +120,16 @@ function ClientAccess() {
     return filteredClients.every((c) => stateMap.get(c.id)?.assigned);
   }, [filteredClients, stateMap]);
 
+  const visibleAssignedClients = useMemo(
+    () => filteredClients.filter((c) => stateMap.get(c.id)?.assigned),
+    [filteredClients, stateMap],
+  );
+
+  const visibleAllCanCreate = useMemo(() => {
+    if (visibleAssignedClients.length === 0) return false;
+    return visibleAssignedClients.every((c) => stateMap.get(c.id)?.can_create);
+  }, [visibleAssignedClients, stateMap]);
+
   const assignedClients = useMemo(() => {
     if (!clientsQ.data) return [];
     return clientsQ.data
@@ -130,6 +140,13 @@ function ClientAccess() {
         ),
       );
   }, [clientsQ.data, stateMap]);
+
+  const summaryText = useMemo(() => {
+    if (createCount === 0) {
+      return `${assignedCount} de ${totalClients} clientes asignados · Sin permiso de creación`;
+    }
+    return `${assignedCount} de ${totalClients} clientes asignados · ${createCount} con permiso de creación`;
+  }, [assignedCount, totalClients, createCount]);
 
   const diff = useMemo(() => {
     const toInsert: string[] = [];
@@ -174,7 +191,7 @@ function ClientAccess() {
     });
   };
 
-  const toggleAllVisible = (on: boolean) => {
+  const toggleAllAssigned = (on: boolean) => {
     setStateMap((prev) => {
       const next = new Map(prev);
       filteredClients.forEach((c) => {
@@ -183,6 +200,18 @@ function ClientAccess() {
           assigned: on,
           can_create: on ? curr.can_create : false,
         });
+      });
+      return next;
+    });
+  };
+
+  const toggleAllCanCreate = (on: boolean) => {
+    setStateMap((prev) => {
+      const next = new Map(prev);
+      filteredClients.forEach((c) => {
+        const curr = next.get(c.id) ?? { assigned: false, can_create: false };
+        if (!curr.assigned) return;
+        next.set(c.id, { ...curr, can_create: on });
       });
       return next;
     });
@@ -267,7 +296,7 @@ function ClientAccess() {
   const user = profileQ.data;
 
   return (
-    <div className="-mt-6 space-y-5 pb-24">
+    <div className="-mt-6 space-y-5">
       <Link
         to="/setup/users/$userId"
         params={{ userId }}
@@ -289,9 +318,13 @@ function ClientAccess() {
         <p className="text-sm text-muted-foreground">
           Configura qué clientes puede ver y en cuáles puede crear acuerdos.
         </p>
-        <p className="text-xs font-medium text-foreground">
-          {assignedCount} de {totalClients} clientes asignados
+        <p className="text-sm text-muted-foreground">
+          Activa un cliente para que el usuario pueda verlo en la plataforma. Si
+          además necesita crear acuerdos para ese cliente, activa también el
+          permiso de creación — eso le permitirá iniciar nuevos acuerdos y
+          quedar como responsable de ellos.
         </p>
+        <p className="text-xs text-muted-foreground">{summaryText}</p>
       </header>
 
       <Card>
@@ -307,14 +340,29 @@ function ClientAccess() {
                 className="pl-9"
               />
             </div>
-            <label className="flex items-center gap-2 whitespace-nowrap text-xs font-medium text-muted-foreground">
-              {search.trim() ? "Seleccionar visibles" : "Todos"}
-              <Switch
-                checked={visibleAllAssigned}
-                disabled={filteredClients.length === 0}
-                onCheckedChange={toggleAllVisible}
-              />
-            </label>
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2 whitespace-nowrap text-xs font-medium text-muted-foreground">
+                {search.trim() ? "Asignar visibles" : "Asignar todos"}
+                <Switch
+                  checked={visibleAllAssigned}
+                  disabled={filteredClients.length === 0}
+                  onCheckedChange={toggleAllAssigned}
+                />
+              </label>
+              <label
+                className={cn(
+                  "flex items-center gap-2 whitespace-nowrap text-xs font-medium text-muted-foreground",
+                  visibleAssignedClients.length === 0 && "opacity-50",
+                )}
+              >
+                {search.trim() ? "Crear acuerdos a visibles" : "Crear acuerdos a todos"}
+                <Switch
+                  checked={visibleAllCanCreate}
+                  disabled={visibleAssignedClients.length === 0}
+                  onCheckedChange={toggleAllCanCreate}
+                />
+              </label>
+            </div>
           </div>
           {search.trim() !== "" && (
             <p className="text-xs text-muted-foreground">
@@ -364,19 +412,20 @@ function ClientAccess() {
                     </div>
 
                     <div className="flex items-center gap-6">
-                      <label className="flex flex-col items-center gap-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                        Asignado
+                      <label className="flex flex-col items-center gap-1 text-xs font-normal text-muted-foreground">
+                        Asignar
                         <Switch
                           checked={st.assigned}
                           onCheckedChange={(v) => setAssigned(c.id, v)}
                         />
                       </label>
                       <label
-                        className={`flex flex-col items-center gap-1 text-[11px] font-medium uppercase tracking-wide ${
-                          st.assigned ? "text-muted-foreground" : "text-muted-foreground/40"
-                        }`}
+                        className={cn(
+                          "flex flex-col items-center gap-1 text-xs font-normal text-muted-foreground",
+                          !st.assigned && "opacity-40",
+                        )}
                       >
-                        Crea acuerdos
+                        Crear acuerdos
                         <Switch
                           checked={st.can_create}
                           disabled={!st.assigned}
@@ -392,21 +441,10 @@ function ClientAccess() {
         </CardContent>
       </Card>
 
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-[1400px] flex-col gap-3 px-6 py-3">
+      <div className="sticky bottom-0 z-20 border-t border-border bg-background/95 backdrop-blur">
+        <div className="flex flex-col gap-3 py-3">
           <div className="flex w-full items-center justify-between">
-            <p
-              className={cn(
-                "text-sm",
-                assignedCount === 0 ? "text-muted-foreground" : "text-foreground",
-              )}
-            >
-              {assignedCount === 0
-                ? "Sin clientes asignados"
-                : createCount === 0
-                  ? `${assignedCount} clientes asignados · Sin permiso de creación`
-                  : `${assignedCount} clientes asignados · ${createCount} con permiso de creación`}
-            </p>
+            <p className="text-xs text-muted-foreground">{summaryText}</p>
             {assignedCount > 0 && (
               <Button
                 variant="link"
