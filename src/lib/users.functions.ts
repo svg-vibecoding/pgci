@@ -78,6 +78,27 @@ export const createUser = createServerFn({ method: "POST" })
       throw new Error(`No se pudo crear el perfil: ${profileErr.message}`);
     }
 
+    if (data.role === "platform_user" && data.client_ids.length > 0) {
+      const rows = data.client_ids.map((client_id) => ({
+        user_id: newUserId,
+        client_id,
+        granted_by: userId,
+      }));
+      const { error: accessErr } = await supabaseAdmin
+        .from("user_client_access")
+        .insert(rows);
+      if (accessErr) {
+        // Profile created but access failed — surface a warning but keep the user.
+        return {
+          user_id: newUserId,
+          email: data.email,
+          full_name: data.full_name,
+          temp_password: tempPassword,
+          access_error: accessErr.message,
+        };
+      }
+    }
+
     return {
       user_id: newUserId,
       email: data.email,
