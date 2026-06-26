@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,29 +16,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
 import { StatusBadge, Badge } from "@/components/sumatec";
 import { useIsSuperAdmin } from "@/hooks/use-profile";
 import {
   ArrowLeft,
   Pencil,
   Power,
-  Plus,
-  Trash2,
   Building2,
-  Check,
+  AlertTriangle,
+  CheckCircle2,
+  Info,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/setup/users/$userId/")({
@@ -56,6 +44,38 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
+function SummaryCard({
+  label,
+  value,
+  hint,
+  tone = "default",
+}: {
+  label: string;
+  value: React.ReactNode;
+  hint?: React.ReactNode;
+  tone?: "default" | "warning";
+}) {
+  return (
+    <div className="rounded-lg border border-border bg-card p-3">
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </p>
+      <p className="mt-1 text-xl font-semibold text-foreground">{value}</p>
+      {hint && (
+        <p
+          className={
+            tone === "warning"
+              ? "mt-1 text-xs font-medium text-[var(--status-warning-strong)]"
+              : "mt-1 text-xs text-muted-foreground"
+          }
+        >
+          {hint}
+        </p>
+      )}
+    </div>
+  );
+}
+
 const roleLabel = (r: string) =>
   r === "super_admin" ? "Super admin" : "Usuario plataforma";
 
@@ -64,7 +84,6 @@ function UserDetail() {
   const qc = useQueryClient();
   const { isSuperAdmin } = useIsSuperAdmin();
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [pickerOpen, setPickerOpen] = useState(false);
 
   const { data: user, isLoading } = useQuery({
     queryKey: ["users", userId],
@@ -91,19 +110,6 @@ function UserDetail() {
     },
   });
 
-  const { data: clients } = useQuery({
-    queryKey: ["clients", "active-options"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("clients")
-        .select("id, commercial_name, legal_name, type, status")
-        .eq("status", "active")
-        .order("commercial_name");
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
-
   const toggleStatus = useMutation({
     mutationFn: async (next: "active" | "inactive") => {
       const { error } = await supabase
@@ -121,42 +127,24 @@ function UserDetail() {
     onError: () => toast.error("No fue posible cambiar el estado."),
   });
 
-  const addAccess = useMutation({
-    mutationFn: async (clientId: string) => {
-      const { error } = await supabase
-        .from("user_client_access")
-        .insert({ user_id: userId, client_id: clientId });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["users", userId, "access"] });
-      toast.success("Acceso asignado.");
-      setPickerOpen(false);
-    },
-    onError: (err: Error) => {
-      toast.error(err.message.includes("duplicate") ? "El usuario ya tiene acceso a este cliente." : "No se pudo asignar el acceso.");
-    },
-  });
-
-  const removeAccess = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("user_client_access").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["users", userId, "access"] });
-      toast.success("Acceso removido.");
-    },
-    onError: () => toast.error("No se pudo remover el acceso."),
-  });
-
   if (isLoading) return <p className="text-sm text-muted-foreground">Cargando…</p>;
   if (!user) return <p className="text-sm text-muted-foreground">No encontrado.</p>;
 
   const isActive = user.status === "active";
   const isSuper = user.role === "super_admin";
-  const assignedIds = new Set((access ?? []).map((a) => a.client_id));
-  const availableClients = (clients ?? []).filter((c) => !assignedIds.has(c.id));
+  const assignedCount = access?.length ?? 0;
+
+  // Diagnostics
+  const diagnostics: string[] = [];
+  if (!isSuper && assignedCount === 0) {
+    diagnostics.push("Usuario sin clientes asignados.");
+  }
+  if (!isSuper && user.can_create_agreements && assignedCount === 0) {
+    diagnostics.push("Puede crear acuerdos, pero no tiene clientes asignados.");
+  }
+  if (!isActive && assignedCount > 0) {
+    diagnostics.push("Usuario inactivo con accesos existentes.");
+  }
 
   return (
     <div className="-mt-6 space-y-5">
@@ -229,30 +217,57 @@ function UserDetail() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="rounded-lg border border-border bg-card p-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Clientes asignados
-          </p>
-          <p className="mt-1 text-xl font-semibold text-foreground">
-            {isSuper ? "Todos" : access?.length ?? 0}
-          </p>
-        </div>
-        <div className="rounded-lg border border-border bg-card p-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Rol
-          </p>
-          <p className="mt-1 text-sm font-medium text-foreground">{roleLabel(user.role)}</p>
-        </div>
-        <div className="rounded-lg border border-border bg-card p-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Creado
-          </p>
-          <p className="mt-1 text-sm text-foreground">
-            {new Date(user.created_at).toLocaleDateString()}
-          </p>
-        </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <SummaryCard
+          label="Clientes asignados"
+          value={isSuper ? "Acceso total" : assignedCount}
+          hint={
+            !isSuper && assignedCount === 0 ? "Requiere asignación" : undefined
+          }
+          tone={!isSuper && assignedCount === 0 ? "warning" : "default"}
+        />
+        <SummaryCard
+          label="Tipo de usuario"
+          value={<span className="text-sm font-medium">{roleLabel(user.role)}</span>}
+        />
+        <SummaryCard
+          label="Creación de acuerdos"
+          value={
+            <span className="text-sm font-medium">
+              {isSuper ? "No aplica" : user.can_create_agreements ? "Sí" : "No"}
+            </span>
+          }
+        />
+        <SummaryCard
+          label="Creado"
+          value={
+            <span className="text-sm font-medium">
+              {new Date(user.created_at).toLocaleDateString()}
+            </span>
+          }
+        />
       </div>
+
+      {/* Diagnóstico de acceso */}
+      {diagnostics.length > 0 ? (
+        <Alert variant="warning">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Diagnóstico de acceso</AlertTitle>
+          <AlertDescription>
+            <ul className="mt-1 list-disc space-y-1 pl-4">
+              {diagnostics.map((m) => (
+                <li key={m}>{m}</li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <Alert variant="success">
+          <CheckCircle2 className="h-4 w-4" />
+          <AlertTitle>Diagnóstico de acceso</AlertTitle>
+          <AlertDescription>Configuración operativa válida.</AlertDescription>
+        </Alert>
+      )}
 
       <Card>
         <CardHeader>
@@ -261,85 +276,55 @@ function UserDetail() {
         <CardContent className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           <Field label="Nombre completo">{user.full_name}</Field>
           <Field label="Email">{user.email}</Field>
-          <Field label="Rol">{roleLabel(user.role)}</Field>
           <Field label="Código ERP">{user.erp_user_code || "—"}</Field>
-          <Field label="Puede crear acuerdos">
-            {isSuper ? "Implícito (super admin)" : user.can_create_agreements ? "Sí" : "No"}
-          </Field>
+          <Field label="Tipo de usuario">{roleLabel(user.role)}</Field>
           <Field label="Estado">
             <StatusBadge
               status={isActive ? "active" : "neutral"}
               label={isActive ? "Activo" : "Inactivo"}
             />
           </Field>
+          <Field label="Creación de acuerdos">
+            {isSuper ? "No aplica" : user.can_create_agreements ? "Sí" : "No"}
+          </Field>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
-          <div>
-            <CardTitle className="text-base">Accesos a clientes</CardTitle>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {isSuper
-                ? "Los super admins tienen acceso implícito a todos los clientes."
-                : "Clientes a los que este usuario puede acceder en la plataforma."}
-            </p>
-          </div>
-          {isSuperAdmin && !isSuper && (
-            <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
-              <PopoverTrigger asChild>
-                <Button size="sm" variant="outline" disabled={availableClients.length === 0}>
-                  <Plus className="mr-2 h-4 w-4" /> Asignar cliente
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[320px] p-0" align="end">
-                <Command>
-                  <CommandInput placeholder="Buscar cliente…" />
-                  <CommandList>
-                    <CommandEmpty>Sin resultados.</CommandEmpty>
-                    <CommandGroup>
-                      {availableClients.map((c) => {
-                        const name = c.commercial_name?.trim() || c.legal_name;
-                        return (
-                          <CommandItem
-                            key={c.id}
-                            value={name}
-                            onSelect={() => addAccess.mutate(c.id)}
-                            disabled={addAccess.isPending}
-                          >
-                            <Check className="mr-2 h-4 w-4 opacity-0" />
-                            <span className="flex-1 truncate">{name}</span>
-                            <span className="ml-2 text-xs text-muted-foreground">
-                              {c.type === "holding" ? "Holding" : "Directo"}
-                            </span>
-                          </CommandItem>
-                        );
-                      })}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-          )}
+        <CardHeader>
+          <CardTitle className="text-base">Accesos a clientes</CardTitle>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {isSuper
+              ? "Vista de solo lectura."
+              : "Clientes a los que este usuario puede acceder en la plataforma. Edita la configuración para ajustar sus accesos."}
+          </p>
         </CardHeader>
         <CardContent>
           {isSuper ? (
-            <p className="text-sm text-muted-foreground">
-              Sin asignaciones manuales. El acceso se otorga por el rol.
-            </p>
-          ) : !access || access.length === 0 ? (
+            <Alert variant="info">
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                Los super admins tienen acceso total a la plataforma y no requieren asignación manual de clientes.
+              </AlertDescription>
+            </Alert>
+          ) : assignedCount === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-md border border-dashed border-border py-8 text-center">
               <Building2 className="mb-2 h-6 w-6 text-muted-foreground" />
-              <p className="text-sm font-medium">Sin clientes asignados.</p>
+              <p className="text-sm font-medium">Este usuario aún no tiene clientes asignados.</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                {isSuperAdmin
-                  ? "Asigna clientes para habilitar el acceso a sus acuerdos."
-                  : "Aún no tiene acceso a clientes."}
+                Edita la configuración para ajustar sus accesos.
               </p>
+              {isSuperAdmin && (
+                <Button asChild variant="outline" size="sm" className="mt-3">
+                  <Link to="/setup/users/$userId/edit" params={{ userId }}>
+                    <Pencil className="mr-2 h-4 w-4" /> Editar configuración
+                  </Link>
+                </Button>
+              )}
             </div>
           ) : (
             <ul className="divide-y divide-border rounded-md border border-border">
-              {access.map((a) => {
+              {(access ?? []).map((a) => {
                 const c = a.clients;
                 const name = c?.commercial_name?.trim() || c?.legal_name || "—";
                 return (
@@ -363,16 +348,6 @@ function UserDetail() {
                         <Badge color="neutral" variant="soft">Inactivo</Badge>
                       )}
                     </div>
-                    {isSuperAdmin && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        disabled={removeAccess.isPending}
-                        onClick={() => removeAccess.mutate(a.id)}
-                      >
-                        <Trash2 className="mr-1.5 h-4 w-4" /> Remover
-                      </Button>
-                    )}
                   </li>
                 );
               })}
