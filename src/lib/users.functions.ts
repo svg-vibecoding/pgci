@@ -14,6 +14,7 @@ const createUserSchema = z.object({
     .optional()
     .transform((v) => (v && v.length ? v : null)),
   status: z.enum(["active", "inactive"]).default("active"),
+  client_ids: z.array(z.string().uuid()).default([]),
 });
 
 export type CreateUserInput = z.input<typeof createUserSchema>;
