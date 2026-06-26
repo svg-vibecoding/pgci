@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Info, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -120,6 +120,14 @@ export function UserForm({
 
   const showClientsSection = !!clients;
   const isSuper = v.role === "super_admin";
+  const hasNoClients = !isSuper && v.client_ids.length === 0;
+
+  // Auto-disable can_create_agreements when platform_user has no clients
+  useEffect(() => {
+    if (hasNoClients && v.can_create_agreements) {
+      setV((prev) => ({ ...prev, can_create_agreements: false }));
+    }
+  }, [hasNoClients, v.can_create_agreements]);
 
   return (
     <form
@@ -373,17 +381,25 @@ export function UserForm({
       )}
 
       {!isSuper && (
-        <div className="flex items-center justify-between gap-4 rounded-lg border border-border bg-card p-4">
-          <div>
-            <p className="text-sm font-medium">Puede crear acuerdos en clientes asignados</p>
-            <p className="text-xs text-muted-foreground">
-              Permite a este usuario crear acuerdos para todos los clientes que tenga asignados.
-            </p>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-4 rounded-lg border border-border bg-card p-4">
+            <div>
+              <p className="text-sm font-medium">Puede crear acuerdos en clientes asignados</p>
+              <p className="text-xs text-muted-foreground">
+                Permite a este usuario crear acuerdos para todos los clientes que tenga asignados.
+              </p>
+            </div>
+            <Switch
+              checked={v.can_create_agreements}
+              disabled={hasNoClients}
+              onCheckedChange={(checked) => set("can_create_agreements", checked)}
+            />
           </div>
-          <Switch
-            checked={v.can_create_agreements}
-            onCheckedChange={(checked) => set("can_create_agreements", checked)}
-          />
+          {hasNoClients && (
+            <p className="text-xs text-muted-foreground">
+              Asigna al menos un cliente para habilitar la creación de acuerdos.
+            </p>
+          )}
         </div>
       )}
 
