@@ -430,7 +430,7 @@ function ClientAccess() {
                     </div>
 
                     <div className="flex items-center gap-6">
-                      <label className="flex flex-col items-center gap-1 text-xs font-normal text-muted-foreground">
+                      <label className="flex flex-col items-center gap-1 text-xs font-medium text-muted-foreground">
                         Asignar
                         <Switch
                           checked={st.assigned}
@@ -439,7 +439,7 @@ function ClientAccess() {
                       </label>
                       <label
                         className={cn(
-                          "flex flex-col items-center gap-1 text-xs font-normal text-muted-foreground",
+                          "flex flex-col items-center gap-1 text-xs font-medium text-muted-foreground",
                           !st.assigned && "opacity-40",
                         )}
                       >
