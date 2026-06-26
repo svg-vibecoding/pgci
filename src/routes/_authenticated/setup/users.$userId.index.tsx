@@ -47,8 +47,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 const roleLabel = (r: string) =>
   r === "super_admin" ? "Super admin" : "Usuario plataforma";
 
-const ADMIN_ROLES = new Set(["agreement_admin", "super_admin"]);
-
 function UserDetail() {
   const { userId } = Route.useParams();
   const qc = useQueryClient();
