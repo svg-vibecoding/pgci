@@ -97,7 +97,11 @@ export function UserForm({
 
   const filteredClients = useMemo(() => {
     const q = clientSearch.trim().toLowerCase();
-    const list = clients ?? [];
+    const list = [...(clients ?? [])].sort((a, b) => {
+      const an = (a.commercial_name?.trim() || a.legal_name).toLocaleLowerCase("es");
+      const bn = (b.commercial_name?.trim() || b.legal_name).toLocaleLowerCase("es");
+      return an.localeCompare(bn, "es", { sensitivity: "base" });
+    });
     if (!q) return list;
     return list.filter((c) => {
       const name = (c.commercial_name?.trim() || c.legal_name).toLowerCase();
