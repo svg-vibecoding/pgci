@@ -220,11 +220,10 @@ function ViewClient() {
         </CardHeader>
         <CardContent>
           <InfoSection>
+            <InfoField label="NIT">{data.tax_id || "—"}</InfoField>
             <InfoField label="Razón social">{data.legal_name || "—"}</InfoField>
             <InfoField label="Nombre comercial">{data.commercial_name?.trim() || "—"}</InfoField>
             <InfoField label="Nombre ERP">{data.erp_name?.trim() || "—"}</InfoField>
-            <InfoField label="Tipo ID">{data.tax_id_type || "NIT"}</InfoField>
-            <InfoField label="NIT">{data.tax_id || "—"}</InfoField>
             <InfoField label="Tipo de cliente">{isHolding ? "Holding" : "Directo"}</InfoField>
             <InfoField label="Estado">
               <StatusBadge
