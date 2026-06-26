@@ -31,6 +31,7 @@ function ClientAccess() {
   const [stateMap, setStateMap] = useState<Map<string, AccessState>>(new Map());
   const [initialMap, setInitialMap] = useState<Map<string, AccessState>>(new Map());
   const [saving, setSaving] = useState(false);
+  const [showDetail, setShowDetail] = useState(false);
 
   const profileQ = useQuery({
     queryKey: ["users", userId, "profile-min"],
