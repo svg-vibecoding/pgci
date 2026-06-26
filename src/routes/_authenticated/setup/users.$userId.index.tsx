@@ -283,22 +283,22 @@ function UserDetail() {
           dotColor="accent"
         />
         <IndicatorCard
-          label="Capacidad"
+          label="ALCANCES EN PGCI"
           value={
             isSuper
               ? "Administración"
               : user.can_create_agreements
-                ? "Con creación habilitada"
-                : "Sin creación"
+                ? "SÍ"
+                : "NO"
           }
-          hint={isSuper ? "Crea, administra y consulta" : undefined}
+          hint={isSuper ? "Crea, administra y consulta" : "crea acuerdos"}
           dotColor="muted"
+          tone={!isSuper && !user.can_create_agreements ? "muted" : "default"}
         >
           {!isSuper && (
             <>
-              <p>Crear acuerdos: {user.can_create_agreements ? "Sí" : "No"}</p>
-              <p>Administra: {adminCount > 0 ? adminCount : "Sin acuerdos"}</p>
-              <p>Participa: {participantCount > 0 ? participantCount : "Sin acuerdos"}</p>
+              <p>Administra: {adminCount > 0 ? `${adminCount} clientes` : "No"}</p>
+              <p>Participa: {participantCount > 0 ? `${participantCount} clientes` : "No"}</p>
             </>
           )}
         </IndicatorCard>
