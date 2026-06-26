@@ -287,31 +287,31 @@ function UserDetail() {
       {/* Indicadores principales */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <IndicatorCard
-          label="Cartera de clientes"
-          value={clientsValue}
-          hint={clientsHint}
+          label="Cartera"
+          value={isSuper ? "Acceso total" : `${assignedCount} ${assignedCount === 1 ? "cliente" : "clientes"}`}
+          hint={isSuper ? "Todos los clientes" : assignedCount === 0 ? "Requiere asignación" : "Cartera asignada"}
+          dotColor="primary"
           tone={!isSuper && assignedCount === 0 ? "warning" : "default"}
         />
         <IndicatorCard
-          label="Acuerdos en gestión"
-          value={agreementsValue}
-          hint={agreementsHint}
+          label="Acuerdos"
+          value={isSuper ? "Acceso total" : `${totalAgreements} ${totalAgreements === 1 ? "acuerdo" : "acuerdos"}`}
+          hint={isSuper ? "Todos los acuerdos" : totalAgreements === 0 ? "Sin acuerdos asignados" : "En gestión"}
+          dotColor="accent"
         />
         <IndicatorCard
-          label="Capacidad comercial"
+          label="Capacidad"
           value={
-            <span className="text-sm font-medium">
-              {isSuper
-                ? "Admin total"
-                : user.can_create_agreements
-                  ? "Con creación habilitada"
-                  : "Sin creación"}
-            </span>
+            isSuper
+              ? "Admin total"
+              : user.can_create_agreements
+                ? "Con creación habilitada"
+                : "Sin creación"
           }
+          hint={isSuper ? "Crea, administra y consulta" : undefined}
+          dotColor="muted"
         >
-          {isSuper ? (
-            <p>Crea, administra y consulta</p>
-          ) : (
+          {!isSuper && (
             <>
               <p>Crear acuerdos: {user.can_create_agreements ? "Sí" : "No"}</p>
               <p>Administra: {adminCount > 0 ? adminCount : "Sin acuerdos"}</p>
@@ -321,9 +321,11 @@ function UserDetail() {
         </IndicatorCard>
         <IndicatorCard
           label="Datos sensibles"
-          value={<span className="text-sm font-medium">Próximamente</span>}
+          value="Pendiente"
           hint="Costos y márgenes"
+          dotColor="muted"
           tone="muted"
+          icon={<Lock className="h-3 w-3" />}
           tag={
             <Badge color="neutral" variant="soft">
               Próximamente
