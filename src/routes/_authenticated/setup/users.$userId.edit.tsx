@@ -61,6 +61,7 @@ function EditUser() {
     can_create_agreements: Boolean(data.can_create_agreements),
     erp_user_code: data.erp_user_code ?? "",
     status: (data.status as "active" | "inactive") ?? "active",
+    client_ids: [],
   };
 
   return (
