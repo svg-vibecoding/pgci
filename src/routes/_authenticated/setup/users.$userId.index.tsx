@@ -280,7 +280,11 @@ function UserDetail() {
           label="Capacidad comercial"
           value={
             <span className="text-sm font-medium">
-              {isSuper ? "Admin total" : user.can_create_agreements ? "Operativa" : "Limitada"}
+              {isSuper
+                ? "Admin total"
+                : user.can_create_agreements
+                  ? "Con creación habilitada"
+                  : "Sin creación"}
             </span>
           }
         >
