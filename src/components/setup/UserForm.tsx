@@ -205,74 +205,120 @@ export function UserForm({
         </div>
       </div>
 
-      {showClientsSection && (
+      {showClientsSection && isSuper && (
+        <div className="rounded-lg border border-border bg-muted/40 px-4 py-3">
+          <p className="text-sm text-muted-foreground">
+            Los super admins tienen acceso total y no requieren asignación manual de clientes.
+          </p>
+        </div>
+      )}
+
+      {showClientsSection && v.role === "platform_user" && (
         <section className="rounded-lg border border-border bg-card">
           <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
             <div>
               <h2 className="text-sm font-semibold">Clientes asignados</h2>
               <p className="text-xs text-muted-foreground">
-                {isSuper
-                  ? "No requiere asignación manual."
-                  : "Selecciona los clientes a los que tendrá acceso este usuario."}
+                Selecciona los clientes a los que tendrá acceso este usuario.
               </p>
             </div>
-            {!isSuper && (
-              <span className="rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
-                {v.client_ids.length} seleccionado{v.client_ids.length === 1 ? "" : "s"}
-              </span>
-            )}
+            <span
+              className={
+                "rounded-md px-2 py-1 text-xs font-medium " +
+                (v.client_ids.length === 0
+                  ? "bg-muted text-muted-foreground"
+                  : "bg-emerald-100 text-emerald-700")
+              }
+            >
+              {v.client_ids.length === 1
+                ? "1 seleccionado"
+                : `${v.client_ids.length} seleccionados`}
+            </span>
           </header>
 
-          {isSuper ? (
-            <div className="px-4 py-4">
-              <p className="text-sm text-muted-foreground">
-                Los super admins tienen acceso total y no requieren asignación manual de clientes.
-              </p>
+          <div className="space-y-3 p-4">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={clientSearch}
+                onChange={(e) => setClientSearch(e.target.value)}
+                placeholder="Buscar cliente…"
+                className="pl-9"
+              />
             </div>
-          ) : (
-            <div className="space-y-3 p-4">
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={clientSearch}
-                  onChange={(e) => setClientSearch(e.target.value)}
-                  placeholder="Buscar cliente…"
-                  className="pl-9"
-                />
-              </div>
-              <div className="max-h-72 divide-y divide-border overflow-y-auto rounded-md border border-border">
-                {filteredClients.length === 0 ? (
-                  <p className="px-4 py-6 text-center text-sm text-muted-foreground">
-                    {(clients?.length ?? 0) === 0
-                      ? "No hay clientes activos disponibles."
-                      : "Sin resultados."}
-                  </p>
-                ) : (
-                  filteredClients.map((c) => {
+
+            {selectedClients.length > 0 && (
+              <div className="rounded-md border border-border bg-muted/30 p-2">
+                <div
+                  className={
+                    "flex flex-wrap gap-1.5 overflow-hidden " +
+                    (showAllChips ? "" : "max-h-[68px]")
+                  }
+                >
+                  {selectedClients.map((c) => {
                     const name = c.commercial_name?.trim() || c.legal_name;
-                    const checked = v.client_ids.includes(c.id);
                     return (
-                      <label
+                      <span
                         key={c.id}
-                        className="flex cursor-pointer items-center justify-between gap-3 px-4 py-2.5 hover:bg-muted/50"
+                        className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2 py-1 text-xs"
                       >
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-medium">{name}</p>
-                          <p className="truncate text-xs text-muted-foreground">
-                            {c.type === "holding" ? "Holding" : "Directo"}
-                          </p>
-                        </div>
-                        <Switch
-                          checked={checked}
-                          onCheckedChange={(val) => toggleClient(c.id, val)}
-                        />
-                      </label>
+                        <span className="max-w-[180px] truncate">{name}</span>
+                        <button
+                          type="button"
+                          aria-label={`Quitar ${name}`}
+                          onClick={() => toggleClient(c.id, false)}
+                          className="rounded-sm text-muted-foreground hover:text-foreground"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </span>
                     );
-                  })
+                  })}
+                </div>
+                {selectedClients.length > 8 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAllChips((s) => !s)}
+                    className="mt-2 text-xs font-medium text-primary hover:underline"
+                  >
+                    {showAllChips ? "Ocultar" : `Ver todos (${selectedClients.length})`}
+                  </button>
                 )}
               </div>
+            )}
+
+            <div className="max-h-72 divide-y divide-border overflow-y-auto rounded-md border border-border">
+              {filteredClients.length === 0 ? (
+                <p className="px-4 py-6 text-center text-sm text-muted-foreground">
+                  {(clients?.length ?? 0) === 0
+                    ? "No hay clientes activos disponibles."
+                    : "Sin resultados."}
+                </p>
+              ) : (
+                filteredClients.map((c) => {
+                  const name = c.commercial_name?.trim() || c.legal_name;
+                  const checked = v.client_ids.includes(c.id);
+                  return (
+                    <label
+                      key={c.id}
+                      className="flex cursor-pointer items-center justify-between gap-3 px-4 py-2.5 hover:bg-muted/50"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium">{name}</p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {c.type === "holding" ? "Holding" : "Directo"}
+                        </p>
+                      </div>
+                      <Switch
+                        checked={checked}
+                        onCheckedChange={(val) => toggleClient(c.id, val)}
+                      />
+                    </label>
+                  );
+                })
+              )}
             </div>
-          )}
+          </div>
         </section>
       )}
 
