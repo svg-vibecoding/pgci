@@ -116,8 +116,6 @@ function UserDetail() {
   const isSuper = user.role === "super_admin";
   const assignedCount = access?.length ?? 0;
   const totalAgreements = memberships?.length ?? 0;
-  const adminCount = (memberships ?? []).filter((m) => ADMIN_ROLES.has(m.role)).length;
-  const participantCount = totalAgreements - adminCount;
 
 
   // Alerts
