@@ -51,9 +51,9 @@ function SetupLayout() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[var(--surface-page)]">
+    <div className="fixed inset-0 flex overflow-hidden bg-[var(--surface-page)]">
       <aside
-        className="flex h-screen w-[264px] flex-shrink-0 flex-col border-r border-[var(--border-subtle)] bg-[var(--surface-sidebar)]"
+        className="flex h-full w-[264px] flex-shrink-0 flex-col border-r border-[var(--border-subtle)] bg-[var(--surface-sidebar)]"
       >
         {/* Marca */}
         <div className="px-6 pt-5 pb-2">
@@ -141,7 +141,7 @@ function SetupLayout() {
         </div>
       </aside>
 
-      <main className="h-screen flex-1 overflow-y-auto">
+      <main className="h-full min-w-0 flex-1 overflow-y-auto overscroll-contain">
         <div className="mx-auto max-w-6xl px-10 py-14">
           <Outlet />
         </div>
