@@ -59,6 +59,25 @@ function ProductDetail() {
     },
   });
 
+  const { data: associatedClients = 0 } = useQuery({
+    queryKey: ["products", productId, "associated-clients"],
+    queryFn: async () => {
+      const { data: rows, error: err1 } = await supabase
+        .from("agreement_products")
+        .select("agreement_id")
+        .eq("product_id", productId);
+      if (err1 || !rows?.length) return 0;
+      const ids = [...new Set(rows.map((r) => r.agreement_id))];
+      const { data: agreements, error: err2 } = await supabase
+        .from("agreements")
+        .select("client_id")
+        .in("id", ids);
+      if (err2) return 0;
+      const clients = new Set(agreements?.map((a) => a.client_id).filter(Boolean) ?? []);
+      return clients.size;
+    },
+  });
+
   const backLink = (
     <Link
       to="/setup/products"
