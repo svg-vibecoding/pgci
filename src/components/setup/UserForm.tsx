@@ -381,12 +381,14 @@ export function UserForm({
       )}
 
       {!isSuper && (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between gap-4 rounded-lg border border-border bg-card p-4">
+        <div className="rounded-lg border border-border bg-card p-4">
+          <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm font-medium">Puede crear acuerdos en clientes asignados</p>
               <p className="text-xs text-muted-foreground">
-                Permite a este usuario crear acuerdos para todos los clientes que tenga asignados.
+                {hasNoClients
+                  ? "Asigna al menos un cliente para habilitar la creación de acuerdos."
+                  : "Permite a este usuario crear acuerdos para todos los clientes que tenga asignados."}
               </p>
             </div>
             <Switch
@@ -395,11 +397,6 @@ export function UserForm({
               onCheckedChange={(checked) => set("can_create_agreements", checked)}
             />
           </div>
-          {hasNoClients && (
-            <p className="text-xs text-muted-foreground">
-              Asigna al menos un cliente para habilitar la creación de acuerdos.
-            </p>
-          )}
         </div>
       )}
 
