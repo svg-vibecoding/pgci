@@ -491,7 +491,7 @@ function ClientAccess() {
                   return (
                     <Chip
                       key={c.id}
-                      color={st.can_create ? "primary" : "neutral"}
+                      color={st.can_create ? "info" : "neutral"}
                       variant="soft"
                       size="small"
                       icon={st.can_create ? Check : undefined}
