@@ -392,7 +392,7 @@ export function UserForm({
         >
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm font-medium">Puede crear acuerdos en clientes asignados</p>
+              <p className="text-sm font-medium">Crear acuerdos en clientes asignados</p>
               <p className="text-xs text-muted-foreground">
                 {hasNoClients
                   ? "Asigna al menos un cliente para habilitar la creación de acuerdos."
