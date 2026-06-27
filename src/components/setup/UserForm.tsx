@@ -135,22 +135,14 @@ export function UserForm({
         </div>
 
         <div className="md:col-span-2 space-y-2">
-          <h3 className="text-sm font-semibold">Tipo de usuario</h3>
+          <h3 className="text-sm font-semibold">Permisos de administración</h3>
           <div className="rounded-lg border border-border bg-card p-4">
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-1">
-                {isSuper ? (
-                  <>
-                    <p className="text-sm font-semibold">Super admin</p>
-                    <p className="text-xs text-muted-foreground">
-                      Acceso total a la plataforma sin asignación manual de clientes.
-                    </p>
-                  </>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Después de crear el usuario podrás definir a qué clientes tendrá acceso.
-                  </p>
-                )}
+                <p className="text-sm font-semibold">Super administrador</p>
+                <p className="text-xs text-muted-foreground">
+                  Los super admins tienen acceso total a la plataforma.
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 <Label htmlFor="super_admin" className="text-sm font-medium">
@@ -166,16 +158,6 @@ export function UserForm({
               </div>
             </div>
           </div>
-
-          {isSuper && (
-            <Alert variant="info">
-              <Info className="h-4 w-4" />
-              <AlertDescription>
-                Los super admins tienen acceso total a la plataforma y no requieren asignación
-                manual de clientes.
-              </AlertDescription>
-            </Alert>
-          )}
         </div>
 
         {showPasswordSection && (
