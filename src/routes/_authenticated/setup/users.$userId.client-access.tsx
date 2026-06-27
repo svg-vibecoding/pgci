@@ -358,7 +358,7 @@ function ClientAccess() {
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-end gap-3">
                 <span className="text-right text-xs font-medium text-muted-foreground">
-                  Asignar clientes {search.trim() ? "(Visibles)" : "(Todos)"}
+                  {search.trim() ? "Acceso a clientes visibles" : "Acceso a todos los clientes"}
                 </span>
                 <Switch
                   checked={visibleAllAssigned}
@@ -373,7 +373,7 @@ function ClientAccess() {
                 )}
               >
                 <span className="text-right text-xs font-medium text-muted-foreground">
-                  Crear acuerdos {search.trim() ? "(Visibles)" : "(Todos)"}
+                  {search.trim() ? "Crear acuerdos en clientes visibles asignados" : "Crear acuerdos en todos los clientes asignados"}
                 </span>
                 <Switch
                   checked={visibleAllCanCreate}
