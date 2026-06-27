@@ -375,6 +375,7 @@ type UserRow = {
   updated_at: string | null;
   client_count: number;
   create_count: number;
+  agreement_count: number;
 };
 
 function getUserIssues(u: UserRow): string[] {
