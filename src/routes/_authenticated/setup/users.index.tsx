@@ -29,13 +29,11 @@ export const Route = createFileRoute("/_authenticated/setup/users/")({
 });
 
 type CardKey = "all" | "active" | "inactive" | "alerts";
-type RoleFilter = "all" | "super_admin" | "platform_user";
 type CreateFilter = "all" | "yes" | "no";
 type GestionFilter = "all" | "active" | "none";
 
 function UsersList() {
   const [search, setSearch] = useState("");
-  const [roleF, setRoleF] = useState<RoleFilter>("all");
   const [createF, setCreateF] = useState<CreateFilter>("all");
   const [gestionF, setGestionF] = useState<GestionFilter>("all");
   const [activeCard, setActiveCard] = useState<CardKey>("all");
@@ -100,8 +98,6 @@ function UsersList() {
     if (activeCard === "inactive" && u.status !== "inactive") return false;
     if (activeCard === "alerts" && getUserIssues(u).length === 0) return false;
 
-    if (roleF !== "all" && u.role !== roleF) return false;
-
     if (createF === "yes" && !(u.role === "platform_user" && u.create_count > 0)) return false;
     if (createF === "no" && !(u.role === "platform_user" && u.create_count === 0)) return false;
 
@@ -134,21 +130,16 @@ function UsersList() {
 
   const hasActiveFilters =
     activeCard !== "all" ||
-    roleF !== "all" ||
     createF !== "all" ||
     gestionF !== "all" ||
     search.trim() !== "";
 
   const clearFilters = () => {
     setActiveCard("all");
-    setRoleF("all");
     setCreateF("all");
     setGestionF("all");
     setSearch("");
   };
-
-  const roleLabel = (r: string) =>
-    r === "super_admin" ? "Super admin" : "Usuario plataforma";
 
   return (
     <div className="space-y-6">
@@ -207,21 +198,6 @@ function UsersList() {
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="role-select" className="text-xs text-muted-foreground">
-            Rol
-          </label>
-          <Select value={roleF} onValueChange={(v) => setRoleF(v as RoleFilter)}>
-            <SelectTrigger id="role-select" className="w-40 lg:w-44">
-              <SelectValue placeholder="Rol" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="super_admin">Super admin</SelectItem>
-              <SelectItem value="platform_user">Usuario plataforma</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex flex-col gap-1.5">
           <label htmlFor="create-select" className="text-xs text-muted-foreground">
             Crea acuerdos
           </label>
@@ -263,11 +239,6 @@ function UsersList() {
               {activeCard !== "all" && (
                 <Chip size="small" variant="soft" color="neutral" onRemove={() => setActiveCard("all")}>
                   {cardLabelByKey[activeCard]}
-                </Chip>
-              )}
-              {roleF !== "all" && (
-                <Chip size="small" variant="soft" color="neutral" onRemove={() => setRoleF("all")}>
-                  {roleLabel(roleF)}
                 </Chip>
               )}
               {createF !== "all" && (
