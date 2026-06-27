@@ -198,21 +198,6 @@ function UsersList() {
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="role-select" className="text-xs text-muted-foreground">
-            Rol
-          </label>
-          <Select value={roleF} onValueChange={(v) => setRoleF(v as RoleFilter)}>
-            <SelectTrigger id="role-select" className="w-40 lg:w-44">
-              <SelectValue placeholder="Rol" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="super_admin">Super admin</SelectItem>
-              <SelectItem value="platform_user">Usuario plataforma</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex flex-col gap-1.5">
           <label htmlFor="create-select" className="text-xs text-muted-foreground">
             Crea acuerdos
           </label>
@@ -254,11 +239,6 @@ function UsersList() {
               {activeCard !== "all" && (
                 <Chip size="small" variant="soft" color="neutral" onRemove={() => setActiveCard("all")}>
                   {cardLabelByKey[activeCard]}
-                </Chip>
-              )}
-              {roleF !== "all" && (
-                <Chip size="small" variant="soft" color="neutral" onRemove={() => setRoleF("all")}>
-                  {roleLabel(roleF)}
                 </Chip>
               )}
               {createF !== "all" && (
