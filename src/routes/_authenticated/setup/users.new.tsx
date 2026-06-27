@@ -100,8 +100,8 @@ function NewUser() {
           <DialogHeader>
             <DialogTitle>Usuario creado</DialogTitle>
             <DialogDescription>
-              Comparte estas credenciales con {credentials?.full_name}. La contraseña no volverá
-              a mostrarse.
+              Guarda las credenciales de acceso para compartir con{" "}
+              {credentials?.full_name}. La contraseña no volverá a mostrarse.
             </DialogDescription>
           </DialogHeader>
           {credentials && (
