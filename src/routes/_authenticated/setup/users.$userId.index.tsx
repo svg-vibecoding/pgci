@@ -27,6 +27,7 @@ import {
   Building2,
   AlertTriangle,
   Info,
+  UserCog,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/setup/users/$userId/")({
@@ -145,6 +146,14 @@ function UserDetail() {
         {isSuperAdmin && (
           <div className="flex flex-wrap gap-2">
             <Button asChild variant="outline" size="sm">
+              <Link
+                to="/setup/users/$userId/client-access"
+                params={{ userId }}
+              >
+                <UserCog className="mr-2 h-4 w-4" /> Gestionar accesos
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
               <Link to="/setup/users/$userId/edit" params={{ userId }}>
                 <Pencil className="mr-2 h-4 w-4" /> Editar
               </Link>
@@ -223,24 +232,18 @@ function UserDetail() {
             <InfoField label="Nombre completo">{user.full_name}</InfoField>
             <InfoField label="Email">{user.email}</InfoField>
             <InfoField label="Código ERP">{user.erp_user_code || "—"}</InfoField>
-            <InfoField label="Estado">
-              <StatusBadge
-                status={isActive ? "active" : "neutral"}
-                label={isActive ? "Activo" : "Inactivo"}
-              />
-            </InfoField>
-            <InfoField label="Creación de acuerdos">
-              {isSuper
-                ? "No aplica"
-                : createCount === 0
-                  ? "Sin permiso de creación"
-                  : `Puede crear acuerdos en ${createCount} de ${assignedCount} clientes`}
+            <InfoField label="Acuerdos asignados">
+              {isSuper ? "Acceso total" : totalAgreements}
             </InfoField>
             <InfoField label="Clientes asignados">
               {isSuper ? "Acceso total" : assignedCount}
             </InfoField>
-            <InfoField label="Acuerdos en gestión">
-              {isSuper ? "Acceso total" : totalAgreements}
+            <InfoField label="Permisos de creación">
+              {isSuper
+                ? "No aplica"
+                : createCount === 0
+                  ? "Sin permisos de creación"
+                  : `${createCount} de ${assignedCount} clientes`}
             </InfoField>
             <InfoField label="Fecha de creación">
               {new Date(user.created_at).toLocaleDateString()}
@@ -250,6 +253,12 @@ function UserDetail() {
                 {new Date(user.updated_at).toLocaleDateString()}
               </InfoField>
             )}
+            <InfoField label="Estado">
+              <StatusBadge
+                status={isActive ? "active" : "neutral"}
+                label={isActive ? "Activo" : "Inactivo"}
+              />
+            </InfoField>
           </InfoSection>
         </CardContent>
       </Card>
