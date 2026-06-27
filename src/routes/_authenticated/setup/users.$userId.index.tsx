@@ -27,6 +27,7 @@ import {
   Building2,
   AlertTriangle,
   Info,
+  UserCog,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/setup/users/$userId/")({
