@@ -373,7 +373,7 @@ function ClientAccess() {
                 )}
               >
                 <span className="text-right text-xs font-medium text-muted-foreground">
-                  Crear acuerdos {search.trim() ? "(Visibles)" : "(Todos)"}
+                  {search.trim() ? "Crear acuerdos en clientes visibles asignados" : "Crear acuerdos en todos los clientes asignados"}
                 </span>
                 <Switch
                   checked={visibleAllCanCreate}
