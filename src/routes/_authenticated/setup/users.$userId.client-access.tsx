@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_authenticated/setup/users/$userId/client
 type AccessState = { assigned: boolean; can_create: boolean };
 
 const roleLabel = (r: string) =>
-  r === "super_admin" ? "Super admin" : "Usuario plataforma";
+  r === "super_admin" ? "Super admin" : null;
 
 function ClientAccess() {
   const { userId } = Route.useParams();
