@@ -30,10 +30,14 @@ export const Route = createFileRoute("/_authenticated/setup/users/")({
 
 type CardKey = "all" | "active" | "inactive" | "alerts";
 type RoleFilter = "all" | "super_admin" | "platform_user";
+type CreateFilter = "all" | "yes" | "no";
+type GestionFilter = "all" | "active" | "none";
 
 function UsersList() {
   const [search, setSearch] = useState("");
   const [roleF, setRoleF] = useState<RoleFilter>("all");
+  const [createF, setCreateF] = useState<CreateFilter>("all");
+  const [gestionF, setGestionF] = useState<GestionFilter>("all");
   const [activeCard, setActiveCard] = useState<CardKey>("all");
 
   const { data, isLoading } = useQuery({
@@ -64,10 +68,23 @@ function UsersList() {
           }
         });
       }
+      const agreementCounts = new Map<string, number>();
+      if (ids.length) {
+        const { data: members } = await supabase
+          .from("agreement_members")
+          .select("user_id")
+          .in("user_id", ids);
+        (members ?? []).forEach((m) => {
+          if (m.user_id) {
+            agreementCounts.set(m.user_id, (agreementCounts.get(m.user_id) ?? 0) + 1);
+          }
+        });
+      }
       return (profiles ?? []).map((p) => ({
         ...p,
         client_count: accessCounts.get(p.user_id) ?? 0,
         create_count: createCounts.get(p.user_id) ?? 0,
+        agreement_count: agreementCounts.get(p.user_id) ?? 0,
       })) as UserRow[];
     },
   });
@@ -84,6 +101,12 @@ function UsersList() {
     if (activeCard === "alerts" && getUserIssues(u).length === 0) return false;
 
     if (roleF !== "all" && u.role !== roleF) return false;
+
+    if (createF === "yes" && !(u.role === "platform_user" && u.create_count > 0)) return false;
+    if (createF === "no" && !(u.role === "platform_user" && u.create_count === 0)) return false;
+
+    if (gestionF === "active" && !(u.agreement_count > 0)) return false;
+    if (gestionF === "none" && !(u.role === "platform_user" && u.agreement_count === 0)) return false;
 
     if (search) {
       const s = search.toLowerCase();
@@ -110,11 +133,17 @@ function UsersList() {
   };
 
   const hasActiveFilters =
-    activeCard !== "all" || roleF !== "all" || search.trim() !== "";
+    activeCard !== "all" ||
+    roleF !== "all" ||
+    createF !== "all" ||
+    gestionF !== "all" ||
+    search.trim() !== "";
 
   const clearFilters = () => {
     setActiveCard("all");
     setRoleF("all");
+    setCreateF("all");
+    setGestionF("all");
     setSearch("");
   };
 
@@ -192,6 +221,36 @@ function UsersList() {
             </SelectContent>
           </Select>
         </div>
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="create-select" className="text-xs text-muted-foreground">
+            Crea acuerdos
+          </label>
+          <Select value={createF} onValueChange={(v) => setCreateF(v as CreateFilter)}>
+            <SelectTrigger id="create-select" className="w-48">
+              <SelectValue placeholder="Crea acuerdos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="yes">Sí</SelectItem>
+              <SelectItem value="no">No</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="gestion-select" className="text-xs text-muted-foreground">
+            En gestión
+          </label>
+          <Select value={gestionF} onValueChange={(v) => setGestionF(v as GestionFilter)}>
+            <SelectTrigger id="gestion-select" className="w-48">
+              <SelectValue placeholder="En gestión" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="active">Con acuerdos</SelectItem>
+              <SelectItem value="none">Sin acuerdos</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="space-y-2">
@@ -209,6 +268,16 @@ function UsersList() {
               {roleF !== "all" && (
                 <Chip size="small" variant="soft" color="neutral" onRemove={() => setRoleF("all")}>
                   {roleLabel(roleF)}
+                </Chip>
+              )}
+              {createF !== "all" && (
+                <Chip size="small" variant="soft" color="neutral" onRemove={() => setCreateF("all")}>
+                  {createF === "yes" ? "Crea acuerdos: Sí" : "Crea acuerdos: No"}
+                </Chip>
+              )}
+              {gestionF !== "all" && (
+                <Chip size="small" variant="soft" color="neutral" onRemove={() => setGestionF("all")}>
+                  {gestionF === "active" ? "En gestión: Con acuerdos" : "En gestión: Sin acuerdos"}
                 </Chip>
               )}
               {search.trim() && (
@@ -297,12 +366,17 @@ function UsersList() {
                     <TableCell className="text-sm">
                       {isSuper ? (
                         <span className="text-muted-foreground">—</span>
-                      ) : u.create_count > 0 ? (
-                        <span>
-                          {u.create_count} de {u.client_count}
-                        </span>
                       ) : (
-                        <span className="text-muted-foreground">—</span>
+                        <div className="flex items-center gap-2">
+                          {u.create_count > 0 ? (
+                            <Chip size="small" color="success">Sí</Chip>
+                          ) : (
+                            <Chip size="small" color="neutral">No</Chip>
+                          )}
+                          <span className="text-xs text-muted-foreground">
+                            {u.agreement_count} en gestión
+                          </span>
+                        </div>
                       )}
                     </TableCell>
                     <TableCell>
@@ -346,6 +420,7 @@ type UserRow = {
   updated_at: string | null;
   client_count: number;
   create_count: number;
+  agreement_count: number;
 };
 
 function getUserIssues(u: UserRow): string[] {
