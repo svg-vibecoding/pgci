@@ -9,7 +9,7 @@ export function useMyProfile() {
       if (!auth.user) return null;
       const { data, error } = await supabase
         .from("profiles")
-        .select("user_id, role, status, full_name, can_create_agreements")
+        .select("user_id, role, status, full_name")
         .eq("user_id", auth.user.id)
         .maybeSingle();
       if (error) throw error;
