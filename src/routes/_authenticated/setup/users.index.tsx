@@ -68,10 +68,23 @@ function UsersList() {
           }
         });
       }
+      const agreementCounts = new Map<string, number>();
+      if (ids.length) {
+        const { data: members } = await supabase
+          .from("agreement_members")
+          .select("user_id")
+          .in("user_id", ids);
+        (members ?? []).forEach((m) => {
+          if (m.user_id) {
+            agreementCounts.set(m.user_id, (agreementCounts.get(m.user_id) ?? 0) + 1);
+          }
+        });
+      }
       return (profiles ?? []).map((p) => ({
         ...p,
         client_count: accessCounts.get(p.user_id) ?? 0,
         create_count: createCounts.get(p.user_id) ?? 0,
+        agreement_count: agreementCounts.get(p.user_id) ?? 0,
       })) as UserRow[];
     },
   });
