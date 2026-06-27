@@ -116,8 +116,13 @@ function NewUser() {
               </div>
             </div>
           )}
-          <DialogFooter className="sm:justify-between">
-            <Button type="button" variant="outline" onClick={copyCredentials}>
+          <DialogFooter className="flex-col gap-3 sm:flex-col">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={copyCredentials}
+              className="w-full"
+            >
               {copied ? (
                 <>
                   <Check className="mr-2 h-4 w-4" /> Copiado
@@ -128,17 +133,34 @@ function NewUser() {
                 </>
               )}
             </Button>
-            <Button
-              type="button"
-              onClick={() => {
-                if (!credentials) return;
-                const id = credentials.user_id;
-                setCredentials(null);
-                navigate({ to: "/setup/users/$userId", params: { userId: id } });
-              }}
-            >
-              Ir al detalle
-            </Button>
+            <div className="flex w-full items-center justify-between gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  if (!credentials) return;
+                  const id = credentials.user_id;
+                  setCredentials(null);
+                  navigate({ to: "/setup/users/$userId", params: { userId: id } });
+                }}
+              >
+                Ir al detalle
+              </Button>
+              <Button
+                type="button"
+                onClick={() => {
+                  if (!credentials) return;
+                  const id = credentials.user_id;
+                  setCredentials(null);
+                  navigate({
+                    to: "/setup/users/$userId/client-access",
+                    params: { userId: id },
+                  });
+                }}
+              >
+                Configurar accesos
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
