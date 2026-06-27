@@ -98,6 +98,7 @@ function EditUser() {
       <UserForm
         initial={initial}
         showPasswordSection
+        isEditing
         submitting={mutation.isPending}
         submitLabel="Guardar cambios"
 

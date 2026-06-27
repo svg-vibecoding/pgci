@@ -40,6 +40,7 @@ export function UserForm({
   submitting,
   submitLabel = "Crear usuario",
   showPasswordSection = false,
+  isEditing = false,
   onSubmit,
   onCancel,
 }: {
@@ -47,11 +48,13 @@ export function UserForm({
   submitting: boolean;
   submitLabel?: string;
   showPasswordSection?: boolean;
+  isEditing?: boolean;
   onSubmit: (v: UserFormValues) => Promise<void> | void;
   onCancel: () => void;
 }) {
   const [v, setV] = useState<UserFormValues>(initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [passwordOpen, setPasswordOpen] = useState(false);
 
   const set = <K extends keyof UserFormValues>(k: K, val: UserFormValues[K]) =>
     setV((prev) => ({ ...prev, [k]: val }));
@@ -161,38 +164,59 @@ export function UserForm({
         </div>
 
         {showPasswordSection && (
-          <div className="md:col-span-2 space-y-2 border-t border-border pt-4">
-            <h3 className="text-sm font-semibold">Contraseña</h3>
-            <p className="text-xs text-muted-foreground">
-              Asigna una nueva contraseña temporal a este usuario. Deberás compartirla manualmente.
-            </p>
-            <div>
-              <Label htmlFor="new_password">Nueva contraseña temporal</Label>
-              <Input
-                id="new_password"
-                type="text"
-                value={v.new_password ?? ""}
-                onChange={(e) => set("new_password", e.target.value)}
-                maxLength={72}
-                placeholder="Opcional"
-                autoComplete="off"
-              />
-              {errors.new_password && (
-                <p className="mt-1 text-xs text-destructive">{errors.new_password}</p>
-              )}
-            </div>
+          <div className="md:col-span-2">
+            {!passwordOpen ? (
+              <button
+                type="button"
+                onClick={() => setPasswordOpen(true)}
+                className="text-sm font-medium text-primary hover:text-primary/80 hover:underline"
+              >
+                Asignar nueva contraseña
+              </button>
+            ) : (
+              <div className="space-y-2 border-t border-border pt-4">
+                <h3 className="text-sm font-semibold">Contraseña</h3>
+                <div>
+                  <Label htmlFor="new_password">Nueva contraseña temporal</Label>
+                  <Input
+                    id="new_password"
+                    type="text"
+                    value={v.new_password ?? ""}
+                    onChange={(e) => set("new_password", e.target.value)}
+                    maxLength={72}
+                    placeholder="Opcional"
+                    autoComplete="off"
+                  />
+                  {errors.new_password && (
+                    <p className="mt-1 text-xs text-destructive">{errors.new_password}</p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPasswordOpen(false);
+                    set("new_password", "");
+                  }}
+                  className="text-sm text-muted-foreground hover:text-foreground hover:underline"
+                >
+                  Cancelar
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      <Alert variant="info">
-        <Info className="h-4 w-4" />
-        <AlertDescription>
-          {isSuper
-            ? "Al crear el usuario se generará automáticamente una contraseña temporal que deberás compartirle directamente. Los super admins tienen acceso total a la plataforma y no requieren configuración de cartera de clientes."
-            : "Al crear el usuario se generará automáticamente una contraseña temporal que deberás compartirle directamente. En el paso siguiente podrás configurar su cartera de clientes y sus permisos de gestión comercial."}
-        </AlertDescription>
-      </Alert>
+      {!isEditing && (
+        <Alert variant="info">
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            {isSuper
+              ? "Al crear el usuario se generará automáticamente una contraseña temporal que deberás compartirle directamente. Los super admins tienen acceso total a la plataforma y no requieren configuración de cartera de clientes."
+              : "Al crear el usuario se generará automáticamente una contraseña temporal que deberás compartirle directamente. En el paso siguiente podrás configurar su cartera de clientes y sus permisos de gestión comercial."}
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="flex items-center justify-end gap-2 border-t border-border pt-4">
         <Button type="button" variant="ghost" onClick={onCancel} disabled={submitting}>
