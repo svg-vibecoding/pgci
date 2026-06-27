@@ -188,8 +188,8 @@ function ClientsList() {
         })}
       </div>
 
-      <div className="flex flex-wrap gap-3 items-end">
-        <div className="relative w-full md:w-[calc(50%-0.375rem)]">
+      <div className="flex flex-wrap gap-3 items-end md:flex-nowrap">
+        <div className="relative w-full md:w-64 lg:w-72">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Buscar por nombre o NIT…"
@@ -203,7 +203,7 @@ function ClientsList() {
             Relación con holding
           </label>
           <Select value={holdingRelF} onValueChange={(v) => setHoldingRelF(v as HoldingRelFilter)}>
-            <SelectTrigger id="holding-rel-select" className="w-56">
+            <SelectTrigger id="holding-rel-select" className="w-40 lg:w-44">
               <SelectValue placeholder="Relación con holding" />
             </SelectTrigger>
             <SelectContent>
@@ -218,7 +218,7 @@ function ClientsList() {
             Estado
           </label>
           <Select value={statusF} onValueChange={(v) => setStatusF(v as StatusFilter)}>
-            <SelectTrigger id="status-select" className="w-44">
+            <SelectTrigger id="status-select" className="w-32 lg:w-36">
               <SelectValue placeholder="Estado" />
             </SelectTrigger>
             <SelectContent>
