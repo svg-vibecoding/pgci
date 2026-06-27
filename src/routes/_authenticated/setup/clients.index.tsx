@@ -172,7 +172,7 @@ function ClientsList() {
               <Card
                 className={
                   selected
-                    ? "border-l-4 border-l-primary/40 shadow-sm transition-colors"
+                    ? "border-l-[3px] border-l-primary shadow-sm transition-colors"
                     : "hover:border-muted-foreground/20 hover:bg-muted/30 transition-colors"
                 }
               >
