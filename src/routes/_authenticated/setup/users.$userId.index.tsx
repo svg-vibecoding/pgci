@@ -36,7 +36,7 @@ export const Route = createFileRoute("/_authenticated/setup/users/$userId/")({
 
 
 const roleLabel = (r: string) =>
-  r === "super_admin" ? "Super admin" : "Usuario plataforma";
+  r === "super_admin" ? "Super admin" : null;
 
 function UserDetail() {
   const { userId } = Route.useParams();
@@ -130,9 +130,11 @@ function UserDetail() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{user.full_name}</h1>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <Badge color={isSuper ? "accent" : "neutral"} variant="soft">
-              {roleLabel(user.role)}
-            </Badge>
+            {isSuper && (
+              <Badge color="accent" variant="soft">
+                {roleLabel(user.role)}
+              </Badge>
+            )}
             <StatusBadge
               status={isActive ? "active" : "neutral"}
               label={isActive ? "Activo" : "Inactivo"}
@@ -221,7 +223,6 @@ function UserDetail() {
             <InfoField label="Nombre completo">{user.full_name}</InfoField>
             <InfoField label="Email">{user.email}</InfoField>
             <InfoField label="Código ERP">{user.erp_user_code || "—"}</InfoField>
-            <InfoField label="Tipo de usuario">{roleLabel(user.role)}</InfoField>
             <InfoField label="Estado">
               <StatusBadge
                 status={isActive ? "active" : "neutral"}
