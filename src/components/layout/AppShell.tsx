@@ -1,5 +1,5 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { Building2, Home, Package, Users, LogOut, FileText, Search, Download, LayoutDashboard } from "lucide-react";
+import { Gauge, Building2, Package, Users, LogOut, FileText, Search, Download, LayoutDashboard } from "lucide-react";
 import { SumatecLogo } from "@/components/SumatecLogo";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ type NavItem = {
 };
 
 const SETUP_NAV: NavItem[] = [
-  { to: "/setup", label: "Inicio", icon: Home, exact: true },
+  { to: "/setup", label: "Plataforma", icon: Gauge, exact: true },
   { to: "/setup/clients", label: "Clientes", icon: Building2 },
   { to: "/setup/products", label: "Productos", icon: Package },
   { to: "/setup/users", label: "Usuarios", icon: Users },
