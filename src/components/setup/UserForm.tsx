@@ -139,10 +139,18 @@ export function UserForm({
           <div className="rounded-lg border border-border bg-card p-4">
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-1">
-                <p className="text-sm font-semibold">Usuario plataforma</p>
-                <p className="text-xs text-muted-foreground">
-                  Acceso según clientes asignados.
-                </p>
+                {isSuper ? (
+                  <>
+                    <p className="text-sm font-semibold">Super admin</p>
+                    <p className="text-xs text-muted-foreground">
+                      Acceso total a la plataforma sin asignación manual de clientes.
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Acceso según clientes asignados.
+                  </p>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 <Label htmlFor="super_admin" className="text-sm font-medium">
