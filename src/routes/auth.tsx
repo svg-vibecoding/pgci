@@ -22,13 +22,20 @@ function AuthPage() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
-    if (error) {
+    const { data: signIn, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error || !signIn.user) {
+      setLoading(false);
       setError("No fue posible iniciar sesión. Verifica tus credenciales.");
       return;
     }
-    navigate({ to: "/setup" });
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role, status")
+      .eq("user_id", signIn.user.id)
+      .maybeSingle();
+    setLoading(false);
+    const isSuper = profile?.role === "super_admin" && profile?.status === "active";
+    navigate({ to: isSuper ? "/setup" : "/pgci" });
   }
 
   return (
