@@ -337,8 +337,7 @@ function ClientAccess() {
           {user.full_name}
         </p>
         <p className="text-sm text-muted-foreground">
-          Asigna clientes a este usuario para que pueda verlos en la plataforma. Si además podrá crear acuerdos sobre clientes asignados,&nbsp;<br />
-          activa también sus permisos de creación.
+          Asígnale al usuario los clientes que podrá ver en la plataforma. También puedes habilitarle permisos de creación de acuerdos sobre clientes asignados.
         </p>
         <p className="text-sm font-medium text-foreground">{initialSummaryText}</p>
       </header>
