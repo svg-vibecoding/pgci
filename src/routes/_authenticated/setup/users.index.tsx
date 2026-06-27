@@ -98,8 +98,6 @@ function UsersList() {
     if (activeCard === "inactive" && u.status !== "inactive") return false;
     if (activeCard === "alerts" && getUserIssues(u).length === 0) return false;
 
-    if (roleF !== "all" && u.role !== roleF) return false;
-
     if (createF === "yes" && !(u.role === "platform_user" && u.create_count > 0)) return false;
     if (createF === "no" && !(u.role === "platform_user" && u.create_count === 0)) return false;
 
