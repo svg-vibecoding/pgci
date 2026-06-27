@@ -133,11 +133,17 @@ function UsersList() {
   };
 
   const hasActiveFilters =
-    activeCard !== "all" || roleF !== "all" || search.trim() !== "";
+    activeCard !== "all" ||
+    roleF !== "all" ||
+    createF !== "all" ||
+    gestionF !== "all" ||
+    search.trim() !== "";
 
   const clearFilters = () => {
     setActiveCard("all");
     setRoleF("all");
+    setCreateF("all");
+    setGestionF("all");
     setSearch("");
   };
 
