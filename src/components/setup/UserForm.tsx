@@ -40,6 +40,7 @@ export function UserForm({
   submitting,
   submitLabel = "Crear usuario",
   showPasswordSection = false,
+  isEditing = false,
   onSubmit,
   onCancel,
 }: {
@@ -47,11 +48,13 @@ export function UserForm({
   submitting: boolean;
   submitLabel?: string;
   showPasswordSection?: boolean;
+  isEditing?: boolean;
   onSubmit: (v: UserFormValues) => Promise<void> | void;
   onCancel: () => void;
 }) {
   const [v, setV] = useState<UserFormValues>(initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [passwordOpen, setPasswordOpen] = useState(false);
 
   const set = <K extends keyof UserFormValues>(k: K, val: UserFormValues[K]) =>
     setV((prev) => ({ ...prev, [k]: val }));
