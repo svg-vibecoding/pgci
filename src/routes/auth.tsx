@@ -22,13 +22,31 @@ function AuthPage() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
-    if (error) {
+    const { data: signInData, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error || !signInData.user) {
+      setLoading(false);
       setError("No fue posible iniciar sesión. Verifica tus credenciales.");
       return;
     }
-    navigate({ to: "/setup" });
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role, status")
+      .eq("user_id", signInData.user.id)
+      .maybeSingle();
+    setLoading(false);
+    if (!profile || profile.status !== "active") {
+      await supabase.auth.signOut();
+      setError("Tu usuario no está activo. Contacta al administrador.");
+      return;
+    }
+    if (profile.role === "super_admin") {
+      navigate({ to: "/setup" });
+    } else {
+      navigate({ to: "/app" });
+    }
   }
 
   return (
