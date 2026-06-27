@@ -221,6 +221,36 @@ function UsersList() {
             </SelectContent>
           </Select>
         </div>
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="create-select" className="text-xs text-muted-foreground">
+            Crea acuerdos
+          </label>
+          <Select value={createF} onValueChange={(v) => setCreateF(v as CreateFilter)}>
+            <SelectTrigger id="create-select" className="w-48">
+              <SelectValue placeholder="Crea acuerdos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="yes">Sí</SelectItem>
+              <SelectItem value="no">No</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="gestion-select" className="text-xs text-muted-foreground">
+            En gestión
+          </label>
+          <Select value={gestionF} onValueChange={(v) => setGestionF(v as GestionFilter)}>
+            <SelectTrigger id="gestion-select" className="w-48">
+              <SelectValue placeholder="En gestión" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="active">Con acuerdos</SelectItem>
+              <SelectItem value="none">Sin acuerdos</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="space-y-2">
