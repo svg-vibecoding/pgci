@@ -1,5 +1,5 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { Gauge, Building2, Package, Users, LogOut, FileText, Search, Download, LayoutDashboard } from "lucide-react";
+import { Gauge, Building2, Package, Users, LogOut, FileText, Search, Download, LayoutDashboard, type LucideIcon } from "lucide-react";
 import { SumatecLogo } from "@/components/SumatecLogo";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 type NavItem = {
   to: string;
   label: string;
-  icon: typeof Home;
+  icon: LucideIcon;
   exact?: boolean;
   disabled?: boolean;
   disabledHint?: string;
