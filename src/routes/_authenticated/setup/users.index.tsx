@@ -366,12 +366,17 @@ function UsersList() {
                     <TableCell className="text-sm">
                       {isSuper ? (
                         <span className="text-muted-foreground">—</span>
-                      ) : u.create_count > 0 ? (
-                        <span>
-                          {u.create_count} de {u.client_count}
-                        </span>
                       ) : (
-                        <span className="text-muted-foreground">—</span>
+                        <div className="flex items-center gap-2">
+                          {u.create_count > 0 ? (
+                            <Chip size="small" color="success">Sí</Chip>
+                          ) : (
+                            <Chip size="small" color="neutral">No</Chip>
+                          )}
+                          <span className="text-xs text-muted-foreground">
+                            {u.agreement_count} en gestión
+                          </span>
+                        </div>
                       )}
                     </TableCell>
                     <TableCell>
