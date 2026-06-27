@@ -102,6 +102,12 @@ function UsersList() {
 
     if (roleF !== "all" && u.role !== roleF) return false;
 
+    if (createF === "yes" && !(u.role === "platform_user" && u.create_count > 0)) return false;
+    if (createF === "no" && !(u.role === "platform_user" && u.create_count === 0)) return false;
+
+    if (gestionF === "active" && !(u.agreement_count > 0)) return false;
+    if (gestionF === "none" && !(u.role === "platform_user" && u.agreement_count === 0)) return false;
+
     if (search) {
       const s = search.toLowerCase();
       const hay = [u.full_name, u.email, u.erp_user_code]
