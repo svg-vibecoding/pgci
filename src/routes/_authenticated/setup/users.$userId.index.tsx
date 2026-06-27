@@ -28,6 +28,7 @@ import {
   AlertTriangle,
   Info,
   UserCog,
+  ShieldCheck,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/setup/users/$userId/")({
@@ -150,7 +151,7 @@ function UserDetail() {
                 to="/setup/users/$userId/client-access"
                 params={{ userId }}
               >
-                <UserCog className="mr-2 h-4 w-4" /> Gestionar accesos
+                <ShieldCheck className="mr-2 h-4 w-4" /> Gestionar accesos
               </Link>
             </Button>
             <Button asChild variant="outline" size="sm">
