@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge, Chip } from "@/components/sumatec";
+import { Badge, Chip, StatusBadge } from "@/components/sumatec";
 import { useIsSuperAdmin } from "@/hooks/use-profile";
 import { ArrowLeft, Check, Search } from "lucide-react";
 
@@ -329,7 +329,11 @@ function ClientAccess() {
         <h1 className="text-2xl font-bold tracking-tight">
           Gestión de capacidades comerciales
         </h1>
-        <p className="text-base font-semibold text-foreground">
+        <p className="text-base font-semibold text-foreground flex items-center gap-2">
+          <StatusBadge
+            status={user.status === "active" ? "active" : "neutral"}
+            label={user.status === "active" ? "Activo" : "Inactivo"}
+          />
           {user.full_name}
         </p>
         <p className="text-sm text-muted-foreground">
