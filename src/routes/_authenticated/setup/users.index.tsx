@@ -244,7 +244,7 @@ function UsersList() {
             value={participationF}
             onValueChange={(v) => setParticipationF(v as ParticipationFilter)}
           >
-            <SelectTrigger id="participation-select" className="w-52">
+            <SelectTrigger id="participation-select" className="w-44">
               <SelectValue placeholder="Participación en acuerdos" />
             </SelectTrigger>
             <SelectContent>
