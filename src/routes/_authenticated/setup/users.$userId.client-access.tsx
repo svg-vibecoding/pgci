@@ -331,12 +331,11 @@ function ClientAccess() {
       <header className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="text-2xl font-bold tracking-tight">{user.full_name}</h1>
-          <Badge
-            color={user.role === "super_admin" ? "accent" : "neutral"}
-            variant="soft"
-          >
-            {roleLabel(user.role)}
-          </Badge>
+          {user.role === "super_admin" && (
+            <Badge color="accent" variant="soft">
+              {roleLabel(user.role)}
+            </Badge>
+          )}
         </div>
         <p className="text-sm text-muted-foreground">
           Asigna clientes a este usuario para que pueda verlos en la plataforma. Si además podrá crear acuerdos sobre clientes asignados,&nbsp;<br />
