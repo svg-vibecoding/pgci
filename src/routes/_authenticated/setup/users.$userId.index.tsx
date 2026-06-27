@@ -27,7 +27,6 @@ import {
   Building2,
   AlertTriangle,
   Info,
-  UserCog,
   ShieldCheck,
 } from "lucide-react";
 
