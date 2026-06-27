@@ -29,13 +29,11 @@ export const Route = createFileRoute("/_authenticated/setup/users/")({
 });
 
 type CardKey = "all" | "active" | "inactive" | "alerts";
-type RoleFilter = "all" | "super_admin" | "platform_user";
 type CreateFilter = "all" | "yes" | "no";
 type GestionFilter = "all" | "active" | "none";
 
 function UsersList() {
   const [search, setSearch] = useState("");
-  const [roleF, setRoleF] = useState<RoleFilter>("all");
   const [createF, setCreateF] = useState<CreateFilter>("all");
   const [gestionF, setGestionF] = useState<GestionFilter>("all");
   const [activeCard, setActiveCard] = useState<CardKey>("all");
