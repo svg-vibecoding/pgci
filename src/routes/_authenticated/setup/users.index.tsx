@@ -270,6 +270,16 @@ function UsersList() {
                   {roleLabel(roleF)}
                 </Chip>
               )}
+              {createF !== "all" && (
+                <Chip size="small" variant="soft" color="neutral" onRemove={() => setCreateF("all")}>
+                  {createF === "yes" ? "Crea acuerdos: Sí" : "Crea acuerdos: No"}
+                </Chip>
+              )}
+              {gestionF !== "all" && (
+                <Chip size="small" variant="soft" color="neutral" onRemove={() => setGestionF("all")}>
+                  {gestionF === "active" ? "En gestión: Con acuerdos" : "En gestión: Sin acuerdos"}
+                </Chip>
+              )}
               {search.trim() && (
                 <Chip size="small" variant="soft" color="neutral" onRemove={() => setSearch("")}>
                   Búsqueda: {search.trim()}
