@@ -1,10 +1,8 @@
 import { useState } from "react";
-import { Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Select,
   SelectContent,
@@ -184,6 +182,10 @@ export function UserForm({
           </div>
         )}
       </div>
+
+      <p className="text-sm text-muted-foreground">
+        Al crear el usuario se generará automáticamente una contraseña temporal que deberás compartirle. En el siguiente paso podrás configurar su cartera de clientes y sus permisos de gestión comercial.
+      </p>
 
       <div className="flex items-center justify-end gap-2 border-t border-border pt-4">
         <Button type="button" variant="ghost" onClick={onCancel} disabled={submitting}>
