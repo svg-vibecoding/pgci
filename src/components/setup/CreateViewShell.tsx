@@ -21,7 +21,7 @@ export function CreateViewShell({
           <p className="text-sm text-muted-foreground">{description}</p>
         )}
       </header>
-      <div className="max-w-2xl">{children}</div>
+      <div className="mx-auto max-w-2xl">{children}</div>
     </div>
   );
 }

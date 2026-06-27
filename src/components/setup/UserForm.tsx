@@ -148,7 +148,7 @@ export function UserForm({
                   </>
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    Acceso según clientes asignados.
+                    Después de crear el usuario podrás definir a qué clientes tendrá acceso.
                   </p>
                 )}
               </div>
