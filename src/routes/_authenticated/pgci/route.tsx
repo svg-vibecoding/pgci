@@ -1,13 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useIsSuperAdmin } from "@/hooks/use-profile";
+import { useMyProfile, useIsSuperAdmin } from "@/hooks/use-profile";
 import { AppShell } from "@/components/layout/AppShell";
 
-export const Route = createFileRoute("/_authenticated/setup")({
-  component: SetupLayout,
+export const Route = createFileRoute("/_authenticated/pgci")({
+  component: PgciLayout,
 });
 
-function SetupLayout() {
-  const { isSuperAdmin, isLoading } = useIsSuperAdmin();
+function PgciLayout() {
+  const { data: profile, isLoading } = useMyProfile();
+  const { isSuperAdmin } = useIsSuperAdmin();
 
   if (isLoading) {
     return (
@@ -17,19 +18,18 @@ function SetupLayout() {
     );
   }
 
-  if (!isSuperAdmin) {
+  if (!profile || profile.status !== "active") {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[var(--surface-page)] px-6">
         <div className="max-w-md text-center">
-          <h1 className="text-xl font-semibold">No encontrado o sin acceso</h1>
+          <h1 className="text-xl font-semibold">Sin acceso</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Esta sección está disponible solo para administradores.
+            Tu cuenta no está activa. Contacta a un administrador.
           </p>
         </div>
       </main>
     );
   }
 
-  return <AppShell showSetup showPgci homeHref="/setup" />;
+  return <AppShell showSetup={isSuperAdmin} showPgci homeHref="/pgci" />;
 }
-
