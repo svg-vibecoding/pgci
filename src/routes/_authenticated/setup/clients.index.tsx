@@ -188,8 +188,8 @@ function ClientsList() {
         })}
       </div>
 
-      <div className="flex flex-wrap gap-3 items-end md:flex-nowrap">
-        <div className="relative w-full md:w-64 lg:w-72">
+      <div className="flex flex-wrap items-center gap-3 md:flex-nowrap">
+        <div className="relative w-full flex-1 min-w-[16rem]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Buscar por nombre o NIT…"
@@ -198,31 +198,23 @@ function ClientsList() {
             className="w-full pl-9"
           />
         </div>
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="holding-rel-select" className="text-xs text-muted-foreground">
-            Relación con holding
-          </label>
+        <div className="flex gap-2 shrink-0 md:ml-auto">
           <Select value={holdingRelF} onValueChange={(v) => setHoldingRelF(v as HoldingRelFilter)}>
-            <SelectTrigger id="holding-rel-select" className="w-40 lg:w-44">
+            <SelectTrigger className="w-44 shrink-0">
               <SelectValue placeholder="Relación con holding" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="all">Relación: todos</SelectItem>
               <SelectItem value="linked">Asociados a holding</SelectItem>
               <SelectItem value="unlinked">Sin holding</SelectItem>
             </SelectContent>
           </Select>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="status-select" className="text-xs text-muted-foreground">
-            Estado
-          </label>
           <Select value={statusF} onValueChange={(v) => setStatusF(v as StatusFilter)}>
-            <SelectTrigger id="status-select" className="w-32 lg:w-36">
+            <SelectTrigger className="w-44 shrink-0">
               <SelectValue placeholder="Estado" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="all">Estado: todos</SelectItem>
               <SelectItem value="active">Activos</SelectItem>
               <SelectItem value="inactive">Inactivos</SelectItem>
             </SelectContent>
