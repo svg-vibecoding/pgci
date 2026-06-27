@@ -74,7 +74,6 @@ function NewUser() {
         </Button>
       }
       title="Crear usuario"
-      description="Se generará una contraseña temporal que deberás compartir manualmente con el usuario."
     >
       <UserForm
         initial={emptyUser}
