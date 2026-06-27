@@ -196,8 +196,8 @@ function UsersList() {
         })}
       </div>
 
-      <div className="flex flex-wrap gap-3 items-end">
-        <div className="relative w-full md:w-[calc(50%-0.375rem)]">
+      <div className="flex flex-wrap gap-3 items-end md:flex-nowrap">
+        <div className="relative w-full md:w-64 lg:w-72">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Buscar por nombre, email o código ERP…"
@@ -211,7 +211,7 @@ function UsersList() {
             Rol
           </label>
           <Select value={roleF} onValueChange={(v) => setRoleF(v as RoleFilter)}>
-            <SelectTrigger id="role-select" className="w-56">
+            <SelectTrigger id="role-select" className="w-40 lg:w-44">
               <SelectValue placeholder="Rol" />
             </SelectTrigger>
             <SelectContent>
@@ -226,7 +226,7 @@ function UsersList() {
             Crea acuerdos
           </label>
           <Select value={createF} onValueChange={(v) => setCreateF(v as CreateFilter)}>
-            <SelectTrigger id="create-select" className="w-48">
+            <SelectTrigger id="create-select" className="w-32 lg:w-36">
               <SelectValue placeholder="Crea acuerdos" />
             </SelectTrigger>
             <SelectContent>
@@ -241,7 +241,7 @@ function UsersList() {
             En gestión
           </label>
           <Select value={gestionF} onValueChange={(v) => setGestionF(v as GestionFilter)}>
-            <SelectTrigger id="gestion-select" className="w-48">
+            <SelectTrigger id="gestion-select" className="w-32 lg:w-36">
               <SelectValue placeholder="En gestión" />
             </SelectTrigger>
             <SelectContent>
