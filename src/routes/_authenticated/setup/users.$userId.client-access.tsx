@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge, Chip } from "@/components/sumatec";
+import { Chip } from "@/components/sumatec";
 import { useIsSuperAdmin } from "@/hooks/use-profile";
 import { ArrowLeft, Check, Search } from "lucide-react";
 
@@ -18,9 +18,6 @@ export const Route = createFileRoute("/_authenticated/setup/users/$userId/client
 });
 
 type AccessState = { assigned: boolean; can_create: boolean };
-
-const roleLabel = (r: string) =>
-  r === "super_admin" ? "Super admin" : null;
 
 function ClientAccess() {
   const { userId } = Route.useParams();
@@ -329,14 +326,12 @@ function ClientAccess() {
       </Link>
 
       <header className="space-y-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-bold tracking-tight">{user.full_name}</h1>
-          {user.role === "super_admin" && (
-            <Badge color="accent" variant="soft">
-              {roleLabel(user.role)}
-            </Badge>
-          )}
-        </div>
+        <h1 className="text-2xl font-bold tracking-tight">
+          Gestión de capacidades comerciales
+        </h1>
+        <p className="text-base font-semibold text-foreground">
+          {user.full_name}
+        </p>
         <p className="text-sm text-muted-foreground">
           Asigna clientes a este usuario para que pueda verlos en la plataforma. Si además podrá crear acuerdos sobre clientes asignados,&nbsp;<br />
           activa también sus permisos de creación.
