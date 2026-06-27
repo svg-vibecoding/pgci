@@ -329,7 +329,11 @@ function ClientAccess() {
         <h1 className="text-2xl font-bold tracking-tight">
           Gestión de capacidades comerciales
         </h1>
-        <p className="text-base font-semibold text-foreground">
+        <p className="text-base font-semibold text-foreground flex items-center gap-2">
+          <StatusBadge
+            status={user.status === "active" ? "active" : "neutral"}
+            label={user.status === "active" ? "Activo" : "Inactivo"}
+          />
           {user.full_name}
         </p>
         <p className="text-sm text-muted-foreground">
