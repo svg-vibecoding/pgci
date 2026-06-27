@@ -232,24 +232,18 @@ function UserDetail() {
             <InfoField label="Nombre completo">{user.full_name}</InfoField>
             <InfoField label="Email">{user.email}</InfoField>
             <InfoField label="Código ERP">{user.erp_user_code || "—"}</InfoField>
-            <InfoField label="Estado">
-              <StatusBadge
-                status={isActive ? "active" : "neutral"}
-                label={isActive ? "Activo" : "Inactivo"}
-              />
-            </InfoField>
-            <InfoField label="Creación de acuerdos">
-              {isSuper
-                ? "No aplica"
-                : createCount === 0
-                  ? "Sin permiso de creación"
-                  : `Puede crear acuerdos en ${createCount} de ${assignedCount} clientes`}
+            <InfoField label="Acuerdos asignados">
+              {isSuper ? "Acceso total" : totalAgreements}
             </InfoField>
             <InfoField label="Clientes asignados">
               {isSuper ? "Acceso total" : assignedCount}
             </InfoField>
-            <InfoField label="Acuerdos en gestión">
-              {isSuper ? "Acceso total" : totalAgreements}
+            <InfoField label="Permisos de creación">
+              {isSuper
+                ? "No aplica"
+                : createCount === 0
+                  ? "Sin permisos de creación"
+                  : `${createCount} de ${assignedCount} clientes`}
             </InfoField>
             <InfoField label="Fecha de creación">
               {new Date(user.created_at).toLocaleDateString()}
@@ -259,6 +253,12 @@ function UserDetail() {
                 {new Date(user.updated_at).toLocaleDateString()}
               </InfoField>
             )}
+            <InfoField label="Estado">
+              <StatusBadge
+                status={isActive ? "active" : "neutral"}
+                label={isActive ? "Activo" : "Inactivo"}
+              />
+            </InfoField>
           </InfoSection>
         </CardContent>
       </Card>
