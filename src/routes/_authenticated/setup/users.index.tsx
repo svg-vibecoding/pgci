@@ -30,12 +30,12 @@ export const Route = createFileRoute("/_authenticated/setup/users/")({
 
 type CardKey = "all" | "active" | "inactive" | "alerts";
 type CreateFilter = "all" | "yes" | "no";
-type GestionFilter = "all" | "active" | "none";
+type ParticipationFilter = "all" | "admin" | "member" | "both" | "none";
 
 function UsersList() {
   const [search, setSearch] = useState("");
   const [createF, setCreateF] = useState<CreateFilter>("all");
-  const [gestionF, setGestionF] = useState<GestionFilter>("all");
+  const [participationF, setParticipationF] = useState<ParticipationFilter>("all");
   const [activeCard, setActiveCard] = useState<CardKey>("all");
 
   const { data, isLoading } = useQuery({
@@ -66,24 +66,34 @@ function UsersList() {
           }
         });
       }
-      const agreementCounts = new Map<string, number>();
+      const adminCounts = new Map<string, number>();
+      const memberCounts = new Map<string, number>();
       if (ids.length) {
         const { data: members } = await supabase
           .from("agreement_members")
-          .select("user_id")
+          .select("user_id, role")
           .in("user_id", ids);
         (members ?? []).forEach((m) => {
-          if (m.user_id) {
-            agreementCounts.set(m.user_id, (agreementCounts.get(m.user_id) ?? 0) + 1);
+          if (!m.user_id) return;
+          if (m.role === "agreement_admin") {
+            adminCounts.set(m.user_id, (adminCounts.get(m.user_id) ?? 0) + 1);
+          } else if (m.role === "agreement_member") {
+            memberCounts.set(m.user_id, (memberCounts.get(m.user_id) ?? 0) + 1);
           }
         });
       }
-      return (profiles ?? []).map((p) => ({
-        ...p,
-        client_count: accessCounts.get(p.user_id) ?? 0,
-        create_count: createCounts.get(p.user_id) ?? 0,
-        agreement_count: agreementCounts.get(p.user_id) ?? 0,
-      })) as UserRow[];
+      return (profiles ?? []).map((p) => {
+        const admin_count = adminCounts.get(p.user_id) ?? 0;
+        const member_count = memberCounts.get(p.user_id) ?? 0;
+        return {
+          ...p,
+          client_count: accessCounts.get(p.user_id) ?? 0,
+          create_count: createCounts.get(p.user_id) ?? 0,
+          admin_count,
+          member_count,
+          agreement_count: admin_count + member_count,
+        };
+      }) as UserRow[];
     },
   });
 
@@ -101,8 +111,10 @@ function UsersList() {
     if (createF === "yes" && !(u.role === "platform_user" && u.create_count > 0)) return false;
     if (createF === "no" && !(u.role === "platform_user" && u.create_count === 0)) return false;
 
-    if (gestionF === "active" && !(u.agreement_count > 0)) return false;
-    if (gestionF === "none" && !(u.role === "platform_user" && u.agreement_count === 0)) return false;
+    if (participationF === "admin" && !(u.admin_count > 0)) return false;
+    if (participationF === "member" && !(u.member_count > 0)) return false;
+    if (participationF === "both" && !(u.admin_count > 0 && u.member_count > 0)) return false;
+    if (participationF === "none" && !(u.role === "platform_user" && u.agreement_count === 0)) return false;
 
     if (search) {
       const s = search.toLowerCase();
@@ -128,16 +140,28 @@ function UsersList() {
     alerts: "Alertas",
   };
 
+  const createLabelByKey: Record<Exclude<CreateFilter, "all">, string> = {
+    yes: "Puede crear",
+    no: "No puede crear",
+  };
+
+  const participationLabelByKey: Record<Exclude<ParticipationFilter, "all">, string> = {
+    admin: "Administra acuerdos",
+    member: "Participa como miembro",
+    both: "Administra y participa",
+    none: "Sin acuerdos activos",
+  };
+
   const hasActiveFilters =
     activeCard !== "all" ||
     createF !== "all" ||
-    gestionF !== "all" ||
+    participationF !== "all" ||
     search.trim() !== "";
 
   const clearFilters = () => {
     setActiveCard("all");
     setCreateF("all");
-    setGestionF("all");
+    setParticipationF("all");
     setSearch("");
   };
 
@@ -188,7 +212,7 @@ function UsersList() {
       </div>
 
       <div className="flex flex-wrap gap-3 items-end md:flex-nowrap">
-        <div className="relative w-full md:w-64 lg:w-72">
+        <div className="relative w-full md:flex-1 md:min-w-[16rem]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Buscar por nombre, email o código ERP…"
@@ -197,33 +221,38 @@ function UsersList() {
             className="w-full pl-9"
           />
         </div>
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1.5 shrink-0">
           <label htmlFor="create-select" className="text-xs text-muted-foreground">
-            Crea acuerdos
+            Permiso de creación
           </label>
           <Select value={createF} onValueChange={(v) => setCreateF(v as CreateFilter)}>
-            <SelectTrigger id="create-select" className="w-32 lg:w-36">
-              <SelectValue placeholder="Crea acuerdos" />
+            <SelectTrigger id="create-select" className="w-44">
+              <SelectValue placeholder="Permiso de creación" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="yes">Sí</SelectItem>
-              <SelectItem value="no">No</SelectItem>
+              <SelectItem value="yes">Puede crear</SelectItem>
+              <SelectItem value="no">No puede crear</SelectItem>
             </SelectContent>
           </Select>
         </div>
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="gestion-select" className="text-xs text-muted-foreground">
-            En gestión
+        <div className="flex flex-col gap-1.5 shrink-0">
+          <label htmlFor="participation-select" className="text-xs text-muted-foreground">
+            Participación en acuerdos
           </label>
-          <Select value={gestionF} onValueChange={(v) => setGestionF(v as GestionFilter)}>
-            <SelectTrigger id="gestion-select" className="w-32 lg:w-36">
-              <SelectValue placeholder="En gestión" />
+          <Select
+            value={participationF}
+            onValueChange={(v) => setParticipationF(v as ParticipationFilter)}
+          >
+            <SelectTrigger id="participation-select" className="w-52">
+              <SelectValue placeholder="Participación en acuerdos" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="active">Con acuerdos</SelectItem>
-              <SelectItem value="none">Sin acuerdos</SelectItem>
+              <SelectItem value="admin">Administra acuerdos</SelectItem>
+              <SelectItem value="member">Participa como miembro</SelectItem>
+              <SelectItem value="both">Administra y participa</SelectItem>
+              <SelectItem value="none">Sin acuerdos activos</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -243,12 +272,12 @@ function UsersList() {
               )}
               {createF !== "all" && (
                 <Chip size="small" variant="soft" color="neutral" onRemove={() => setCreateF("all")}>
-                  {createF === "yes" ? "Crea acuerdos: Sí" : "Crea acuerdos: No"}
+                  Permiso: {createLabelByKey[createF]}
                 </Chip>
               )}
-              {gestionF !== "all" && (
-                <Chip size="small" variant="soft" color="neutral" onRemove={() => setGestionF("all")}>
-                  {gestionF === "active" ? "En gestión: Con acuerdos" : "En gestión: Sin acuerdos"}
+              {participationF !== "all" && (
+                <Chip size="small" variant="soft" color="neutral" onRemove={() => setParticipationF("all")}>
+                  Participación: {participationLabelByKey[participationF]}
                 </Chip>
               )}
               {search.trim() && (
@@ -345,7 +374,7 @@ function UsersList() {
                             <Chip size="small" color="neutral">No</Chip>
                           )}
                           <span className="text-xs text-muted-foreground">
-                            {u.agreement_count} en gestión
+                            {formatParticipation(u.admin_count, u.member_count)}
                           </span>
                         </div>
                       )}
@@ -391,8 +420,23 @@ type UserRow = {
   updated_at: string | null;
   client_count: number;
   create_count: number;
+  admin_count: number;
+  member_count: number;
   agreement_count: number;
 };
+
+function formatParticipation(admin: number, member: number): string {
+  if (admin > 0 && member > 0) {
+    return `Administra ${admin} · Participa en ${member}`;
+  }
+  if (admin > 0) {
+    return `Administra ${admin} ${admin === 1 ? "acuerdo" : "acuerdos"}`;
+  }
+  if (member > 0) {
+    return `Participa en ${member} ${member === 1 ? "acuerdo" : "acuerdos"}`;
+  }
+  return "Sin acuerdos";
+}
 
 function getUserIssues(u: UserRow): string[] {
   const issues: string[] = [];
