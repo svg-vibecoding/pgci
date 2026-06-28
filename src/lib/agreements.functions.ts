@@ -770,7 +770,7 @@ export const updateAgreementMember = createServerFn({ method: "POST" })
       .single();
     if (mErr || !m) throw new Error("Miembro no encontrado");
     await assertCanAdmin(context.supabase, m.agreement_id as string);
-    const patch: Record<string, unknown> = {};
+    const patch: import("@/integrations/supabase/types").TablesUpdate<"agreement_members"> = {};
     if (data.role !== undefined) patch.role = data.role;
     if (data.can_view_costs !== undefined) patch.can_view_costs = data.can_view_costs;
     const { error } = await context.supabase
