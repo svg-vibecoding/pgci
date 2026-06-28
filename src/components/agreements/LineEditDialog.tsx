@@ -68,8 +68,13 @@ export function LineEditDialog({
 
   const save = useMutation({
     mutationFn: async () => {
-      const num = (s: string) => (s.trim() === "" ? null : Number(s.replace(",", ".")));
-      const txt = (s: string) => (s.trim() === "" ? null : s.trim());
+      const num = (s: string) => {
+        const t = s.trim();
+        if (t === "") return undefined;
+        const n = Number(t.replace(",", "."));
+        return Number.isFinite(n) ? n : undefined;
+      };
+      const txt = (s: string) => (s.trim() === "" ? undefined : s.trim());
       if (isEdit) {
         return patchFn({
           data: {
