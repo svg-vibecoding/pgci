@@ -349,14 +349,20 @@ function AgreementDetail() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Líneas del acuerdo</CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm text-muted-foreground">
-          La gestión operativa de líneas (cargue, edición y exclusión) se habilita en el siguiente paso.
-        </CardContent>
-      </Card>
+      <AgreementLinesSection
+        agreementId={agreementId}
+        agreementName={agreement.name as string}
+        canAdmin={canAdmin}
+        onOpenImport={() => setImportOpen(true)}
+      />
+
+      <AgreementCompaniesSection agreementId={agreementId} canAdmin={canAdmin} />
+
+      <AgreementImportWizard
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        agreementId={agreementId}
+      />
 
       <AlertDialog open={statusOpen} onOpenChange={setStatusOpen}>
         <AlertDialogContent>
