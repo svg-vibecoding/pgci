@@ -793,6 +793,10 @@ export type Database = {
         Returns: boolean
       }
       can_view_costs: { Args: { p_agreement_id: string }; Returns: boolean }
+      commit_agreement_import: {
+        Args: { p_agreement_id: string; p_payload: Json }
+        Returns: Json
+      }
       get_agreement_client_id: {
         Args: { p_agreement_id: string }
         Returns: string

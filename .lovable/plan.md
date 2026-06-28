@@ -1,68 +1,47 @@
-## Plan — Filtros operacionales y layout en `users.index.tsx`
 
-Solo se toca `src/routes/_authenticated/setup/users.index.tsx`. Ningún otro archivo.
+# Paso 2 — Server functions + helpers (decisiones cerradas)
 
----
+Confirmas ambas recomendaciones: **(1)** RPC `pl/pgsql` para el commit transaccional de importación, **(2)** dentro de `updateAgreement`, al cambiar vigencia, forzar recálculo con un `update` ligero sobre líneas no excluidas.
 
-### Mejora 1 — Filtros operacionales
+## Sub-paso 2.0 — Migración pequeña (1 RPC)
 
-**Datos a traer (extender el `queryFn` existente)**
+```sql
+create or replace function public.commit_agreement_import(
+  p_agreement_id uuid,
+  p_payload      jsonb            -- { rows: [...], price_resolutions: { sku: 'applyAll'|'keepDistinct' } }
+) returns jsonb
+language plpgsql security invoker set search_path = public as $$
+declare ...
+begin
+  if not public.can_admin_agreement(p_agreement_id) then
+    raise exception 'Forbidden' using errcode = '42501';
+  end if;
+  -- transacción única:
+  --   1) upsert client_products por (client_id, client_code)
+  --   2) insert client_product_match faltantes
+  --   3) insert/update agreement_products (trigger recalcula status)
+  --   4) si price_resolutions[sku] = 'applyAll', propaga a líneas existentes mismo sku
+  -- devuelve { inserted, updated, byStatus, nConflictsApplied }
+end$$;
 
-- Hoy: `agreement_members` solo trae `user_id`. Pasarlo a `select("user_id, role")`.
-- Derivar por usuario dos contadores:
-  - `admin_count` → membresías con `role = "agreement_admin"`
-  - `member_count` → membresías con `role = "agreement_member"`
-- Mantener `agreement_count = admin_count + member_count` para compatibilidad interna.
+grant execute on function public.commit_agreement_import(uuid, jsonb) to authenticated;
+```
 
-**Filtros nuevos (reemplazan a "Rol" y a "En gestión")**
+## Sub-paso 2.1 — Archivos nuevos
 
-Se eliminan: `RoleFilter`, `GestionFilter` y sus `Select`. Se conserva el filtro "Crea acuerdos" tal cual.
+- `src/lib/agreements.schemas.ts` — esquemas Zod client-safe (`AgreementCreate`, `LinePatch`, `ImportRow`, etc.).
+- `src/lib/agreements.server.ts` — helpers server-only: `assertCanAdmin`, `resolveProductBySku`, `ensureClientProduct`, `ensureMatch`, `buildLineUpdate`, `detectSkuConflicts`.
+- `src/lib/agreements.functions.ts` — todas las `createServerFn` listadas en el plan anterior, importando de `.server` y `.schemas`. Todas usan `requireSupabaseAuth`.
+- `src/lib/agreement-import.ts` — parser xlsx en cliente (`parseAgreementFile`, `downloadAgreementTemplate`, tipos `ParsedRow`/`PreviewBucket`/`NConflictGroup`/`ImportSummary`). Reutiliza el patrón de `pim-import.ts`.
+- `src/lib/agreement-export.ts` — `exportAgreementLines(lines, preset)` con columnas del spec §15 y celdas vacías reales (mismo patrón que `product-export.ts`).
 
-Dos selects nuevos, independientes y combinables:
+## Sub-paso 2.2 — Lista exacta de server fns
 
-1. **"Permiso de creación"** (`createF`, reemplaza al actual)
-   - Todos
-   - Puede crear (`create_count > 0`)
-   - No puede crear (platform_user con `create_count === 0`)
+`listAgreements`, `getAgreement`, `getAgreementContext`, `listAssignableClients`, `createAgreement`, `updateAgreement` (con recálculo de líneas si cambian fechas), `setAgreementStatus`, `listAgreementLines`, `getAgreementLine`, `createAgreementLine`, `updateAgreementLine` (chequea N:1 al tocar precio), `excludeAgreementLine`, `reactivateAgreementLine`, `detectNConflict`, `applyPriceToSku`, `importAgreementLinesPreview`, `commitAgreementImport` (invoca RPC), `listAgreementMembers`, `addAgreementMember` (auto-inserta `user_client_access` con `can_create_agreements=false`), `removeAgreementMember`, `updateAgreementMember`, `listAgreementCompanies`, `addAgreementCompany`, `removeAgreementCompany`.
 
-2. **"Participación en acuerdos"** (`participationF`, nuevo)
-   - Todos
-   - Administra acuerdos (`admin_count > 0`)
-   - Participa como miembro (`member_count > 0`)
-   - Administra y participa (`admin_count > 0 && member_count > 0`)
-   - Sin acuerdos activos (`agreement_count === 0`, solo platform_user)
+## Verificación al cerrar
 
-   Las opciones "Administra" y "Participa" no son excluyentes: un usuario con ambos roles aparece en ambos filtros individuales, además de en "Administra y participa".
+- `tsgo` limpio (esperado: 0 errores).
+- `stack_modern--invoke-server-function` contra `listAgreements` y `listAssignableClients` con la sesión inyectada, para confirmar contrato y que RLS filtra bien.
 
-**Chips activos**
-
-Reflejar los nuevos selects en los chips con etiquetas legibles (ej. "Participación: Administra acuerdos").
-
-**Columna "Crea acuerdos" en la tabla**
-
-Sustituir el texto plano `N en gestión` por una línea más precisa basada en los conteos por rol:
-
-- Si `admin_count > 0 && member_count > 0` → `Administra N · Participa en M`
-- Si solo `admin_count > 0` → `Administra N acuerdo(s)`
-- Si solo `member_count > 0` → `Participa en M acuerdo(s)`
-- Si ambos en 0 → `Sin acuerdos`
-
-Se mantiene el chip Sí/No del permiso de creación a la izquierda.
-
----
-
-### Mejora 2 — Layout buscador + filtros en una línea
-
-En el contenedor `flex … md:flex-nowrap`:
-
-- Buscador: quitar el ancho fijo `md:w-64 lg:w-72` y dejarlo como `flex-1 min-w-0` (con `min-w-[16rem]` como piso) para que ocupe todo el espacio sobrante en desktop.
-- Selects: mantener anchos compactos actuales (`w-36`/`w-44`), `shrink-0`, alineados al final de la fila.
-- En mobile se sigue envolviendo con `flex-wrap`.
-
-Resultado: una sola línea limpia en desktop, buscador elástico a la izquierda y los dos selects fijos a la derecha.
-
----
-
-### Fuera de alcance
-
-Cards superiores, query base de `profiles`, lógica de alertas, columnas Usuario/Código/Cartera/Estado/Acciones, y cualquier otro archivo.
+Al terminar te aviso y entramos a **Paso 3** (UI: listado + crear + detalle).
