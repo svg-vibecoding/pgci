@@ -300,7 +300,7 @@ function AgreementsList() {
                     </TableCell>
                     <TableCell className="text-right">
                       {(a.lines_review ?? 0) > 0 ? (
-                        <Badge color="danger">{a.lines_review}</Badge>
+                        <Badge color="error">{a.lines_review}</Badge>
                       ) : (
                         <span className="text-muted-foreground">0</span>
                       )}
