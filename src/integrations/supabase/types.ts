@@ -68,6 +68,13 @@ export type Database = {
             referencedRelation: "agreements"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "agreement_change_requests_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "agreements_with_counts"
+            referencedColumns: ["id"]
+          },
         ]
       }
       agreement_companies: {
@@ -104,6 +111,13 @@ export type Database = {
             columns: ["agreement_id"]
             isOneToOne: false
             referencedRelation: "agreements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreement_companies_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "agreements_with_counts"
             referencedColumns: ["id"]
           },
         ]
@@ -186,6 +200,13 @@ export type Database = {
             columns: ["agreement_id"]
             isOneToOne: false
             referencedRelation: "agreements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreement_members_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "agreements_with_counts"
             referencedColumns: ["id"]
           },
         ]
@@ -302,6 +323,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "agreement_products_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "agreements_with_counts"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "agreement_products_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
@@ -406,6 +434,127 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "client_companies_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_product_history: {
+        Row: {
+          brand: string | null
+          client_product_id: string
+          created_at: string
+          description: string | null
+          id: string
+          valid_from: string
+          valid_until: string | null
+        }
+        Insert: {
+          brand?: string | null
+          client_product_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          valid_from: string
+          valid_until?: string | null
+        }
+        Update: {
+          brand?: string | null
+          client_product_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_product_history_client_product_id_fkey"
+            columns: ["client_product_id"]
+            isOneToOne: false
+            referencedRelation: "client_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_product_match: {
+        Row: {
+          client_product_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          product_id: string
+          source: string | null
+          valid_from: string
+          valid_until: string | null
+        }
+        Insert: {
+          client_product_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          product_id: string
+          source?: string | null
+          valid_from: string
+          valid_until?: string | null
+        }
+        Update: {
+          client_product_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          product_id?: string
+          source?: string | null
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_product_match_client_product_id_fkey"
+            columns: ["client_product_id"]
+            isOneToOne: false
+            referencedRelation: "client_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_product_match_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_products: {
+        Row: {
+          client_code: string
+          client_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          status: string
+        }
+        Insert: {
+          client_code: string
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          status?: string
+        }
+        Update: {
+          client_code?: string
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_products_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
@@ -596,7 +745,39 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      agreements_with_counts: {
+        Row: {
+          client_commercial_name: string | null
+          client_id: string | null
+          client_legal_name: string | null
+          created_at: string | null
+          created_by: string | null
+          end_date: string | null
+          id: string | null
+          lines_active: number | null
+          lines_excluded: number | null
+          lines_pending: number | null
+          lines_review: number | null
+          lines_total: number | null
+          my_role: string | null
+          name: string | null
+          observations: string | null
+          scope: string | null
+          start_date: string | null
+          status: string | null
+          unit_name: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agreements_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       can_access_agreement: {
