@@ -117,25 +117,48 @@ export async function detectSkuConflicts(
 ): Promise<SkuConflict[]> {
   const product = await resolveProductBySku(supabase, sku);
   if (!product) return [];
-  const { data, error } = await supabase
+  const { data: lines, error } = await supabase
     .from("agreement_products")
-    .select(
-      "id, sale_price, client_product_match_id, client_product_match:client_product_match_id(client_product_id, client_products:client_product_id(client_code))",
-    )
+    .select("id, sale_price, client_product_match_id")
     .eq("agreement_id", agreementId)
     .eq("product_id", product.id)
     .neq("status", "excluded");
   if (error) throw new Error("No se pudieron consultar líneas con mismo SKU");
-  return (data ?? [])
-    .filter((r) => r.id !== excludeLineId)
-    .map((r) => {
-      const cp = r.client_product_match as
-        | { client_products: { client_code: string } | null }
-        | null;
-      return {
-        line_id: r.id as string,
-        client_code: cp?.client_products?.client_code ?? null,
-        current_price: (r.sale_price as number | null) ?? null,
-      };
-    });
+  const filtered = (lines ?? []).filter((r) => r.id !== excludeLineId);
+  if (filtered.length === 0) return [];
+
+  const matchIds = filtered
+    .map((r) => r.client_product_match_id)
+    .filter((v): v is string => !!v);
+  const codeByMatch = new Map<string, string>();
+  if (matchIds.length > 0) {
+    const { data: matches } = await supabase
+      .from("client_product_match")
+      .select("id, client_product_id")
+      .in("id", matchIds);
+    const cpIds = (matches ?? [])
+      .map((m) => m.client_product_id)
+      .filter((v): v is string => !!v);
+    if (cpIds.length > 0) {
+      const { data: cps } = await supabase
+        .from("client_products")
+        .select("id, client_code")
+        .in("id", cpIds);
+      const codeByCp = new Map<string, string>(
+        (cps ?? []).map((c) => [c.id as string, c.client_code as string]),
+      );
+      for (const m of matches ?? []) {
+        const code = m.client_product_id ? codeByCp.get(m.client_product_id) : undefined;
+        if (code) codeByMatch.set(m.id as string, code);
+      }
+    }
+  }
+
+  return filtered.map((r) => ({
+    line_id: r.id as string,
+    client_code: r.client_product_match_id
+      ? codeByMatch.get(r.client_product_match_id) ?? null
+      : null,
+    current_price: (r.sale_price as number | null) ?? null,
+  }));
 }
