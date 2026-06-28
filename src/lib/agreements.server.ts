@@ -81,6 +81,11 @@ export async function ensureMatch(
   clientProductId: string,
   productId: string,
 ): Promise<string> {
+  // TODO 03.22: cerrar match anterior antes de crear uno nuevo.
+  // Decisión V1 (acordada): ensureMatch NO cierra matches anteriores del mismo
+  // client_product_id. Si el código del cliente cambia de producto, pueden
+  // coexistir dos matches abiertos. El cierre (valid_to del match previo) se
+  // implementa en el módulo 03.22 (Códigos del cliente / mapeo).
   const { data: existing } = await supabase
     .from("client_product_match")
     .select("id")
