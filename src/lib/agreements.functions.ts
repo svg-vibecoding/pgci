@@ -509,6 +509,17 @@ export const importAgreementLinesPreview = createServerFn({ method: "POST" })
     await assertCanAdmin(context.supabase, data.agreement_id);
     const clientId = await getAgreementClientId(context.supabase, data.agreement_id);
 
+    // Fechas del acuerdo (fallback cuando la fila no trae start/end), igual
+    // que en el trigger recalc_agreement_product_status.
+    const { data: agreement } = await context.supabase
+      .from("agreements")
+      .select("start_date, end_date")
+      .eq("id", data.agreement_id)
+      .single();
+    const agrStart = (agreement?.start_date as string | null) ?? null;
+    const agrEnd = (agreement?.end_date as string | null) ?? null;
+    const today = new Date().toISOString().slice(0, 10);
+
     const skus = Array.from(
       new Set(
         data.rows
@@ -568,7 +579,6 @@ export const importAgreementLinesPreview = createServerFn({ method: "POST" })
       const code = (r.client_code ?? "").trim();
       const price = r.sale_price ?? null;
       const product = sku ? productsMap.get(sku) ?? null : null;
-      const reasons: string[] = [];
 
       const isDup =
         sku && code && (dupCount.get(dupKey(sku, code)) ?? 0) > 1;
@@ -578,24 +588,31 @@ export const importAgreementLinesPreview = createServerFn({ method: "POST" })
         continue;
       }
 
-      if (sku && !product) reasons.push("no_sku");
-      if (!sku) reasons.push("no_sku");
-      if (price === null || price === 0) reasons.push("no_price");
+      // Mismo orden de evaluación que el trigger recalc_agreement_product_status:
+      // 1) SKU existe pero está inactivo  -> requires_review
+      // 2) Vigencia vencida (end < today) -> requires_review
+      // 3) Faltantes (no_sku/no_price/no_dates) -> pending
+      // 4) Resto -> active
+      const effStart = (r.start_date ?? null) || agrStart;
+      const effEnd = (r.end_date ?? null) || agrEnd;
 
-      const classified: ClassifiedRow = { row: r, status: "active" };
       if (product && product.status !== "active") {
-        classified.status = "requires_review";
-        buckets.review.push(classified);
-      } else if (reasons.length === 0) {
-        classified.status = "active";
-        buckets.active.push(classified);
+        buckets.review.push({ row: r, status: "requires_review" });
+      } else if (effEnd && effEnd < today) {
+        buckets.review.push({ row: r, status: "requires_review" });
       } else {
-        classified.status = "pending";
-        classified.reasons = reasons;
-        buckets.pending.push(classified);
+        const reasons: string[] = [];
+        if (!sku || !product) reasons.push("no_sku");
+        if (price === null || price === 0) reasons.push("no_price");
+        if (!effStart || !effEnd) reasons.push("no_dates");
+        if (reasons.length === 0) {
+          buckets.active.push({ row: r, status: "active" });
+        } else {
+          buckets.pending.push({ row: r, status: "pending", reasons });
+        }
       }
 
-      if (sku) {
+      if (sku && product) {
         const arr = nConflictBySku.get(sku) ?? [];
         if (price !== null && price > 0) arr.push(price);
         nConflictBySku.set(sku, arr);
@@ -609,7 +626,6 @@ export const importAgreementLinesPreview = createServerFn({ method: "POST" })
       const distinct = Array.from(new Set(prices));
       const product = productsMap.get(sku);
       if (!product) continue;
-      // detectar contra líneas existentes
       const existing = await detectSkuConflicts(
         context.supabase,
         data.agreement_id,
