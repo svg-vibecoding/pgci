@@ -453,7 +453,5 @@ export function AgreementLinesSection({
   );
 }
 
-// Standalone empty-state dialog reused if needed in the future.
-export function _UnusedExclude() {
   return <Dialog open={false} onOpenChange={() => {}}><DialogContent><DialogHeader><DialogTitle /><DialogDescription /></DialogHeader><DialogFooter /></DialogContent></Dialog>;
 }
