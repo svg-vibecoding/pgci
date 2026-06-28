@@ -70,28 +70,84 @@ export type Database = {
           },
         ]
       }
-      agreement_costs: {
+      agreement_companies: {
         Row: {
           agreement_id: string
           created_at: string
           id: string
+          legal_name: string | null
+          notes: string | null
+          tax_id: string
+          tax_id_type: string
         }
         Insert: {
           agreement_id: string
           created_at?: string
           id?: string
+          legal_name?: string | null
+          notes?: string | null
+          tax_id: string
+          tax_id_type?: string
         }
         Update: {
           agreement_id?: string
           created_at?: string
           id?: string
+          legal_name?: string | null
+          notes?: string | null
+          tax_id?: string
+          tax_id_type?: string
         }
         Relationships: [
           {
-            foreignKeyName: "agreement_costs_agreement_id_fkey"
+            foreignKeyName: "agreement_companies_agreement_id_fkey"
             columns: ["agreement_id"]
             isOneToOne: false
             referencedRelation: "agreements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agreement_costs: {
+        Row: {
+          agreement_product_id: string
+          cost_source: string | null
+          cost_value: number | null
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          agreement_product_id: string
+          cost_source?: string | null
+          cost_value?: number | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          agreement_product_id?: string
+          cost_source?: string | null
+          cost_value?: number | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agreement_costs_agreement_product_id_fkey"
+            columns: ["agreement_product_id"]
+            isOneToOne: false
+            referencedRelation: "agreement_products"
             referencedColumns: ["id"]
           },
         ]
@@ -134,24 +190,108 @@ export type Database = {
           },
         ]
       }
+      agreement_product_alternatives: {
+        Row: {
+          agreement_product_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          product_id: string
+        }
+        Insert: {
+          agreement_product_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          product_id: string
+        }
+        Update: {
+          agreement_product_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agreement_product_alternatives_agreement_product_id_fkey"
+            columns: ["agreement_product_id"]
+            isOneToOne: false
+            referencedRelation: "agreement_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreement_product_alternatives_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agreement_products: {
         Row: {
           agreement_id: string
+          client_product_match_id: string | null
           created_at: string
+          created_by: string | null
+          end_date: string | null
+          excluded_at: string | null
+          excluded_by: string | null
+          excluded_reason: string | null
           id: string
+          observations: string | null
+          par_price: number | null
+          pending_reason: string | null
           product_id: string | null
+          sale_price: number | null
+          start_date: string | null
+          status: string
+          updated_at: string
+          updated_by: string | null
         }
         Insert: {
           agreement_id: string
+          client_product_match_id?: string | null
           created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          excluded_at?: string | null
+          excluded_by?: string | null
+          excluded_reason?: string | null
           id?: string
+          observations?: string | null
+          par_price?: number | null
+          pending_reason?: string | null
           product_id?: string | null
+          sale_price?: number | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
         }
         Update: {
           agreement_id?: string
+          client_product_match_id?: string | null
           created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          excluded_at?: string | null
+          excluded_by?: string | null
+          excluded_reason?: string | null
           id?: string
+          observations?: string | null
+          par_price?: number | null
+          pending_reason?: string | null
           product_id?: string | null
+          sale_price?: number | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
         }
         Relationships: [
           {
@@ -175,21 +315,42 @@ export type Database = {
           client_id: string
           created_at: string
           created_by: string | null
+          end_date: string | null
           id: string
+          name: string
+          observations: string | null
+          scope: string
+          start_date: string | null
+          status: string
+          unit_name: string | null
           updated_at: string
         }
         Insert: {
           client_id: string
           created_at?: string
           created_by?: string | null
+          end_date?: string | null
           id?: string
+          name: string
+          observations?: string | null
+          scope?: string
+          start_date?: string | null
+          status?: string
+          unit_name?: string | null
           updated_at?: string
         }
         Update: {
           client_id?: string
           created_at?: string
           created_by?: string | null
+          end_date?: string | null
           id?: string
+          name?: string
+          observations?: string | null
+          scope?: string
+          start_date?: string | null
+          status?: string
+          unit_name?: string | null
           updated_at?: string
         }
         Relationships: [
