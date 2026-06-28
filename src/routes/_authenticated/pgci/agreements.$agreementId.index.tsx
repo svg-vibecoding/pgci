@@ -26,6 +26,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge, Badge } from "@/components/sumatec";
 import { IndicatorCard } from "@/components/setup/IndicatorCard";
 import { InfoField, InfoSection } from "@/components/setup/InfoSection";
+import { AgreementLinesSection } from "@/components/agreements/AgreementLinesSection";
+import { AgreementImportWizard } from "@/components/agreements/AgreementImportWizard";
+import { AgreementCompaniesSection } from "@/components/agreements/AgreementCompaniesSection";
 import {
   Dialog,
   DialogContent,
@@ -104,6 +107,7 @@ function AgreementDetail() {
   const [statusOpen, setStatusOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [removeId, setRemoveId] = useState<string | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   const toggleStatus = useMutation({
     mutationFn: () =>
@@ -345,14 +349,20 @@ function AgreementDetail() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Líneas del acuerdo</CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm text-muted-foreground">
-          La gestión operativa de líneas (cargue, edición y exclusión) se habilita en el siguiente paso.
-        </CardContent>
-      </Card>
+      <AgreementLinesSection
+        agreementId={agreementId}
+        agreementName={agreement.name as string}
+        canAdmin={canAdmin}
+        onOpenImport={() => setImportOpen(true)}
+      />
+
+      <AgreementCompaniesSection agreementId={agreementId} canAdmin={canAdmin} />
+
+      <AgreementImportWizard
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        agreementId={agreementId}
+      />
 
       <AlertDialog open={statusOpen} onOpenChange={setStatusOpen}>
         <AlertDialogContent>
