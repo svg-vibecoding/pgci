@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -77,7 +77,6 @@ function formatDate(value: string | null | undefined) {
 function AgreementDetail() {
   const { agreementId } = Route.useParams();
   const qc = useQueryClient();
-  const navigate = useNavigate();
 
   const getFn = useServerFn(getAgreement);
   const ctxFn = useServerFn(getAgreementContext);
