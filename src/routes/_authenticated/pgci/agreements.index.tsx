@@ -29,7 +29,7 @@ export const Route = createFileRoute("/_authenticated/pgci/agreements/")({
   component: AgreementsList,
 });
 
-type CardKey = "all" | "active" | "pending" | "review" | "mine";
+type CardKey = "all" | "active" | "pending" | "review";
 type StatusFilter = "all" | "active" | "inactive";
 type ScopeFilter = "all" | "global" | "unit";
 
@@ -58,19 +58,11 @@ function AgreementsList() {
   const activeCount = all.filter((a) => a.status === "active").length;
   const pendingCount = all.filter((a) => (a.lines_pending ?? 0) > 0).length;
   const reviewCount = all.filter((a) => (a.lines_review ?? 0) > 0).length;
-  const mineCount = all.filter(
-    (a) => a.my_role && a.my_role !== "super_admin",
-  ).length;
 
   const filtered = all.filter((a) => {
     if (activeCard === "active" && a.status !== "active") return false;
     if (activeCard === "pending" && (a.lines_pending ?? 0) === 0) return false;
     if (activeCard === "review" && (a.lines_review ?? 0) === 0) return false;
-    if (
-      activeCard === "mine" &&
-      (!a.my_role || a.my_role === "super_admin")
-    )
-      return false;
 
     if (statusF !== "all" && a.status !== statusF) return false;
     if (scopeF !== "all" && a.scope !== scopeF) return false;
@@ -91,17 +83,12 @@ function AgreementsList() {
     { key: "pending", label: "Con pendientes", value: pendingCount },
     { key: "review", label: "Requieren revisión", value: reviewCount },
   ];
-  // "Mine" sólo si el usuario es miembro de algún acuerdo (rol distinto a SA).
-  if (mineCount > 0) {
-    summaryCards.push({ key: "mine", label: "En los que participo", value: mineCount });
-  }
 
   const cardLabelByKey: Record<CardKey, string> = {
     all: "Acuerdos",
     active: "Activos",
     pending: "Con pendientes",
     review: "Requieren revisión",
-    mine: "En los que participo",
   };
 
   const hasActiveFilters =
@@ -133,7 +120,7 @@ function AgreementsList() {
         </Button>
       </header>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {summaryCards.map((c) => {
           const selected = activeCard === c.key;
           return (
