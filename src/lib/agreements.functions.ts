@@ -370,7 +370,7 @@ export const updateAgreementLine = createServerFn({ method: "POST" })
       }
     }
 
-    const updatePayload: Record<string, unknown> = {
+    const updatePayload: import("@/integrations/supabase/types").TablesUpdate<"agreement_products"> = {
       ...("sale_price" in data.patch ? { sale_price: data.patch.sale_price } : {}),
       ...("par_price" in data.patch ? { par_price: data.patch.par_price } : {}),
       ...("start_date" in data.patch ? { start_date: data.patch.start_date } : {}),
