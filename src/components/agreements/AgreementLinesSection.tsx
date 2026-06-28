@@ -452,6 +452,3 @@ export function AgreementLinesSection({
     </Card>
   );
 }
-
-  return <Dialog open={false} onOpenChange={() => {}}><DialogContent><DialogHeader><DialogTitle /><DialogDescription /></DialogHeader><DialogFooter /></DialogContent></Dialog>;
-}
