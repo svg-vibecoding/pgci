@@ -30,7 +30,7 @@ const dateOptional = z
   });
 
 const priceOptional = z
-  .union([z.number(), z.string()])
+  .union([z.number(), z.string(), z.null()])
   .optional()
   .transform((v) => {
     if (v === undefined || v === null || v === "") return null;
