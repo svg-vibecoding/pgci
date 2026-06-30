@@ -192,11 +192,6 @@ function AgreementsList() {
                   {statusF === "active" ? "Activos" : "Inactivos"}
                 </Chip>
               )}
-              {scopeF !== "all" && (
-                <Chip size="small" variant="soft" color="neutral" onRemove={() => setScopeF("all")}>
-                  {scopeF === "global" ? "Global" : "Por unidad"}
-                </Chip>
-              )}
               {search.trim() && (
                 <Chip size="small" variant="soft" color="neutral" onRemove={() => setSearch("")}>
                   Búsqueda: {search.trim()}
