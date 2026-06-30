@@ -79,9 +79,9 @@
   --warning: #ffc745;
   --warning-strong: #c9930f;
 
-  --error-soft: #fde7e6;
-  --error: #ed362f;
-  --error-strong: #c0211b;
+  --error-soft: var(--red-50);
+  --error: var(--red-500);
+  --error-strong: var(--red-700);
 
   /* ── Estado de dominio (operación) ─────────────────────────────
      Tokens semánticos de estado para tablas, cards y badges.
