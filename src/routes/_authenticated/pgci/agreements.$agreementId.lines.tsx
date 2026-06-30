@@ -69,11 +69,6 @@ const STATUS_META: Record<
   excluded: { label: "Excluida", status: "neutral" },
 };
 
-const fmtDate = (v: string | null) => {
-  if (!v) return "—";
-  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(v);
-  return m ? `${m[3]}/${m[2]}/${m[1]}` : v;
-};
 
 const fmtMoney = (v: number | null) =>
   v == null
@@ -83,6 +78,29 @@ const fmtMoney = (v: number | null) =>
         currency: "COP",
         maximumFractionDigits: 0,
       }).format(v);
+
+type VigenciaBadge = {
+  color: "info" | "warning" | "error" | "neutral";
+  label: string;
+};
+
+function vigenciaBadge(
+  lineEnd: string | null,
+  agreementEnd: string | null,
+): VigenciaBadge {
+  const eff = lineEnd ?? agreementEnd ?? null;
+  if (!eff) return { color: "neutral", label: "Sin vigencia" };
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(eff);
+  if (!m) return { color: "neutral", label: "Sin vigencia" };
+  const end = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diffDays = Math.round((end.getTime() - today.getTime()) / 86_400_000);
+  const label = `${m[3]}/${m[2]}/${m[1]}`;
+  if (diffDays < 0) return { color: "error", label };
+  if (diffDays <= 30) return { color: "warning", label };
+  return { color: "info", label };
+}
 
 function AgreementLinesPage() {
   const { agreementId } = Route.useParams();
@@ -328,10 +346,11 @@ function AgreementLinesPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Cliente</TableHead>
-              <TableHead>SKU Jaivaná</TableHead>
-              <TableHead className="text-right">Precio venta</TableHead>
+              <TableHead>Jaivaná</TableHead>
+              <TableHead>Marca</TableHead>
+              <TableHead className="text-right">Precio</TableHead>
               <TableHead className="text-right">Precio par</TableHead>
-              <TableHead>Vigencia</TableHead>
+              <TableHead>Vigencia hasta</TableHead>
               <TableHead>Estado</TableHead>
               {canAdmin && <TableHead className="w-32 text-right">Acciones</TableHead>}
             </TableRow>
@@ -340,7 +359,7 @@ function AgreementLinesPage() {
             {loadingLines && (
               <TableRow>
                 <TableCell
-                  colSpan={canAdmin ? 7 : 6}
+                  colSpan={canAdmin ? 8 : 7}
                   className="py-6 text-center text-sm text-muted-foreground"
                 >
                   Cargando…
@@ -350,7 +369,7 @@ function AgreementLinesPage() {
             {!loadingLines && filtered.length === 0 && (
               <TableRow>
                 <TableCell
-                  colSpan={canAdmin ? 7 : 6}
+                  colSpan={canAdmin ? 8 : 7}
                   className="py-8 text-center text-sm text-muted-foreground"
                 >
                   No hay líneas con esos filtros.
@@ -363,6 +382,10 @@ function AgreementLinesPage() {
                 .split(",")
                 .filter(Boolean) as ImportPendingReason[];
               const isExcluded = r.status === "excluded";
+              const vig = vigenciaBadge(
+                r.end_date ?? null,
+                (agreement.end_date as string | null) ?? null,
+              );
               return (
                 <TableRow key={r.id as string}>
                   <TableCell>
@@ -375,12 +398,10 @@ function AgreementLinesPage() {
                     <div className="font-mono text-sm">{r.products?.sku ?? "—"}</div>
                     <div className="text-xs text-muted-foreground line-clamp-2">
                       {r.products?.erp_description ?? "—"}
-                      {r.products?.commercial_brand ? (
-                        <span className="ml-1 text-muted-foreground/70">
-                          · {r.products.commercial_brand}
-                        </span>
-                      ) : null}
                     </div>
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {r.products?.commercial_brand ?? "—"}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">
                     {fmtMoney(r.sale_price ?? null)}
@@ -388,8 +409,8 @@ function AgreementLinesPage() {
                   <TableCell className="text-right tabular-nums">
                     {fmtMoney(r.par_price ?? null)}
                   </TableCell>
-                  <TableCell className="whitespace-nowrap text-sm">
-                    {fmtDate(r.start_date ?? null)} – {fmtDate(r.end_date ?? null)}
+                  <TableCell className="whitespace-nowrap">
+                    <Badge color={vig.color}>{vig.label}</Badge>
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-1">
