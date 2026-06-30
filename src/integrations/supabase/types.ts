@@ -750,6 +750,7 @@ export type Database = {
           client_commercial_name: string | null
           client_id: string | null
           client_legal_name: string | null
+          client_tax_id: string | null
           created_at: string | null
           created_by: string | null
           end_date: string | null
