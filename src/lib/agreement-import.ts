@@ -195,6 +195,7 @@ function rowFromRaw(
   if (hasValue(parRaw)) {
     par_price = parsePrice(parRaw);
     if (par_price === null) errors.push("Precio par inválido");
+    else if (par_price === 0) par_price = null;
   }
 
   const startRes = parseDate(valueAt(raw, headerByField, "start_date"));
