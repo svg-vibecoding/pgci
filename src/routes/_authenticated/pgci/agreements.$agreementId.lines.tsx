@@ -261,7 +261,7 @@ function AgreementLinesPage() {
             {agreement.scope === "unit" && <Badge color="info">Con alcance</Badge>}
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            Gestión de productos · {clientName}
+            Gestión de posiciones · {clientName}
             {agreement.scope === "unit" && agreement.unit_name && (
               <> · {agreement.unit_name}</>
             )}
