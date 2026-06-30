@@ -235,9 +235,10 @@ export function LineEditDialog({
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const readonlyClass = "bg-muted/60 cursor-not-allowed";
-  const inputClass = "bg-surface-card";
+  const readonlyClass = "bg-muted/50 cursor-not-allowed";
+  const inputClass = "";
   const catalogDateLabel = fmtCatalogDate(lookup.catalogUpdatedAt ?? null);
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
