@@ -63,11 +63,16 @@ function AgreementsList() {
     if (activeCard === "review" && (a.lines_review ?? 0) === 0) return false;
 
     if (statusF !== "all" && a.status !== statusF) return false;
-    if (scopeF !== "all" && a.scope !== scopeF) return false;
 
     if (search) {
       const s = search.toLowerCase();
-      const hay = [a.name, a.client_legal_name, a.client_commercial_name, a.unit_name]
+      const hay = [
+        a.name,
+        a.client_legal_name,
+        a.client_commercial_name,
+        a.unit_name,
+        (a as { client_tax_id?: string | null }).client_tax_id,
+      ]
         .filter(Boolean)
         .some((v) => (v as string).toLowerCase().includes(s));
       if (!hay) return false;
