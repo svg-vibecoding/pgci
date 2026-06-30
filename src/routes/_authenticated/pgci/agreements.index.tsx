@@ -285,14 +285,24 @@ function AgreementsList() {
                       />
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button asChild size="sm" variant="ghost">
-                        <Link
-                          to="/pgci/agreements/$agreementId"
-                          params={{ agreementId: a.id as string }}
-                        >
-                          Ver
-                        </Link>
-                      </Button>
+                      <div className="inline-flex items-center gap-1">
+                        <Button asChild size="sm" variant="ghost">
+                          <Link
+                            to="/pgci/agreements/$agreementId"
+                            params={{ agreementId: a.id as string }}
+                          >
+                            Ver
+                          </Link>
+                        </Button>
+                        <Button asChild size="sm" variant="ghost">
+                          <Link
+                            to="/pgci/agreements/$agreementId/edit"
+                            params={{ agreementId: a.id as string }}
+                          >
+                            Editar
+                          </Link>
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
