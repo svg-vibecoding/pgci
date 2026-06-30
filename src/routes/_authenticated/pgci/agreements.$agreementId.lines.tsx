@@ -358,7 +358,7 @@ function AgreementLinesPage() {
             {loadingLines && (
               <TableRow>
                 <TableCell
-                  colSpan={canAdmin ? 8 : 7}
+                  colSpan={canAdmin ? 7 : 6}
                   className="py-6 text-center text-sm text-muted-foreground"
                 >
                   Cargando…
@@ -368,7 +368,7 @@ function AgreementLinesPage() {
             {!loadingLines && filtered.length === 0 && (
               <TableRow>
                 <TableCell
-                  colSpan={canAdmin ? 8 : 7}
+                  colSpan={canAdmin ? 7 : 6}
                   className="py-8 text-center text-sm text-muted-foreground"
                 >
                   No hay líneas con esos filtros.
