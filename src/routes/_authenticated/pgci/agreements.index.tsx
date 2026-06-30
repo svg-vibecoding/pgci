@@ -32,12 +32,25 @@ export const Route = createFileRoute("/_authenticated/pgci/agreements/")({
 type CardKey = "all" | "active" | "pending" | "review";
 type StatusFilter = "all" | "active" | "inactive";
 
-function formatDate(value: string | null) {
-  if (!value) return "—";
-  // value is YYYY-MM-DD; display dd/mm/yyyy
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  return m ? `${m[3]}/${m[2]}/${m[1]}` : value;
+type VigenciaBadge = {
+  color: "info" | "warning" | "error" | "neutral";
+  label: string;
+};
+
+function vigenciaBadge(endDate: string | null): VigenciaBadge {
+  if (!endDate) return { color: "neutral", label: "Sin vigencia" };
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(endDate);
+  if (!m) return { color: "neutral", label: "Sin vigencia" };
+  const end = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diffDays = Math.round((end.getTime() - today.getTime()) / 86_400_000);
+  const label = `${m[3]}/${m[2]}/${m[1]}`;
+  if (diffDays < 0) return { color: "error", label };
+  if (diffDays <= 30) return { color: "warning", label };
+  return { color: "info", label };
 }
+
 
 function AgreementsList() {
   const listFn = useServerFn(listAgreements);
@@ -214,10 +227,10 @@ function AgreementsList() {
               <TableRow>
                 <TableHead>Acuerdo</TableHead>
                 <TableHead>Cliente</TableHead>
-                <TableHead>Vigencia</TableHead>
                 <TableHead className="text-right">Líneas</TableHead>
                 <TableHead className="text-right">Pendientes</TableHead>
                 <TableHead className="text-right">Revisión</TableHead>
+                <TableHead>Vigencia</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
@@ -241,7 +254,7 @@ function AgreementsList() {
               )}
               {filtered.map((a) => {
                 const clientName = a.client_commercial_name || a.client_legal_name || "—";
-                const vigencia = `${formatDate(a.start_date)} – ${formatDate(a.end_date)}`;
+                const vig = vigenciaBadge(a.end_date ?? null);
                 return (
                   <TableRow key={a.id ?? undefined}>
                     <TableCell className="font-medium">
@@ -262,7 +275,6 @@ function AgreementsList() {
                       )}
                     </TableCell>
                     <TableCell className="text-muted-foreground">{clientName}</TableCell>
-                    <TableCell className="text-muted-foreground">{vigencia}</TableCell>
                     <TableCell className="text-right">{a.lines_total ?? 0}</TableCell>
                     <TableCell className="text-right">
                       {(a.lines_pending ?? 0) > 0 ? (
@@ -277,6 +289,9 @@ function AgreementsList() {
                       ) : (
                         <span className="text-muted-foreground">0</span>
                       )}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      <Badge color={vig.color}>{vig.label}</Badge>
                     </TableCell>
                     <TableCell>
                       <StatusBadge
