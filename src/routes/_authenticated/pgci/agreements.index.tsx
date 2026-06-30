@@ -31,7 +31,6 @@ export const Route = createFileRoute("/_authenticated/pgci/agreements/")({
 
 type CardKey = "all" | "active" | "pending" | "review";
 type StatusFilter = "all" | "active" | "inactive";
-type ScopeFilter = "all" | "global" | "unit";
 
 function formatDate(value: string | null) {
   if (!value) return "—";
@@ -49,7 +48,6 @@ function AgreementsList() {
 
   const [search, setSearch] = useState("");
   const [statusF, setStatusF] = useState<StatusFilter>("all");
-  const [scopeF, setScopeF] = useState<ScopeFilter>("all");
   const [activeCard, setActiveCard] = useState<CardKey>("all");
 
   const all = useMemo(() => data ?? [], [data]);
@@ -65,11 +63,16 @@ function AgreementsList() {
     if (activeCard === "review" && (a.lines_review ?? 0) === 0) return false;
 
     if (statusF !== "all" && a.status !== statusF) return false;
-    if (scopeF !== "all" && a.scope !== scopeF) return false;
 
     if (search) {
       const s = search.toLowerCase();
-      const hay = [a.name, a.client_legal_name, a.client_commercial_name, a.unit_name]
+      const hay = [
+        a.name,
+        a.client_legal_name,
+        a.client_commercial_name,
+        a.unit_name,
+        (a as { client_tax_id?: string | null }).client_tax_id,
+      ]
         .filter(Boolean)
         .some((v) => (v as string).toLowerCase().includes(s));
       if (!hay) return false;
@@ -94,13 +97,11 @@ function AgreementsList() {
   const hasActiveFilters =
     activeCard !== "all" ||
     statusF !== "all" ||
-    scopeF !== "all" ||
     search.trim() !== "";
 
   const clearFilters = () => {
     setActiveCard("all");
     setStatusF("all");
-    setScopeF("all");
     setSearch("");
   };
 
@@ -154,23 +155,13 @@ function AgreementsList() {
         <div className="relative w-full flex-1 min-w-[16rem]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Buscar por nombre, cliente o unidad…"
+            placeholder="Buscar por acuerdo, cliente o NIT…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-9"
           />
         </div>
         <div className="flex gap-2 shrink-0 md:ml-auto">
-          <Select value={scopeF} onValueChange={(v) => setScopeF(v as ScopeFilter)}>
-            <SelectTrigger className="w-44 shrink-0">
-              <SelectValue placeholder="Alcance" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Alcance: todos</SelectItem>
-              <SelectItem value="global">Global</SelectItem>
-              <SelectItem value="unit">Por unidad</SelectItem>
-            </SelectContent>
-          </Select>
           <Select value={statusF} onValueChange={(v) => setStatusF(v as StatusFilter)}>
             <SelectTrigger className="w-44 shrink-0">
               <SelectValue placeholder="Estado" />
@@ -199,11 +190,6 @@ function AgreementsList() {
               {statusF !== "all" && (
                 <Chip size="small" variant="soft" color="neutral" onRemove={() => setStatusF("all")}>
                   {statusF === "active" ? "Activos" : "Inactivos"}
-                </Chip>
-              )}
-              {scopeF !== "all" && (
-                <Chip size="small" variant="soft" color="neutral" onRemove={() => setScopeF("all")}>
-                  {scopeF === "global" ? "Global" : "Por unidad"}
                 </Chip>
               )}
               {search.trim() && (
@@ -267,7 +253,7 @@ function AgreementsList() {
                         >
                           {a.name}
                         </Link>
-                        {a.scope === "unit" && <Badge color="info">Unidad</Badge>}
+                        {a.scope === "unit" && <Badge color="info">Con alcance</Badge>}
                       </div>
                       {a.scope === "unit" && a.unit_name && (
                         <span className="block text-xs text-muted-foreground truncate max-w-[260px]" title={a.unit_name}>
