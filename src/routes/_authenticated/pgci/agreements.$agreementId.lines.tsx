@@ -19,7 +19,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge, StatusBadge, type StatusBadgeStatus } from "@/components/sumatec";
+import { Badge, Chip, StatusBadge, type StatusBadgeStatus } from "@/components/sumatec";
 import {
   Table,
   TableBody,
@@ -260,7 +260,7 @@ function AgreementLinesPage() {
             />
             {agreement.scope === "unit" && <Badge color="info">Con alcance</Badge>}
           </div>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-sm font-semibold text-foreground">
             Gestión de posiciones · {clientName}
             {agreement.scope === "unit" && agreement.unit_name && (
               <> · {agreement.unit_name}</>
@@ -341,6 +341,47 @@ function AgreementLinesPage() {
           )}
         </div>
       </div>
+
+      {(activeCard !== "all" || q.trim()) && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <p className="text-sm text-muted-foreground">
+            {filtered.length} de {counts.all} {counts.all === 1 ? "posición" : "posiciones"}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {activeCard !== "all" && (
+              <Chip
+                size="small"
+                variant="soft"
+                color="neutral"
+                onRemove={() => setActiveCard("all")}
+              >
+                {summaryCards.find((c) => c.key === activeCard)?.label ?? activeCard}
+              </Chip>
+            )}
+            {q.trim() && (
+              <Chip
+                size="small"
+                variant="soft"
+                color="neutral"
+                onRemove={() => setQ("")}
+              >
+                Búsqueda: {q.trim()}
+              </Chip>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveCard("all");
+              setQ("");
+            }}
+            className="text-sm font-medium text-primary hover:underline"
+          >
+            Limpiar filtros
+          </button>
+        </div>
+      )}
+
 
       <div className="overflow-x-auto rounded-lg border border-border bg-card">
         <Table>
