@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Info, Loader2, Search } from "lucide-react";
+import { AlertTriangle, ChevronDown, Info, Loader2, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
@@ -17,10 +17,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   createAgreementLine,
   updateAgreementLine,
   lookupProductBySku,
+  detectNConflict,
 } from "@/lib/agreements.functions";
 
 export type LineEditValues = {
@@ -127,48 +142,99 @@ export function LineEditDialog({
   const createFn = useServerFn(createAgreementLine);
   const patchFn = useServerFn(updateAgreementLine);
   const lookupFn = useServerFn(lookupProductBySku);
+  const conflictFn = useServerFn(detectNConflict);
   const [v, setV] = useState<LineEditValues>(empty);
   const [productMeta, setProductMeta] = useState<ProductMeta | null>(null);
   const [lookup, setLookup] = useState<{
     kind: LookupKind;
     catalogUpdatedAt?: string | null;
   }>({ kind: "idle" });
+  const [nConflict, setNConflict] = useState<{
+    kind: "idle" | "loading" | "none" | "found";
+    lines: Array<{
+      line_id: string;
+      client_code: string | null;
+      client_description: string | null;
+      current_price: number | null;
+      updated_at: string | null;
+    }>;
+  }>({ kind: "idle", lines: [] });
+  const [nExpanded, setNExpanded] = useState(true);
+  const [priceChoice, setPriceChoice] = useState<"same" | "distinct" | null>(null);
+  const [chosenPriceLineId, setChosenPriceLineId] = useState<string | null>(null);
   const lookupSeq = useRef(0);
+  const conflictSeq = useRef(0);
 
   const runLookup = async (sku: string) => {
     const trimmed = sku.trim();
     if (!trimmed) {
       setProductMeta(null);
       setLookup({ kind: "empty" });
+      setNConflict({ kind: "idle", lines: [] });
+      setPriceChoice(null);
+      setChosenPriceLineId(null);
       return;
     }
     const seq = ++lookupSeq.current;
+    const cseq = ++conflictSeq.current;
     setLookup({ kind: "loading" });
-    try {
-      const res = await lookupFn({ data: { sku: trimmed } });
-      if (seq !== lookupSeq.current) return;
-      if (!res.found) {
-        setProductMeta(null);
+    setNConflict({ kind: "loading", lines: [] });
+    setPriceChoice(null);
+    setChosenPriceLineId(null);
+
+    const lookupPromise = lookupFn({ data: { sku: trimmed } })
+      .then((res) => {
+        if (seq !== lookupSeq.current) return;
+        if (!res.found) {
+          setProductMeta(null);
+          setLookup({ kind: "not_found", catalogUpdatedAt: res.catalog_updated_at });
+          return;
+        }
+        setProductMeta({
+          erp_description: res.erp_description,
+          commercial_brand: res.commercial_brand,
+        });
         setLookup({
-          kind: "not_found",
+          kind: res.status === "active" ? "active" : "inactive",
           catalogUpdatedAt: res.catalog_updated_at,
         });
-        return;
-      }
-      setProductMeta({
-        erp_description: res.erp_description,
-        commercial_brand: res.commercial_brand,
+      })
+      .catch((e: Error) => {
+        if (seq !== lookupSeq.current) return;
+        setProductMeta(null);
+        setLookup({ kind: "idle" });
+        toast.error(e.message);
       });
-      setLookup({
-        kind: res.status === "active" ? "active" : "inactive",
-        catalogUpdatedAt: res.catalog_updated_at,
+
+    const conflictPromise = conflictFn({
+      data: { agreement_id: agreementId, sku: trimmed },
+    })
+      .then((res) => {
+        if (cseq !== conflictSeq.current) return;
+        const excludeId = initial?.line_id ?? null;
+        const lines = (res.conflicts ?? []).filter((l) => l.line_id !== excludeId);
+        if (lines.length === 0) {
+          setNConflict({ kind: "none", lines: [] });
+          return;
+        }
+        // pick most recent by updated_at as default chosen
+        const sorted = [...lines].sort((a, b) => {
+          const ta = a.updated_at ? Date.parse(a.updated_at) : 0;
+          const tb = b.updated_at ? Date.parse(b.updated_at) : 0;
+          return tb - ta;
+        });
+        setNConflict({ kind: "found", lines: sorted });
+        setNExpanded(true);
+        setChosenPriceLineId(sorted[0]?.line_id ?? null);
+      })
+      .catch((e: Error) => {
+        if (cseq !== conflictSeq.current) return;
+        setNConflict({ kind: "idle", lines: [] });
+        // silent — conflict check is auxiliary
+        console.error("detectNConflict failed", e);
       });
-    } catch (e) {
-      if (seq !== lookupSeq.current) return;
-      setProductMeta(null);
-      setLookup({ kind: "idle" });
-      toast.error((e as Error).message);
-    }
+
+    await Promise.all([lookupPromise, conflictPromise]);
   };
 
   useEffect(() => {
@@ -177,11 +243,15 @@ export function LineEditDialog({
     setV(next);
     setProductMeta(null);
     setLookup({ kind: next.sku.trim() ? "idle" : "empty" });
+    setNConflict({ kind: "idle", lines: [] });
+    setPriceChoice(null);
+    setChosenPriceLineId(null);
     if (next.sku.trim()) {
       void runLookup(next.sku);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initial]);
+
 
   const isEdit = !!initial?.line_id;
 
@@ -345,6 +415,180 @@ export function LineEditDialog({
                             ? ` (última actualización: ${catalogDateLabel}).`
                             : "."}
                         </AlertDescription>
+                      </Alert>
+                    </div>
+                  )}
+                  {nConflict.kind === "found" && (
+                    <div className="md:col-span-2">
+                      <Alert variant="warning" className="p-0">
+                        <Collapsible open={nExpanded} onOpenChange={setNExpanded}>
+                          <CollapsibleTrigger asChild>
+                            <button
+                              type="button"
+                              className="flex w-full items-center gap-2 px-4 py-3 text-left"
+                            >
+                              <AlertTriangle className="h-4 w-4 shrink-0" />
+                              <span className="flex-1 text-sm font-medium">
+                                Este SKU ya tiene {nConflict.lines.length}{" "}
+                                {nConflict.lines.length === 1 ? "posición" : "posiciones"} en el acuerdo
+                              </span>
+                              <ChevronDown
+                                className={cn(
+                                  "h-4 w-4 shrink-0 transition-transform",
+                                  nExpanded && "rotate-180",
+                                )}
+                              />
+                            </button>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent>
+                            <div className="border-t border-warning/30 px-4 py-3 space-y-4">
+                              <div className="rounded-md border border-border bg-white overflow-hidden">
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      {(() => {
+                                        const distinctPrices = new Set(
+                                          nConflict.lines
+                                            .map((l) => l.current_price)
+                                            .filter((p): p is number => p != null),
+                                        );
+                                        const showPick =
+                                          priceChoice === "same" && distinctPrices.size > 1;
+                                        return (
+                                          <>
+                                            {showPick && <TableHead className="w-8" />}
+                                            <TableHead>Código cliente</TableHead>
+                                            <TableHead>Descripción cliente</TableHead>
+                                            <TableHead className="text-right">Precio actual</TableHead>
+                                          </>
+                                        );
+                                      })()}
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {nConflict.lines.map((l) => {
+                                      const distinctPrices = new Set(
+                                        nConflict.lines
+                                          .map((x) => x.current_price)
+                                          .filter((p): p is number => p != null),
+                                      );
+                                      const showPick =
+                                        priceChoice === "same" && distinctPrices.size > 1;
+                                      return (
+                                        <TableRow key={l.line_id}>
+                                          {showPick && (
+                                            <TableCell>
+                                              <RadioGroupItem
+                                                value={l.line_id}
+                                                checked={chosenPriceLineId === l.line_id}
+                                                onClick={() => {
+                                                  setChosenPriceLineId(l.line_id);
+                                                  if (l.current_price != null) {
+                                                    setV((cur) => ({
+                                                      ...cur,
+                                                      sale_price: String(l.current_price),
+                                                    }));
+                                                  }
+                                                }}
+                                              />
+                                            </TableCell>
+                                          )}
+                                          <TableCell className="font-mono text-xs">
+                                            {l.client_code ?? "—"}
+                                          </TableCell>
+                                          <TableCell className="text-xs">
+                                            {l.client_description ?? "—"}
+                                          </TableCell>
+                                          <TableCell className="text-right text-xs tabular-nums">
+                                            {l.current_price != null
+                                              ? l.current_price.toLocaleString("es-CO", {
+                                                  style: "currency",
+                                                  currency: "COP",
+                                                  minimumFractionDigits: 2,
+                                                  maximumFractionDigits: 2,
+                                                })
+                                              : "—"}
+                                          </TableCell>
+                                        </TableRow>
+                                      );
+                                    })}
+                                  </TableBody>
+                                </Table>
+                              </div>
+
+                              <div className="space-y-2">
+                                <p className="text-xs font-medium text-foreground">
+                                  ¿Esta nueva posición debe usar el mismo precio?
+                                </p>
+                                <RadioGroup
+                                  value={priceChoice ?? ""}
+                                  onValueChange={(val) => {
+                                    const choice = val as "same" | "distinct";
+                                    setPriceChoice(choice);
+                                    if (choice === "same") {
+                                      const distinctPrices = Array.from(
+                                        new Set(
+                                          nConflict.lines
+                                            .map((l) => l.current_price)
+                                            .filter((p): p is number => p != null),
+                                        ),
+                                      );
+                                      let price: number | null = null;
+                                      if (distinctPrices.length === 1) {
+                                        price = distinctPrices[0];
+                                      } else {
+                                        const chosen = nConflict.lines.find(
+                                          (l) => l.line_id === chosenPriceLineId,
+                                        );
+                                        price = chosen?.current_price ?? null;
+                                      }
+                                      if (price != null) {
+                                        setV((cur) => ({ ...cur, sale_price: String(price) }));
+                                      }
+                                    } else {
+                                      setV((cur) => ({ ...cur, sale_price: "" }));
+                                    }
+                                  }}
+                                  className="gap-2"
+                                >
+                                  {(() => {
+                                    const distinctPrices = Array.from(
+                                      new Set(
+                                        nConflict.lines
+                                          .map((l) => l.current_price)
+                                          .filter((p): p is number => p != null),
+                                      ),
+                                    );
+                                    const sameLabel =
+                                      distinctPrices.length === 1
+                                        ? `Sí, usar el mismo precio (${distinctPrices[0].toLocaleString(
+                                            "es-CO",
+                                            {
+                                              style: "currency",
+                                              currency: "COP",
+                                              minimumFractionDigits: 2,
+                                              maximumFractionDigits: 2,
+                                            },
+                                          )})`
+                                        : "Sí, usar el mismo precio (selecciona cuál abajo)";
+                                    return (
+                                      <>
+                                        <label className="flex items-start gap-2 text-xs">
+                                          <RadioGroupItem value="same" className="mt-0.5" />
+                                          <span>{sameLabel}</span>
+                                        </label>
+                                        <label className="flex items-start gap-2 text-xs">
+                                          <RadioGroupItem value="distinct" className="mt-0.5" />
+                                          <span>No, definiré un precio distinto</span>
+                                        </label>
+                                      </>
+                                    );
+                                  })()}
+                                </RadioGroup>
+                              </div>
+                            </div>
+                          </CollapsibleContent>
+                        </Collapsible>
                       </Alert>
                     </div>
                   )}

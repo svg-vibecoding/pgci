@@ -111,7 +111,9 @@ export async function ensureMatch(
 export type SkuConflict = {
   line_id: string;
   client_code: string | null;
+  client_description: string | null;
   current_price: number | null;
+  updated_at: string | null;
 };
 
 export async function detectSkuConflicts(
@@ -124,7 +126,7 @@ export async function detectSkuConflicts(
   if (!product) return [];
   const { data: lines, error } = await supabase
     .from("agreement_products")
-    .select("id, sale_price, client_product_match_id")
+    .select("id, sale_price, client_product_match_id, updated_at")
     .eq("agreement_id", agreementId)
     .eq("product_id", product.id)
     .neq("status", "excluded");
@@ -136,6 +138,7 @@ export async function detectSkuConflicts(
     .map((r) => r.client_product_match_id)
     .filter((v): v is string => !!v);
   const codeByMatch = new Map<string, string>();
+  const descByMatch = new Map<string, string>();
   if (matchIds.length > 0) {
     const { data: matches } = await supabase
       .from("client_product_match")
@@ -144,6 +147,7 @@ export async function detectSkuConflicts(
     const cpIds = (matches ?? [])
       .map((m) => m.client_product_id)
       .filter((v): v is string => !!v);
+    const descByCp = new Map<string, string>();
     if (cpIds.length > 0) {
       const { data: cps } = await supabase
         .from("client_products")
@@ -152,9 +156,24 @@ export async function detectSkuConflicts(
       const codeByCp = new Map<string, string>(
         (cps ?? []).map((c) => [c.id as string, c.client_code as string]),
       );
+      const { data: hist } = await supabase
+        .from("client_product_history")
+        .select("client_product_id, description, valid_from")
+        .in("client_product_id", cpIds)
+        .order("valid_from", { ascending: false });
+      for (const h of hist ?? []) {
+        const cpId = h.client_product_id as string;
+        if (!descByCp.has(cpId) && h.description) {
+          descByCp.set(cpId, h.description as string);
+        }
+      }
       for (const m of matches ?? []) {
-        const code = m.client_product_id ? codeByCp.get(m.client_product_id) : undefined;
+        const cpId = m.client_product_id as string | null;
+        if (!cpId) continue;
+        const code = codeByCp.get(cpId);
         if (code) codeByMatch.set(m.id as string, code);
+        const desc = descByCp.get(cpId);
+        if (desc) descByMatch.set(m.id as string, desc);
       }
     }
   }
@@ -164,6 +183,10 @@ export async function detectSkuConflicts(
     client_code: r.client_product_match_id
       ? codeByMatch.get(r.client_product_match_id) ?? null
       : null,
+    client_description: r.client_product_match_id
+      ? descByMatch.get(r.client_product_match_id) ?? null
+      : null,
     current_price: (r.sale_price as number | null) ?? null,
+    updated_at: (r.updated_at as string | null) ?? null,
   }));
 }
