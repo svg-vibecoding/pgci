@@ -61,7 +61,7 @@ const fileNameFor = (
     .slice(0, 60);
   const suffix =
     preset === "active" ? "activas" : preset === "filtered" ? "filtradas" : "todas";
-  return `acuerdo_${safe || "lineas"}_${suffix}.xlsx`;
+  return `acuerdo_${safe || "posiciones"}_${suffix}.xlsx`;
 };
 
 export function exportAgreementLines(
@@ -84,6 +84,6 @@ export function exportAgreementLines(
 
   const ws = XLSX.utils.aoa_to_sheet([HEADERS, ...data]);
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Líneas");
+  XLSX.utils.book_append_sheet(wb, ws, "Posiciones");
   XLSX.writeFile(wb, fileNameFor(opts.preset, opts.agreementName));
 }

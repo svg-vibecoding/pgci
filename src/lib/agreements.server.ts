@@ -128,7 +128,7 @@ export async function detectSkuConflicts(
     .eq("agreement_id", agreementId)
     .eq("product_id", product.id)
     .neq("status", "excluded");
-  if (error) throw new Error("No se pudieron consultar líneas con mismo SKU");
+  if (error) throw new Error("No se pudieron consultar posiciones con mismo SKU");
   const filtered = (lines ?? []).filter((r) => r.id !== excludeLineId);
   if (filtered.length === 0) return [];
 

@@ -324,13 +324,13 @@ export function AgreementImportWizard({
                           <div className="flex items-start gap-2">
                             <RadioGroupItem value="keepDistinct" id={`${g.sku}-keep`} />
                             <Label htmlFor={`${g.sku}-keep`} className="font-normal leading-snug">
-                              Mantener precios por línea
+                              Mantener precios por posición
                             </Label>
                           </div>
                           <div className="flex items-start gap-2">
                             <RadioGroupItem value="applyAll" id={`${g.sku}-all`} />
                             <Label htmlFor={`${g.sku}-all`} className="font-normal leading-snug">
-                              Aplicar precio máximo a todas las líneas del SKU
+                              Aplicar precio máximo a todas las posiciones del SKU
                             </Label>
                           </div>
                         </RadioGroup>
@@ -374,7 +374,7 @@ export function AgreementImportWizard({
                   <CheckCircle2 className="h-4 w-4" /> Importación aplicada
                 </div>
                 <div className="mt-2 text-sm text-emerald-900">
-                  {commitResult.inserted} líneas insertadas · {commitResult.updated} actualizadas
+                  {commitResult.inserted} posiciones insertadas · {commitResult.updated} actualizadas
                   {commitResult.propagated_n1 > 0 && (
                     <> · {commitResult.propagated_n1} propagaciones N:1</>
                   )}
