@@ -138,7 +138,7 @@ export const lineReactivateSchema = z.object({
 export const nConflictDetectSchema = z.object({
   agreement_id: z.string().uuid(),
   sku: z.string().trim().min(1),
-  new_price: z.number(),
+  new_price: z.number().optional(),
 });
 
 export const applyPriceSchema = z.object({
