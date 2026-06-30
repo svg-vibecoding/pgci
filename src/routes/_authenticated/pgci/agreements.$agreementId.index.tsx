@@ -176,7 +176,7 @@ function AgreementDetail() {
               status={isActive ? "active" : "neutral"}
               label={isActive ? "Activo" : "Inactivo"}
             />
-            {agreement.scope === "unit" && <Badge color="info">Unidad</Badge>}
+            {agreement.scope === "unit" && <Badge color="info">Con alcance</Badge>}
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
             {clientName}
