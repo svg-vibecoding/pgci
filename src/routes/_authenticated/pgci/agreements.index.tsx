@@ -48,7 +48,6 @@ function AgreementsList() {
 
   const [search, setSearch] = useState("");
   const [statusF, setStatusF] = useState<StatusFilter>("all");
-  const [scopeF, setScopeF] = useState<ScopeFilter>("all");
   const [activeCard, setActiveCard] = useState<CardKey>("all");
 
   const all = useMemo(() => data ?? [], [data]);
