@@ -31,7 +31,6 @@ export const Route = createFileRoute("/_authenticated/pgci/agreements/")({
 
 type CardKey = "all" | "active" | "pending" | "review";
 type StatusFilter = "all" | "active" | "inactive";
-type ScopeFilter = "all" | "global" | "unit";
 
 function formatDate(value: string | null) {
   if (!value) return "—";
