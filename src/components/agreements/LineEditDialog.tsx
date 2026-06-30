@@ -79,7 +79,7 @@ function FieldLabel({
   return (
     <Label
       className={cn(
-        "text-[11px] font-semibold uppercase tracking-tight text-text-tertiary",
+        "text-[11px] font-semibold tracking-tight text-text-tertiary",
         className,
       )}
     >
