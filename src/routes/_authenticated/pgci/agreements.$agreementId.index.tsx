@@ -10,6 +10,7 @@ import {
   UserPlus,
   Trash2,
   Info,
+  Boxes,
 } from "lucide-react";
 import {
   getAgreement,
@@ -26,8 +27,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge, Badge } from "@/components/sumatec";
 import { IndicatorCard } from "@/components/setup/IndicatorCard";
 import { InfoField, InfoSection } from "@/components/setup/InfoSection";
-import { AgreementLinesSection } from "@/components/agreements/AgreementLinesSection";
-import { AgreementImportWizard } from "@/components/agreements/AgreementImportWizard";
 import { AgreementCompaniesSection } from "@/components/agreements/AgreementCompaniesSection";
 import {
   Dialog,
