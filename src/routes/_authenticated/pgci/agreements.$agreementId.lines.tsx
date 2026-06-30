@@ -403,10 +403,12 @@ function AgreementLinesPage() {
                     {r.products?.commercial_brand ?? "—"}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">
-                    {fmtMoney(r.sale_price ?? null)}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {fmtMoney(r.par_price ?? null)}
+                    <div>{fmtMoney(r.sale_price ?? null)}</div>
+                    {r.par_price != null && (
+                      <div className="text-xs text-muted-foreground">
+                        {fmtMoney(r.par_price)} par
+                      </div>
+                    )}
                   </TableCell>
                   <TableCell className="whitespace-nowrap">
                     <Badge color={vig.color}>{vig.label}</Badge>
