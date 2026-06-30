@@ -97,12 +97,9 @@ function SectionHeader({
 }) {
   return (
     <div className="flex items-center gap-2 pb-1 border-b border-border">
-      <span className="text-[10px] font-bold uppercase tracking-overline text-accent">
-        {number}
+      <span className="text-xs font-medium text-muted-foreground tracking-wide">
+        {number} {title}
       </span>
-      <h4 className="text-xs font-bold uppercase tracking-wide text-text-disabled">
-        {title}
-      </h4>
     </div>
   );
 }
