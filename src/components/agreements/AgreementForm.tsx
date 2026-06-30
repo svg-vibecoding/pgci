@@ -226,8 +226,8 @@ export function AgreementForm({
         />
       </div>
 
-      <p className="text-xs text-muted-foreground">
-        Después de crear el acuerdo podrás agregar líneas de productos, cargar precios desde Excel y asignar miembros.
+      <p className="text-sm text-muted-foreground">
+        Al crear el acuerdo, en los siguientes pasos podrás cargar su información comercial (productos y precios), asignar usuarios para su gestión y/o consulta y, si aplica, vincular otras empresas cubiertas por este acuerdo.
       </p>
 
       {serverError && <p className="text-sm text-destructive">{serverError}</p>}
