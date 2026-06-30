@@ -79,7 +79,7 @@ function FieldLabel({
   return (
     <Label
       className={cn(
-        "text-[11px] font-semibold uppercase tracking-tight text-text-tertiary",
+        "text-[11px] font-semibold tracking-tight text-text-tertiary",
         className,
       )}
     >
@@ -97,8 +97,11 @@ function SectionHeader({
 }) {
   return (
     <div className="flex items-center gap-2 pb-1 border-b border-border">
-      <span className="text-xs font-medium text-muted-foreground tracking-wide">
-        {number} {title}
+      <span className="text-xs font-medium tracking-wide text-accent">
+        {number}
+      </span>
+      <span className="text-xs font-medium uppercase tracking-wide text-text-disabled">
+        {title}
       </span>
     </div>
   );
