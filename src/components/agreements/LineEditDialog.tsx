@@ -285,7 +285,7 @@ export function LineEditDialog({
             {/* Información Jaivaná */}
             <section className="space-y-4">
               <SectionHeader title="Información Jaivaná" number="02" />
-              <div className="p-4 bg-muted/40 rounded-md border border-border space-y-4">
+              <div className="space-y-4">
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-1.5">
                     <FieldLabel>
