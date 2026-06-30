@@ -342,6 +342,47 @@ function AgreementLinesPage() {
         </div>
       </div>
 
+      {(activeCard !== "all" || q.trim()) && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <p className="text-sm text-muted-foreground">
+            {filtered.length} de {counts.all} {counts.all === 1 ? "posición" : "posiciones"}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {activeCard !== "all" && (
+              <Chip
+                size="small"
+                variant="soft"
+                color="neutral"
+                onRemove={() => setActiveCard("all")}
+              >
+                {summaryCards.find((c) => c.key === activeCard)?.label ?? activeCard}
+              </Chip>
+            )}
+            {q.trim() && (
+              <Chip
+                size="small"
+                variant="soft"
+                color="neutral"
+                onRemove={() => setQ("")}
+              >
+                Búsqueda: {q.trim()}
+              </Chip>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveCard("all");
+              setQ("");
+            }}
+            className="text-sm font-medium text-primary hover:underline"
+          >
+            Limpiar filtros
+          </button>
+        </div>
+      )}
+
+
       <div className="overflow-x-auto rounded-lg border border-border bg-card">
         <Table>
           <TableHeader>
