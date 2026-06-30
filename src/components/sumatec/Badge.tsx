@@ -23,7 +23,7 @@ const palette: Record<SumatecBadgeColor, { main: string; soft: string }> = {
   info: { main: "var(--info-strong)", soft: "var(--info-soft)" },
   success: { main: "var(--success-strong)", soft: "var(--success-soft)" },
   warning: { main: "var(--warning-strong)", soft: "var(--warning-soft)" },
-  error: { main: "var(--error)", soft: "var(--error-soft)" },
+  error: { main: "var(--error-strong)", soft: "var(--error-soft)" },
 };
 
 /** Badge — etiqueta de estado o conteo numérico. Usa `dot` para estado mínimo. */
