@@ -351,10 +351,11 @@ function AgreementLinesPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Cliente</TableHead>
-              <TableHead>SKU Jaivaná</TableHead>
-              <TableHead className="text-right">Precio venta</TableHead>
+              <TableHead>Jaivaná</TableHead>
+              <TableHead>Marca</TableHead>
+              <TableHead className="text-right">Precio</TableHead>
               <TableHead className="text-right">Precio par</TableHead>
-              <TableHead>Vigencia</TableHead>
+              <TableHead>Vigencia hasta</TableHead>
               <TableHead>Estado</TableHead>
               {canAdmin && <TableHead className="w-32 text-right">Acciones</TableHead>}
             </TableRow>
