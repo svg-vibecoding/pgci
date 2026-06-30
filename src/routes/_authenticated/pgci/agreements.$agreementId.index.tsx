@@ -372,20 +372,8 @@ function AgreementDetail() {
         </CardContent>
       </Card>
 
-      <AgreementLinesSection
-        agreementId={agreementId}
-        agreementName={agreement.name as string}
-        canAdmin={canAdmin}
-        onOpenImport={() => setImportOpen(true)}
-      />
-
       <AgreementCompaniesSection agreementId={agreementId} canAdmin={canAdmin} />
 
-      <AgreementImportWizard
-        open={importOpen}
-        onOpenChange={setImportOpen}
-        agreementId={agreementId}
-      />
 
       <AlertDialog open={statusOpen} onOpenChange={setStatusOpen}>
         <AlertDialogContent>
