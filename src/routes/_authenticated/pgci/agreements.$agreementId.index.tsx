@@ -185,9 +185,13 @@ function AgreementDetail() {
         </div>
         {canAdmin && (
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={() => setStatusOpen(true)}>
-              <Power className="mr-1.5 h-4 w-4" />
-              {isActive ? "Inactivar" : "Activar"}
+            <Button asChild size="sm" variant="outline">
+              <Link
+                to="/pgci/agreements/$agreementId/lines"
+                params={{ agreementId }}
+              >
+                <Boxes className="mr-1.5 h-4 w-4" /> Gestión de Productos
+              </Link>
             </Button>
             <Button variant="outline" asChild size="sm">
               <Link
@@ -197,21 +201,17 @@ function AgreementDetail() {
                 <Pencil className="mr-1.5 h-4 w-4" /> Editar
               </Link>
             </Button>
+            <Button variant="outline" size="sm" onClick={() => setStatusOpen(true)}>
+              <Power className="mr-1.5 h-4 w-4" />
+              {isActive ? "Inactivar" : "Activar"}
+            </Button>
           </div>
         )}
       </header>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between gap-3">
+        <CardHeader>
           <CardTitle className="text-base">Información comercial</CardTitle>
-          <Button asChild size="sm" variant="outline">
-            <Link
-              to="/pgci/agreements/$agreementId/lines"
-              params={{ agreementId }}
-            >
-              <Boxes className="mr-1.5 h-4 w-4" /> Gestión de Productos
-            </Link>
-          </Button>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
