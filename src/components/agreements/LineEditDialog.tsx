@@ -101,7 +101,7 @@ function SectionHeader({
       <span className="text-[10px] font-bold uppercase tracking-overline text-accent">
         {number}
       </span>
-      <h4 className="text-xs font-bold uppercase tracking-wide text-text-tertiary">
+      <h4 className="text-xs font-bold uppercase tracking-wide text-text-disabled">
         {title}
       </h4>
     </div>
