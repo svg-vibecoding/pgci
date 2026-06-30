@@ -387,6 +387,10 @@ function AgreementLinesPage() {
                 .split(",")
                 .filter(Boolean) as ImportPendingReason[];
               const isExcluded = r.status === "excluded";
+              const vig = vigenciaBadge(
+                r.end_date ?? null,
+                (agreement.end_date as string | null) ?? null,
+              );
               return (
                 <TableRow key={r.id as string}>
                   <TableCell>
@@ -399,12 +403,10 @@ function AgreementLinesPage() {
                     <div className="font-mono text-sm">{r.products?.sku ?? "—"}</div>
                     <div className="text-xs text-muted-foreground line-clamp-2">
                       {r.products?.erp_description ?? "—"}
-                      {r.products?.commercial_brand ? (
-                        <span className="ml-1 text-muted-foreground/70">
-                          · {r.products.commercial_brand}
-                        </span>
-                      ) : null}
                     </div>
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {r.products?.commercial_brand ?? "—"}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">
                     {fmtMoney(r.sale_price ?? null)}
@@ -412,8 +414,8 @@ function AgreementLinesPage() {
                   <TableCell className="text-right tabular-nums">
                     {fmtMoney(r.par_price ?? null)}
                   </TableCell>
-                  <TableCell className="whitespace-nowrap text-sm">
-                    {fmtDate(r.start_date ?? null)} – {fmtDate(r.end_date ?? null)}
+                  <TableCell className="whitespace-nowrap">
+                    <Badge color={vig.color}>{vig.label}</Badge>
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-1">
