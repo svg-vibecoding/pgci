@@ -404,7 +404,7 @@ function AgreementLinesPage() {
                   </TableCell>
                   <TableCell className="text-right tabular-nums">
                     <div>{fmtMoney(r.sale_price ?? null)}</div>
-                    {r.par_price != null && (
+                    {r.par_price != null && r.par_price > 0 && (
                       <div className="text-xs text-muted-foreground">
                         {fmtMoney(r.par_price)} par
                       </div>
