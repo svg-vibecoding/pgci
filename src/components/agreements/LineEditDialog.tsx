@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Info, Loader2, Search } from "lucide-react";
+import { AlertTriangle, ChevronDown, Info, Loader2, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
@@ -17,10 +17,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   createAgreementLine,
   updateAgreementLine,
   lookupProductBySku,
+  detectNConflict,
 } from "@/lib/agreements.functions";
 
 export type LineEditValues = {
