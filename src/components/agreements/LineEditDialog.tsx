@@ -108,11 +108,15 @@ export function LineEditDialog({
   open,
   onOpenChange,
   agreementId,
+  agreementName,
+  clientName,
   initial,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   agreementId: string;
+  agreementName?: string | null;
+  clientName?: string | null;
   initial?: Partial<LineEditValues> | null;
 }) {
   const qc = useQueryClient();
