@@ -245,7 +245,7 @@ export function LineEditDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 min-h-0">
           <div className="p-6 space-y-8">
             {/* Información del cliente */}
             <section className="space-y-4">
