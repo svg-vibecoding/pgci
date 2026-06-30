@@ -84,6 +84,29 @@ const fmtMoney = (v: number | null) =>
         maximumFractionDigits: 0,
       }).format(v);
 
+type VigenciaBadge = {
+  color: "info" | "warning" | "error" | "neutral";
+  label: string;
+};
+
+function vigenciaBadge(
+  lineEnd: string | null,
+  agreementEnd: string | null,
+): VigenciaBadge {
+  const eff = lineEnd ?? agreementEnd ?? null;
+  if (!eff) return { color: "neutral", label: "Sin vigencia" };
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(eff);
+  if (!m) return { color: "neutral", label: "Sin vigencia" };
+  const end = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diffDays = Math.round((end.getTime() - today.getTime()) / 86_400_000);
+  const label = `${m[3]}/${m[2]}/${m[1]}`;
+  if (diffDays < 0) return { color: "error", label };
+  if (diffDays <= 30) return { color: "warning", label };
+  return { color: "info", label };
+}
+
 function AgreementLinesPage() {
   const { agreementId } = Route.useParams();
   const qc = useQueryClient();
