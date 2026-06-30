@@ -19,7 +19,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge, StatusBadge, type StatusBadgeStatus } from "@/components/sumatec";
+import { Badge, Chip, StatusBadge, type StatusBadgeStatus } from "@/components/sumatec";
 import {
   Table,
   TableBody,
