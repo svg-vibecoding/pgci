@@ -107,9 +107,13 @@ function excelSerialToIso(serial: number): string | null {
 }
 
 function rawValueLabel(v: unknown): string {
-  if (v instanceof Date) return v.toISOString();
+  if (v instanceof Date) return Number.isNaN(v.getTime()) ? String(v) : v.toISOString();
   const s = String(v ?? "").trim();
   return s || "vacío";
+}
+
+function hasValue(v: unknown): boolean {
+  return v != null && String(v).trim() !== "";
 }
 
 function parseDate(v: unknown): { value: string | null; error?: string } {
@@ -182,13 +186,13 @@ function rowFromRaw(
 
   const saleRaw = valueAt(raw, headerByField, "sale_price");
   let sale_price: number | null = null;
-  if (saleRaw) {
+  if (hasValue(saleRaw)) {
     sale_price = parsePrice(saleRaw);
     if (sale_price === null) errors.push("Precio de venta inválido");
   }
   const parRaw = valueAt(raw, headerByField, "par_price");
   let par_price: number | null = null;
-  if (parRaw) {
+  if (hasValue(parRaw)) {
     par_price = parsePrice(parRaw);
     if (par_price === null) errors.push("Precio par inválido");
   }
