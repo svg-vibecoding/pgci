@@ -106,7 +106,6 @@ function AgreementDetail() {
   const [statusOpen, setStatusOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [removeId, setRemoveId] = useState<string | null>(null);
-  const [importOpen, setImportOpen] = useState(false);
 
   const toggleStatus = useMutation({
     mutationFn: () =>
