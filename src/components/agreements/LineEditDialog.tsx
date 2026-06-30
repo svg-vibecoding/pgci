@@ -142,48 +142,99 @@ export function LineEditDialog({
   const createFn = useServerFn(createAgreementLine);
   const patchFn = useServerFn(updateAgreementLine);
   const lookupFn = useServerFn(lookupProductBySku);
+  const conflictFn = useServerFn(detectNConflict);
   const [v, setV] = useState<LineEditValues>(empty);
   const [productMeta, setProductMeta] = useState<ProductMeta | null>(null);
   const [lookup, setLookup] = useState<{
     kind: LookupKind;
     catalogUpdatedAt?: string | null;
   }>({ kind: "idle" });
+  const [nConflict, setNConflict] = useState<{
+    kind: "idle" | "loading" | "none" | "found";
+    lines: Array<{
+      line_id: string;
+      client_code: string | null;
+      client_description: string | null;
+      current_price: number | null;
+      updated_at: string | null;
+    }>;
+  }>({ kind: "idle", lines: [] });
+  const [nExpanded, setNExpanded] = useState(true);
+  const [priceChoice, setPriceChoice] = useState<"same" | "distinct" | null>(null);
+  const [chosenPriceLineId, setChosenPriceLineId] = useState<string | null>(null);
   const lookupSeq = useRef(0);
+  const conflictSeq = useRef(0);
 
   const runLookup = async (sku: string) => {
     const trimmed = sku.trim();
     if (!trimmed) {
       setProductMeta(null);
       setLookup({ kind: "empty" });
+      setNConflict({ kind: "idle", lines: [] });
+      setPriceChoice(null);
+      setChosenPriceLineId(null);
       return;
     }
     const seq = ++lookupSeq.current;
+    const cseq = ++conflictSeq.current;
     setLookup({ kind: "loading" });
-    try {
-      const res = await lookupFn({ data: { sku: trimmed } });
-      if (seq !== lookupSeq.current) return;
-      if (!res.found) {
-        setProductMeta(null);
+    setNConflict({ kind: "loading", lines: [] });
+    setPriceChoice(null);
+    setChosenPriceLineId(null);
+
+    const lookupPromise = lookupFn({ data: { sku: trimmed } })
+      .then((res) => {
+        if (seq !== lookupSeq.current) return;
+        if (!res.found) {
+          setProductMeta(null);
+          setLookup({ kind: "not_found", catalogUpdatedAt: res.catalog_updated_at });
+          return;
+        }
+        setProductMeta({
+          erp_description: res.erp_description,
+          commercial_brand: res.commercial_brand,
+        });
         setLookup({
-          kind: "not_found",
+          kind: res.status === "active" ? "active" : "inactive",
           catalogUpdatedAt: res.catalog_updated_at,
         });
-        return;
-      }
-      setProductMeta({
-        erp_description: res.erp_description,
-        commercial_brand: res.commercial_brand,
+      })
+      .catch((e: Error) => {
+        if (seq !== lookupSeq.current) return;
+        setProductMeta(null);
+        setLookup({ kind: "idle" });
+        toast.error(e.message);
       });
-      setLookup({
-        kind: res.status === "active" ? "active" : "inactive",
-        catalogUpdatedAt: res.catalog_updated_at,
+
+    const conflictPromise = conflictFn({
+      data: { agreement_id: agreementId, sku: trimmed },
+    })
+      .then((res) => {
+        if (cseq !== conflictSeq.current) return;
+        const excludeId = initial?.line_id ?? null;
+        const lines = (res.conflicts ?? []).filter((l) => l.line_id !== excludeId);
+        if (lines.length === 0) {
+          setNConflict({ kind: "none", lines: [] });
+          return;
+        }
+        // pick most recent by updated_at as default chosen
+        const sorted = [...lines].sort((a, b) => {
+          const ta = a.updated_at ? Date.parse(a.updated_at) : 0;
+          const tb = b.updated_at ? Date.parse(b.updated_at) : 0;
+          return tb - ta;
+        });
+        setNConflict({ kind: "found", lines: sorted });
+        setNExpanded(true);
+        setChosenPriceLineId(sorted[0]?.line_id ?? null);
+      })
+      .catch((e: Error) => {
+        if (cseq !== conflictSeq.current) return;
+        setNConflict({ kind: "idle", lines: [] });
+        // silent — conflict check is auxiliary
+        console.error("detectNConflict failed", e);
       });
-    } catch (e) {
-      if (seq !== lookupSeq.current) return;
-      setProductMeta(null);
-      setLookup({ kind: "idle" });
-      toast.error((e as Error).message);
-    }
+
+    await Promise.all([lookupPromise, conflictPromise]);
   };
 
   useEffect(() => {
@@ -192,11 +243,15 @@ export function LineEditDialog({
     setV(next);
     setProductMeta(null);
     setLookup({ kind: next.sku.trim() ? "idle" : "empty" });
+    setNConflict({ kind: "idle", lines: [] });
+    setPriceChoice(null);
+    setChosenPriceLineId(null);
     if (next.sku.trim()) {
       void runLookup(next.sku);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initial]);
+
 
   const isEdit = !!initial?.line_id;
 
