@@ -542,6 +542,8 @@ function AgreementLinesPage() {
         open={editOpen}
         onOpenChange={setEditOpen}
         agreementId={agreementId}
+        agreementName={agreement?.name as string | undefined}
+        clientName={clientName}
         initial={editInitial}
       />
 
