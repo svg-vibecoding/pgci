@@ -239,9 +239,13 @@ export function LineEditDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col overflow-hidden p-0 gap-0">
         <DialogHeader className="px-6 py-4 border-b border-border shrink-0">
-          <DialogTitle>{isEdit ? "Editar posición" : "Nueva posición"}</DialogTitle>
-          <DialogDescription>
-            El estado operativo se recalcula automáticamente al guardar.
+          <DialogTitle className="text-xl font-semibold">
+            {isEdit ? "Editar posición" : "Nueva posición"}
+          </DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground">
+            {agreementName && clientName
+              ? `${agreementName} · ${clientName}`
+              : agreementName || clientName || "Acuerdo comercial"}
           </DialogDescription>
         </DialogHeader>
 
