@@ -254,8 +254,9 @@ export function LineEditDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="flex-1 min-h-0 overflow-y-auto bg-white">
           <div className="p-6 space-y-8">
+
             {/* Información del cliente */}
             <section className="space-y-4">
               <SectionHeader title="Información del cliente" number="01" />
