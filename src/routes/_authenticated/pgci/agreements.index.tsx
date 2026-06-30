@@ -97,13 +97,11 @@ function AgreementsList() {
   const hasActiveFilters =
     activeCard !== "all" ||
     statusF !== "all" ||
-    scopeF !== "all" ||
     search.trim() !== "";
 
   const clearFilters = () => {
     setActiveCard("all");
     setStatusF("all");
-    setScopeF("all");
     setSearch("");
   };
 
