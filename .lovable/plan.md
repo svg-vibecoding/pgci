@@ -1,46 +1,57 @@
-## Cambios en `/pgci/agreements/$agreementId/lines`
+# Ajustes al modal "Nueva posición" / "Editar posición"
 
-Archivo único a modificar: `src/routes/_authenticated/pgci/agreements.$agreementId.lines.tsx`.
+Archivos a tocar:
+- `src/lib/agreements.functions.ts` — nueva server fn `lookupProductBySku`.
+- `src/components/agreements/LineEditDialog.tsx` — reestructura UI y lookup.
 
-### 1. Columnas finales (en orden)
+Sin cambios en schemas, RLS, ni en `agreements.server.ts` (se reutiliza `resolveProductBySku`).
 
-| # | Header | Contenido |
-|---|--------|-----------|
-| 1 | Cliente | sin cambios (código + descripción) |
-| 2 | Jaivaná | sin cambios en contenido (SKU mono + descripción), solo se renombra el header (antes "SKU Jaivaná") |
-| 3 | Marca | **nueva** — `products.commercial_brand`, o "—" si no hay |
-| 4 | Precio | renombrado desde "Precio venta", contenido igual (`sale_price`) |
-| 5 | Precio par | sin cambios |
-| 6 | Vigencia hasta | **rediseño** (ver abajo) — reemplaza la columna "Vigencia" que mostraba rango completo |
-| 7 | Estado | sin cambios |
-| 8 | Acciones | sin cambios |
+## 1. Server function `lookupProductBySku`
 
-Como la marca pasa a ser una columna propia, se quitará el sufijo `· {marca}` que hoy aparece bajo la descripción Jaivaná, para no duplicar.
+En `agreements.functions.ts`, nueva fn protegida con `requireSupabaseAuth`:
 
-### 2. Columna "Vigencia hasta"
+- Input: `{ sku: string }` (trim, no vacío).
+- Lógica:
+  - Consulta `products` por `sku` exacto seleccionando `id, sku, erp_description, commercial_brand, status`.
+  - En paralelo, consulta `max(updated_at)` de `products` (para la fecha de "última actualización del catálogo") — un `select("updated_at").order("updated_at", { ascending: false }).limit(1)`.
+- Output:
+  - `{ found: true, status: "active" | "inactive", erp_description, commercial_brand }` si existe.
+  - `{ found: false, catalog_updated_at: string | null }` si no.
 
-Fecha efectiva = `line.end_date ?? agreement.end_date`.
+## 2. Reestructura del modal `LineEditDialog`
 
-Render: un `Badge` compacto (componente `@/components/sumatec/Badge`, mismo patrón usado en la plataforma) con la fecha en formato `dd/mm/yyyy`.
+Reorganizar el grid actual en **dos secciones** con el patrón visual que ya usan otras vistas (un `<h4>` con `text-sm font-semibold` + `<Separator />`, mismo estilo que usa `InfoSection`/forms de Setup):
 
-Color según días restantes contra hoy:
+**Sección "Información del cliente"** (grid 2 columnas):
+- Código del cliente
+- Descripción del cliente (full width)
 
-- **`color="info"` (azul)** — faltan más de 30 días.
-- **`color="warning"` (amarillo)** — faltan ≤ 30 días, incluyendo el día actual (diff ≥ 0 y ≤ 30).
-- **`color="error"` (rojo)** — la fecha ya venció (diff < 0).
-- **`color="neutral"`** con texto "Sin vigencia" — cuando no hay fecha propia ni heredada.
+**Sección "Información Jaivaná"** (grid 2 columnas):
+- Código Jaivaná (SKU) — editable, con validación on-blur
+- Descripción Jaivaná — **solo lectura**, autopoblada (`bg-muted`)
+- Marca — **solo lectura**, autopoblada (`bg-muted`)
 
-El cálculo de días se hace en zona horaria local, comparando solo la parte de fecha (sin hora) para evitar off-by-one.
+Debajo del bloque Jaivaná se mantienen Precio venta, Precio par, Fecha inicio, Fecha fin, Observaciones (sin cambios estructurales — quedan fuera de las dos secciones nombradas, agrupadas bajo una tercera sección "Condiciones comerciales" para mantener consistencia visual).
 
-### 3. Sin cambios de backend
+## 3. Lookup on-blur del SKU
 
-- No se toca `agreements_with_counts`, RPCs ni schemas.
-- El `agreement` ya está disponible en la página vía `getAgreement` y trae `end_date`.
-- El `commercial_brand` ya viene en la query de líneas (se usa hoy bajo la descripción).
-- El `colSpan` de los estados de carga / vacío sube de `6/7` a `7/8` para acomodar la nueva columna.
+Estado local nuevo en el componente:
+- `productMeta: { erp_description: string | null; commercial_brand: string | null } | null`
+- `lookupState: { kind: "idle" | "loading" | "active" | "inactive" | "not_found" | "empty"; catalogUpdatedAt?: string | null }`
 
-### Notas técnicas
+En `useEffect` al abrir, si viene `initial.sku` con valor, disparar lookup una vez para precargar los campos read-only (modo edición).
 
-- Helper local `vigenciaBadge(endDate: string | null)` que devuelve `{ color, label }` para mantener el render simple.
-- Se mantiene `fmtDate` existente para formatear la fecha dentro del badge.
-- Búsqueda existente sigue intacta (ya incluye marca via `brand`).
+Handler `onBlur` del input SKU:
+- Si el valor está vacío → `lookupState = "empty"`, limpia `productMeta`, sin alerta.
+- Si tiene valor → `loading` → llama `lookupProductBySku`:
+  - `found && status === "active"` → puebla `productMeta`, estado `active`, sin alerta.
+  - `found && status !== "active"` → puebla `productMeta`, estado `inactive`, alerta amarilla (`Alert variant="warning"`): *"Producto inactivo en el catálogo. Esta posición quedará en 'Requiere revisión'."*
+  - `!found` → limpia `productMeta`, estado `not_found`, alerta roja (`Alert variant="error"`): *"Código no encontrado en el catálogo Jaivaná (última actualización: dd/mm/aaaa)."* usando `catalog_updated_at` formateada con el helper local `fmtDate` (si es null, omite el paréntesis).
+
+La alerta se renderiza directamente debajo del input SKU dentro de la sección Jaivaná.
+
+## 4. Notas
+
+- No se bloquea el guardado por SKU no encontrado: el flujo "campo vacío / no encontrado" sigue permitiendo crear la posición en estado pending (la lógica de backend ya lo soporta).
+- Los campos read-only de descripción/marca son puramente informativos en el cliente; el backend ya deriva esos datos del `product_id` resuelto vía `resolveProductBySku` al guardar — no se envían en el payload.
+- Reutiliza `Alert`/`AlertDescription` de `@/components/ui/alert` con variantes `warning` y `error` ya definidas.
