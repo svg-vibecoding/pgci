@@ -69,7 +69,7 @@ function NewAgreement() {
         </Button>
       }
       title="Crear acuerdo"
-      description="Registra un nuevo acuerdo comercial. Después podrás cargar productos y precios."
+      description="Registra la información general del acuerdo."
     >
       <AgreementForm
         initial={initial}
