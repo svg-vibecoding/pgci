@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Info, Loader2 } from "lucide-react";
+import { Info, Loader2, Search } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -15,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   createAgreementLine,
@@ -69,13 +70,40 @@ function fmtCatalogDate(iso: string | null | undefined): string | null {
   return `${dd}/${mm}/${d.getFullYear()}`;
 }
 
-function SectionHeader({ title }: { title: string }) {
+function FieldLabel({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <div className="space-y-2">
-      <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+    <Label
+      className={cn(
+        "text-[11px] font-semibold uppercase tracking-tight text-text-tertiary",
+        className,
+      )}
+    >
+      {children}
+    </Label>
+  );
+}
+
+function SectionHeader({
+  title,
+  number,
+}: {
+  title: string;
+  number: string;
+}) {
+  return (
+    <div className="flex items-center gap-2 pb-1 border-b border-border">
+      <span className="text-[10px] font-bold uppercase tracking-overline text-accent">
+        {number}
+      </span>
+      <h4 className="text-xs font-bold uppercase tracking-wide text-text-tertiary">
         {title}
       </h4>
-      <Separator />
     </div>
   );
 }
@@ -117,7 +145,10 @@ export function LineEditDialog({
       if (seq !== lookupSeq.current) return;
       if (!res.found) {
         setProductMeta(null);
-        setLookup({ kind: "not_found", catalogUpdatedAt: res.catalog_updated_at });
+        setLookup({
+          kind: "not_found",
+          catalogUpdatedAt: res.catalog_updated_at,
+        });
         return;
       }
       setProductMeta({
@@ -201,160 +232,186 @@ export function LineEditDialog({
   });
 
   const readonlyClass = "bg-muted/60 cursor-not-allowed";
+  const inputClass = "bg-surface-card";
   const catalogDateLabel = fmtCatalogDate(lookup.catalogUpdatedAt ?? null);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col overflow-hidden p-0 gap-0">
+        <DialogHeader className="px-6 py-4 border-b border-border shrink-0">
           <DialogTitle>{isEdit ? "Editar posición" : "Nueva posición"}</DialogTitle>
           <DialogDescription>
             El estado operativo se recalcula automáticamente al guardar.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Información del cliente */}
-          <section className="space-y-4">
-            <SectionHeader title="Información del cliente" />
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label>Código del cliente</Label>
-                <Input
-                  value={v.client_code}
-                  onChange={(e) => setV({ ...v, client_code: e.target.value })}
-                />
+        <ScrollArea className="flex-1">
+          <div className="p-6 space-y-8">
+            {/* Información del cliente */}
+            <section className="space-y-4">
+              <SectionHeader title="Información del cliente" number="01" />
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-1.5">
+                  <FieldLabel>Código del cliente</FieldLabel>
+                  <Input
+                    className={inputClass}
+                    value={v.client_code}
+                    onChange={(e) => setV({ ...v, client_code: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1.5 md:col-span-2">
+                  <FieldLabel>Descripción del cliente</FieldLabel>
+                  <Input
+                    className={inputClass}
+                    value={v.client_description}
+                    onChange={(e) =>
+                      setV({ ...v, client_description: e.target.value })
+                    }
+                  />
+                </div>
               </div>
-              <div className="space-y-1.5 md:col-span-2">
-                <Label>Descripción del cliente</Label>
-                <Input
-                  value={v.client_description}
-                  onChange={(e) =>
-                    setV({ ...v, client_description: e.target.value })
-                  }
-                />
-              </div>
-            </div>
-          </section>
+            </section>
 
-          {/* Información Jaivaná */}
-          <section className="space-y-4">
-            <SectionHeader title="Información Jaivaná" />
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label>
-                  Código Jaivaná
-                  {lookup.kind === "loading" && (
-                    <Loader2 className="ml-2 inline h-3 w-3 animate-spin text-muted-foreground" />
+            {/* Información Jaivaná */}
+            <section className="space-y-4">
+              <SectionHeader title="Información Jaivaná" number="02" />
+              <div className="p-4 bg-muted/40 rounded-md border border-border space-y-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <FieldLabel>
+                      Código Jaivaná
+                      {lookup.kind === "loading" && (
+                        <Loader2 className="ml-2 inline h-3 w-3 animate-spin text-muted-foreground" />
+                      )}
+                    </FieldLabel>
+                    <div className="relative">
+                      <Input
+                        className={cn(inputClass, "pr-9")}
+                        value={v.sku}
+                        onChange={(e) => setV({ ...v, sku: e.target.value })}
+                        onBlur={(e) => void runLookup(e.target.value)}
+                      />
+                      {lookup.kind !== "loading" && (
+                        <Search className="absolute right-3 top-2.5 h-4 w-4 text-text-tertiary pointer-events-none" />
+                      )}
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <FieldLabel>Marca</FieldLabel>
+                    <Input
+                      value={productMeta?.commercial_brand ?? ""}
+                      readOnly
+                      tabIndex={-1}
+                      placeholder="—"
+                      className={readonlyClass}
+                    />
+                  </div>
+                  <div className="space-y-1.5 md:col-span-2">
+                    <FieldLabel>Descripción Jaivaná</FieldLabel>
+                    <Input
+                      value={productMeta?.erp_description ?? ""}
+                      readOnly
+                      tabIndex={-1}
+                      placeholder="Se completa al validar el código"
+                      className={readonlyClass}
+                    />
+                  </div>
+                  {lookup.kind === "inactive" && (
+                    <div className="md:col-span-2">
+                      <Alert variant="warning">
+                        <AlertDescription>
+                          Producto inactivo en el catálogo. Esta posición quedará
+                          en "Requiere revisión".
+                        </AlertDescription>
+                      </Alert>
+                    </div>
                   )}
-                </Label>
-                <Input
-                  value={v.sku}
-                  onChange={(e) => setV({ ...v, sku: e.target.value })}
-                  onBlur={(e) => void runLookup(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Marca</Label>
-                <Input
-                  value={productMeta?.commercial_brand ?? ""}
-                  readOnly
-                  tabIndex={-1}
-                  placeholder="—"
-                  className={readonlyClass}
-                />
-              </div>
-              <div className="space-y-1.5 md:col-span-2">
-                <Label>Descripción Jaivaná</Label>
-                <Input
-                  value={productMeta?.erp_description ?? ""}
-                  readOnly
-                  tabIndex={-1}
-                  placeholder="Se completa al validar el código"
-                  className={readonlyClass}
-                />
-              </div>
-              {lookup.kind === "inactive" && (
-                <div className="md:col-span-2">
-                  <Alert variant="warning">
-                    <AlertDescription>
-                      Producto inactivo en el catálogo. Esta posición quedará en
-                      "Requiere revisión".
-                    </AlertDescription>
-                  </Alert>
+                  {lookup.kind === "not_found" && (
+                    <div className="md:col-span-2">
+                      <Alert variant="error">
+                        <AlertDescription>
+                          Código no encontrado en el catálogo Jaivaná
+                          {catalogDateLabel
+                            ? ` (última actualización: ${catalogDateLabel}).`
+                            : "."}
+                        </AlertDescription>
+                      </Alert>
+                    </div>
+                  )}
                 </div>
-              )}
-              {lookup.kind === "not_found" && (
-                <div className="md:col-span-2">
-                  <Alert variant="error">
-                    <AlertDescription>
-                      Código no encontrado en el catálogo Jaivaná
-                      {catalogDateLabel
-                        ? ` (última actualización: ${catalogDateLabel}).`
-                        : "."}
-                    </AlertDescription>
-                  </Alert>
+              </div>
+            </section>
+
+            {/* Condiciones comerciales */}
+            <section className="space-y-4">
+              <SectionHeader title="Condiciones comerciales" number="03" />
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-1.5">
+                  <FieldLabel>Precio de venta</FieldLabel>
+                  <Input
+                    className={inputClass}
+                    inputMode="decimal"
+                    value={v.sale_price}
+                    onChange={(e) => setV({ ...v, sale_price: e.target.value })}
+                  />
                 </div>
-              )}
-            </div>
-          </section>
+                <div className="space-y-1.5">
+                  <FieldLabel>Precio par</FieldLabel>
+                  <Input
+                    className={inputClass}
+                    inputMode="decimal"
+                    value={v.par_price}
+                    onChange={(e) => setV({ ...v, par_price: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <FieldLabel>Fecha inicio</FieldLabel>
+                  <Input
+                    className={inputClass}
+                    type="date"
+                    value={v.start_date}
+                    onChange={(e) => setV({ ...v, start_date: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <FieldLabel>Fecha fin</FieldLabel>
+                  <Input
+                    className={inputClass}
+                    type="date"
+                    value={v.end_date}
+                    onChange={(e) => setV({ ...v, end_date: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1.5 md:col-span-2">
+                  <FieldLabel>Observaciones</FieldLabel>
+                  <Textarea
+                    className={inputClass}
+                    rows={2}
+                    value={v.observations}
+                    onChange={(e) =>
+                      setV({ ...v, observations: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+            </section>
 
-          {/* Condiciones comerciales */}
-          <section className="space-y-4">
-            <SectionHeader title="Condiciones comerciales" />
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label>Precio de venta</Label>
-                <Input
-                  inputMode="decimal"
-                  value={v.sale_price}
-                  onChange={(e) => setV({ ...v, sale_price: e.target.value })}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Precio par</Label>
-                <Input
-                  inputMode="decimal"
-                  value={v.par_price}
-                  onChange={(e) => setV({ ...v, par_price: e.target.value })}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Fecha inicio</Label>
-                <Input
-                  type="date"
-                  value={v.start_date}
-                  onChange={(e) => setV({ ...v, start_date: e.target.value })}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Fecha fin</Label>
-                <Input
-                  type="date"
-                  value={v.end_date}
-                  onChange={(e) => setV({ ...v, end_date: e.target.value })}
-                />
-              </div>
-              <div className="space-y-1.5 md:col-span-2">
-                <Label>Observaciones</Label>
-                <Textarea
-                  rows={2}
-                  value={v.observations}
-                  onChange={(e) => setV({ ...v, observations: e.target.value })}
-                />
-              </div>
-            </div>
-          </section>
-        </div>
+            <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
+              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              Si las fechas quedan vacías se hereda la vigencia del acuerdo.
+              Cambios de precio aplican solo a esta posición; usa "Aplicar a
+              SKU" desde la importación para propagar a otras posiciones con el
+              mismo SKU.
+            </p>
+          </div>
+        </ScrollArea>
 
-        <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
-          <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          Si las fechas quedan vacías se hereda la vigencia del acuerdo. Cambios de precio
-          aplican solo a esta posición; usa "Aplicar a SKU" desde la importación para propagar
-          a otras posiciones con el mismo SKU.
-        </p>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={save.isPending}>
+        <DialogFooter className="px-6 py-4 border-t border-border bg-muted/30 shrink-0">
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={save.isPending}
+          >
             Cancelar
           </Button>
           <Button onClick={() => save.mutate()} disabled={save.isPending}>
