@@ -61,7 +61,7 @@ const fileNameFor = (
     .slice(0, 60);
   const suffix =
     preset === "active" ? "activas" : preset === "filtered" ? "filtradas" : "todas";
-  return `acuerdo_${safe || "lineas"}_${suffix}.xlsx`;
+  return `acuerdo_${safe || "posiciones"}_${suffix}.xlsx`;
 };
 
 export function exportAgreementLines(
