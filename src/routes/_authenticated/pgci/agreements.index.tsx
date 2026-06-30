@@ -253,7 +253,7 @@ function AgreementsList() {
                         >
                           {a.name}
                         </Link>
-                        {a.scope === "unit" && <Badge color="info">Unidad</Badge>}
+                        {a.scope === "unit" && <Badge color="info">Con alcance</Badge>}
                       </div>
                       {a.scope === "unit" && a.unit_name && (
                         <span className="block text-xs text-muted-foreground truncate max-w-[260px]" title={a.unit_name}>
