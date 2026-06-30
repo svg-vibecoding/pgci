@@ -750,7 +750,9 @@ export type Database = {
           client_commercial_name: string | null
           client_id: string | null
           client_legal_name: string | null
+          client_parent_id: string | null
           client_tax_id: string | null
+          companies_count: number | null
           created_at: string | null
           created_by: string | null
           end_date: string | null
@@ -760,9 +762,12 @@ export type Database = {
           lines_pending: number | null
           lines_review: number | null
           lines_total: number | null
+          members_count: number | null
           my_role: string | null
           name: string | null
           observations: string | null
+          parent_commercial_name: string | null
+          parent_legal_name: string | null
           scope: string | null
           start_date: string | null
           status: string | null
@@ -773,6 +778,13 @@ export type Database = {
           {
             foreignKeyName: "agreements_client_id_fkey"
             columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clients_parent_client_id_fkey"
+            columns: ["client_parent_id"]
             isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]

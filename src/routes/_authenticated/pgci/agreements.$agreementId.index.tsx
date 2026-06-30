@@ -10,6 +10,7 @@ import {
   UserPlus,
   Trash2,
   Info,
+  Boxes,
 } from "lucide-react";
 import {
   getAgreement,
@@ -26,8 +27,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge, Badge } from "@/components/sumatec";
 import { IndicatorCard } from "@/components/setup/IndicatorCard";
 import { InfoField, InfoSection } from "@/components/setup/InfoSection";
-import { AgreementLinesSection } from "@/components/agreements/AgreementLinesSection";
-import { AgreementImportWizard } from "@/components/agreements/AgreementImportWizard";
 import { AgreementCompaniesSection } from "@/components/agreements/AgreementCompaniesSection";
 import {
   Dialog,
@@ -107,7 +106,6 @@ function AgreementDetail() {
   const [statusOpen, setStatusOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [removeId, setRemoveId] = useState<string | null>(null);
-  const [importOpen, setImportOpen] = useState(false);
 
   const toggleStatus = useMutation({
     mutationFn: () =>
@@ -203,13 +201,28 @@ function AgreementDetail() {
         )}
       </header>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-        <IndicatorCard label="Líneas" value={total} />
-        <IndicatorCard label="Activas" value={active} />
-        <IndicatorCard label="Pendientes" value={pending} />
-        <IndicatorCard label="Requieren revisión" value={review} />
-        <IndicatorCard label="Excluidas" value={excluded} />
-      </div>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between gap-3">
+          <CardTitle className="text-base">Información comercial</CardTitle>
+          <Button asChild size="sm" variant="outline">
+            <Link
+              to="/pgci/agreements/$agreementId/lines"
+              params={{ agreementId }}
+            >
+              <Boxes className="mr-1.5 h-4 w-4" /> Gestión de Productos
+            </Link>
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+            <IndicatorCard label="Líneas" value={total} />
+            <IndicatorCard label="Activas" value={active} />
+            <IndicatorCard label="Pendientes" value={pending} />
+            <IndicatorCard label="Requieren revisión" value={review} />
+            <IndicatorCard label="Excluidas" value={excluded} />
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -217,35 +230,45 @@ function AgreementDetail() {
         </CardHeader>
         <CardContent className="space-y-6">
           <InfoSection>
+            <InfoField label="Acuerdo">{agreement.name}</InfoField>
             <InfoField label="Cliente">{clientName}</InfoField>
+            <InfoField label="Holding">
+              {agreement.parent_commercial_name?.trim() ||
+                agreement.parent_legal_name ||
+                "—"}
+            </InfoField>
+
+            <InfoField label="Líneas">{total}</InfoField>
+            <InfoField label="Usuarios">{agreement.members_count ?? 0}</InfoField>
+            <InfoField label="Empresas">{agreement.companies_count ?? 0}</InfoField>
+
             <InfoField label="Alcance">
               {agreement.scope === "unit"
                 ? `Por unidad${agreement.unit_name ? ` · ${agreement.unit_name}` : ""}`
                 : "Global"}
             </InfoField>
-            <InfoField label="Vigencia">
-              {agreement.start_date || agreement.end_date
-                ? `${formatDate(agreement.start_date)} – ${formatDate(agreement.end_date)}`
-                : "Sin fechas definidas"}
+            <InfoField label="Vigencia desde">
+              {formatDate(agreement.start_date)}
             </InfoField>
+            <InfoField label="Vigencia hasta">
+              {formatDate(agreement.end_date)}
+            </InfoField>
+
+            <InfoField label="Estado">{isActive ? "Activo" : "Inactivo"}</InfoField>
             <InfoField label="Creado">{formatDate(agreement.created_at)}</InfoField>
             <InfoField label="Actualizado">{formatDate(agreement.updated_at)}</InfoField>
-            <InfoField label="Estado">
-              {isActive ? "Activo" : "Inactivo"}
-            </InfoField>
           </InfoSection>
-          {agreement.observations && (
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Observaciones
-              </p>
-              <p className="mt-1 whitespace-pre-wrap text-sm">
-                {agreement.observations}
-              </p>
-            </div>
-          )}
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Observaciones
+            </p>
+            <p className="mt-1 whitespace-pre-wrap text-sm">
+              {agreement.observations?.trim() ? agreement.observations : "—"}
+            </p>
+          </div>
         </CardContent>
       </Card>
+
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
@@ -349,20 +372,8 @@ function AgreementDetail() {
         </CardContent>
       </Card>
 
-      <AgreementLinesSection
-        agreementId={agreementId}
-        agreementName={agreement.name as string}
-        canAdmin={canAdmin}
-        onOpenImport={() => setImportOpen(true)}
-      />
-
       <AgreementCompaniesSection agreementId={agreementId} canAdmin={canAdmin} />
 
-      <AgreementImportWizard
-        open={importOpen}
-        onOpenChange={setImportOpen}
-        agreementId={agreementId}
-      />
 
       <AlertDialog open={statusOpen} onOpenChange={setStatusOpen}>
         <AlertDialogContent>
