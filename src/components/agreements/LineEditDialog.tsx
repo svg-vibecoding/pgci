@@ -79,7 +79,7 @@ function FieldLabel({
   return (
     <Label
       className={cn(
-        "text-[11px] font-semibold tracking-tight text-text-tertiary",
+        "text-[11px] font-semibold uppercase tracking-wider text-muted-foreground",
         className,
       )}
     >
@@ -87,6 +87,7 @@ function FieldLabel({
     </Label>
   );
 }
+
 
 function SectionHeader({
   title,
@@ -234,9 +235,10 @@ export function LineEditDialog({
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const readonlyClass = "bg-muted/60 cursor-not-allowed";
-  const inputClass = "bg-surface-card";
+  const readonlyClass = "bg-muted/50 cursor-not-allowed";
+  const inputClass = "";
   const catalogDateLabel = fmtCatalogDate(lookup.catalogUpdatedAt ?? null);
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -252,8 +254,9 @@ export function LineEditDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="flex-1 min-h-0 overflow-y-auto bg-white">
           <div className="p-6 space-y-8">
+
             {/* Información del cliente */}
             <section className="space-y-4">
               <SectionHeader title="Información del cliente" number="01" />
@@ -282,7 +285,7 @@ export function LineEditDialog({
             {/* Información Jaivaná */}
             <section className="space-y-4">
               <SectionHeader title="Información Jaivaná" number="02" />
-              <div className="p-4 bg-muted/40 rounded-md border border-border space-y-4">
+              <div className="space-y-4">
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-1.5">
                     <FieldLabel>
