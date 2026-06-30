@@ -110,7 +110,7 @@ function AgreementsList() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Acuerdos comerciales</h1>
           <p className="text-sm text-muted-foreground">
-            Consulta y gestiona los acuerdos comerciales activos por cliente.
+            Consulta y gestiona los acuerdos comerciales con clientes.
           </p>
         </div>
         <Button asChild>
