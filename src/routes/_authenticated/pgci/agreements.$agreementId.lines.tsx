@@ -53,7 +53,7 @@ import { AgreementImportWizard } from "@/components/agreements/AgreementImportWi
 export const Route = createFileRoute(
   "/_authenticated/pgci/agreements/$agreementId/lines",
 )({
-  head: () => ({ meta: [{ title: "Líneas del acuerdo · PGCI" }] }),
+  head: () => ({ meta: [{ title: "Posiciones del acuerdo · PGCI" }] }),
   component: AgreementLinesPage,
 });
 
@@ -139,7 +139,7 @@ function AgreementLinesPage() {
     mutationFn: (vars: { line_id: string; reason: string | null }) =>
       excludeFn({ data: vars }),
     onSuccess: () => {
-      toast.success("Línea excluida");
+      toast.success("Posición excluida");
       qc.invalidateQueries({ queryKey: ["agreements", "lines", agreementId] });
       qc.invalidateQueries({ queryKey: ["agreements", "detail", agreementId] });
       setExcludeTarget(null);
@@ -151,7 +151,7 @@ function AgreementLinesPage() {
   const reactivate = useMutation({
     mutationFn: (lineId: string) => reactivateFn({ data: { line_id: lineId } }),
     onSuccess: () => {
-      toast.success("Línea reactivada");
+      toast.success("Posición reactivada");
       qc.invalidateQueries({ queryKey: ["agreements", "lines", agreementId] });
       qc.invalidateQueries({ queryKey: ["agreements", "detail", agreementId] });
     },
@@ -230,7 +230,7 @@ function AgreementLinesPage() {
     "—";
 
   const summaryCards: { key: LineCardKey; label: string; value: number }[] = [
-    { key: "all", label: "Líneas", value: counts.all },
+    { key: "all", label: "Posiciones", value: counts.all },
     { key: "active", label: "Activas", value: counts.active },
     { key: "pending", label: "Pendientes", value: counts.pending },
     { key: "requires_review", label: "Requieren revisión", value: counts.requires_review },
@@ -283,7 +283,7 @@ function AgreementLinesPage() {
                   setEditOpen(true);
                 }}
               >
-                <Plus className="mr-1.5 h-4 w-4" /> Nueva línea
+                <Plus className="mr-1.5 h-4 w-4" /> Nueva posición
               </Button>
             </>
           )}
@@ -372,7 +372,7 @@ function AgreementLinesPage() {
                   colSpan={canAdmin ? 7 : 6}
                   className="py-8 text-center text-sm text-muted-foreground"
                 >
-                  No hay líneas con esos filtros.
+                  No hay posiciones con esos filtros.
                 </TableCell>
               </TableRow>
             )}
@@ -520,9 +520,9 @@ function AgreementLinesPage() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir línea</AlertDialogTitle>
+            <AlertDialogTitle>Excluir posición</AlertDialogTitle>
             <AlertDialogDescription>
-              La línea queda fuera del acuerdo pero conserva su historial. Puedes
+              La posición queda fuera del acuerdo pero conserva su historial. Puedes
               reactivarla después si fue un error.
             </AlertDialogDescription>
           </AlertDialogHeader>

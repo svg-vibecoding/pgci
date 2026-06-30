@@ -190,7 +190,7 @@ function AgreementDetail() {
                 to="/pgci/agreements/$agreementId/lines"
                 params={{ agreementId }}
               >
-                <Boxes className="mr-1.5 h-4 w-4" /> Gestión de Productos
+                <Boxes className="mr-1.5 h-4 w-4" /> Gestión de Posiciones
               </Link>
             </Button>
             <Button variant="outline" asChild size="sm">
@@ -215,7 +215,7 @@ function AgreementDetail() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-            <IndicatorCard label="Líneas" value={total} />
+            <IndicatorCard label="Posiciones" value={total} />
             <IndicatorCard label="Activas" value={active} />
             <IndicatorCard label="Pendientes" value={pending} />
             <IndicatorCard label="Requieren revisión" value={review} />
@@ -238,7 +238,7 @@ function AgreementDetail() {
                 "—"}
             </InfoField>
 
-            <InfoField label="Líneas">{total}</InfoField>
+            <InfoField label="Posiciones">{total}</InfoField>
             <InfoField label="Usuarios">{agreement.members_count ?? 0}</InfoField>
             <InfoField label="Empresas">{agreement.companies_count ?? 0}</InfoField>
 
@@ -383,8 +383,8 @@ function AgreementDetail() {
             </AlertDialogTitle>
             <AlertDialogDescription>
               {isActive
-                ? "Las líneas no se eliminan, pero el acuerdo dejará de estar activo en consultas operativas."
-                : "El acuerdo volverá a estar disponible y sus líneas se recalcularán según vigencia."}
+                ? "Las posiciones no se eliminan, pero el acuerdo dejará de estar activo en consultas operativas."
+                : "El acuerdo volverá a estar disponible y sus posiciones se recalcularán según vigencia."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

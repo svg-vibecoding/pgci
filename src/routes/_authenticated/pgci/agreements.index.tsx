@@ -227,7 +227,7 @@ function AgreementsList() {
               <TableRow>
                 <TableHead>Acuerdo</TableHead>
                 <TableHead>Cliente</TableHead>
-                <TableHead className="text-right">Líneas</TableHead>
+                <TableHead className="text-right">Posiciones</TableHead>
                 <TableHead className="text-right">Pendientes</TableHead>
                 <TableHead className="text-right">Revisión</TableHead>
                 <TableHead>Vigencia</TableHead>

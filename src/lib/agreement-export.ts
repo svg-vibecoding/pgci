@@ -84,6 +84,6 @@ export function exportAgreementLines(
 
   const ws = XLSX.utils.aoa_to_sheet([HEADERS, ...data]);
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Líneas");
+  XLSX.utils.book_append_sheet(wb, ws, "Posiciones");
   XLSX.writeFile(wb, fileNameFor(opts.preset, opts.agreementName));
 }

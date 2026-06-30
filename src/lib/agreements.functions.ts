@@ -297,7 +297,7 @@ export const createAgreementLine = createServerFn({ method: "POST" })
       })
       .select("id")
       .single();
-    if (error) throw new Error(`No se pudo crear la línea: ${error.message}`);
+    if (error) throw new Error(`No se pudo crear la posición: ${error.message}`);
     return { line_id: row.id as string };
   });
 
@@ -310,7 +310,7 @@ export const updateAgreementLine = createServerFn({ method: "POST" })
       .select("agreement_id, product_id, sale_price, client_product_match_id")
       .eq("id", data.line_id)
       .single();
-    if (lineErr || !line) throw new Error("Línea no encontrada");
+    if (lineErr || !line) throw new Error("Posición no encontrada");
     await assertCanAdmin(context.supabase, line.agreement_id as string);
 
     const clientId = await getAgreementClientId(
@@ -385,7 +385,7 @@ export const updateAgreementLine = createServerFn({ method: "POST" })
       .from("agreement_products")
       .update(updatePayload)
       .eq("id", data.line_id);
-    if (error) throw new Error(`No se pudo actualizar la línea: ${error.message}`);
+    if (error) throw new Error(`No se pudo actualizar la posición: ${error.message}`);
     return { ok: true };
   });
 
@@ -422,7 +422,7 @@ export const excludeAgreementLine = createServerFn({ method: "POST" })
       .select("agreement_id")
       .eq("id", data.line_id)
       .single();
-    if (lineErr || !line) throw new Error("Línea no encontrada");
+    if (lineErr || !line) throw new Error("Posición no encontrada");
     await assertCanAdmin(context.supabase, line.agreement_id as string);
     const { error } = await context.supabase
       .from("agreement_products")
@@ -447,7 +447,7 @@ export const reactivateAgreementLine = createServerFn({ method: "POST" })
       .select("agreement_id")
       .eq("id", data.line_id)
       .single();
-    if (lineErr || !line) throw new Error("Línea no encontrada");
+    if (lineErr || !line) throw new Error("Posición no encontrada");
     await assertCanAdmin(context.supabase, line.agreement_id as string);
     // limpiar campos de exclusión y dejar que el trigger recalcule
     const { error } = await context.supabase

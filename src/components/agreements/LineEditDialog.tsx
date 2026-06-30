@@ -108,7 +108,7 @@ export function LineEditDialog({
       });
     },
     onSuccess: () => {
-      toast.success(isEdit ? "Línea actualizada" : "Línea creada");
+      toast.success(isEdit ? "Posición actualizada" : "Posición creada");
       qc.invalidateQueries({ queryKey: ["agreements", "lines", agreementId] });
       qc.invalidateQueries({ queryKey: ["agreements", "detail", agreementId] });
       onOpenChange(false);
@@ -120,7 +120,7 @@ export function LineEditDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Editar línea" : "Nueva línea"}</DialogTitle>
+          <DialogTitle>{isEdit ? "Editar posición" : "Nueva posición"}</DialogTitle>
           <DialogDescription>
             El estado operativo se recalcula automáticamente al guardar.
           </DialogDescription>
@@ -188,8 +188,8 @@ export function LineEditDialog({
         <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
           <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           Si las fechas quedan vacías se hereda la vigencia del acuerdo. Cambios de precio
-          aplican solo a esta línea; usa "Aplicar a SKU" desde la importación para propagar
-          a otras líneas con el mismo SKU.
+          aplican solo a esta posición; usa "Aplicar a SKU" desde la importación para propagar
+          a otras posiciones con el mismo SKU.
         </p>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={save.isPending}>
