@@ -53,7 +53,8 @@ const fmtMoney = (v: number | null | undefined) =>
     : new Intl.NumberFormat("es-CO", {
         style: "currency",
         currency: "COP",
-        maximumFractionDigits: 0,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
       }).format(v);
 
 export function AgreementImportWizard({
