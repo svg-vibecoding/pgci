@@ -155,23 +155,13 @@ function AgreementsList() {
         <div className="relative w-full flex-1 min-w-[16rem]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Buscar por nombre, cliente o unidad…"
+            placeholder="Buscar por acuerdo, cliente o NIT…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-9"
           />
         </div>
         <div className="flex gap-2 shrink-0 md:ml-auto">
-          <Select value={scopeF} onValueChange={(v) => setScopeF(v as ScopeFilter)}>
-            <SelectTrigger className="w-44 shrink-0">
-              <SelectValue placeholder="Alcance" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Alcance: todos</SelectItem>
-              <SelectItem value="global">Global</SelectItem>
-              <SelectItem value="unit">Por unidad</SelectItem>
-            </SelectContent>
-          </Select>
           <Select value={statusF} onValueChange={(v) => setStatusF(v as StatusFilter)}>
             <SelectTrigger className="w-44 shrink-0">
               <SelectValue placeholder="Estado" />
