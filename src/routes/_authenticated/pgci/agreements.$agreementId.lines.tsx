@@ -349,7 +349,6 @@ function AgreementLinesPage() {
               <TableHead>Jaivaná</TableHead>
               <TableHead>Marca</TableHead>
               <TableHead className="text-right">Precio</TableHead>
-              <TableHead className="text-right">Precio par</TableHead>
               <TableHead>Vigencia hasta</TableHead>
               <TableHead>Estado</TableHead>
               {canAdmin && <TableHead className="w-32 text-right">Acciones</TableHead>}
@@ -359,7 +358,7 @@ function AgreementLinesPage() {
             {loadingLines && (
               <TableRow>
                 <TableCell
-                  colSpan={canAdmin ? 8 : 7}
+                  colSpan={canAdmin ? 7 : 6}
                   className="py-6 text-center text-sm text-muted-foreground"
                 >
                   Cargando…
@@ -369,7 +368,7 @@ function AgreementLinesPage() {
             {!loadingLines && filtered.length === 0 && (
               <TableRow>
                 <TableCell
-                  colSpan={canAdmin ? 8 : 7}
+                  colSpan={canAdmin ? 7 : 6}
                   className="py-8 text-center text-sm text-muted-foreground"
                 >
                   No hay líneas con esos filtros.
@@ -404,10 +403,12 @@ function AgreementLinesPage() {
                     {r.products?.commercial_brand ?? "—"}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">
-                    {fmtMoney(r.sale_price ?? null)}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {fmtMoney(r.par_price ?? null)}
+                    <div>{fmtMoney(r.sale_price ?? null)}</div>
+                    {r.par_price != null && (
+                      <div className="text-xs text-muted-foreground">
+                        {fmtMoney(r.par_price)} par
+                      </div>
+                    )}
                   </TableCell>
                   <TableCell className="whitespace-nowrap">
                     <Badge color={vig.color}>{vig.label}</Badge>
