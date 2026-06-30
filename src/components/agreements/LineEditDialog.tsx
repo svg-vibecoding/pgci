@@ -84,7 +84,7 @@ export function LineEditDialog({
               client_code: txt(v.client_code),
               client_description: txt(v.client_description),
               sale_price: num(v.sale_price),
-              par_price: num(v.par_price),
+              par_price: num(v.par_price) || undefined,
               start_date: txt(v.start_date) ?? undefined,
               end_date: txt(v.end_date) ?? undefined,
               observations: txt(v.observations) ?? undefined,
