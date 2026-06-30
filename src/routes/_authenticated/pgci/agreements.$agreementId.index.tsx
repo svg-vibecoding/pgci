@@ -189,7 +189,7 @@ function AgreementDetail() {
               <Power className="mr-1.5 h-4 w-4" />
               {isActive ? "Inactivar" : "Activar"}
             </Button>
-            <Button asChild size="sm">
+            <Button variant="outline" asChild size="sm">
               <Link
                 to="/pgci/agreements/$agreementId/edit"
                 params={{ agreementId }}
