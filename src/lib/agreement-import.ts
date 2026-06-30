@@ -67,33 +67,100 @@ export type ParsedImportResult = {
   format_errors: ParsedImportRow[];
 };
 
-function parsePrice(v: string): number | null {
-  const s = v.trim().replace(/\$/g, "").replace(/\./g, "").replace(/,/g, ".");
+type RawImportRow = Record<string, unknown>;
+
+function parsePrice(v: unknown): number | null {
+  if (typeof v === "number") return Number.isFinite(v) ? v : null;
+  const s = String(v ?? "")
+    .trim()
+    .replace(/\$/g, "")
+    .replace(/\./g, "")
+    .replace(/,/g, ".");
   if (!s) return null;
   const n = Number(s);
   return Number.isNaN(n) ? null : n;
 }
 
-function parseDate(v: string): { value: string | null; error?: string } {
-  const s = v.trim();
+function pad2(n: number): string {
+  return String(n).padStart(2, "0");
+}
+
+function isValidDateParts(year: number, month: number, day: number): boolean {
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
+}
+
+function datePartsToIso(year: number, month: number, day: number): string | null {
+  if (!isValidDateParts(year, month, day)) return null;
+  return `${year}-${pad2(month)}-${pad2(day)}`;
+}
+
+function excelSerialToIso(serial: number): string | null {
+  if (!Number.isFinite(serial) || serial <= 0) return null;
+  const parsed = XLSX.SSF.parse_date_code(serial);
+  if (!parsed) return null;
+  return datePartsToIso(parsed.y, parsed.m, parsed.d);
+}
+
+function rawValueLabel(v: unknown): string {
+  if (v instanceof Date) return Number.isNaN(v.getTime()) ? String(v) : v.toISOString();
+  const s = String(v ?? "").trim();
+  return s || "vacío";
+}
+
+function hasValue(v: unknown): boolean {
+  return v != null && String(v).trim() !== "";
+}
+
+function parseDate(v: unknown): { value: string | null; error?: string } {
+  if (v == null) return { value: null };
+
+  if (v instanceof Date) {
+    if (Number.isNaN(v.getTime())) return { value: null, error: `Fecha inválida: ${rawValueLabel(v)}` };
+    return { value: datePartsToIso(v.getFullYear(), v.getMonth() + 1, v.getDate()) };
+  }
+
+  if (typeof v === "number") {
+    const value = excelSerialToIso(v);
+    return value ? { value } : { value: null, error: `Fecha inválida: ${rawValueLabel(v)}` };
+  }
+
+  const s = String(v).trim();
   if (!s) return { value: null };
-  // formatos aceptados: YYYY-MM-DD, DD/MM/YYYY, DD-MM-YYYY
+  // Formatos aceptados: YYYY-MM-DD y DD/MM/YYYY o DD-MM-YYYY. Siempre día primero.
   const m1 = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
-  if (m1) return { value: `${m1[1]}-${m1[2]}-${m1[3]}` };
+  if (m1) {
+    const value = datePartsToIso(Number(m1[1]), Number(m1[2]), Number(m1[3]));
+    return value ? { value } : { value: null, error: `Fecha inválida: ${s}` };
+  }
   const m2 = /^(\d{2})[/-](\d{2})[/-](\d{4})$/.exec(s);
-  if (m2) return { value: `${m2[3]}-${m2[2]}-${m2[1]}` };
-  return { value: null, error: "Fecha inválida" };
+  if (m2) {
+    const value = datePartsToIso(Number(m2[3]), Number(m2[2]), Number(m2[1]));
+    return value ? { value } : { value: null, error: `Fecha inválida: ${s}` };
+  }
+
+  const maybeSerial = Number(s);
+  if (/^\d+(\.\d+)?$/.test(s)) {
+    const value = excelSerialToIso(maybeSerial);
+    if (value) return { value };
+  }
+
+  return { value: null, error: `Fecha inválida: ${s}` };
 }
 
 function valueAt(
-  raw: Record<string, string>,
+  raw: RawImportRow,
   headerByField: Map<AgreementImportField, string>,
   field: AgreementImportField,
-): string {
+): unknown {
   const h = headerByField.get(field);
   if (!h) return "";
   const v = raw[h];
-  return v == null ? "" : String(v).trim();
+  return typeof v === "string" ? v.trim() : (v ?? "");
 }
 
 function buildHeaderIndex(headers: string[]): Map<AgreementImportField, string> {
@@ -106,26 +173,26 @@ function buildHeaderIndex(headers: string[]): Map<AgreementImportField, string> 
 }
 
 function rowFromRaw(
-  raw: Record<string, string>,
+  raw: RawImportRow,
   rowNumber: number,
   headerByField: Map<AgreementImportField, string>,
 ): ParsedImportRow {
   const errors: string[] = [];
 
-  const sku = valueAt(raw, headerByField, "sku") || null;
-  const client_code = valueAt(raw, headerByField, "client_code") || null;
-  const description = valueAt(raw, headerByField, "description") || null;
-  const observations = valueAt(raw, headerByField, "observations") || null;
+  const sku = String(valueAt(raw, headerByField, "sku") || "").trim() || null;
+  const client_code = String(valueAt(raw, headerByField, "client_code") || "").trim() || null;
+  const description = String(valueAt(raw, headerByField, "description") || "").trim() || null;
+  const observations = String(valueAt(raw, headerByField, "observations") || "").trim() || null;
 
   const saleRaw = valueAt(raw, headerByField, "sale_price");
   let sale_price: number | null = null;
-  if (saleRaw) {
+  if (hasValue(saleRaw)) {
     sale_price = parsePrice(saleRaw);
     if (sale_price === null) errors.push("Precio de venta inválido");
   }
   const parRaw = valueAt(raw, headerByField, "par_price");
   let par_price: number | null = null;
-  if (parRaw) {
+  if (hasValue(parRaw)) {
     par_price = parsePrice(parRaw);
     if (par_price === null) errors.push("Precio par inválido");
   }
@@ -151,12 +218,12 @@ function rowFromRaw(
 
 export async function parseAgreementFile(file: File): Promise<ParsedImportResult> {
   const name = file.name.toLowerCase();
-  let rawRows: Record<string, string>[] = [];
+  let rawRows: RawImportRow[] = [];
   let headers: string[] = [];
 
   if (name.endsWith(".csv")) {
     const text = await file.text();
-    const res = Papa.parse<Record<string, string>>(text, {
+    const res = Papa.parse<RawImportRow>(text, {
       header: true,
       skipEmptyLines: true,
     });
@@ -164,18 +231,18 @@ export async function parseAgreementFile(file: File): Promise<ParsedImportResult
     headers = (res.meta?.fields ?? []).map((h) => String(h));
   } else if (name.endsWith(".xlsx") || name.endsWith(".xls")) {
     const buf = await file.arrayBuffer();
-    const wb = XLSX.read(buf, { type: "array", cellText: true, cellDates: false });
+    const wb = XLSX.read(buf, { type: "array", cellText: false, cellDates: true });
     const sheet = wb.Sheets[wb.SheetNames[0]];
     if (sheet) {
       const aoa = XLSX.utils.sheet_to_json<string[]>(sheet, {
         header: 1,
         defval: "",
-        raw: false,
+        raw: true,
       });
       headers = (aoa[0] ?? []).map((h) => String(h ?? ""));
-      rawRows = XLSX.utils.sheet_to_json<Record<string, string>>(sheet, {
+      rawRows = XLSX.utils.sheet_to_json<RawImportRow>(sheet, {
         defval: "",
-        raw: false,
+        raw: true,
       });
     }
   } else {
