@@ -464,6 +464,46 @@ export const reactivateAgreementLine = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const lookupProductBySku = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => {
+    const obj = (d ?? {}) as { sku?: unknown };
+    const sku = typeof obj.sku === "string" ? obj.sku.trim() : "";
+    if (!sku) throw new Error("SKU requerido");
+    return { sku };
+  })
+  .handler(async ({ data, context }) => {
+    const [productRes, latestRes] = await Promise.all([
+      context.supabase
+        .from("products")
+        .select("id, sku, erp_description, commercial_brand, status")
+        .eq("sku", data.sku)
+        .maybeSingle(),
+      context.supabase
+        .from("products")
+        .select("updated_at")
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+    const catalog_updated_at =
+      (latestRes.data?.updated_at as string | null | undefined) ?? null;
+    if (productRes.error) {
+      throw new Error(`No se pudo consultar el catálogo: ${productRes.error.message}`);
+    }
+    const p = productRes.data;
+    if (!p) {
+      return { found: false as const, catalog_updated_at };
+    }
+    return {
+      found: true as const,
+      status: (p.status as string) === "active" ? ("active" as const) : ("inactive" as const),
+      erp_description: (p.erp_description as string | null) ?? null,
+      commercial_brand: (p.commercial_brand as string | null) ?? null,
+      catalog_updated_at,
+    };
+  });
+
 // ---------------------------------------------------------------------------
 // Conflicto N:1
 // ---------------------------------------------------------------------------
