@@ -23,6 +23,44 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge, Chip, StatusBadge } from "@/components/sumatec";
+import type { SumatecBadgeColor, SumatecBadgeVariant } from "@/components/sumatec/Badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+type CountSpec = {
+  key: string;
+  label: string;
+  value: number;
+  color: SumatecBadgeColor;
+  variant?: SumatecBadgeVariant;
+};
+
+function PositionsCounters({ counts }: { counts: CountSpec[] }) {
+  const visible = counts.filter((c) => c.value > 0);
+  if (visible.length === 0) {
+    return <span className="text-muted-foreground">0</span>;
+  }
+  return (
+    <div className="flex items-center gap-1.5">
+      {visible.map((c) => (
+        <Tooltip key={c.key}>
+          <TooltipTrigger asChild>
+            <span className="inline-flex cursor-default">
+              <Badge color={c.color} variant={c.variant ?? "soft"}>
+                {c.value}
+              </Badge>
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>{c.label}</TooltipContent>
+        </Tooltip>
+      ))}
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/_authenticated/pgci/agreements/")({
   head: () => ({ meta: [{ title: "Acuerdos · PGCI" }] }),
@@ -223,30 +261,29 @@ function AgreementsList() {
         )}
 
         <div className="rounded-lg border border-border bg-card">
+          <TooltipProvider delayDuration={150}>
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Acuerdo</TableHead>
                 <TableHead>Cliente</TableHead>
-                <TableHead className="text-right">Posiciones</TableHead>
-                <TableHead className="text-right">Pendientes</TableHead>
-                <TableHead className="text-right">Revisión</TableHead>
-                <TableHead>Vigencia</TableHead>
-                <TableHead>Estado</TableHead>
+                <TableHead className="w-[220px] whitespace-nowrap">Posiciones</TableHead>
+                <TableHead className="w-[140px] whitespace-nowrap">Vigencia</TableHead>
+                <TableHead className="w-[110px] whitespace-nowrap">Estado</TableHead>
                 <TableHead className="w-[1%] whitespace-nowrap text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading && (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-sm text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center text-sm text-muted-foreground">
                     Cargando…
                   </TableCell>
                 </TableRow>
               )}
               {!isLoading && filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-sm text-muted-foreground py-8">
+                  <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">
                     {all.length === 0
                       ? "Aún no hay acuerdos. Crea el primero para empezar a registrar información comercial."
                       : "No hay acuerdos que coincidan con los filtros."}
@@ -256,6 +293,13 @@ function AgreementsList() {
               {filtered.map((a) => {
                 const clientName = a.client_commercial_name || a.client_legal_name || "—";
                 const vig = vigenciaBadge(a.end_date ?? null);
+                const counts: CountSpec[] = [
+                  { key: "total", label: "Total de posiciones", value: a.lines_total ?? 0, color: "neutral" },
+                  { key: "active", label: "Activas", value: (a as { lines_active?: number }).lines_active ?? 0, color: "success" },
+                  { key: "pending", label: "Pendientes", value: a.lines_pending ?? 0, color: "warning" },
+                  { key: "review", label: "Requieren revisión", value: a.lines_review ?? 0, color: "error" },
+                  { key: "excluded", label: "Excluidas", value: (a as { lines_excluded?: number }).lines_excluded ?? 0, color: "neutral", variant: "solid" },
+                ];
                 return (
                   <TableRow key={a.id ?? undefined}>
                     <TableCell className="font-medium">
@@ -276,20 +320,8 @@ function AgreementsList() {
                       )}
                     </TableCell>
                     <TableCell className="text-muted-foreground">{clientName}</TableCell>
-                    <TableCell className="text-right">{a.lines_total ?? 0}</TableCell>
-                    <TableCell className="text-right">
-                      {(a.lines_pending ?? 0) > 0 ? (
-                        <Badge color="warning">{a.lines_pending}</Badge>
-                      ) : (
-                        <span className="text-muted-foreground">0</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {(a.lines_review ?? 0) > 0 ? (
-                        <Badge color="error">{a.lines_review}</Badge>
-                      ) : (
-                        <span className="text-muted-foreground">0</span>
-                      )}
+                    <TableCell>
+                      <PositionsCounters counts={counts} />
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
                       <Badge color={vig.color}>{vig.label}</Badge>
@@ -333,6 +365,7 @@ function AgreementsList() {
               })}
             </TableBody>
           </Table>
+          </TooltipProvider>
         </div>
       </div>
     </div>
