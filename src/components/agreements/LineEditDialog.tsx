@@ -516,13 +516,13 @@ export function LineEditDialog({
                                   <TableBody>
                                     {nConflict.lines.map((l) => (
                                       <TableRow key={l.line_id}>
-                                        <TableCell className="font-mono text-xs text-foreground">
+                                        <TableCell className="text-sm text-foreground">
                                           {l.client_code ?? "—"}
                                         </TableCell>
-                                        <TableCell className="text-xs text-foreground">
+                                        <TableCell className="text-sm text-foreground">
                                           {l.client_description ?? "—"}
                                         </TableCell>
-                                        <TableCell className="text-right text-xs tabular-nums text-foreground">
+                                        <TableCell className="text-right text-sm tabular-nums text-foreground">
                                           {l.current_price != null
                                             ? l.current_price.toLocaleString("es-CO", {
                                                 style: "currency",
