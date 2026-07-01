@@ -522,7 +522,11 @@ function EditMemberDialog({
                     <Switch checked={false} disabled />
                   </span>
                 </TooltipTrigger>
-                <TooltipContent>Disponible próximamente.</TooltipContent>
+                <TooltipContent>
+                  Próximamente.
+                  <br />
+                  Disponible próximamente.
+                </TooltipContent>
               </Tooltip>
             </div>
           </TooltipProvider>
