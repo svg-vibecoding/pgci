@@ -211,7 +211,7 @@ function AgreementDetail() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Información comercial</CardTitle>
+          <CardTitle className="text-base">Información comercial / Posiciones</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
