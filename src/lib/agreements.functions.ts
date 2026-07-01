@@ -17,6 +17,8 @@ import {
   memberRemoveSchema,
   memberUpdateSchema,
   nConflictDetectSchema,
+  skuLinkSchema,
+  skuLinkWithPriceSchema,
 } from "./agreements.schemas";
 import {
   assertCanAccess,
