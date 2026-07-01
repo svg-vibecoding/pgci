@@ -300,6 +300,27 @@ export const createAgreementLine = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (error) throw new Error(`No se pudo crear la posición: ${error.message}`);
+
+    // Auto-propagación: si el SKU está vinculado en este acuerdo y se guardó
+    // un precio distinto al vigente en las posiciones vinculadas, alinear todas.
+    if (product?.id && data.sale_price != null) {
+      const { data: linkRow } = await context.supabase
+        .from("agreement_sku_links")
+        .select("id")
+        .eq("agreement_id", data.agreement_id)
+        .eq("product_id", product.id)
+        .maybeSingle();
+      if (linkRow) {
+        const { error: propErr } = await context.supabase
+          .from("agreement_products")
+          .update({ sale_price: data.sale_price, updated_by: context.userId })
+          .eq("agreement_id", data.agreement_id)
+          .eq("product_id", product.id)
+          .neq("status", "excluded");
+        if (propErr)
+          throw new Error(`Posición creada pero no se pudo propagar el precio: ${propErr.message}`);
+      }
+    }
     return { line_id: row.id as string };
   });
 
