@@ -287,6 +287,7 @@ function AgreementDetail() {
           )}
         </CardHeader>
         <CardContent>
+          <TooltipProvider delayDuration={150}>
           <div className="rounded-lg border border-border">
             <Table>
               <TableHeader>
@@ -294,7 +295,7 @@ function AgreementDetail() {
                   <TableHead>Usuario</TableHead>
                   <TableHead>Rol</TableHead>
                   <TableHead>Ve costos</TableHead>
-                  {canAdmin && <TableHead className="w-12 text-right"><span className="sr-only">Acciones</span></TableHead>}
+                  {canAdmin && <TableHead className="w-24 text-right"><span className="sr-only">Acciones</span></TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -308,73 +309,76 @@ function AgreementDetail() {
                     </TableCell>
                   </TableRow>
                 )}
-                {(members ?? []).map((m) => (
+                {(members ?? []).map((m) => {
+                  const roleLabel = m.role === "agreement_admin" ? "Administrador" : "Miembro";
+                  const erpCode = (m.profile as { erp_user_code?: string | null } | null)?.erp_user_code;
+                  return (
                   <TableRow key={m.id as string}>
                     <TableCell>
-                      <div className="font-medium">
-                        {m.profile?.full_name ?? "—"}
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="font-medium">
+                          {m.profile?.full_name ?? "—"}
+                        </span>
+                        {erpCode && (
+                          <Badge color="neutral" variant="soft">{erpCode}</Badge>
+                        )}
                       </div>
                       <div className="text-xs text-muted-foreground">
                         {m.profile?.email ?? ""}
                       </div>
                     </TableCell>
+                    <TableCell className="text-sm">{roleLabel}</TableCell>
                     <TableCell>
-                      {canAdmin ? (
-                        <Select
-                          value={m.role as string}
-                          onValueChange={(val) =>
-                            updateMember.mutate({
-                              member_id: m.id as string,
-                              role: val as "agreement_admin" | "agreement_member",
-                            })
-                          }
-                        >
-                          <SelectTrigger className="h-8 w-44">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="agreement_admin">Admin del acuerdo</SelectItem>
-                            <SelectItem value="agreement_member">Miembro</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      ) : m.role === "agreement_admin" ? (
-                        "Admin del acuerdo"
-                      ) : (
-                        "Miembro"
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Switch
-                        checked={!!m.can_view_costs}
-                        disabled={!canAdmin}
-                        onCheckedChange={(checked) =>
-                          updateMember.mutate({
-                            member_id: m.id as string,
-                            can_view_costs: checked,
-                          })
-                        }
-                      />
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span tabIndex={0} className="inline-flex">
+                            <Switch checked={!!m.can_view_costs} disabled />
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>Disponible próximamente.</TooltipContent>
+                      </Tooltip>
                     </TableCell>
                     {canAdmin && (
                       <TableCell className="text-right">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => setRemoveId(m.id as string)}
-                          aria-label="Remover miembro"
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() =>
+                              setEditMember({
+                                id: m.id as string,
+                                name: m.profile?.full_name ?? "—",
+                                role: m.role as "agreement_admin" | "agreement_member",
+                              })
+                            }
+                            aria-label="Editar miembro"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => setRemoveId(m.id as string)}
+                            aria-label="Remover miembro"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
                       </TableCell>
                     )}
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
+          </TooltipProvider>
           <p className="mt-2 flex items-start gap-1.5 text-xs text-muted-foreground">
             <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             Al agregar un miembro, se le otorga acceso al cliente del acuerdo automáticamente.
+          </p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            <span className="font-medium text-foreground">Administrador:</span> gestiona el acuerdo, carga y edita posiciones, administra miembros y empresas vinculadas. <span className="font-medium text-foreground">Miembro:</span> consulta el acuerdo y sus posiciones.
           </p>
         </CardContent>
       </Card>
