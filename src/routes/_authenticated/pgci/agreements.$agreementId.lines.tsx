@@ -13,6 +13,8 @@ import {
   Download,
   Upload,
   X,
+  AlertTriangle,
+  XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -156,6 +158,7 @@ function AgreementLinesPage() {
       sku?: string | null;
       erp_description?: string | null;
       commercial_brand?: string | null;
+      status?: string | null;
     } | null;
   };
 
@@ -451,14 +454,33 @@ function AgreementLinesPage() {
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col items-start gap-1">
-                      {meta && <StatusBadge status={meta.status} label={meta.label} />}
+                      {(r.status === "active" || r.status === "excluded") && meta && (
+                        <StatusBadge status={meta.status} label={meta.label} />
+                      )}
                       {r.status === "pending" && reasons.length > 0 && (
                         <div className="flex flex-wrap gap-1">
                           {reasons.map((rsn) => (
                             <Badge key={rsn} color="warning" variant="soft">
+                              <AlertTriangle className="h-3 w-3" />
                               {PENDING_REASON_LABELS[rsn] ?? rsn}
                             </Badge>
                           ))}
+                        </div>
+                      )}
+                      {r.status === "requires_review" && (
+                        <div className="flex flex-wrap gap-1">
+                          {r.product_id && r.products?.status !== "active" && (
+                            <Badge color="error" variant="soft">
+                              <XCircle className="h-3 w-3" />
+                              SKU inactivo
+                            </Badge>
+                          )}
+                          {vig.color === "error" && (
+                            <Badge color="error" variant="soft">
+                              <XCircle className="h-3 w-3" />
+                              Vigencia vencida
+                            </Badge>
+                          )}
                         </div>
                       )}
                       {isExcluded && r.excluded_reason && (
