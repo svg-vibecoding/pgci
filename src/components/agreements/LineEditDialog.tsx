@@ -720,7 +720,10 @@ export function LineEditDialog({
           </div>
         </div>
 
-        <DialogFooter className="px-6 py-4 border-t border-border bg-muted/30 shrink-0">
+        <DialogFooter className="px-6 py-4 border-t border-border bg-muted/30 shrink-0 flex-col sm:flex-row sm:items-center gap-2">
+          {saveError && (
+            <p className="text-xs text-destructive sm:mr-auto">{saveError}</p>
+          )}
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
@@ -729,12 +732,20 @@ export function LineEditDialog({
             Cancelar
           </Button>
           <Button
-            onClick={() => save.mutate()}
+            onClick={() => {
+              if (v.sku.trim() && !hasSearched) {
+                setSaveError("Valida el código Jaivaná antes de guardar.");
+                return;
+              }
+              setSaveError(null);
+              save.mutate();
+            }}
             disabled={save.isPending}
           >
             {save.isPending ? "Guardando…" : "Guardar"}
           </Button>
         </DialogFooter>
+
       </DialogContent>
     </Dialog>
   );
