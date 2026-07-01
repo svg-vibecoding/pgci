@@ -424,7 +424,7 @@ function statusLabel(k: string) {
     case "pending":
       return "Pendientes";
     case "requires_review":
-      return "Revisar";
+      return "Requieren revisión";
     case "excluded":
       return "Excluidas";
     default:
