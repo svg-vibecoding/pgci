@@ -348,11 +348,7 @@ function AgreementDetail() {
                             <Switch checked={!!m.can_view_costs} disabled />
                           </span>
                         </TooltipTrigger>
-                        <TooltipContent>
-                          Próximamente.
-                          <br />
-                          Disponible próximamente.
-                        </TooltipContent>
+                        <TooltipContent>Próximamente.</TooltipContent>
                       </Tooltip>
                     </TableCell>
                     {canAdmin && (
@@ -522,11 +518,7 @@ function EditMemberDialog({
                     <Switch checked={false} disabled />
                   </span>
                 </TooltipTrigger>
-                <TooltipContent>
-                  Próximamente.
-                  <br />
-                  Disponible próximamente.
-                </TooltipContent>
+                <TooltipContent>Próximamente.</TooltipContent>
               </Tooltip>
             </div>
           </TooltipProvider>
