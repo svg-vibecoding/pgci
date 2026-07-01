@@ -1,24 +1,25 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Plus, Trash2, Building2 } from "lucide-react";
+import { Plus, Trash2, Building2, Search } from "lucide-react";
 import {
   listAgreementCompanies,
   addAgreementCompany,
   removeAgreementCompany,
 } from "@/lib/agreements.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -38,6 +39,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Badge } from "@/components/sumatec";
 
 export function AgreementCompaniesSection({
   agreementId,
@@ -58,27 +60,73 @@ export function AgreementCompaniesSection({
 
   const [addOpen, setAddOpen] = useState(false);
   const [removeId, setRemoveId] = useState<string | null>(null);
-  const [taxId, setTaxId] = useState("");
-  const [legalName, setLegalName] = useState("");
-  const [notes, setNotes] = useState("");
+  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  const clientsQ = useQuery({
+    queryKey: ["clients", "picker-active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("clients")
+        .select("id, commercial_name, legal_name, tax_id, tax_id_type, type")
+        .eq("status", "active")
+        .order("legal_name");
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: addOpen,
+  });
+
+  const linkedTaxIds = useMemo(
+    () => new Set((companies ?? []).map((c) => c.tax_id as string)),
+    [companies],
+  );
+
+  const availableClients = useMemo(() => {
+    const list = (clientsQ.data ?? []).filter((c) => !linkedTaxIds.has(c.tax_id));
+    const q = search.trim().toLowerCase();
+    if (!q) return list;
+    return list.filter((c) => {
+      const name = (c.commercial_name || c.legal_name || "").toLowerCase();
+      const legal = (c.legal_name || "").toLowerCase();
+      const tax = (c.tax_id || "").toLowerCase();
+      return name.includes(q) || legal.includes(q) || tax.includes(q);
+    });
+  }, [clientsQ.data, linkedTaxIds, search]);
+
+  const toggle = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const resetPicker = () => {
+    setSelected(new Set());
+    setSearch("");
+  };
 
   const add = useMutation({
-    mutationFn: () =>
-      addFn({
-        data: {
-          agreement_id: agreementId,
-          tax_id: taxId.trim(),
-          tax_id_type: "NIT",
-          legal_name: legalName.trim() || undefined,
-          notes: notes.trim() || undefined,
-        },
-      }),
-    onSuccess: () => {
-      toast.success("Empresa agregada");
+    mutationFn: async () => {
+      const chosen = (clientsQ.data ?? []).filter((c) => selected.has(c.id));
+      for (const c of chosen) {
+        await addFn({
+          data: {
+            agreement_id: agreementId,
+            tax_id: c.tax_id,
+            tax_id_type: c.tax_id_type ?? "NIT",
+            legal_name: c.legal_name ?? undefined,
+          },
+        });
+      }
+      return chosen.length;
+    },
+    onSuccess: (count) => {
+      toast.success(count === 1 ? "Empresa agregada" : `${count} empresas agregadas`);
       qc.invalidateQueries({ queryKey: ["agreements", "companies", agreementId] });
-      setTaxId("");
-      setLegalName("");
-      setNotes("");
+      resetPicker();
       setAddOpen(false);
     },
     onError: (e: Error) => toast.error(e.message),
@@ -154,33 +202,89 @@ export function AgreementCompaniesSection({
         )}
       </CardContent>
 
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent>
+      <Dialog
+        open={addOpen}
+        onOpenChange={(o) => {
+          setAddOpen(o);
+          if (!o) resetPicker();
+        }}
+      >
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Agregar empresa</DialogTitle>
+            <DialogTitle>Agregar empresas</DialogTitle>
+            <DialogDescription>
+              Selecciona uno o varios clientes disponibles para vincularlos a este acuerdo.
+            </DialogDescription>
           </DialogHeader>
+
           <div className="space-y-3">
-            <div className="space-y-1.5">
-              <Label>
-                NIT <span className="text-primary">*</span>
-              </Label>
-              <Input value={taxId} onChange={(e) => setTaxId(e.target.value)} />
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                autoFocus
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar por nombre o NIT…"
+                className="pl-9"
+              />
             </div>
-            <div className="space-y-1.5">
-              <Label>Razón social</Label>
-              <Input value={legalName} onChange={(e) => setLegalName(e.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Notas</Label>
-              <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
+
+            <div className="max-h-80 overflow-y-auto rounded-md border border-border">
+              {clientsQ.isLoading ? (
+                <p className="py-8 text-center text-sm text-muted-foreground">Cargando…</p>
+              ) : availableClients.length === 0 ? (
+                <p className="py-8 text-center text-sm text-muted-foreground">
+                  {search.trim()
+                    ? "Sin resultados para esa búsqueda."
+                    : "No hay clientes disponibles para vincular."}
+                </p>
+              ) : (
+                <ul className="divide-y divide-border">
+                  {availableClients.map((c) => {
+                    const name = c.commercial_name?.trim() || c.legal_name || "—";
+                    const isChecked = selected.has(c.id);
+                    return (
+                      <li key={c.id}>
+                        <label className="flex cursor-pointer items-center gap-3 px-4 py-3 hover:bg-muted/40">
+                          <Checkbox
+                            checked={isChecked}
+                            onCheckedChange={() => toggle(c.id)}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="truncate font-medium">{name}</span>
+                              {c.type === "holding" && (
+                                <Badge color="accent" variant="soft">
+                                  Holding
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="mt-0.5 truncate font-mono text-xs text-muted-foreground">
+                              {c.tax_id_type ?? "NIT"} · {c.tax_id}
+                            </p>
+                          </div>
+                        </label>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
             </div>
           </div>
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAddOpen(false)} disabled={add.isPending}>
+            <Button
+              variant="outline"
+              onClick={() => setAddOpen(false)}
+              disabled={add.isPending}
+            >
               Cancelar
             </Button>
-            <Button onClick={() => add.mutate()} disabled={!taxId.trim() || add.isPending}>
-              Agregar
+            <Button
+              onClick={() => add.mutate()}
+              disabled={selected.size === 0 || add.isPending}
+            >
+              {selected.size > 1 ? `Agregar (${selected.size})` : "Agregar"}
             </Button>
           </DialogFooter>
         </DialogContent>
