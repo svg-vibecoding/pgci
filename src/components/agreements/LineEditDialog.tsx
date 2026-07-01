@@ -673,10 +673,7 @@ export function LineEditDialog({
 
             <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
               <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              Si las fechas quedan vacías se hereda la vigencia del acuerdo.
-              Cambios de precio aplican solo a esta posición; usa "Aplicar a
-              SKU" desde la importación para propagar a otras posiciones con el
-              mismo SKU.
+              Si las fechas de inicio y fin no se indican en la posición, se hereda la vigencia del acuerdo.
             </p>
           </div>
         </div>
