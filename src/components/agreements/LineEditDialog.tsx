@@ -36,6 +36,8 @@ import {
   updateAgreementLine,
   lookupProductBySku,
   detectNConflict,
+  linkSkuPrice,
+  unlinkSkuPrice,
 } from "@/lib/agreements.functions";
 
 export type LineEditValues = {
