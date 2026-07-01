@@ -313,6 +313,55 @@ export function LineEditDialog({
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const invalidateLines = () => {
+    qc.invalidateQueries({ queryKey: ["agreements", "lines", agreementId] });
+    qc.invalidateQueries({ queryKey: ["agreements", "detail", agreementId] });
+  };
+
+  const linkMut = useMutation({
+    mutationFn: async () => {
+      if (!productId) throw new Error("SKU no válido para vincular");
+      const priceStr = v.sale_price.trim();
+      if (!priceStr) throw new Error("Ingresa un precio antes de vincular");
+      const price = Number(priceStr.replace(",", "."));
+      if (!Number.isFinite(price) || price < 0) {
+        throw new Error("Precio inválido");
+      }
+      return linkFn({
+        data: { agreement_id: agreementId, product_id: productId, price },
+      });
+    },
+    onSuccess: (res) => {
+      setIsLinked(true);
+      setLinkError(null);
+      toast.success(
+        `SKU vinculado. Precio aplicado a ${res.updated} ${res.updated === 1 ? "posición" : "posiciones"}.`,
+      );
+      invalidateLines();
+      if (v.sku.trim()) void runLookup(v.sku);
+    },
+    onError: (e: Error) => {
+      setLinkError(e.message);
+      toast.error(e.message);
+    },
+  });
+
+  const unlinkMut = useMutation({
+    mutationFn: async () => {
+      if (!productId) throw new Error("SKU no válido para desvincular");
+      return unlinkFn({
+        data: { agreement_id: agreementId, product_id: productId },
+      });
+    },
+    onSuccess: () => {
+      setIsLinked(false);
+      setLinkError(null);
+      toast.success("SKU desvinculado.");
+      invalidateLines();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const readonlyClass = "bg-muted/50 cursor-not-allowed";
   const inputClass = "";
   const catalogDateLabel = fmtCatalogDate(lookup.catalogUpdatedAt ?? null);
