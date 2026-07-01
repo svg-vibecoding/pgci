@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { AlertTriangle, Calendar, ChevronDown, Link, Link2, Loader2, Search, Unlink } from "lucide-react";
+import { AlertTriangle, Calendar as CalendarIcon, ChevronDown, Link, Link2, Loader2, Search, Unlink } from "lucide-react";
+import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { formatMoneyCOP } from "@/lib/format";
 import {
