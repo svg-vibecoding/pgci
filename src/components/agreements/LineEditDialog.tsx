@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { AlertTriangle, ChevronDown, Info, Link, Link2, Loader2, Search, Unlink } from "lucide-react";
+import { AlertTriangle, ChevronDown, Link, Link2, Loader2, Search, Unlink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatMoneyCOP } from "@/lib/format";
 import {
@@ -90,6 +90,13 @@ function fmtCatalogDate(iso: string | null | undefined): string | null {
   return `${dd}/${mm}/${d.getFullYear()}`;
 }
 
+function fmtDateLocal(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  if (!m) return null;
+  return `${m[3]}/${m[2]}/${m[1]}`;
+}
+
 function FieldLabel({
   children,
   className,
@@ -136,6 +143,8 @@ export function LineEditDialog({
   agreementName,
   clientName,
   initial,
+  agreementStartDate,
+  agreementEndDate,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -143,6 +152,8 @@ export function LineEditDialog({
   agreementName?: string | null;
   clientName?: string | null;
   initial?: Partial<LineEditValues> | null;
+  agreementStartDate?: string | null;
+  agreementEndDate?: string | null;
 }) {
   const qc = useQueryClient();
   const createFn = useServerFn(createAgreementLine);
@@ -355,6 +366,19 @@ export function LineEditDialog({
   };
 
   const hasProduct = !!productId;
+
+  const agreementDatesLabel = useMemo(() => {
+    if (!hasProduct) {
+      return "Las condiciones comerciales se habilitan cuando haya un producto Jaivaná seleccionado.";
+    }
+    const start = fmtDateLocal(agreementStartDate);
+    const end = fmtDateLocal(agreementEndDate);
+    if (start && end) {
+      return `Las fechas de vigencia son opcionales. Si no se indican, se heredan del acuerdo (${start} — ${end}).`;
+    }
+    return null;
+  }, [hasProduct, agreementStartDate, agreementEndDate]);
+
   const searchPlaceholder = hasProduct
     ? "Escribe para cambiar el producto..."
     : "Busca por código, descripción o marca...";
@@ -561,7 +585,7 @@ export function LineEditDialog({
                               key={p.id}
                               type="button"
                               onClick={() => onSelectProduct(p)}
-                              className="flex w-full flex-col gap-0.5 px-3 py-2 text-left hover:bg-accent focus:bg-accent focus:outline-none"
+                              className="flex w-full flex-col gap-0.5 px-3 py-2 text-left hover:bg-muted focus:bg-muted focus:outline-none"
                             >
                               <span className="font-mono text-sm font-medium text-foreground">
                                 {p.sku}
@@ -785,53 +809,54 @@ export function LineEditDialog({
             {/* Condiciones comerciales */}
             <section className="space-y-4">
               <SectionHeader title="Condiciones comerciales" number="03" />
-              {!hasProduct ? (
-                <div className="md:col-span-2">
-                  <Alert variant="info">
-                    <AlertDescription>
-                      Las condiciones comerciales se habilitan cuando haya un producto Jaivaná seleccionado.
-                    </AlertDescription>
-                  </Alert>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-                  <div className="space-y-1.5">
-                    <FieldLabel>Precio de venta</FieldLabel>
-                    <Input
-                      className={inputClass}
-                      inputMode="decimal"
-                      value={v.sale_price}
-                      onChange={(e) => setV({ ...v, sale_price: e.target.value })}
-                    />
+              {agreementDatesLabel && (
+                <Alert variant="info">
+                  <AlertDescription>{agreementDatesLabel}</AlertDescription>
+                </Alert>
+              )}
+              {hasProduct && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <FieldLabel>Precio de venta</FieldLabel>
+                      <Input
+                        className={inputClass}
+                        inputMode="decimal"
+                        value={v.sale_price}
+                        onChange={(e) => setV({ ...v, sale_price: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <FieldLabel>Precio par</FieldLabel>
+                      <Input
+                        className={inputClass}
+                        inputMode="decimal"
+                        value={v.par_price}
+                        onChange={(e) => setV({ ...v, par_price: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <FieldLabel>Fecha inicio</FieldLabel>
+                      <Input
+                        className={inputClass}
+                        type="date"
+                        value={v.start_date}
+                        onChange={(e) => setV({ ...v, start_date: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <FieldLabel>Fecha fin</FieldLabel>
+                      <Input
+                        className={inputClass}
+                        type="date"
+                        value={v.end_date}
+                        onChange={(e) => setV({ ...v, end_date: e.target.value })}
+                      />
+                    </div>
                   </div>
                   <div className="space-y-1.5">
-                    <FieldLabel>Precio par</FieldLabel>
-                    <Input
-                      className={inputClass}
-                      inputMode="decimal"
-                      value={v.par_price}
-                      onChange={(e) => setV({ ...v, par_price: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <FieldLabel>Fecha inicio</FieldLabel>
-                    <Input
-                      className={inputClass}
-                      type="date"
-                      value={v.start_date}
-                      onChange={(e) => setV({ ...v, start_date: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <FieldLabel>Fecha fin</FieldLabel>
-                    <Input
-                      className={inputClass}
-                      type="date"
-                      value={v.end_date}
-                      onChange={(e) => setV({ ...v, end_date: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-1.5 md:col-span-4">
                     <FieldLabel>Observaciones</FieldLabel>
                     <Textarea
                       className={inputClass}
@@ -845,11 +870,6 @@ export function LineEditDialog({
                 </div>
               )}
             </section>
-
-            <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
-              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              Si las fechas de inicio y fin no se indican en la posición, se hereda la vigencia del acuerdo.
-            </p>
           </div>
         </div>
 
