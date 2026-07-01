@@ -564,7 +564,7 @@ function AddMemberDialog({
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="agreement_member">Miembro</SelectItem>
-                  <SelectItem value="agreement_admin">Admin del acuerdo</SelectItem>
+                  <SelectItem value="agreement_admin">Administrador</SelectItem>
                 </SelectContent>
               </Select>
             </div>
