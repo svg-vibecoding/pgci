@@ -232,7 +232,7 @@ function AgreementsList() {
                 <TableHead className="text-right">Revisión</TableHead>
                 <TableHead>Vigencia</TableHead>
                 <TableHead>Estado</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
+                <TableHead className="w-[1%] whitespace-nowrap text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
