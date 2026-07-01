@@ -293,7 +293,7 @@ function AgreementsList() {
               <TableRow>
                 <TableHead className="w-auto">Acuerdo</TableHead>
                 <TableHead className="w-auto">Cliente</TableHead>
-                <TableHead className="w-[220px] whitespace-nowrap">Posiciones</TableHead>
+                <TableHead className="w-[240px] whitespace-nowrap">Posiciones</TableHead>
                 <TableHead className="w-[112px] whitespace-nowrap">Vigencia</TableHead>
                 <TableHead className="w-[96px] whitespace-nowrap">Estado</TableHead>
                 <TableHead className="w-[144px] whitespace-nowrap text-right">Acciones</TableHead>
@@ -346,7 +346,7 @@ function AgreementsList() {
                       )}
                     </TableCell>
                     <TableCell className="text-muted-foreground min-w-0 truncate">{clientName}</TableCell>
-                    <TableCell className="w-[220px] whitespace-nowrap">
+                    <TableCell className="w-[240px] whitespace-nowrap">
                       <PositionsCounters counts={counts} agreementId={a.id ?? null} />
                     </TableCell>
                     <TableCell className="w-[112px] whitespace-nowrap">
