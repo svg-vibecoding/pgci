@@ -218,7 +218,7 @@ function AgreementDetail() {
             <IndicatorCard label="Posiciones" value={total} />
             <IndicatorCard label="Activas" value={active} />
             <IndicatorCard label="Pendientes" value={pending} />
-            <IndicatorCard label="Requieren revisión" value={review} />
+            <IndicatorCard label="Revisar" value={review} />
             <IndicatorCard label="Excluidas" value={excluded} />
           </div>
         </CardContent>
