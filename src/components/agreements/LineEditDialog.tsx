@@ -670,14 +670,7 @@ export function LineEditDialog({
             Cancelar
           </Button>
           <Button
-            onClick={() => {
-              if (nConflict.kind === "found" && priceChoice === null) {
-                setChoiceError(true);
-                setNExpanded(true);
-                return;
-              }
-              save.mutate();
-            }}
+            onClick={() => save.mutate()}
             disabled={save.isPending}
           >
             {save.isPending ? "Guardando…" : "Guardar"}
