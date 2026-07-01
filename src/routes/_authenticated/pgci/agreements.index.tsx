@@ -265,12 +265,12 @@ function AgreementsList() {
           <Table className="table-fixed">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-auto min-w-0">Acuerdo</TableHead>
-                <TableHead className="w-auto min-w-0">Cliente</TableHead>
-                <TableHead className="w-0 whitespace-nowrap">Posiciones</TableHead>
-                <TableHead className="w-0 whitespace-nowrap">Vigencia</TableHead>
-                <TableHead className="w-0 whitespace-nowrap">Estado</TableHead>
-                <TableHead className="w-0 whitespace-nowrap text-right">Acciones</TableHead>
+                <TableHead className="w-auto">Acuerdo</TableHead>
+                <TableHead className="w-auto">Cliente</TableHead>
+                <TableHead className="w-0 min-w-max whitespace-nowrap">Posiciones</TableHead>
+                <TableHead className="w-0 min-w-max whitespace-nowrap">Vigencia</TableHead>
+                <TableHead className="w-0 min-w-max whitespace-nowrap">Estado</TableHead>
+                <TableHead className="w-0 min-w-max whitespace-nowrap text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
