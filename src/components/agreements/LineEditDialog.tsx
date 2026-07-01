@@ -895,21 +895,45 @@ export function LineEditDialog({
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="space-y-1.5">
                       <FieldLabel>Fecha inicio</FieldLabel>
-                      <Input
-                        className={inputClass}
-                        type="date"
-                        value={v.start_date}
-                        onChange={(e) => setV({ ...v, start_date: e.target.value })}
-                      />
+                      <div className="relative">
+                        <Input
+                          className={cn(
+                            inputClass,
+                            "pr-10",
+                            "[&::-webkit-calendar-picker-indicator]:opacity-0",
+                            "[&::-webkit-calendar-picker-indicator]:absolute",
+                            "[&::-webkit-calendar-picker-indicator]:inset-y-0",
+                            "[&::-webkit-calendar-picker-indicator]:right-0",
+                            "[&::-webkit-calendar-picker-indicator]:w-10",
+                            "[&::-webkit-calendar-picker-indicator]:cursor-pointer",
+                          )}
+                          type="date"
+                          value={v.start_date}
+                          onChange={(e) => setV({ ...v, start_date: e.target.value })}
+                        />
+                        <Calendar className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      </div>
                     </div>
                     <div className="space-y-1.5">
                       <FieldLabel>Fecha fin</FieldLabel>
-                      <Input
-                        className={inputClass}
-                        type="date"
-                        value={v.end_date}
-                        onChange={(e) => setV({ ...v, end_date: e.target.value })}
-                      />
+                      <div className="relative">
+                        <Input
+                          className={cn(
+                            inputClass,
+                            "pr-10",
+                            "[&::-webkit-calendar-picker-indicator]:opacity-0",
+                            "[&::-webkit-calendar-picker-indicator]:absolute",
+                            "[&::-webkit-calendar-picker-indicator]:inset-y-0",
+                            "[&::-webkit-calendar-picker-indicator]:right-0",
+                            "[&::-webkit-calendar-picker-indicator]:w-10",
+                            "[&::-webkit-calendar-picker-indicator]:cursor-pointer",
+                          )}
+                          type="date"
+                          value={v.end_date}
+                          onChange={(e) => setV({ ...v, end_date: e.target.value })}
+                        />
+                        <Calendar className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      </div>
                     </div>
                   </div>
                   <div className="space-y-1.5">
