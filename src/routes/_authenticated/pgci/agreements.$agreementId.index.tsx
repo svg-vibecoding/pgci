@@ -112,6 +112,7 @@ function AgreementDetail() {
   const [statusOpen, setStatusOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [removeId, setRemoveId] = useState<string | null>(null);
+  const [editMember, setEditMember] = useState<{ id: string; name: string; role: "agreement_admin" | "agreement_member" } | null>(null);
 
   const toggleStatus = useMutation({
     mutationFn: () =>
