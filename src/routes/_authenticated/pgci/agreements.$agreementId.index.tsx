@@ -446,7 +446,85 @@ function AgreementDetail() {
         }
         addMemberFn={addMemberFn}
       />
+
+      <EditMemberDialog
+        member={editMember}
+        onOpenChange={(o) => !o && setEditMember(null)}
+        onSave={(role) => {
+          if (!editMember) return;
+          updateMember.mutate(
+            { member_id: editMember.id, role },
+            { onSuccess: () => setEditMember(null) },
+          );
+        }}
+        isSaving={updateMember.isPending}
+      />
     </div>
+  );
+}
+
+function EditMemberDialog({
+  member,
+  onOpenChange,
+  onSave,
+  isSaving,
+}: {
+  member: { id: string; name: string; role: "agreement_admin" | "agreement_member" } | null;
+  onOpenChange: (v: boolean) => void;
+  onSave: (role: "agreement_admin" | "agreement_member") => void;
+  isSaving: boolean;
+}) {
+  const [role, setRole] = useState<"agreement_admin" | "agreement_member">("agreement_member");
+  React.useEffect(() => {
+    if (member) setRole(member.role);
+  }, [member]);
+  return (
+    <Dialog open={!!member} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Editar miembro</DialogTitle>
+          <DialogDescription>Ajusta el rol del miembro dentro del acuerdo.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-1">
+            <Label>Usuario</Label>
+            <p className="text-sm font-medium">{member?.name ?? "—"}</p>
+          </div>
+          <div className="space-y-2">
+            <Label>Rol</Label>
+            <Select value={role} onValueChange={(v) => setRole(v as typeof role)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="agreement_member">Miembro</SelectItem>
+                <SelectItem value="agreement_admin">Administrador</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <TooltipProvider delayDuration={150}>
+            <div className="flex items-center justify-between rounded-md border border-border px-3 py-2">
+              <div>
+                <Label className="text-sm">Ve costos</Label>
+                <p className="text-xs text-muted-foreground">Acceso a costos internos.</p>
+              </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span tabIndex={0} className="inline-flex">
+                    <Switch checked={false} disabled />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>Disponible próximamente.</TooltipContent>
+              </Tooltip>
+            </div>
+          </TooltipProvider>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={isSaving}>Cancelar</Button>
+          <Button onClick={() => onSave(role)} disabled={isSaving}>
+            {isSaving ? "Guardando…" : "Guardar"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
