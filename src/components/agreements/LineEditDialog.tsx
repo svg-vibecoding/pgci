@@ -605,7 +605,7 @@ export function LineEditDialog({
                 {hasProduct && (
                   <>
                     <div className="space-y-1.5">
-                      <FieldLabel>Código Jaivaná</FieldLabel>
+                      <FieldLabel>Código Sumatec</FieldLabel>
                       <Input
                         value={v.sku}
                         readOnly
