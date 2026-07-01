@@ -535,7 +535,10 @@ export function LineEditDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col overflow-hidden p-0 gap-0">
+      <DialogContent
+        className="max-w-2xl max-h-[85vh] flex flex-col overflow-hidden p-0 gap-0"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         <DialogHeader className="px-6 py-4 border-b border-border shrink-0">
           <DialogTitle className="text-2xl font-bold tracking-tight">
             {isEdit ? "Editar posición" : "Nueva posición"}
@@ -578,7 +581,7 @@ export function LineEditDialog({
             {/* Información Jaivaná */}
             <section className="space-y-4">
               <SectionHeader title="Información Jaivaná" number="02" />
-              <div className="rounded-lg bg-muted/40 p-4">
+              <div className="rounded-lg border border-input bg-muted/40 p-4">
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {/* Buscador — ancho completo */}
                 <div className="space-y-1.5 md:col-span-2">
@@ -588,7 +591,7 @@ export function LineEditDialog({
                       <div className="relative">
                         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
-                          className={cn(inputClass, "pl-9")}
+                          className={cn(inputClass, "pl-9 bg-white")}
                           value={searchQuery}
                           placeholder={searchPlaceholder}
                           onFocus={() => setSearchOpen(true)}
