@@ -97,6 +97,46 @@ function fmtDateLocal(iso: string | null | undefined): string | null {
   return `${m[3]}/${m[2]}/${m[1]}`;
 }
 
+// Acepta `.` o `,` como separador decimal y opcionales separadores de miles.
+// Devuelve el número completo sin redondear o null si no aplica.
+function parsePriceInput(raw: string | number | null | undefined): number | null {
+  if (raw == null) return null;
+  if (typeof raw === "number") return Number.isFinite(raw) ? raw : null;
+  let s = String(raw).trim();
+  if (!s) return null;
+  s = s.replace(/[^\d.,-]/g, "");
+  const lastComma = s.lastIndexOf(",");
+  const lastDot = s.lastIndexOf(".");
+  let decSep = "";
+  if (lastComma > -1 && lastDot > -1) {
+    decSep = lastComma > lastDot ? "," : ".";
+  } else if (lastComma > -1) {
+    decSep = ",";
+  } else if (lastDot > -1) {
+    decSep = ".";
+  }
+  if (decSep) {
+    const thousandSep = decSep === "," ? "." : ",";
+    s = s.split(thousandSep).join("").replace(decSep, ".");
+  }
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+}
+
+// Muestra siempre 2 decimales con coma decimal y punto de miles (estándar CO).
+function formatPriceDisplay(n: number | null | undefined): string {
+  if (n == null || !Number.isFinite(n)) return "";
+  const neg = n < 0;
+  const [intP, decP = "00"] = Math.abs(n).toFixed(2).split(".");
+  const withThousands = intP.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return `${neg ? "-" : ""}${withThousands},${decP}`;
+}
+
+function normalizePriceOnBlur(raw: string): string {
+  const n = parsePriceInput(raw);
+  return n == null ? "" : formatPriceDisplay(n);
+}
+
 function FieldLabel({
   children,
   className,
