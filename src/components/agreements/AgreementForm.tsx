@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +11,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+
+const dateInputClass = cn(
+  "pr-10",
+  "[&::-webkit-calendar-picker-indicator]:opacity-0",
+  "[&::-webkit-calendar-picker-indicator]:absolute",
+  "[&::-webkit-calendar-picker-indicator]:inset-y-0",
+  "[&::-webkit-calendar-picker-indicator]:right-0",
+  "[&::-webkit-calendar-picker-indicator]:w-10",
+  "[&::-webkit-calendar-picker-indicator]:cursor-pointer",
+);
 
 export type AgreementFormValues = {
   client_id: string;
@@ -156,26 +168,35 @@ export function AgreementForm({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="start_date">Fecha inicial</Label>
-          <Input
-            id="start_date"
-            type="date"
-            value={v.start_date}
-            onChange={(e) => setV({ ...v, start_date: e.target.value })}
-          />
+          <div className="relative">
+            <Input
+              id="start_date"
+              className={dateInputClass}
+              type="date"
+              value={v.start_date}
+              onChange={(e) => setV({ ...v, start_date: e.target.value })}
+            />
+            <Calendar className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          </div>
         </div>
         <div className="space-y-2">
           <Label htmlFor="end_date">Fecha final</Label>
-          <Input
-            id="end_date"
-            type="date"
-            value={v.end_date}
-            onChange={(e) => setV({ ...v, end_date: e.target.value })}
-          />
+          <div className="relative">
+            <Input
+              id="end_date"
+              className={dateInputClass}
+              type="date"
+              value={v.end_date}
+              onChange={(e) => setV({ ...v, end_date: e.target.value })}
+            />
+            <Calendar className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          </div>
           {errors.end_date && (
             <p className="text-sm text-destructive">{errors.end_date}</p>
           )}
         </div>
       </div>
+
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
