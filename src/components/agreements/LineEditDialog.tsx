@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { AlertTriangle, ChevronDown, Info, Link2, Link2Off, Loader2, Search } from "lucide-react";
+import { AlertTriangle, ChevronDown, Info, Link, Link2, Loader2, Search, Unlink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
@@ -491,8 +491,8 @@ export function LineEditDialog({
                               )}
                               <span className="flex-1 text-sm font-medium">
                                 {isLinked
-                                  ? `Este SKU está vinculado. El precio se comparte con ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} en el acuerdo.`
-                                  : `Este SKU ya tiene ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} en el acuerdo`}
+                                  ? `Este SKU está vinculado con ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} del acuerdo. Cualquier cambio de precio se aplicará automáticamente a todas.`
+                                  : `Este SKU está asignado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} más del acuerdo. Si las vinculas, compartirán el mismo precio y se actualizarán juntas automáticamente en cada cambio de precio.`}
                               </span>
                               <ChevronDown
                                 className={cn(
