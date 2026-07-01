@@ -74,25 +74,20 @@ function PositionsCounters({
         </Tooltip>
       ))}
       {agreementId && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              asChild
-              size="sm"
-              variant="ghost"
-              className="h-6 px-1.5 text-xs text-muted-foreground hover:text-foreground"
-            >
-              <Link
-                to="/pgci/agreements/$agreementId/lines"
-                params={{ agreementId: agreementId as string }}
-                className="inline-flex items-center gap-1"
-              >
-                Ir <ArrowUpRight className="h-3.5 w-3.5" />
-              </Link>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Ver posiciones</TooltipContent>
-        </Tooltip>
+        <Button
+          asChild
+          size="sm"
+          variant="ghost"
+          className="h-6 px-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+        >
+          <Link
+            to="/pgci/agreements/$agreementId/lines"
+            params={{ agreementId: agreementId as string }}
+            className="inline-flex items-center gap-1"
+          >
+            Ir <ArrowUpRight className="h-3.5 w-3.5" />
+          </Link>
+        </Button>
       )}
     </div>
   );
