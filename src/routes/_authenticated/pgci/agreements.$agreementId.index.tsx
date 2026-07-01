@@ -244,10 +244,6 @@ function AgreementDetail() {
                 "—"}
             </InfoField>
 
-            <InfoField label="Posiciones">{total}</InfoField>
-            <InfoField label="Usuarios">{agreement.members_count ?? 0}</InfoField>
-            <InfoField label="Empresas">{agreement.companies_count ?? 0}</InfoField>
-
             <InfoField label="Alcance">
               {agreement.scope === "unit"
                 ? `Por unidad${agreement.unit_name ? ` · ${agreement.unit_name}` : ""}`
