@@ -67,7 +67,7 @@ export function Badge({
     fontSize: 11,
     lineHeight: 1,
     letterSpacing: "0.02em",
-    color: solid ? "var(--text-on-brand)" : tone.main,
+    color: solid ? tone.soft : tone.main,
     background: solid ? tone.main : tone.soft,
     borderRadius: "var(--radius-pill)",
     ...style,

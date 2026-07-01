@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import type { CSSProperties } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -39,6 +40,13 @@ type CountSpec = {
   variant?: SumatecBadgeVariant;
 };
 
+const COUNTER_STYLE: CSSProperties = {
+  boxSizing: "border-box",
+  minWidth: 24,
+  height: 24,
+  padding: 0,
+};
+
 function PositionsCounters({ counts }: { counts: CountSpec[] }) {
   const visible = counts.filter((c) => c.value > 0);
   if (visible.length === 0) {
@@ -50,7 +58,7 @@ function PositionsCounters({ counts }: { counts: CountSpec[] }) {
         <Tooltip key={c.key}>
           <TooltipTrigger asChild>
             <span className="inline-flex cursor-default">
-              <Badge color={c.color} variant={c.variant ?? "soft"}>
+              <Badge color={c.color} variant={c.variant ?? "soft"} style={COUNTER_STYLE}>
                 {c.value}
               </Badge>
             </span>
@@ -267,7 +275,7 @@ function AgreementsList() {
               <TableRow>
                 <TableHead className="w-auto">Acuerdo</TableHead>
                 <TableHead className="w-auto">Cliente</TableHead>
-                <TableHead className="w-[144px] whitespace-nowrap">Posiciones</TableHead>
+                <TableHead className="w-[168px] whitespace-nowrap">Posiciones</TableHead>
                 <TableHead className="w-[112px] whitespace-nowrap">Vigencia</TableHead>
                 <TableHead className="w-[96px] whitespace-nowrap">Estado</TableHead>
                 <TableHead className="w-[224px] whitespace-nowrap text-right">Acciones</TableHead>
@@ -298,7 +306,7 @@ function AgreementsList() {
                   { key: "active", label: "Activas", value: (a as { lines_active?: number }).lines_active ?? 0, color: "success" },
                   { key: "pending", label: "Pendientes", value: a.lines_pending ?? 0, color: "warning" },
                   { key: "review", label: "Requieren revisión", value: a.lines_review ?? 0, color: "error" },
-                  { key: "excluded", label: "Excluidas", value: (a as { lines_excluded?: number }).lines_excluded ?? 0, color: "neutral", variant: "solid" },
+                  { key: "excluded", label: "Excluidas", value: (a as { lines_excluded?: number }).lines_excluded ?? 0, color: "error", variant: "solid" },
                 ];
                 return (
                   <TableRow key={a.id ?? undefined}>
@@ -320,7 +328,7 @@ function AgreementsList() {
                       )}
                     </TableCell>
                     <TableCell className="text-muted-foreground min-w-0 truncate">{clientName}</TableCell>
-                    <TableCell className="w-[144px] whitespace-nowrap">
+                    <TableCell className="w-[168px] whitespace-nowrap">
                       <PositionsCounters counts={counts} />
                     </TableCell>
                     <TableCell className="w-[112px] whitespace-nowrap">
