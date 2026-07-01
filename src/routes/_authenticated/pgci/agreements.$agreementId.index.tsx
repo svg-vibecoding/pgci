@@ -9,7 +9,6 @@ import {
   Power,
   UserPlus,
   Trash2,
-  Info,
   Boxes,
 } from "lucide-react";
 import {
