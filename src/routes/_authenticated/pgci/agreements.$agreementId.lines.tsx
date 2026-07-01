@@ -158,6 +158,7 @@ function AgreementLinesPage() {
       sku?: string | null;
       erp_description?: string | null;
       commercial_brand?: string | null;
+      status?: string | null;
     } | null;
   };
 
