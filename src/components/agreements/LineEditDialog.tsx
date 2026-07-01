@@ -512,76 +512,131 @@ export function LineEditDialog({
             <section className="space-y-4">
               <SectionHeader title="Información Jaivaná" number="02" />
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="space-y-1.5">
-                  <FieldLabel>Código Jaivaná</FieldLabel>
-                  <div className="relative">
-                    <Input
-                      className={cn(inputClass, "pr-10")}
-                      value={v.sku}
-                      onChange={(e) => {
-                        setV({ ...v, sku: e.target.value });
-                        setProductMeta(null);
-                        setLookup({ kind: e.target.value.trim() ? "idle" : "empty" });
-                        setNConflict({ kind: "idle", lines: [] });
-                        setIsLinked(false);
-                        setProductId(null);
-                        setLinkError(null);
-                        setHasSearched(false);
-                        setSaveError(null);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          if (v.sku.trim() && lookup.kind !== "loading") {
-                            void runLookup(v.sku);
-                          }
-                        }
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => void runLookup(v.sku)}
-                      disabled={!v.sku.trim() || lookup.kind === "loading"}
-                      aria-label="Validar código en catálogo"
-                      className="absolute right-1 top-1 h-7 w-7 inline-flex items-center justify-center rounded-sm text-text-tertiary hover:text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-text-tertiary transition-colors"
+                {/* Buscador — ancho completo */}
+                <div className="space-y-1.5 md:col-span-2">
+                  <FieldLabel>Producto Jaivaná</FieldLabel>
+                  <Popover open={searchOpen} onOpenChange={setSearchOpen}>
+                    <PopoverTrigger asChild>
+                      <div className="relative">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          className={cn(inputClass, "pl-9")}
+                          value={searchQuery}
+                          placeholder={searchPlaceholder}
+                          onFocus={() => setSearchOpen(true)}
+                          onChange={(e) => {
+                            setSearchQuery(e.target.value);
+                            setSearchOpen(true);
+                            setSaveError(null);
+                          }}
+                        />
+                        {searchLoading && (
+                          <Loader2 className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+                        )}
+                      </div>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      align="start"
+                      sideOffset={4}
+                      onOpenAutoFocus={(e) => e.preventDefault()}
+                      className="w-[var(--radix-popover-trigger-width)] p-0"
                     >
-                      {lookup.kind === "loading" ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                      {searchQuery.trim().length < 2 ? (
+                        <p className="px-3 py-4 text-center text-sm text-muted-foreground">
+                          Escribe al menos 2 caracteres para buscar.
+                        </p>
+                      ) : searchLoading && searchResults.length === 0 ? (
+                        <p className="px-3 py-4 text-center text-sm text-muted-foreground">
+                          Buscando…
+                        </p>
+                      ) : searchResults.length === 0 ? (
+                        <p className="px-3 py-4 text-center text-sm text-muted-foreground">
+                          Sin resultados en el catálogo.
+                        </p>
                       ) : (
-                        <Search className="h-4 w-4" />
+                        <div className="max-h-72 overflow-y-auto py-1">
+                          {searchResults.map((p) => (
+                            <button
+                              key={p.id}
+                              type="button"
+                              onClick={() => onSelectProduct(p)}
+                              className="flex w-full flex-col gap-0.5 px-3 py-2 text-left hover:bg-accent focus:bg-accent focus:outline-none"
+                            >
+                              <span className="font-mono text-sm font-medium text-foreground">
+                                {p.sku}
+                              </span>
+                              <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                                <span className="truncate">
+                                  {p.erp_description ?? "—"}
+                                </span>
+                                <span aria-hidden>·</span>
+                                <span>{p.commercial_brand ?? "—"}</span>
+                                <span aria-hidden>·</span>
+                                <StatusBadge
+                                  size="sm"
+                                  status={p.status === "active" ? "active" : "neutral"}
+                                  label={p.status === "active" ? "Activo" : "Inactivo"}
+                                />
+                              </span>
+                            </button>
+                          ))}
+                          {searchHasMore && (
+                            <div className="border-t border-border p-2">
+                              <button
+                                type="button"
+                                onClick={() => void loadMoreResults()}
+                                disabled={searchLoadingMore}
+                                className="flex w-full items-center justify-center gap-2 rounded-sm py-2 text-sm font-medium text-primary hover:bg-accent disabled:opacity-50"
+                              >
+                                {searchLoadingMore && (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                )}
+                                Cargar más
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       )}
-                    </button>
-                  </div>
-                  {v.sku.trim() && !hasSearched && (
-                    <p className="text-xs text-muted-foreground">
-                      Presiona Enter o la lupa para validar.
-                    </p>
-                  )}
+                    </PopoverContent>
+                  </Popover>
                 </div>
-                {hasSearched && (lookup.kind === "active" || lookup.kind === "inactive") && (
-                  <div className="space-y-1.5">
-                    <FieldLabel>Marca</FieldLabel>
-                    <Input
-                      value={productMeta?.commercial_brand ?? ""}
-                      readOnly
-                      tabIndex={-1}
-                      placeholder="—"
-                      className={readonlyClass}
-                    />
-                  </div>
+
+                {/* Campos solo lectura — visibles solo cuando hay producto seleccionado */}
+                {hasProduct && (
+                  <>
+                    <div className="space-y-1.5">
+                      <FieldLabel>Código Jaivaná</FieldLabel>
+                      <Input
+                        value={v.sku}
+                        readOnly
+                        tabIndex={-1}
+                        placeholder="—"
+                        className={readonlyClass}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <FieldLabel>Marca</FieldLabel>
+                      <Input
+                        value={productMeta?.commercial_brand ?? ""}
+                        readOnly
+                        tabIndex={-1}
+                        placeholder="—"
+                        className={readonlyClass}
+                      />
+                    </div>
+                    <div className="space-y-1.5 md:col-span-2">
+                      <FieldLabel>Descripción Jaivaná</FieldLabel>
+                      <Input
+                        value={productMeta?.erp_description ?? ""}
+                        readOnly
+                        tabIndex={-1}
+                        placeholder="—"
+                        className={readonlyClass}
+                      />
+                    </div>
+                  </>
                 )}
-                {hasSearched && (lookup.kind === "active" || lookup.kind === "inactive") && (
-                  <div className="space-y-1.5 md:col-span-2">
-                    <FieldLabel>Descripción Jaivaná</FieldLabel>
-                    <Input
-                      value={productMeta?.erp_description ?? ""}
-                      readOnly
-                      tabIndex={-1}
-                      placeholder="—"
-                      className={readonlyClass}
-                    />
-                  </div>
-                )}
+
 
                 {lookup.kind === "inactive" && (
                   <div className="md:col-span-2">
