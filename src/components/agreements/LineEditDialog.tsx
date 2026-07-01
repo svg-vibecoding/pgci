@@ -321,7 +321,12 @@ export function LineEditDialog({
 
   useEffect(() => {
     if (!open) return;
-    const next = { ...empty, ...(initial ?? {}) };
+    const merged = { ...empty, ...(initial ?? {}) };
+    const next: LineEditValues = {
+      ...merged,
+      sale_price: normalizePriceOnBlur(merged.sale_price),
+      par_price: normalizePriceOnBlur(merged.par_price),
+    };
     setV(next);
     setProductMeta(null);
     setLookup({ kind: next.sku.trim() ? "idle" : "empty" });
