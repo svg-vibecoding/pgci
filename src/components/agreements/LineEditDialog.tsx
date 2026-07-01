@@ -434,129 +434,128 @@ export function LineEditDialog({
             {/* Información Jaivaná */}
             <section className="space-y-4">
               <SectionHeader title="Información Jaivaná" number="02" />
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="space-y-1.5 md:col-span-2">
-                    <FieldLabel>Código Jaivaná</FieldLabel>
-                    <div className="relative">
-                      <Input
-                        className={cn(inputClass, "pr-10")}
-                        value={v.sku}
-                        onChange={(e) => {
-                          setV({ ...v, sku: e.target.value });
-                          setProductMeta(null);
-                          setLookup({ kind: e.target.value.trim() ? "idle" : "empty" });
-                          setNConflict({ kind: "idle", lines: [] });
-                          setIsLinked(false);
-                          setProductId(null);
-                          setLinkError(null);
-                          setHasSearched(false);
-                          setSaveError(null);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            if (v.sku.trim() && lookup.kind !== "loading") {
-                              void runLookup(v.sku);
-                            }
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-1.5">
+                  <FieldLabel>Código Jaivaná</FieldLabel>
+                  <div className="relative">
+                    <Input
+                      className={cn(inputClass, "pr-10")}
+                      value={v.sku}
+                      onChange={(e) => {
+                        setV({ ...v, sku: e.target.value });
+                        setProductMeta(null);
+                        setLookup({ kind: e.target.value.trim() ? "idle" : "empty" });
+                        setNConflict({ kind: "idle", lines: [] });
+                        setIsLinked(false);
+                        setProductId(null);
+                        setLinkError(null);
+                        setHasSearched(false);
+                        setSaveError(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          if (v.sku.trim() && lookup.kind !== "loading") {
+                            void runLookup(v.sku);
                           }
-                        }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => void runLookup(v.sku)}
-                        disabled={!v.sku.trim() || lookup.kind === "loading"}
-                        aria-label="Validar código en catálogo"
-                        className="absolute right-1 top-1 h-7 w-7 inline-flex items-center justify-center rounded-sm text-text-tertiary hover:text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-text-tertiary transition-colors"
-                      >
-                        {lookup.kind === "loading" ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Search className="h-4 w-4" />
-                        )}
-                      </button>
-                    </div>
-                    {v.sku.trim() && !hasSearched && (
-                      <p className="text-xs text-muted-foreground">
-                        Presiona Enter o la lupa para validar.
-                      </p>
-                    )}
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => void runLookup(v.sku)}
+                      disabled={!v.sku.trim() || lookup.kind === "loading"}
+                      aria-label="Validar código en catálogo"
+                      className="absolute right-1 top-1 h-7 w-7 inline-flex items-center justify-center rounded-sm text-text-tertiary hover:text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-text-tertiary transition-colors"
+                    >
+                      {lookup.kind === "loading" ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Search className="h-4 w-4" />
+                      )}
+                    </button>
                   </div>
-                  {hasSearched && (lookup.kind === "active" || lookup.kind === "inactive") && (
-                    <>
-                      <div className="space-y-1.5">
-                        <FieldLabel>Marca</FieldLabel>
-                        <Input
-                          value={productMeta?.commercial_brand ?? ""}
-                          readOnly
-                          tabIndex={-1}
-                          placeholder="—"
-                          className={readonlyClass}
-                        />
-                      </div>
-                      <div className="space-y-1.5 md:col-span-2">
-                        <FieldLabel>Descripción Jaivaná</FieldLabel>
-                        <Input
-                          value={productMeta?.erp_description ?? ""}
-                          readOnly
-                          tabIndex={-1}
-                          placeholder="—"
-                          className={readonlyClass}
-                        />
-                      </div>
-                    </>
+                  {v.sku.trim() && !hasSearched && (
+                    <p className="text-xs text-muted-foreground">
+                      Presiona Enter o la lupa para validar.
+                    </p>
                   )}
+                </div>
+                {hasSearched && (lookup.kind === "active" || lookup.kind === "inactive") && (
+                  <div className="space-y-1.5">
+                    <FieldLabel>Marca</FieldLabel>
+                    <Input
+                      value={productMeta?.commercial_brand ?? ""}
+                      readOnly
+                      tabIndex={-1}
+                      placeholder="—"
+                      className={readonlyClass}
+                    />
+                  </div>
+                )}
+                {hasSearched && (lookup.kind === "active" || lookup.kind === "inactive") && (
+                  <div className="space-y-1.5 md:col-span-2">
+                    <FieldLabel>Descripción Jaivaná</FieldLabel>
+                    <Input
+                      value={productMeta?.erp_description ?? ""}
+                      readOnly
+                      tabIndex={-1}
+                      placeholder="—"
+                      className={readonlyClass}
+                    />
+                  </div>
+                )}
 
-                  {lookup.kind === "inactive" && (
-                    <div className="md:col-span-2">
-                      <Alert variant="warning">
-                        <AlertDescription>
-                          Producto inactivo en el catálogo. Esta posición quedará
-                          en "Requiere revisión".
-                        </AlertDescription>
-                      </Alert>
-                    </div>
-                  )}
-                  {lookup.kind === "not_found" && (
-                    <div className="md:col-span-2">
-                      <Alert variant="error">
-                        <AlertDescription>
-                          Código no encontrado en el catálogo Jaivaná
-                          {catalogDateLabel
-                            ? ` (última actualización: ${catalogDateLabel}).`
-                            : "."}
-                        </AlertDescription>
-                      </Alert>
-                    </div>
-                  )}
-                  {nConflict.kind === "found" && (
-                    <div className="md:col-span-2">
-                      <Alert variant="warning" className="p-0 overflow-hidden">
-                        <Collapsible open={nExpanded} onOpenChange={setNExpanded}>
-                          <CollapsibleTrigger asChild>
-                            <button
-                              type="button"
-                              className="flex w-full items-center gap-2 px-4 py-3 text-left bg-warning/10 hover:bg-warning/15 transition-colors"
-                            >
-                              {isLinked ? (
-                                <Link2 className="h-4 w-4 shrink-0" />
-                              ) : (
-                                <AlertTriangle className="h-4 w-4 shrink-0" />
+                {lookup.kind === "inactive" && (
+                  <div className="md:col-span-2">
+                    <Alert variant="warning">
+                      <AlertDescription>
+                        Producto inactivo en el catálogo. Esta posición quedará
+                        en "Requiere revisión".
+                      </AlertDescription>
+                    </Alert>
+                  </div>
+                )}
+                {lookup.kind === "not_found" && (
+                  <div className="md:col-span-2">
+                    <Alert variant="error">
+                      <AlertDescription>
+                        Código no encontrado en el catálogo Jaivaná
+                        {catalogDateLabel
+                          ? ` (última actualización: ${catalogDateLabel}).`
+                          : "."}
+                      </AlertDescription>
+                    </Alert>
+                  </div>
+                )}
+                {nConflict.kind === "found" && (
+                  <div className="md:col-span-2">
+                    <Alert variant="warning" className="p-0 overflow-hidden">
+                      <Collapsible open={nExpanded} onOpenChange={setNExpanded}>
+                        <CollapsibleTrigger asChild>
+                          <button
+                            type="button"
+                            className="flex w-full items-center gap-2 px-4 py-3 text-left bg-warning/10 hover:bg-warning/15 transition-colors"
+                          >
+                            {isLinked ? (
+                              <Link2 className="h-4 w-4 shrink-0" />
+                            ) : (
+                              <AlertTriangle className="h-4 w-4 shrink-0" />
+                            )}
+                            <span className="flex-1 text-sm font-medium">
+                              {isLinked
+                                ? `Este SKU está vinculado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} del acuerdo.`
+                                : `Este SKU está asignado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} más del acuerdo.`}
+                            </span>
+                            <ChevronDown
+                              className={cn(
+                                "h-4 w-4 shrink-0 text-[var(--status-warning-strong)] transition-transform",
+                                nExpanded && "rotate-180",
                               )}
-                              <span className="flex-1 text-sm font-medium">
-                                {isLinked
-                                  ? `Este SKU está vinculado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} del acuerdo.`
-                                  : `Este SKU está asignado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} más del acuerdo.`}
-                              </span>
-                              <ChevronDown
-                                className={cn(
-                                  "h-4 w-4 shrink-0 text-[var(--status-warning-strong)] transition-transform",
-                                  nExpanded && "rotate-180",
-                                )}
-                              />
-                            </button>
-                          </CollapsibleTrigger>
-                          <CollapsibleContent>
+                            />
+                          </button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
                             <div className="border-t border-border px-4 py-4 space-y-3">
                               <div className="rounded-md border border-border bg-surface-card overflow-hidden">
                                 <Table>
@@ -652,10 +651,8 @@ export function LineEditDialog({
                           </CollapsibleContent>
                         </Collapsible>
                       </Alert>
-                    </div>
-                  )}
-
-                </div>
+                  </div>
+                )}
               </div>
             </section>
 
