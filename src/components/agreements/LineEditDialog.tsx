@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -17,6 +17,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { StatusBadge } from "@/components/sumatec/StatusBadge";
 
 import {
   Table,
@@ -38,6 +40,7 @@ import {
   detectNConflict,
   linkSkuPrice,
   unlinkSkuPrice,
+  searchProducts,
 } from "@/lib/agreements.functions";
 
 export type LineEditValues = {
