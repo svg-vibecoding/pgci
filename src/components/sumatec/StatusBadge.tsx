@@ -38,7 +38,7 @@ const STATUS_CONFIG: Record<
 > = {
   active: { icon: CheckCircle2, label: "Activo" },
   pending: { icon: Clock, label: "Pendiente" },
-  review: { icon: Eye, label: "En revisión" },
+  review: { icon: Eye, label: "Revisar" },
   success: { icon: Check, label: "Completado" },
   warning: { icon: TriangleAlert, label: "Alerta" },
   danger: { icon: XCircle, label: "Crítico" },
