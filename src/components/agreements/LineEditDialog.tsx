@@ -174,6 +174,7 @@ export function LineEditDialog({
       setNConflict({ kind: "idle", lines: [] });
       setPriceChoice(null);
       setChosenPriceLineId(null);
+      setChoiceError(false);
       return;
     }
     const seq = ++lookupSeq.current;
@@ -182,6 +183,7 @@ export function LineEditDialog({
     setNConflict({ kind: "loading", lines: [] });
     setPriceChoice(null);
     setChosenPriceLineId(null);
+    setChoiceError(false);
 
     const lookupPromise = lookupFn({ data: { sku: trimmed } })
       .then((res) => {
