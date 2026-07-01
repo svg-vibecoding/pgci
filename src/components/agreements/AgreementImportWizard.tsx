@@ -260,7 +260,7 @@ export function AgreementImportWizard({
                 />
                 <BucketCard
                   icon={<AlertTriangle className="h-4 w-4 text-orange-600" />}
-                  label="Requieren revisión"
+                  label="Revisar"
                   value={summary.review}
                 />
                 <BucketCard
