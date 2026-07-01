@@ -218,7 +218,8 @@ export function LineEditDialog({
       .then((res) => {
         if (cseq !== conflictSeq.current) return;
         setProductId(res.product_id ?? null);
-        setIsLinked(!!res.isLinked);
+        const linked = !!res.isLinked;
+        setIsLinked(linked);
         const excludeId = initial?.line_id ?? null;
         const lines = (res.conflicts ?? []).filter((l) => l.line_id !== excludeId);
         if (lines.length === 0) {
@@ -232,6 +233,17 @@ export function LineEditDialog({
         });
         setNConflict({ kind: "found", lines: sorted });
         setNExpanded(true);
+        // Precargar precio para nueva posición cuando el SKU ya está vinculado.
+        if (linked && !initial?.line_id) {
+          const linkedPrice = sorted.find((l) => l.current_price != null)?.current_price;
+          if (linkedPrice != null) {
+            setV((prev) =>
+              prev.sale_price.trim() === ""
+                ? { ...prev, sale_price: String(linkedPrice) }
+                : prev,
+            );
+          }
+        }
       })
       .catch((e: Error) => {
         if (cseq !== conflictSeq.current) return;
