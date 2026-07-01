@@ -48,7 +48,13 @@ const COUNTER_STYLE: CSSProperties = {
   padding: 0,
 };
 
-function PositionsCounters({ counts }: { counts: CountSpec[] }) {
+function PositionsCounters({
+  counts,
+  agreementId,
+}: {
+  counts: CountSpec[];
+  agreementId?: string | null;
+}) {
   const visible = counts.filter((c) => c.value > 0);
   if (visible.length === 0) {
     return <span className="text-muted-foreground">0</span>;
@@ -67,6 +73,27 @@ function PositionsCounters({ counts }: { counts: CountSpec[] }) {
           <TooltipContent>{c.label}</TooltipContent>
         </Tooltip>
       ))}
+      {agreementId && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              asChild
+              size="sm"
+              variant="ghost"
+              className="h-6 px-1.5 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <Link
+                to="/pgci/agreements/$agreementId/lines"
+                params={{ agreementId: agreementId as string }}
+                className="inline-flex items-center gap-1"
+              >
+                Ir <ArrowUpRight className="h-3.5 w-3.5" />
+              </Link>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Ver posiciones</TooltipContent>
+        </Tooltip>
+      )}
     </div>
   );
 }
