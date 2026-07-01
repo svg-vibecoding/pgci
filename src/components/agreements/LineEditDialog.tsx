@@ -185,11 +185,14 @@ export function LineEditDialog({
       setLinkError(null);
       return;
     }
+    setHasSearched(true);
+    setSaveError(null);
     const seq = ++lookupSeq.current;
     const cseq = ++conflictSeq.current;
     setLookup({ kind: "loading" });
     setNConflict({ kind: "loading", lines: [] });
     setLinkError(null);
+
 
     const lookupPromise = lookupFn({ data: { sku: trimmed } })
       .then((res) => {
