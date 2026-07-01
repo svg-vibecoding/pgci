@@ -1060,7 +1060,57 @@ export const listAgreementCompanies = createServerFn({ method: "GET" })
       .eq("agreement_id", data.agreement_id)
       .order("legal_name");
     if (error) throw new Error(error.message);
-    return rows ?? [];
+
+    const base = rows ?? [];
+    const taxIds = base.map((r) => r.tax_id).filter((v): v is string => !!v);
+    let clients: {
+      id: string;
+      tax_id: string;
+      commercial_name: string | null;
+      legal_name: string;
+      parent_client_id: string | null;
+      type: string;
+    }[] = [];
+    if (taxIds.length > 0) {
+      const { data: cRows, error: cErr } = await context.supabase
+        .from("clients")
+        .select("id, tax_id, commercial_name, legal_name, parent_client_id, type")
+        .in("tax_id", taxIds);
+      if (cErr) throw new Error(cErr.message);
+      clients = (cRows ?? []) as typeof clients;
+    }
+    const clientByTaxId = new Map<string, (typeof clients)[number]>();
+    const parentIds = new Set<string>();
+    for (const c of clients) {
+      clientByTaxId.set(c.tax_id, c);
+      if (c.parent_client_id) parentIds.add(c.parent_client_id);
+    }
+    const parentNames = new Map<string, string>();
+    if (parentIds.size > 0) {
+      const { data: pRows, error: pErr } = await context.supabase
+        .from("clients")
+        .select("id, commercial_name, legal_name")
+        .in("id", Array.from(parentIds));
+      if (pErr) throw new Error(pErr.message);
+      for (const p of pRows ?? []) {
+        parentNames.set(
+          p.id as string,
+          (p.commercial_name?.trim() || p.legal_name) as string,
+        );
+      }
+    }
+
+    return base.map((r) => {
+      const c = clientByTaxId.get(r.tax_id as string);
+      const displayName = c?.commercial_name?.trim() || c?.legal_name || r.legal_name || r.tax_id;
+      const parentName = c?.parent_client_id ? parentNames.get(c.parent_client_id) ?? null : null;
+      return {
+        ...r,
+        client_display_name: displayName,
+        client_type: c?.type ?? null,
+        parent_client_name: parentName,
+      };
+    });
   });
 
 export const addAgreementCompany = createServerFn({ method: "POST" })
