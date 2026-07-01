@@ -437,7 +437,7 @@ export function LineEditDialog({
         `SKU vinculado. Precio aplicado a ${res.updated} ${res.updated === 1 ? "posición" : "posiciones"}.`,
       );
       invalidateLines();
-      if (v.sku.trim()) void runLookup(v.sku);
+      if (v.sku.trim()) void runConflict(v.sku, productId);
     },
     onError: (e: Error) => {
       setLinkError(e.message);
