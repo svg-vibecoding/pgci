@@ -145,6 +145,8 @@ export function LineEditDialog({
   const patchFn = useServerFn(updateAgreementLine);
   const lookupFn = useServerFn(lookupProductBySku);
   const conflictFn = useServerFn(detectNConflict);
+  const linkFn = useServerFn(linkSkuPrice);
+  const unlinkFn = useServerFn(unlinkSkuPrice);
   const [v, setV] = useState<LineEditValues>(empty);
   const [productMeta, setProductMeta] = useState<ProductMeta | null>(null);
   const [lookup, setLookup] = useState<{
@@ -162,11 +164,12 @@ export function LineEditDialog({
     }>;
   }>({ kind: "idle", lines: [] });
   const [nExpanded, setNExpanded] = useState(true);
-  const [priceChoice, setPriceChoice] = useState<"same" | "distinct" | null>(null);
-  const [chosenPriceLineId, setChosenPriceLineId] = useState<string | null>(null);
-  const [choiceError, setChoiceError] = useState(false);
+  const [isLinked, setIsLinked] = useState(false);
+  const [productId, setProductId] = useState<string | null>(null);
+  const [linkError, setLinkError] = useState<string | null>(null);
   const lookupSeq = useRef(0);
   const conflictSeq = useRef(0);
+
 
   const runLookup = async (sku: string) => {
     const trimmed = sku.trim();
