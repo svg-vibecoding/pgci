@@ -590,6 +590,11 @@ export function LineEditDialog({
                                     );
                                   })()}
                                 </RadioGroup>
+                                {choiceError && (
+                                  <p className="text-xs font-medium text-destructive">
+                                    Debes indicar cómo manejar el precio para esta posición antes de continuar.
+                                  </p>
+                                )}
                               </div>
                             </div>
                           </CollapsibleContent>
