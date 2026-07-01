@@ -497,13 +497,13 @@ export function LineEditDialog({
                                               />
                                             </TableCell>
                                           )}
-                                          <TableCell className="font-mono text-xs">
+                                          <TableCell className="font-mono text-xs text-foreground">
                                             {l.client_code ?? "—"}
                                           </TableCell>
-                                          <TableCell className="text-xs">
+                                          <TableCell className="text-xs text-foreground">
                                             {l.client_description ?? "—"}
                                           </TableCell>
-                                          <TableCell className="text-right text-xs tabular-nums">
+                                          <TableCell className="text-right text-xs tabular-nums text-foreground">
                                             {l.current_price != null
                                               ? l.current_price.toLocaleString("es-CO", {
                                                   style: "currency",
