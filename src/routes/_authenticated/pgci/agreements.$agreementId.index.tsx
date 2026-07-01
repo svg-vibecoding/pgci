@@ -584,7 +584,6 @@ function AddMemberDialog({
   const [role, setRole] = useState<"agreement_admin" | "agreement_member">(
     "agreement_member",
   );
-  const [canViewCosts, setCanViewCosts] = useState(false);
 
   const { data: users } = useQuery({
     queryKey: ["profiles", "active-search", search],
@@ -610,7 +609,7 @@ function AddMemberDialog({
           agreement_id: agreementId,
           user_id: selected,
           role,
-          can_view_costs: canViewCosts,
+          can_view_costs: false,
         },
       }),
     onSuccess: () => {
@@ -618,7 +617,6 @@ function AddMemberDialog({
       onAdded();
       setSelected("");
       setRole("agreement_member");
-      setCanViewCosts(false);
       setSearch("");
       onOpenChange(false);
     },
@@ -630,11 +628,9 @@ function AddMemberDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Agregar miembro</DialogTitle>
-          <DialogDescription>
-            Otorga acceso a este acuerdo a un usuario de la plataforma.
-          </DialogDescription>
+          <DialogDescription>Asigna un usuario a este acuerdo.</DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
+        <div className="space-y-5">
           <div className="space-y-2">
             <Label htmlFor="member-search">Buscar usuario</Label>
             <Input
@@ -671,25 +667,11 @@ function AddMemberDialog({
               );
             })}
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label>Rol</Label>
-              <Select value={role} onValueChange={(v) => setRole(v as typeof role)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="agreement_member">Miembro</SelectItem>
-                  <SelectItem value="agreement_admin">Administrador</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-end justify-between rounded-md border border-border px-3 py-2">
-              <div>
-                <Label className="text-sm">Ve costos</Label>
-                <p className="text-xs text-muted-foreground">Acceso a costos internos.</p>
-              </div>
-              <Switch checked={canViewCosts} onCheckedChange={setCanViewCosts} />
-            </div>
-          </div>
+          <MemberRoleCostFields
+            id="add-member-role"
+            role={role}
+            onRoleChange={setRole}
+          />
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={add.isPending}>
