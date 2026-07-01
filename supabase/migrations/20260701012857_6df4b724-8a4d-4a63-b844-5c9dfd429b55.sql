@@ -1,10 +1,3 @@
-## Migración: crear tabla `agreement_sku_links`
-
-Nueva tabla para vincular SKUs (productos) a acuerdos, de forma idempotente y con RLS alineado a las funciones existentes del módulo Acuerdos.
-
-### Estructura
-
-```sql
 create table if not exists public.agreement_sku_links (
   id            uuid primary key default gen_random_uuid(),
   agreement_id  uuid not null references public.agreements(id) on delete cascade,
@@ -13,20 +6,10 @@ create table if not exists public.agreement_sku_links (
   created_at    timestamptz not null default now(),
   unique (agreement_id, product_id)
 );
-```
 
-### Grants
-
-```sql
 grant select, insert, update, delete on public.agreement_sku_links to authenticated;
 grant all on public.agreement_sku_links to service_role;
-```
 
-(No se otorga acceso a `anon`: todas las políticas dependen de `auth.uid()`.)
-
-### RLS
-
-```sql
 alter table public.agreement_sku_links enable row level security;
 
 drop policy if exists "agreement_sku_links_select" on public.agreement_sku_links;
@@ -57,21 +40,6 @@ create policy "agreement_sku_links_delete"
   for delete
   to authenticated
   using (public.is_super_admin() or public.can_admin_agreement(agreement_id));
-```
 
-### Índices
-
-```sql
 create index if not exists idx_agreement_sku_links_agreement on public.agreement_sku_links(agreement_id);
 create index if not exists idx_agreement_sku_links_product   on public.agreement_sku_links(product_id);
-```
-
-### Notas
-
-- Todo idempotente: `create table if not exists`, `drop policy if exists` antes de cada `create policy`, `create index if not exists`.
-- No se agrega trigger de `updated_at` porque la tabla no tiene esa columna (es un vínculo append-only en la práctica).
-- No se toca código de la aplicación en esta migración; los consumidores (server functions, UI) se ajustarán en un paso posterior.
-
-### Verificación
-
-- Ejecutar `supabase--linter` tras la migración y revisar alertas relacionadas.
