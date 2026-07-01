@@ -381,16 +381,16 @@ function AgreementLinesPage() {
 
 
       <div className="overflow-x-auto rounded-lg border border-border bg-card">
-        <Table>
+        <Table className="table-fixed">
           <TableHeader>
             <TableRow>
               <TableHead>Cliente</TableHead>
               <TableHead>Jaivaná</TableHead>
-              <TableHead>Marca</TableHead>
-              <TableHead className="text-right">Precio</TableHead>
-              <TableHead>Vigencia</TableHead>
-              <TableHead>Estado</TableHead>
-              {canAdmin && <TableHead className="w-32 text-right">Acciones</TableHead>}
+              <TableHead className="w-32 whitespace-nowrap">Marca</TableHead>
+              <TableHead className="w-32 whitespace-nowrap text-right">Precio</TableHead>
+              <TableHead className="w-32 whitespace-nowrap">Vigencia</TableHead>
+              <TableHead className="w-40 whitespace-nowrap">Estado</TableHead>
+              {canAdmin && <TableHead className="w-24 whitespace-nowrap text-right">Acciones</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
