@@ -58,7 +58,7 @@ function PositionsCounters({ counts }: { counts: CountSpec[] }) {
         <Tooltip key={c.key}>
           <TooltipTrigger asChild>
             <span className="inline-flex cursor-default">
-              <Badge color={c.color} variant={c.variant ?? "soft"}>
+              <Badge color={c.color} variant={c.variant ?? "soft"} style={COUNTER_STYLE}>
                 {c.value}
               </Badge>
             </span>
