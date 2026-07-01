@@ -281,7 +281,7 @@ export function LineEditDialog({
         if (linkedPrice != null) {
           setV((prev) =>
             prev.sale_price.trim() === ""
-              ? { ...prev, sale_price: String(linkedPrice) }
+              ? { ...prev, sale_price: formatPriceDisplay(linkedPrice) }
               : prev,
           );
         }
