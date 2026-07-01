@@ -436,45 +436,77 @@ export function LineEditDialog({
               <SectionHeader title="Información Jaivaná" number="02" />
               <div className="space-y-4">
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="space-y-1.5">
-                    <FieldLabel>
-                      Código Jaivaná
-                      {lookup.kind === "loading" && (
-                        <Loader2 className="ml-2 inline h-3 w-3 animate-spin text-muted-foreground" />
-                      )}
-                    </FieldLabel>
+                  <div className="space-y-1.5 md:col-span-2">
+                    <FieldLabel>Código Jaivaná</FieldLabel>
                     <div className="relative">
                       <Input
-                        className={cn(inputClass, "pr-9")}
+                        className={cn(inputClass, "pr-10")}
                         value={v.sku}
-                        onChange={(e) => setV({ ...v, sku: e.target.value })}
-                        onBlur={(e) => void runLookup(e.target.value)}
+                        onChange={(e) => {
+                          setV({ ...v, sku: e.target.value });
+                          setProductMeta(null);
+                          setLookup({ kind: e.target.value.trim() ? "idle" : "empty" });
+                          setNConflict({ kind: "idle", lines: [] });
+                          setIsLinked(false);
+                          setProductId(null);
+                          setLinkError(null);
+                          setHasSearched(false);
+                          setSaveError(null);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            if (v.sku.trim() && lookup.kind !== "loading") {
+                              void runLookup(v.sku);
+                            }
+                          }
+                        }}
                       />
-                      {lookup.kind !== "loading" && (
-                        <Search className="absolute right-3 top-2.5 h-4 w-4 text-text-tertiary pointer-events-none" />
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => void runLookup(v.sku)}
+                        disabled={!v.sku.trim() || lookup.kind === "loading"}
+                        aria-label="Validar código en catálogo"
+                        className="absolute right-1 top-1 h-7 w-7 inline-flex items-center justify-center rounded-sm text-text-tertiary hover:text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-text-tertiary transition-colors"
+                      >
+                        {lookup.kind === "loading" ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Search className="h-4 w-4" />
+                        )}
+                      </button>
                     </div>
+                    {v.sku.trim() && !hasSearched && (
+                      <p className="text-xs text-muted-foreground">
+                        Presiona Enter o la lupa para validar.
+                      </p>
+                    )}
                   </div>
-                  <div className="space-y-1.5">
-                    <FieldLabel>Marca</FieldLabel>
-                    <Input
-                      value={productMeta?.commercial_brand ?? ""}
-                      readOnly
-                      tabIndex={-1}
-                      placeholder="—"
-                      className={readonlyClass}
-                    />
-                  </div>
-                  <div className="space-y-1.5 md:col-span-2">
-                    <FieldLabel>Descripción Jaivaná</FieldLabel>
-                    <Input
-                      value={productMeta?.erp_description ?? ""}
-                      readOnly
-                      tabIndex={-1}
-                      placeholder="Se completa al validar el código"
-                      className={readonlyClass}
-                    />
-                  </div>
+                  {hasSearched && (lookup.kind === "active" || lookup.kind === "inactive") && (
+                    <>
+                      <div className="space-y-1.5">
+                        <FieldLabel>Marca</FieldLabel>
+                        <Input
+                          value={productMeta?.commercial_brand ?? ""}
+                          readOnly
+                          tabIndex={-1}
+                          placeholder="—"
+                          className={readonlyClass}
+                        />
+                      </div>
+                      <div className="space-y-1.5 md:col-span-2">
+                        <FieldLabel>Descripción Jaivaná</FieldLabel>
+                        <Input
+                          value={productMeta?.erp_description ?? ""}
+                          readOnly
+                          tabIndex={-1}
+                          placeholder="—"
+                          className={readonlyClass}
+                        />
+                      </div>
+                    </>
+                  )}
+
                   {lookup.kind === "inactive" && (
                     <div className="md:col-span-2">
                       <Alert variant="warning">
