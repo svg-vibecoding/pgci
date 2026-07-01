@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { AlertTriangle, ChevronDown, Info, Link, Link2, Loader2, Search, Unlink } from "lucide-react";
+import { AlertTriangle, ChevronDown, Link, Link2, Loader2, Search, Unlink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatMoneyCOP } from "@/lib/format";
 import {
