@@ -416,13 +416,15 @@ export function LineEditDialog({
     if (!hasProduct) {
       return "Las condiciones comerciales se habilitan cuando haya un producto Jaivaná seleccionado.";
     }
+    // Solo mostrar herencia cuando ambos campos de vigencia están vacíos.
+    if (v.start_date.trim() !== "" || v.end_date.trim() !== "") return null;
     const start = fmtDateLocal(agreementStartDate);
     const end = fmtDateLocal(agreementEndDate);
     if (start && end) {
       return `Las fechas de vigencia son opcionales. Si no se indican, se heredan del acuerdo (${start} — ${end}).`;
     }
     return null;
-  }, [hasProduct, agreementStartDate, agreementEndDate]);
+  }, [hasProduct, agreementStartDate, agreementEndDate, v.start_date, v.end_date]);
 
   const searchPlaceholder = hasProduct
     ? "Escribe para cambiar el producto..."
