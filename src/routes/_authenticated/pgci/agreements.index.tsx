@@ -346,7 +346,7 @@ function AgreementsList() {
                       )}
                     </TableCell>
                     <TableCell className="text-muted-foreground min-w-0 truncate">{clientName}</TableCell>
-                    <TableCell className="w-[220px] whitespace-nowrap">
+                    <TableCell className="w-[240px] whitespace-nowrap">
                       <PositionsCounters counts={counts} agreementId={a.id ?? null} />
                     </TableCell>
                     <TableCell className="w-[112px] whitespace-nowrap">
