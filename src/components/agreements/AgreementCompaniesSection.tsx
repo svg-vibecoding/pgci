@@ -168,20 +168,30 @@ export function AgreementCompaniesSection({
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Cliente</TableHead>
                   <TableHead>NIT</TableHead>
-                  <TableHead>Razón social</TableHead>
-                  <TableHead>Notas</TableHead>
                   {canAdmin && <TableHead className="w-12 text-right"><span className="sr-only">Acciones</span></TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {(companies ?? []).map((c) => (
                   <TableRow key={c.id as string}>
-                    <TableCell className="font-mono text-sm">{c.tax_id as string}</TableCell>
-                    <TableCell>{(c.legal_name as string | null) ?? "—"}</TableCell>
-                    <TableCell className="max-w-md text-xs text-muted-foreground">
-                      {(c.notes as string | null) ?? "—"}
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        <span>{(c.client_display_name as string | null) ?? "—"}</span>
+                        {(c.client_type as string | null) === "holding" && (
+                          <Badge color="accent" variant="soft">
+                            Holding
+                          </Badge>
+                        )}
+                      </div>
+                      {(c.parent_client_name as string | null) && (
+                        <span className="block text-xs text-muted-foreground truncate max-w-[260px]">
+                          {c.parent_client_name as string}
+                        </span>
+                      )}
                     </TableCell>
+                    <TableCell className="text-muted-foreground">{c.tax_id as string}</TableCell>
                     {canAdmin && (
                       <TableCell className="text-right">
                         <Button
