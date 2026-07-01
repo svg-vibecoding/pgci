@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AlertTriangle, ChevronDown, Info, Link, Link2, Loader2, Search, Unlink } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatMoneyCOP } from "@/lib/format";
 import {
   Dialog,
   DialogContent,
