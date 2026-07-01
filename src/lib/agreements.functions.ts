@@ -925,11 +925,11 @@ export const listAgreementMembers = createServerFn({ method: "GET" })
       .order("created_at");
     if (error) throw new Error(error.message);
     const userIds = (members ?? []).map((m) => m.user_id as string);
-    let profilesById = new Map<string, { full_name: string; email: string; status: string }>();
+    let profilesById = new Map<string, { full_name: string; email: string; status: string; erp_user_code: string | null }>();
     if (userIds.length > 0) {
       const { data: profs } = await context.supabase
         .from("profiles")
-        .select("user_id, full_name, email, status")
+        .select("user_id, full_name, email, status, erp_user_code")
         .in("user_id", userIds);
       profilesById = new Map(
         (profs ?? []).map((p) => [
@@ -938,6 +938,7 @@ export const listAgreementMembers = createServerFn({ method: "GET" })
             full_name: p.full_name as string,
             email: p.email as string,
             status: p.status as string,
+            erp_user_code: (p.erp_user_code as string | null) ?? null,
           },
         ]),
       );
