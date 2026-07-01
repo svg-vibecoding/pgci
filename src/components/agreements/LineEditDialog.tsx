@@ -162,6 +162,7 @@ export function LineEditDialog({
   const [nExpanded, setNExpanded] = useState(true);
   const [priceChoice, setPriceChoice] = useState<"same" | "distinct" | null>(null);
   const [chosenPriceLineId, setChosenPriceLineId] = useState<string | null>(null);
+  const [choiceError, setChoiceError] = useState(false);
   const lookupSeq = useRef(0);
   const conflictSeq = useRef(0);
 
@@ -173,6 +174,7 @@ export function LineEditDialog({
       setNConflict({ kind: "idle", lines: [] });
       setPriceChoice(null);
       setChosenPriceLineId(null);
+      setChoiceError(false);
       return;
     }
     const seq = ++lookupSeq.current;
@@ -181,6 +183,7 @@ export function LineEditDialog({
     setNConflict({ kind: "loading", lines: [] });
     setPriceChoice(null);
     setChosenPriceLineId(null);
+    setChoiceError(false);
 
     const lookupPromise = lookupFn({ data: { sku: trimmed } })
       .then((res) => {
@@ -246,6 +249,7 @@ export function LineEditDialog({
     setNConflict({ kind: "idle", lines: [] });
     setPriceChoice(null);
     setChosenPriceLineId(null);
+    setChoiceError(false);
     if (next.sku.trim()) {
       void runLookup(next.sku);
     }
@@ -525,6 +529,7 @@ export function LineEditDialog({
                                   onValueChange={(val) => {
                                     const choice = val as "same" | "distinct";
                                     setPriceChoice(choice);
+                                    setChoiceError(false);
                                     if (choice === "same") {
                                       const distinctPrices = Array.from(
                                         new Set(
@@ -585,6 +590,11 @@ export function LineEditDialog({
                                     );
                                   })()}
                                 </RadioGroup>
+                                {choiceError && (
+                                  <p className="text-xs font-medium text-destructive">
+                                    Debes indicar cómo manejar el precio para esta posición antes de continuar.
+                                  </p>
+                                )}
                               </div>
                             </div>
                           </CollapsibleContent>
@@ -668,7 +678,17 @@ export function LineEditDialog({
           >
             Cancelar
           </Button>
-          <Button onClick={() => save.mutate()} disabled={save.isPending}>
+          <Button
+            onClick={() => {
+              if (nConflict.kind === "found" && priceChoice === null) {
+                setChoiceError(true);
+                setNExpanded(true);
+                return;
+              }
+              save.mutate();
+            }}
+            disabled={save.isPending}
+          >
             {save.isPending ? "Guardando…" : "Guardar"}
           </Button>
         </DialogFooter>
