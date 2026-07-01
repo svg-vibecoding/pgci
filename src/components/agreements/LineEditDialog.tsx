@@ -162,6 +162,7 @@ export function LineEditDialog({
   const [nExpanded, setNExpanded] = useState(true);
   const [priceChoice, setPriceChoice] = useState<"same" | "distinct" | null>(null);
   const [chosenPriceLineId, setChosenPriceLineId] = useState<string | null>(null);
+  const [choiceError, setChoiceError] = useState(false);
   const lookupSeq = useRef(0);
   const conflictSeq = useRef(0);
 
