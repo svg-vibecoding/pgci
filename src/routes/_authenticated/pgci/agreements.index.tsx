@@ -320,19 +320,19 @@ function AgreementsList() {
                       )}
                     </TableCell>
                     <TableCell className="text-muted-foreground min-w-0 truncate">{clientName}</TableCell>
-                    <TableCell className="whitespace-nowrap">
+                    <TableCell className="w-[144px] whitespace-nowrap">
                       <PositionsCounters counts={counts} />
                     </TableCell>
-                    <TableCell className="whitespace-nowrap">
+                    <TableCell className="w-[112px] whitespace-nowrap">
                       <Badge color={vig.color}>{vig.label}</Badge>
                     </TableCell>
-                    <TableCell className="whitespace-nowrap">
+                    <TableCell className="w-[96px] whitespace-nowrap">
                       <StatusBadge
                         status={a.status === "active" ? "active" : "neutral"}
                         label={a.status === "active" ? "Activo" : "Inactivo"}
                       />
                     </TableCell>
-                    <TableCell className="whitespace-nowrap text-right">
+                    <TableCell className="w-[224px] whitespace-nowrap text-right">
                       <div className="inline-flex items-center gap-1">
                         <Button asChild size="sm" variant="ghost">
                           <Link
