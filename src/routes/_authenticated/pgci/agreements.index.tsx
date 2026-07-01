@@ -267,10 +267,10 @@ function AgreementsList() {
               <TableRow>
                 <TableHead className="w-auto min-w-0">Acuerdo</TableHead>
                 <TableHead className="w-auto min-w-0">Cliente</TableHead>
-                <TableHead className="w-fit whitespace-nowrap">Posiciones</TableHead>
-                <TableHead className="w-fit whitespace-nowrap">Vigencia</TableHead>
-                <TableHead className="w-fit whitespace-nowrap">Estado</TableHead>
-                <TableHead className="w-fit whitespace-nowrap text-right">Acciones</TableHead>
+                <TableHead className="w-0 whitespace-nowrap">Posiciones</TableHead>
+                <TableHead className="w-0 whitespace-nowrap">Vigencia</TableHead>
+                <TableHead className="w-0 whitespace-nowrap">Estado</TableHead>
+                <TableHead className="w-0 whitespace-nowrap text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
