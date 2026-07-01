@@ -535,7 +535,10 @@ export function LineEditDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col overflow-hidden p-0 gap-0">
+      <DialogContent
+        className="max-w-2xl max-h-[85vh] flex flex-col overflow-hidden p-0 gap-0"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         <DialogHeader className="px-6 py-4 border-b border-border shrink-0">
           <DialogTitle className="text-2xl font-bold tracking-tight">
             {isEdit ? "Editar posición" : "Nueva posición"}
