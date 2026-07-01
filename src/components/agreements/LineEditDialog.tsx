@@ -177,18 +177,16 @@ export function LineEditDialog({
       setProductMeta(null);
       setLookup({ kind: "empty" });
       setNConflict({ kind: "idle", lines: [] });
-      setPriceChoice(null);
-      setChosenPriceLineId(null);
-      setChoiceError(false);
+      setIsLinked(false);
+      setProductId(null);
+      setLinkError(null);
       return;
     }
     const seq = ++lookupSeq.current;
     const cseq = ++conflictSeq.current;
     setLookup({ kind: "loading" });
     setNConflict({ kind: "loading", lines: [] });
-    setPriceChoice(null);
-    setChosenPriceLineId(null);
-    setChoiceError(false);
+    setLinkError(null);
 
     const lookupPromise = lookupFn({ data: { sku: trimmed } })
       .then((res) => {
@@ -219,13 +217,14 @@ export function LineEditDialog({
     })
       .then((res) => {
         if (cseq !== conflictSeq.current) return;
+        setProductId(res.product_id ?? null);
+        setIsLinked(!!res.isLinked);
         const excludeId = initial?.line_id ?? null;
         const lines = (res.conflicts ?? []).filter((l) => l.line_id !== excludeId);
         if (lines.length === 0) {
           setNConflict({ kind: "none", lines: [] });
           return;
         }
-        // pick most recent by updated_at as default chosen
         const sorted = [...lines].sort((a, b) => {
           const ta = a.updated_at ? Date.parse(a.updated_at) : 0;
           const tb = b.updated_at ? Date.parse(b.updated_at) : 0;
@@ -233,12 +232,12 @@ export function LineEditDialog({
         });
         setNConflict({ kind: "found", lines: sorted });
         setNExpanded(true);
-        setChosenPriceLineId(sorted[0]?.line_id ?? null);
       })
       .catch((e: Error) => {
         if (cseq !== conflictSeq.current) return;
         setNConflict({ kind: "idle", lines: [] });
-        // silent — conflict check is auxiliary
+        setIsLinked(false);
+        setProductId(null);
         console.error("detectNConflict failed", e);
       });
 
@@ -252,9 +251,9 @@ export function LineEditDialog({
     setProductMeta(null);
     setLookup({ kind: next.sku.trim() ? "idle" : "empty" });
     setNConflict({ kind: "idle", lines: [] });
-    setPriceChoice(null);
-    setChosenPriceLineId(null);
-    setChoiceError(false);
+    setIsLinked(false);
+    setProductId(null);
+    setLinkError(null);
     if (next.sku.trim()) {
       void runLookup(next.sku);
     }
