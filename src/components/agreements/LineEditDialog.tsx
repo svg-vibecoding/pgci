@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { AlertTriangle, ChevronDown, Info, Loader2, Search } from "lucide-react";
+import { AlertTriangle, ChevronDown, Info, Link2, Link2Off, Loader2, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
