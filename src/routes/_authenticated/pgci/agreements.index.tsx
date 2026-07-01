@@ -85,7 +85,7 @@ function PositionsCounters({
             params={{ agreementId: agreementId as string }}
             className="inline-flex items-center gap-1"
           >
-            Ir <ArrowUpRight className="h-3.5 w-3.5" />
+            Abrir <ArrowUpRight className="h-3.5 w-3.5" />
           </Link>
         </Button>
       )}
