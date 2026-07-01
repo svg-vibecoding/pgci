@@ -97,14 +97,14 @@ function AgreementsList() {
     { key: "all", label: "Acuerdos", value: totalCount },
     { key: "active", label: "Activos", value: activeCount },
     { key: "pending", label: "Con pendientes", value: pendingCount },
-    { key: "review", label: "Requieren revisión", value: reviewCount },
+    { key: "review", label: "Revisar", value: reviewCount },
   ];
 
   const cardLabelByKey: Record<CardKey, string> = {
     all: "Acuerdos",
     active: "Activos",
     pending: "Con pendientes",
-    review: "Requieren revisión",
+    review: "Revisar",
   };
 
   const hasActiveFilters =
