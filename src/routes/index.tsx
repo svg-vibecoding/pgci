@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
 import { SumatecLogo } from "@/components/SumatecLogo";
 
@@ -26,7 +26,6 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
-  const navigate = useNavigate();
   return (
     <main className="flex min-h-screen items-center justify-center bg-[var(--surface-page)] px-6 text-[var(--text-primary)]">
       <div
@@ -56,14 +55,14 @@ function Home() {
           </strong>
         </p>
         <div className="flex justify-center pt-2">
-          <button
-            type="button"
-            onClick={() => navigate({ to: "/auth" })}
+          <Link
+            to="/auth"
+            preload="intent"
             className="inline-flex h-12 items-center gap-2 rounded-md bg-[var(--color-primary)] px-6 text-[var(--button)] font-bold text-[var(--text-on-brand)] shadow-[var(--shadow-brand)] transition-colors duration-[var(--dur-fast)] hover:bg-[var(--color-primary-hover)]"
           >
             Iniciar sesión
             <ArrowRight size={16} aria-hidden="true" />
-          </button>
+          </Link>
         </div>
       </section>
     </main>

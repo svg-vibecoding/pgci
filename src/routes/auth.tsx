@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,19 @@ import { Label } from "@/components/ui/label";
 import { SumatecLogo } from "@/components/SumatecLogo";
 
 export const Route = createFileRoute("/auth")({
+  ssr: false,
   head: () => ({ meta: [{ title: "Acceso · PGCI" }] }),
+  beforeLoad: async () => {
+    const { data } = await supabase.auth.getUser();
+    if (!data.user) return;
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role, status")
+      .eq("user_id", data.user.id)
+      .maybeSingle();
+    const isSuper = profile?.role === "super_admin" && profile?.status === "active";
+    throw redirect({ to: isSuper ? "/setup" : "/pgci" });
+  },
   component: AuthPage,
 });
 
@@ -20,6 +32,7 @@ function AuthPage() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (loading) return;
     setLoading(true);
     setError(null);
     const { data: signIn, error } = await supabase.auth.signInWithPassword({ email, password });
