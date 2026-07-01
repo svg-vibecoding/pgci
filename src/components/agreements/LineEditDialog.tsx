@@ -97,6 +97,46 @@ function fmtDateLocal(iso: string | null | undefined): string | null {
   return `${m[3]}/${m[2]}/${m[1]}`;
 }
 
+// Acepta `.` o `,` como separador decimal y opcionales separadores de miles.
+// Devuelve el número completo sin redondear o null si no aplica.
+function parsePriceInput(raw: string | number | null | undefined): number | null {
+  if (raw == null) return null;
+  if (typeof raw === "number") return Number.isFinite(raw) ? raw : null;
+  let s = String(raw).trim();
+  if (!s) return null;
+  s = s.replace(/[^\d.,-]/g, "");
+  const lastComma = s.lastIndexOf(",");
+  const lastDot = s.lastIndexOf(".");
+  let decSep = "";
+  if (lastComma > -1 && lastDot > -1) {
+    decSep = lastComma > lastDot ? "," : ".";
+  } else if (lastComma > -1) {
+    decSep = ",";
+  } else if (lastDot > -1) {
+    decSep = ".";
+  }
+  if (decSep) {
+    const thousandSep = decSep === "," ? "." : ",";
+    s = s.split(thousandSep).join("").replace(decSep, ".");
+  }
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+}
+
+// Muestra siempre 2 decimales con coma decimal y punto de miles (estándar CO).
+function formatPriceDisplay(n: number | null | undefined): string {
+  if (n == null || !Number.isFinite(n)) return "";
+  const neg = n < 0;
+  const [intP, decP = "00"] = Math.abs(n).toFixed(2).split(".");
+  const withThousands = intP.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return `${neg ? "-" : ""}${withThousands},${decP}`;
+}
+
+function normalizePriceOnBlur(raw: string): string {
+  const n = parsePriceInput(raw);
+  return n == null ? "" : formatPriceDisplay(n);
+}
+
 function FieldLabel({
   children,
   className,
@@ -241,7 +281,7 @@ export function LineEditDialog({
         if (linkedPrice != null) {
           setV((prev) =>
             prev.sale_price.trim() === ""
-              ? { ...prev, sale_price: String(linkedPrice) }
+              ? { ...prev, sale_price: formatPriceDisplay(linkedPrice) }
               : prev,
           );
         }
@@ -281,7 +321,12 @@ export function LineEditDialog({
 
   useEffect(() => {
     if (!open) return;
-    const next = { ...empty, ...(initial ?? {}) };
+    const merged = { ...empty, ...(initial ?? {}) };
+    const next: LineEditValues = {
+      ...merged,
+      sale_price: normalizePriceOnBlur(merged.sale_price),
+      par_price: normalizePriceOnBlur(merged.par_price),
+    };
     setV(next);
     setProductMeta(null);
     setLookup({ kind: next.sku.trim() ? "idle" : "empty" });
@@ -371,13 +416,15 @@ export function LineEditDialog({
     if (!hasProduct) {
       return "Las condiciones comerciales se habilitan cuando haya un producto Jaivaná seleccionado.";
     }
+    // Solo mostrar herencia cuando ambos campos de vigencia están vacíos.
+    if (v.start_date.trim() !== "" || v.end_date.trim() !== "") return null;
     const start = fmtDateLocal(agreementStartDate);
     const end = fmtDateLocal(agreementEndDate);
     if (start && end) {
       return `Las fechas de vigencia son opcionales. Si no se indican, se heredan del acuerdo (${start} — ${end}).`;
     }
     return null;
-  }, [hasProduct, agreementStartDate, agreementEndDate]);
+  }, [hasProduct, agreementStartDate, agreementEndDate, v.start_date, v.end_date]);
 
   const searchPlaceholder = hasProduct
     ? "Escribe para cambiar el producto..."
@@ -390,10 +437,8 @@ export function LineEditDialog({
   const save = useMutation({
     mutationFn: async () => {
       const num = (s: string) => {
-        const t = s.trim();
-        if (t === "") return undefined;
-        const n = Number(t.replace(",", "."));
-        return Number.isFinite(n) ? n : undefined;
+        const n = parsePriceInput(s);
+        return n == null ? undefined : n;
       };
       const txt = (s: string) => (s.trim() === "" ? undefined : s.trim());
       if (isEdit) {
@@ -445,12 +490,9 @@ export function LineEditDialog({
   const linkMut = useMutation({
     mutationFn: async () => {
       if (!productId) throw new Error("SKU no válido para vincular");
-      const priceStr = v.sale_price.trim();
-      if (!priceStr) throw new Error("Ingresa un precio antes de vincular");
-      const price = Number(priceStr.replace(",", "."));
-      if (!Number.isFinite(price) || price < 0) {
-        throw new Error("Precio inválido");
-      }
+      const price = parsePriceInput(v.sale_price);
+      if (price == null) throw new Error("Ingresa un precio antes de vincular");
+      if (price < 0) throw new Error("Precio inválido");
       return linkFn({
         data: { agreement_id: agreementId, product_id: productId, price },
       });
@@ -824,6 +866,12 @@ export function LineEditDialog({
                         inputMode="decimal"
                         value={v.sale_price}
                         onChange={(e) => setV({ ...v, sale_price: e.target.value })}
+                        onBlur={(e) =>
+                          setV((prev) => ({
+                            ...prev,
+                            sale_price: normalizePriceOnBlur(e.target.value),
+                          }))
+                        }
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -833,6 +881,12 @@ export function LineEditDialog({
                         inputMode="decimal"
                         value={v.par_price}
                         onChange={(e) => setV({ ...v, par_price: e.target.value })}
+                        onBlur={(e) =>
+                          setV((prev) => ({
+                            ...prev,
+                            par_price: normalizePriceOnBlur(e.target.value),
+                          }))
+                        }
                       />
                     </div>
                   </div>
