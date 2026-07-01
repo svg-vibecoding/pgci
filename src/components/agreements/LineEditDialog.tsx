@@ -625,7 +625,7 @@ export function LineEditDialog({
                       />
                     </div>
                     <div className="space-y-1.5 md:col-span-2">
-                      <FieldLabel>Descripción Jaivaná</FieldLabel>
+                      <FieldLabel>Descripción Sumatec</FieldLabel>
                       <Input
                         value={productMeta?.erp_description ?? ""}
                         readOnly
