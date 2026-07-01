@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { AlertTriangle, Calendar, ChevronDown, Link, Link2, Loader2, Search, Unlink } from "lucide-react";
+import { AlertTriangle, Calendar as CalendarIcon, ChevronDown, Link, Link2, Loader2, Search, Unlink } from "lucide-react";
+import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { formatMoneyCOP } from "@/lib/format";
 import {
@@ -19,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { StatusBadge } from "@/components/sumatec/StatusBadge";
 
 import {
@@ -898,45 +900,71 @@ export function LineEditDialog({
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="space-y-1.5">
                       <FieldLabel>Fecha inicio</FieldLabel>
-                      <div className="relative">
-                        <Input
-                          className={cn(
-                            inputClass,
-                            "pr-10",
-                            "[&::-webkit-calendar-picker-indicator]:opacity-0",
-                            "[&::-webkit-calendar-picker-indicator]:absolute",
-                            "[&::-webkit-calendar-picker-indicator]:inset-y-0",
-                            "[&::-webkit-calendar-picker-indicator]:right-0",
-                            "[&::-webkit-calendar-picker-indicator]:w-10",
-                            "[&::-webkit-calendar-picker-indicator]:cursor-pointer",
-                          )}
-                          type="date"
-                          value={v.start_date}
-                          onChange={(e) => setV({ ...v, start_date: e.target.value })}
-                        />
-                        <Calendar className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      </div>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal h-9 px-3 bg-white border-input hover:bg-white",
+                              !v.start_date && "text-muted-foreground",
+                            )}
+                          >
+                            <CalendarIcon className="mr-3 h-4 w-4 text-muted-foreground" />
+                            {v.start_date ? (
+                              fmtDateLocal(v.start_date) ?? v.start_date
+                            ) : (
+                              <span>Seleccionar fecha</span>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={v.start_date ? new Date(v.start_date) : undefined}
+                            onSelect={(date) => {
+                              if (date) {
+                                setV((prev) => ({ ...prev, start_date: format(date, "yyyy-MM-dd") }));
+                              }
+                            }}
+                            initialFocus
+                            className="p-3 pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
                     </div>
                     <div className="space-y-1.5">
                       <FieldLabel>Fecha fin</FieldLabel>
-                      <div className="relative">
-                        <Input
-                          className={cn(
-                            inputClass,
-                            "pr-10",
-                            "[&::-webkit-calendar-picker-indicator]:opacity-0",
-                            "[&::-webkit-calendar-picker-indicator]:absolute",
-                            "[&::-webkit-calendar-picker-indicator]:inset-y-0",
-                            "[&::-webkit-calendar-picker-indicator]:right-0",
-                            "[&::-webkit-calendar-picker-indicator]:w-10",
-                            "[&::-webkit-calendar-picker-indicator]:cursor-pointer",
-                          )}
-                          type="date"
-                          value={v.end_date}
-                          onChange={(e) => setV({ ...v, end_date: e.target.value })}
-                        />
-                        <Calendar className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      </div>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal h-9 px-3 bg-white border-input hover:bg-white",
+                              !v.end_date && "text-muted-foreground",
+                            )}
+                          >
+                            <CalendarIcon className="mr-3 h-4 w-4 text-muted-foreground" />
+                            {v.end_date ? (
+                              fmtDateLocal(v.end_date) ?? v.end_date
+                            ) : (
+                              <span>Seleccionar fecha</span>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={v.end_date ? new Date(v.end_date) : undefined}
+                            onSelect={(date) => {
+                              if (date) {
+                                setV((prev) => ({ ...prev, end_date: format(date, "yyyy-MM-dd") }));
+                              }
+                            }}
+                            initialFocus
+                            className="p-3 pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
                     </div>
                   </div>
                   <div className="space-y-1.5">
