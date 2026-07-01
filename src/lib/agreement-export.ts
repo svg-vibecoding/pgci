@@ -31,7 +31,7 @@ const HEADERS = [
 const STATUS_LABEL: Record<string, string> = {
   active: "Activa",
   pending: "Pendiente",
-  requires_review: "Revisar",
+  requires_review: "Requiere revisión",
   excluded: "Excluida",
 };
 
