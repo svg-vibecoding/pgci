@@ -70,15 +70,8 @@ const STATUS_META: Record<
 };
 
 
-const fmtMoney = (v: number | null) =>
-  v == null
-    ? "—"
-    : new Intl.NumberFormat("es-CO", {
-        style: "currency",
-        currency: "COP",
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }).format(v);
+import { formatMoneyCOP } from "@/lib/format";
+const fmtMoney = (v: number | null) => formatMoneyCOP(v);
 
 type VigenciaBadge = {
   color: "info" | "warning" | "error" | "neutral";
