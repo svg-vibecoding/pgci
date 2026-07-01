@@ -205,60 +205,68 @@ export const listAgreementLines = createServerFn({ method: "GET" })
     const { data: lines, error } = await context.supabase
       .from("agreement_products")
       .select(
-        "id, agreement_id, product_id, client_product_match_id, sale_price, par_price, start_date, end_date, observations, status, pending_reason, excluded_at, excluded_by, excluded_reason, created_at, updated_at, products:product_id(sku, erp_description, commercial_brand, status)",
+        "id, agreement_id, product_id, client_product_match_id, client_product_id, sale_price, par_price, start_date, end_date, observations, status, pending_reason, excluded_at, excluded_by, excluded_reason, created_at, updated_at, products:product_id(sku, erp_description, commercial_brand, status)",
       )
       .eq("agreement_id", data.agreement_id)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
 
     const rows = lines ?? [];
+
+    // Resolver client_product_id efectivo: directo si existe, sino vía match.
     const matchIds = rows
       .map((r) => r.client_product_match_id)
       .filter((v): v is string => !!v);
-    const codeByMatch = new Map<string, { code: string; description: string | null }>();
+    const cpByMatch = new Map<string, string>();
     if (matchIds.length > 0) {
       const { data: matches } = await context.supabase
         .from("client_product_match")
         .select("id, client_product_id")
         .in("id", matchIds);
-      const cpIds = (matches ?? [])
-        .map((m) => m.client_product_id)
-        .filter((v): v is string => !!v);
-      const codeByCp = new Map<string, string>();
-      const descByCp = new Map<string, string | null>();
-      if (cpIds.length > 0) {
-        const { data: cps } = await context.supabase
-          .from("client_products")
-          .select("id, client_code")
-          .in("id", cpIds);
-        for (const c of cps ?? []) codeByCp.set(c.id as string, c.client_code as string);
-        const { data: hist } = await context.supabase
-          .from("client_product_history")
-          .select("client_product_id, description, valid_from")
-          .in("client_product_id", cpIds)
-          .order("valid_from", { ascending: false });
-        for (const h of hist ?? []) {
-          if (!descByCp.has(h.client_product_id as string)) {
-            descByCp.set(h.client_product_id as string, (h.description as string) ?? null);
-          }
-        }
-      }
       for (const m of matches ?? []) {
-        const cp = m.client_product_id as string | null;
-        if (cp && codeByCp.has(cp)) {
-          codeByMatch.set(m.id as string, {
-            code: codeByCp.get(cp)!,
-            description: descByCp.get(cp) ?? null,
-          });
+        if (m.client_product_id)
+          cpByMatch.set(m.id as string, m.client_product_id as string);
+      }
+    }
+
+    const effectiveCp = new Map<string, string>();
+    for (const r of rows) {
+      const direct = (r as { client_product_id: string | null }).client_product_id;
+      const fromMatch = r.client_product_match_id
+        ? cpByMatch.get(r.client_product_match_id) ?? null
+        : null;
+      const cpId = direct ?? fromMatch;
+      if (cpId) effectiveCp.set(r.id as string, cpId);
+    }
+
+    const cpIds = Array.from(new Set(effectiveCp.values()));
+    const codeByCp = new Map<string, string>();
+    const descByCp = new Map<string, string | null>();
+    if (cpIds.length > 0) {
+      const { data: cps } = await context.supabase
+        .from("client_products")
+        .select("id, client_code")
+        .in("id", cpIds);
+      for (const c of cps ?? []) codeByCp.set(c.id as string, c.client_code as string);
+      const { data: hist } = await context.supabase
+        .from("client_product_history")
+        .select("client_product_id, description, valid_from")
+        .in("client_product_id", cpIds)
+        .order("valid_from", { ascending: false });
+      for (const h of hist ?? []) {
+        if (!descByCp.has(h.client_product_id as string)) {
+          descByCp.set(h.client_product_id as string, (h.description as string) ?? null);
         }
       }
     }
 
     return rows.map((r) => {
-      const cp = r.client_product_match_id
-        ? codeByMatch.get(r.client_product_match_id) ?? null
-        : null;
-      return { ...r, client_code: cp?.code ?? null, client_description: cp?.description ?? null };
+      const cpId = effectiveCp.get(r.id as string) ?? null;
+      return {
+        ...r,
+        client_code: cpId ? codeByCp.get(cpId) ?? null : null,
+        client_description: cpId ? descByCp.get(cpId) ?? null : null,
+      };
     });
   });
 
