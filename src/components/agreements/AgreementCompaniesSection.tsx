@@ -123,7 +123,7 @@ export function AgreementCompaniesSection({
                   <TableHead>NIT</TableHead>
                   <TableHead>Razón social</TableHead>
                   <TableHead>Notas</TableHead>
-                  {canAdmin && <TableHead className="w-12" />}
+                  {canAdmin && <TableHead className="w-12 text-right"><span className="sr-only">Acciones</span></TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
