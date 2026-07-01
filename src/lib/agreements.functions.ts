@@ -545,12 +545,22 @@ export const detectNConflict = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => nConflictDetectSchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertCanAccess(context.supabase, data.agreement_id);
-    const conflicts = await detectSkuConflicts(
-      context.supabase,
-      data.agreement_id,
-      data.sku,
-    );
-    return { conflicts };
+    const [conflicts, product] = await Promise.all([
+      detectSkuConflicts(context.supabase, data.agreement_id, data.sku),
+      resolveProductBySku(context.supabase, data.sku),
+    ]);
+    let isLinked = false;
+    const product_id = product?.id ?? null;
+    if (product_id) {
+      const { data: linkRow } = await context.supabase
+        .from("agreement_sku_links")
+        .select("id")
+        .eq("agreement_id", data.agreement_id)
+        .eq("product_id", product_id)
+        .maybeSingle();
+      isLinked = !!linkRow;
+    }
+    return { conflicts, isLinked, product_id };
   });
 
 export const applyPriceToSku = createServerFn({ method: "POST" })
@@ -568,6 +578,64 @@ export const applyPriceToSku = createServerFn({ method: "POST" })
       .neq("status", "excluded");
     if (error) throw new Error(error.message);
     return { updated: count ?? 0 };
+  });
+
+// ---------------------------------------------------------------------------
+// Vinculación de precio por SKU
+// ---------------------------------------------------------------------------
+
+export const isSkuLinked = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => skuLinkSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertCanAccess(context.supabase, data.agreement_id);
+    const { data: row, error } = await context.supabase
+      .from("agreement_sku_links")
+      .select("id")
+      .eq("agreement_id", data.agreement_id)
+      .eq("product_id", data.product_id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return { linked: !!row };
+  });
+
+export const linkSkuPrice = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => skuLinkWithPriceSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertCanAdmin(context.supabase, data.agreement_id);
+    const { error: insErr } = await context.supabase
+      .from("agreement_sku_links")
+      .insert({
+        agreement_id: data.agreement_id,
+        product_id: data.product_id,
+        created_by: context.userId,
+      });
+    if (insErr && !insErr.message.toLowerCase().includes("duplicate")) {
+      throw new Error(`No se pudo vincular el SKU: ${insErr.message}`);
+    }
+    const { error, count } = await context.supabase
+      .from("agreement_products")
+      .update({ sale_price: data.price, updated_by: context.userId }, { count: "exact" })
+      .eq("agreement_id", data.agreement_id)
+      .eq("product_id", data.product_id)
+      .neq("status", "excluded");
+    if (error) throw new Error(`Vínculo creado pero no se pudo aplicar el precio: ${error.message}`);
+    return { linked: true as const, updated: count ?? 0 };
+  });
+
+export const unlinkSkuPrice = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => skuLinkSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertCanAdmin(context.supabase, data.agreement_id);
+    const { error } = await context.supabase
+      .from("agreement_sku_links")
+      .delete()
+      .eq("agreement_id", data.agreement_id)
+      .eq("product_id", data.product_id);
+    if (error) throw new Error(`No se pudo desvincular el SKU: ${error.message}`);
+    return { linked: false as const };
   });
 
 // ---------------------------------------------------------------------------
