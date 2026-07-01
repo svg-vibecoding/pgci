@@ -424,7 +424,7 @@ export function LineEditDialog({
                   )}
                   {nConflict.kind === "found" && (
                     <div className="md:col-span-2">
-                      <Alert variant="warning" className="p-0 bg-surface-card">
+                      <Alert variant="warning" className="p-0 overflow-hidden">
                         <Collapsible open={nExpanded} onOpenChange={setNExpanded}>
                           <CollapsibleTrigger asChild>
                             <button
@@ -438,14 +438,14 @@ export function LineEditDialog({
                               </span>
                               <ChevronDown
                                 className={cn(
-                                  "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+                                  "h-4 w-4 shrink-0 text-[var(--status-warning-strong)] transition-transform",
                                   nExpanded && "rotate-180",
                                 )}
                               />
                             </button>
                           </CollapsibleTrigger>
                           <CollapsibleContent>
-                            <div className="border-t border-border bg-surface-card px-4 py-4 space-y-4">
+                            <div className="border-t border-border px-4 py-4 space-y-3">
                               <div className="rounded-md border border-border bg-surface-card overflow-hidden">
                                 <Table>
                                   <TableHeader>
