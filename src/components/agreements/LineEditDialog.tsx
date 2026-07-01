@@ -488,12 +488,9 @@ export function LineEditDialog({
   const linkMut = useMutation({
     mutationFn: async () => {
       if (!productId) throw new Error("SKU no válido para vincular");
-      const priceStr = v.sale_price.trim();
-      if (!priceStr) throw new Error("Ingresa un precio antes de vincular");
-      const price = Number(priceStr.replace(",", "."));
-      if (!Number.isFinite(price) || price < 0) {
-        throw new Error("Precio inválido");
-      }
+      const price = parsePriceInput(v.sale_price);
+      if (price == null) throw new Error("Ingresa un precio antes de vincular");
+      if (price < 0) throw new Error("Precio inválido");
       return linkFn({
         data: { agreement_id: agreementId, product_id: productId, price },
       });
