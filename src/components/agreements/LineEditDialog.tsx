@@ -866,6 +866,12 @@ export function LineEditDialog({
                         inputMode="decimal"
                         value={v.sale_price}
                         onChange={(e) => setV({ ...v, sale_price: e.target.value })}
+                        onBlur={(e) =>
+                          setV((prev) => ({
+                            ...prev,
+                            sale_price: normalizePriceOnBlur(e.target.value),
+                          }))
+                        }
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -875,6 +881,12 @@ export function LineEditDialog({
                         inputMode="decimal"
                         value={v.par_price}
                         onChange={(e) => setV({ ...v, par_price: e.target.value })}
+                        onBlur={(e) =>
+                          setV((prev) => ({
+                            ...prev,
+                            par_price: normalizePriceOnBlur(e.target.value),
+                          }))
+                        }
                       />
                     </div>
                   </div>
