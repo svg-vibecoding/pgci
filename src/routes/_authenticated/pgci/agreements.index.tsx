@@ -299,7 +299,7 @@ function AgreementsList() {
                         label={a.status === "active" ? "Activo" : "Inactivo"}
                       />
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="w-[1%] whitespace-nowrap text-right">
                       <div className="inline-flex items-center gap-1">
                         <Button asChild size="sm" variant="ghost">
                           <Link
