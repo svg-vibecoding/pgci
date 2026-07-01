@@ -23,6 +23,44 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge, Chip, StatusBadge } from "@/components/sumatec";
+import type { SumatecBadgeColor, SumatecBadgeVariant } from "@/components/sumatec/Badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+type CountSpec = {
+  key: string;
+  label: string;
+  value: number;
+  color: SumatecBadgeColor;
+  variant?: SumatecBadgeVariant;
+};
+
+function PositionsCounters({ counts }: { counts: CountSpec[] }) {
+  const visible = counts.filter((c) => c.value > 0);
+  if (visible.length === 0) {
+    return <span className="text-muted-foreground">0</span>;
+  }
+  return (
+    <div className="flex items-center gap-1.5">
+      {visible.map((c) => (
+        <Tooltip key={c.key}>
+          <TooltipTrigger asChild>
+            <span className="inline-flex cursor-default">
+              <Badge color={c.color} variant={c.variant ?? "soft"}>
+                {c.value}
+              </Badge>
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>{c.label}</TooltipContent>
+        </Tooltip>
+      ))}
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/_authenticated/pgci/agreements/")({
   head: () => ({ meta: [{ title: "Acuerdos · PGCI" }] }),
