@@ -68,7 +68,7 @@ export function StatusBadge({
     display: "inline-flex",
     alignItems: "center",
     gap: sm ? 4 : 5,
-    padding: sm ? "1px 5px" : "2px 7px",
+    padding: sm ? "2px 7px" : "3px 9px",
     fontFamily: "var(--font-ui)",
     fontWeight: "var(--fw-bold)",
     fontSize: sm ? 10 : 11,

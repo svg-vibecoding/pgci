@@ -451,7 +451,7 @@ function AgreementLinesPage() {
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-1">
-                      {meta && <StatusBadge status={meta.status} label={meta.label} size="sm" />}
+                      {meta && <StatusBadge status={meta.status} label={meta.label} />}
                       {r.status === "pending" && reasons.length > 0 && (
                         <div className="flex flex-wrap gap-1">
                           {reasons.map((rsn) => (
