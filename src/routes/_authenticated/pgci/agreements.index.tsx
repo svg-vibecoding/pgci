@@ -40,6 +40,13 @@ type CountSpec = {
   variant?: SumatecBadgeVariant;
 };
 
+const COUNTER_STYLE: CSSProperties = {
+  boxSizing: "border-box",
+  minWidth: 24,
+  height: 24,
+  padding: 0,
+};
+
 function PositionsCounters({ counts }: { counts: CountSpec[] }) {
   const visible = counts.filter((c) => c.value > 0);
   if (visible.length === 0) {
