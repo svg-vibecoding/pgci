@@ -262,15 +262,15 @@ function AgreementsList() {
 
         <div className="rounded-lg border border-border bg-card">
           <TooltipProvider delayDuration={150}>
-          <Table>
+          <Table className="table-fixed">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-full">Acuerdo</TableHead>
-                <TableHead className="w-full">Cliente</TableHead>
-                <TableHead className="whitespace-nowrap">Posiciones</TableHead>
-                <TableHead className="whitespace-nowrap">Vigencia</TableHead>
-                <TableHead className="whitespace-nowrap">Estado</TableHead>
-                <TableHead className="whitespace-nowrap text-right">Acciones</TableHead>
+                <TableHead className="w-auto">Acuerdo</TableHead>
+                <TableHead className="w-auto">Cliente</TableHead>
+                <TableHead className="w-[144px] whitespace-nowrap">Posiciones</TableHead>
+                <TableHead className="w-[112px] whitespace-nowrap">Vigencia</TableHead>
+                <TableHead className="w-[96px] whitespace-nowrap">Estado</TableHead>
+                <TableHead className="w-[224px] whitespace-nowrap text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
