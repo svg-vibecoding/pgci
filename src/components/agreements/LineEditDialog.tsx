@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AlertTriangle, ChevronDown, Info, Link, Link2, Loader2, Search, Unlink } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatMoneyCOP } from "@/lib/format";
 import {
   Dialog,
   DialogContent,
@@ -708,14 +709,7 @@ export function LineEditDialog({
                                           {l.client_description ?? "—"}
                                         </TableCell>
                                         <TableCell className="text-right text-sm tabular-nums text-foreground">
-                                          {l.current_price != null
-                                            ? l.current_price.toLocaleString("es-CO", {
-                                                style: "currency",
-                                                currency: "COP",
-                                                minimumFractionDigits: 2,
-                                                maximumFractionDigits: 2,
-                                              })
-                                            : "—"}
+                                          {formatMoneyCOP(l.current_price)}
                                         </TableCell>
                                       </TableRow>
                                     ))}

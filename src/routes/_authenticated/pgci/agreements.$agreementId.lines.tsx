@@ -70,15 +70,8 @@ const STATUS_META: Record<
 };
 
 
-const fmtMoney = (v: number | null) =>
-  v == null
-    ? "—"
-    : new Intl.NumberFormat("es-CO", {
-        style: "currency",
-        currency: "COP",
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }).format(v);
+import { formatMoneyCOP } from "@/lib/format";
+const fmtMoney = (v: number | null) => formatMoneyCOP(v);
 
 type VigenciaBadge = {
   color: "info" | "warning" | "error" | "neutral";
@@ -431,7 +424,7 @@ function AgreementLinesPage() {
               return (
                 <TableRow key={r.id as string}>
                   <TableCell>
-                    <div className="font-medium">{r.client_code ?? "—"}</div>
+                    <div className="font-mono text-sm">{r.client_code ?? "—"}</div>
                     <div className="text-xs text-muted-foreground line-clamp-2">
                       {r.client_description ?? "—"}
                     </div>
@@ -449,7 +442,7 @@ function AgreementLinesPage() {
                     <div>{fmtMoney(r.sale_price ?? null)}</div>
                     {r.par_price != null && r.par_price > 0 && (
                       <div className="text-xs text-muted-foreground">
-                        {fmtMoney(r.par_price)} par
+                        par&nbsp;&nbsp;{fmtMoney(r.par_price)}
                       </div>
                     )}
                   </TableCell>
