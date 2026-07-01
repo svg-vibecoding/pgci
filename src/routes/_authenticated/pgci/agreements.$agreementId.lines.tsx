@@ -65,7 +65,7 @@ const STATUS_META: Record<
 > = {
   active: { label: "Activa", status: "active" },
   pending: { label: "Pendiente", status: "warning" },
-  requires_review: { label: "Requiere revisión", status: "danger" },
+  requires_review: { label: "Revisar", status: "danger" },
   excluded: { label: "Excluida", status: "neutral" },
 };
 
@@ -226,7 +226,7 @@ function AgreementLinesPage() {
     { key: "all", label: "Posiciones", value: counts.all },
     { key: "active", label: "Activas", value: counts.active },
     { key: "pending", label: "Pendientes", value: counts.pending },
-    { key: "requires_review", label: "Requieren revisión", value: counts.requires_review },
+    { key: "requires_review", label: "Revisar", value: counts.requires_review },
     { key: "excluded", label: "Excluidas", value: counts.excluded },
   ];
 

@@ -714,7 +714,7 @@ export function LineEditDialog({
                     <Alert variant="warning">
                       <AlertDescription>
                         Producto inactivo en el catálogo. Esta posición quedará
-                        en "Requiere revisión".
+                        en "Revisar".
                       </AlertDescription>
                     </Alert>
                   </div>
