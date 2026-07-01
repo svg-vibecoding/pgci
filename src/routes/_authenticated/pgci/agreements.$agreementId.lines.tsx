@@ -65,7 +65,7 @@ const STATUS_META: Record<
 > = {
   active: { label: "Activa", status: "active" },
   pending: { label: "Pendiente", status: "warning" },
-  requires_review: { label: "Requiere revisión", status: "danger" },
+  requires_review: { label: "Revisar", status: "danger" },
   excluded: { label: "Excluida", status: "neutral" },
 };
 
