@@ -136,6 +136,8 @@ export function LineEditDialog({
   agreementName,
   clientName,
   initial,
+  agreementStartDate,
+  agreementEndDate,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -143,6 +145,8 @@ export function LineEditDialog({
   agreementName?: string | null;
   clientName?: string | null;
   initial?: Partial<LineEditValues> | null;
+  agreementStartDate?: string | null;
+  agreementEndDate?: string | null;
 }) {
   const qc = useQueryClient();
   const createFn = useServerFn(createAgreementLine);
@@ -355,6 +359,19 @@ export function LineEditDialog({
   };
 
   const hasProduct = !!productId;
+
+  const agreementDatesLabel = useMemo(() => {
+    if (!hasProduct) {
+      return "Las condiciones comerciales se habilitan cuando haya un producto Jaivaná seleccionado.";
+    }
+    const start = fmtCatalogDate(agreementStartDate);
+    const end = fmtCatalogDate(agreementEndDate);
+    if (start && end) {
+      return `Las fechas de vigencia son opcionales. Si no se indican, se heredan del acuerdo (${start} — ${end}).`;
+    }
+    return null;
+  }, [hasProduct, agreementStartDate, agreementEndDate]);
+
   const searchPlaceholder = hasProduct
     ? "Escribe para cambiar el producto..."
     : "Busca por código, descripción o marca...";
@@ -561,7 +578,7 @@ export function LineEditDialog({
                               key={p.id}
                               type="button"
                               onClick={() => onSelectProduct(p)}
-                              className="flex w-full flex-col gap-0.5 px-3 py-2 text-left hover:bg-accent focus:bg-accent focus:outline-none"
+                              className="flex w-full flex-col gap-0.5 px-3 py-2 text-left hover:bg-muted focus:bg-muted focus:outline-none"
                             >
                               <span className="font-mono text-sm font-medium text-foreground">
                                 {p.sku}
