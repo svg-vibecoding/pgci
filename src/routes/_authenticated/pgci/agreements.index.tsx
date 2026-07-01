@@ -3,8 +3,9 @@ import type { CSSProperties } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Plus, Search } from "lucide-react";
+import { ArrowUpRight, Plus, Search } from "lucide-react";
 import { listAgreements } from "@/lib/agreements.functions";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -47,7 +48,13 @@ const COUNTER_STYLE: CSSProperties = {
   padding: 0,
 };
 
-function PositionsCounters({ counts }: { counts: CountSpec[] }) {
+function PositionsCounters({
+  counts,
+  agreementId,
+}: {
+  counts: CountSpec[];
+  agreementId?: string | null;
+}) {
   const visible = counts.filter((c) => c.value > 0);
   if (visible.length === 0) {
     return <span className="text-muted-foreground">0</span>;
@@ -66,6 +73,27 @@ function PositionsCounters({ counts }: { counts: CountSpec[] }) {
           <TooltipContent>{c.label}</TooltipContent>
         </Tooltip>
       ))}
+      {agreementId && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              asChild
+              size="sm"
+              variant="ghost"
+              className="h-6 px-1.5 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <Link
+                to="/pgci/agreements/$agreementId/lines"
+                params={{ agreementId: agreementId as string }}
+                className="inline-flex items-center gap-1"
+              >
+                Ir <ArrowUpRight className="h-3.5 w-3.5" />
+              </Link>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Ver posiciones</TooltipContent>
+        </Tooltip>
+      )}
     </div>
   );
 }
@@ -275,10 +303,10 @@ function AgreementsList() {
               <TableRow>
                 <TableHead className="w-auto">Acuerdo</TableHead>
                 <TableHead className="w-auto">Cliente</TableHead>
-                <TableHead className="w-[168px] whitespace-nowrap">Posiciones</TableHead>
+                <TableHead className="w-[220px] whitespace-nowrap">Posiciones</TableHead>
                 <TableHead className="w-[112px] whitespace-nowrap">Vigencia</TableHead>
                 <TableHead className="w-[96px] whitespace-nowrap">Estado</TableHead>
-                <TableHead className="w-[224px] whitespace-nowrap text-right">Acciones</TableHead>
+                <TableHead className="w-[144px] whitespace-nowrap text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -328,8 +356,8 @@ function AgreementsList() {
                       )}
                     </TableCell>
                     <TableCell className="text-muted-foreground min-w-0 truncate">{clientName}</TableCell>
-                    <TableCell className="w-[168px] whitespace-nowrap">
-                      <PositionsCounters counts={counts} />
+                    <TableCell className="w-[220px] whitespace-nowrap">
+                      <PositionsCounters counts={counts} agreementId={a.id ?? null} />
                     </TableCell>
                     <TableCell className="w-[112px] whitespace-nowrap">
                       <Badge color={vig.color}>{vig.label}</Badge>
@@ -340,7 +368,7 @@ function AgreementsList() {
                         label={a.status === "active" ? "Activo" : "Inactivo"}
                       />
                     </TableCell>
-                    <TableCell className="w-[224px] whitespace-nowrap text-right">
+                    <TableCell className="w-[144px] whitespace-nowrap text-right">
                       <div className="inline-flex items-center gap-1">
                         <Button asChild size="sm" variant="ghost">
                           <Link
@@ -348,14 +376,6 @@ function AgreementsList() {
                             params={{ agreementId: a.id as string }}
                           >
                             Ver
-                          </Link>
-                        </Button>
-                        <Button asChild size="sm" variant="ghost">
-                          <Link
-                            to="/pgci/agreements/$agreementId/lines"
-                            params={{ agreementId: a.id as string }}
-                          >
-                            Posiciones
                           </Link>
                         </Button>
                         <Button asChild size="sm" variant="ghost">
