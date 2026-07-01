@@ -338,6 +338,52 @@ export type Database = {
           },
         ]
       }
+      agreement_sku_links: {
+        Row: {
+          agreement_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          product_id: string
+        }
+        Insert: {
+          agreement_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          product_id: string
+        }
+        Update: {
+          agreement_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agreement_sku_links_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "agreements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreement_sku_links_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "agreements_with_counts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreement_sku_links_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agreements: {
         Row: {
           client_id: string
