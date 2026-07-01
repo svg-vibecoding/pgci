@@ -249,6 +249,7 @@ export function LineEditDialog({
     setNConflict({ kind: "idle", lines: [] });
     setPriceChoice(null);
     setChosenPriceLineId(null);
+    setChoiceError(false);
     if (next.sku.trim()) {
       void runLookup(next.sku);
     }
