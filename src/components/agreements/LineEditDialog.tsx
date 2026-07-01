@@ -484,10 +484,15 @@ export function LineEditDialog({
                               type="button"
                               className="flex w-full items-center gap-2 px-4 py-3 text-left bg-warning/10 hover:bg-warning/15 transition-colors"
                             >
-                              <AlertTriangle className="h-4 w-4 shrink-0" />
+                              {isLinked ? (
+                                <Link2 className="h-4 w-4 shrink-0" />
+                              ) : (
+                                <AlertTriangle className="h-4 w-4 shrink-0" />
+                              )}
                               <span className="flex-1 text-sm font-medium">
-                                Este SKU ya tiene {nConflict.lines.length}{" "}
-                                {nConflict.lines.length === 1 ? "posición" : "posiciones"} en el acuerdo
+                                {isLinked
+                                  ? `Este SKU está vinculado. El precio se comparte con ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} en el acuerdo.`
+                                  : `Este SKU ya tiene ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} en el acuerdo`}
                               </span>
                               <ChevronDown
                                 className={cn(
@@ -503,157 +508,82 @@ export function LineEditDialog({
                                 <Table>
                                   <TableHeader>
                                     <TableRow>
-                                      {(() => {
-                                        const distinctPrices = new Set(
-                                          nConflict.lines
-                                            .map((l) => l.current_price)
-                                            .filter((p): p is number => p != null),
-                                        );
-                                        const showPick =
-                                          priceChoice === "same" && distinctPrices.size > 1;
-                                        return (
-                                          <>
-                                            {showPick && <TableHead className="w-8" />}
-                                            <TableHead>Código cliente</TableHead>
-                                            <TableHead>Descripción cliente</TableHead>
-                                            <TableHead className="text-right">Precio actual</TableHead>
-                                          </>
-                                        );
-                                      })()}
+                                      <TableHead>Código cliente</TableHead>
+                                      <TableHead>Descripción cliente</TableHead>
+                                      <TableHead className="text-right">Precio actual</TableHead>
                                     </TableRow>
                                   </TableHeader>
                                   <TableBody>
-                                    {nConflict.lines.map((l) => {
-                                      const distinctPrices = new Set(
-                                        nConflict.lines
-                                          .map((x) => x.current_price)
-                                          .filter((p): p is number => p != null),
-                                      );
-                                      const showPick =
-                                        priceChoice === "same" && distinctPrices.size > 1;
-                                      return (
-                                        <TableRow key={l.line_id}>
-                                          {showPick && (
-                                            <TableCell>
-                                              <RadioGroupItem
-                                                value={l.line_id}
-                                                checked={chosenPriceLineId === l.line_id}
-                                                onClick={() => {
-                                                  setChosenPriceLineId(l.line_id);
-                                                  if (l.current_price != null) {
-                                                    setV((cur) => ({
-                                                      ...cur,
-                                                      sale_price: String(l.current_price),
-                                                    }));
-                                                  }
-                                                }}
-                                              />
-                                            </TableCell>
-                                          )}
-                                          <TableCell className="font-mono text-xs text-foreground">
-                                            {l.client_code ?? "—"}
-                                          </TableCell>
-                                          <TableCell className="text-xs text-foreground">
-                                            {l.client_description ?? "—"}
-                                          </TableCell>
-                                          <TableCell className="text-right text-xs tabular-nums text-foreground">
-                                            {l.current_price != null
-                                              ? l.current_price.toLocaleString("es-CO", {
-                                                  style: "currency",
-                                                  currency: "COP",
-                                                  minimumFractionDigits: 2,
-                                                  maximumFractionDigits: 2,
-                                                })
-                                              : "—"}
-                                          </TableCell>
-                                        </TableRow>
-                                      );
-                                    })}
+                                    {nConflict.lines.map((l) => (
+                                      <TableRow key={l.line_id}>
+                                        <TableCell className="font-mono text-xs text-foreground">
+                                          {l.client_code ?? "—"}
+                                        </TableCell>
+                                        <TableCell className="text-xs text-foreground">
+                                          {l.client_description ?? "—"}
+                                        </TableCell>
+                                        <TableCell className="text-right text-xs tabular-nums text-foreground">
+                                          {l.current_price != null
+                                            ? l.current_price.toLocaleString("es-CO", {
+                                                style: "currency",
+                                                currency: "COP",
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 2,
+                                              })
+                                            : "—"}
+                                        </TableCell>
+                                      </TableRow>
+                                    ))}
                                   </TableBody>
                                 </Table>
                               </div>
 
                               <div className="rounded-md border border-border bg-surface-card p-4 space-y-3">
-                                <p className="text-sm font-medium text-foreground">
-                                  ¿Esta nueva posición debe usar el mismo precio?
-                                </p>
-                                <RadioGroup
-                                  value={priceChoice ?? ""}
-                                  onValueChange={(val) => {
-                                    const choice = val as "same" | "distinct";
-                                    setPriceChoice(choice);
-                                    setChoiceError(false);
-                                    if (choice === "same") {
-                                      const distinctPrices = Array.from(
-                                        new Set(
-                                          nConflict.lines
-                                            .map((l) => l.current_price)
-                                            .filter((p): p is number => p != null),
-                                        ),
-                                      );
-                                      let price: number | null = null;
-                                      if (distinctPrices.length === 1) {
-                                        price = distinctPrices[0];
-                                      } else {
-                                        const chosen = nConflict.lines.find(
-                                          (l) => l.line_id === chosenPriceLineId,
-                                        );
-                                        price = chosen?.current_price ?? null;
-                                      }
-                                      if (price != null) {
-                                        setV((cur) => ({ ...cur, sale_price: String(price) }));
-                                      }
-                                    } else {
-                                      setV((cur) => ({ ...cur, sale_price: "" }));
-                                    }
-                                  }}
-                                  className="gap-2"
-                                >
-                                  {(() => {
-                                    const distinctPrices = Array.from(
-                                      new Set(
-                                        nConflict.lines
-                                          .map((l) => l.current_price)
-                                          .filter((p): p is number => p != null),
-                                      ),
-                                    );
-                                    const singlePrice = distinctPrices[0] ?? null;
-                                    const singlePriceFmt =
-                                      singlePrice != null
-                                        ? singlePrice.toLocaleString("es-CO", {
-                                            style: "currency",
-                                            currency: "COP",
-                                            minimumFractionDigits: 2,
-                                            maximumFractionDigits: 2,
-                                          })
-                                        : null;
-                                    return (
-                                      <>
-                                        <label className="flex items-start gap-2 text-sm font-normal text-muted-foreground">
-                                          <RadioGroupItem value="same" className="mt-0.5" />
-                                          <span>
-                                            Sí, usar el mismo precio{" "}
-                                            {distinctPrices.length === 1 && singlePriceFmt ? (
-                                              <span className="font-semibold">{singlePriceFmt}</span>
-                                            ) : (
-                                              <span className="text-muted-foreground">
-                                                (selecciona cuál abajo)
-                                              </span>
-                                            )}
-                                          </span>
-                                        </label>
-                                        <label className="flex items-start gap-2 text-sm font-normal text-muted-foreground">
-                                          <RadioGroupItem value="distinct" className="mt-0.5" />
-                                          <span>No, definiré un precio distinto</span>
-                                        </label>
-                                      </>
-                                    );
-                                  })()}
-                                </RadioGroup>
-                                {choiceError && (
-                                  <p className="text-xs font-medium text-destructive">
-                                    Debes indicar cómo manejar el precio para esta posición antes de continuar.
-                                  </p>
+                                {isLinked ? (
+                                  <>
+                                    <p className="text-sm text-muted-foreground">
+                                      Al editar el precio de esta posición, se aplicará automáticamente a todas las posiciones con el mismo SKU.
+                                    </p>
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="outline"
+                                      disabled={unlinkMut.isPending || !productId}
+                                      onClick={() => unlinkMut.mutate()}
+                                    >
+                                      {unlinkMut.isPending ? (
+                                        <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                                      ) : (
+                                        <Link2Off className="mr-2 h-3.5 w-3.5" />
+                                      )}
+                                      Desvincular
+                                    </Button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <p className="text-sm text-muted-foreground">
+                                      Al vincular, el precio actual de esta posición se aplicará a todas las posiciones con el mismo SKU y quedarán ligadas.
+                                    </p>
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="outline"
+                                      disabled={linkMut.isPending || !productId}
+                                      onClick={() => linkMut.mutate()}
+                                    >
+                                      {linkMut.isPending ? (
+                                        <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                                      ) : (
+                                        <Link2 className="mr-2 h-3.5 w-3.5" />
+                                      )}
+                                      Vincular
+                                    </Button>
+                                    {linkError && (
+                                      <p className="text-xs font-medium text-destructive">
+                                        {linkError}
+                                      </p>
+                                    )}
+                                  </>
                                 )}
                               </div>
                             </div>
@@ -662,6 +592,7 @@ export function LineEditDialog({
                       </Alert>
                     </div>
                   )}
+
                 </div>
               </div>
             </section>
