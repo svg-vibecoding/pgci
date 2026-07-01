@@ -541,6 +541,9 @@ export function LineEditDialog({
                               <div className="rounded-md border border-border bg-surface-card p-4 space-y-3">
                                 {isLinked ? (
                                   <>
+                                    <h4 className="text-sm font-semibold text-foreground">
+                                      Posiciones vinculadas
+                                    </h4>
                                     <p className="text-sm text-foreground">
                                       {`Este SKU está vinculado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} del acuerdo. Cualquier cambio de precio se aplicará automáticamente a todas.`}
                                     </p>
@@ -562,6 +565,9 @@ export function LineEditDialog({
                                   </>
                                 ) : (
                                   <>
+                                    <h4 className="text-sm font-semibold text-foreground">
+                                      Posiciones no vinculadas
+                                    </h4>
                                     <p className="text-sm text-foreground">
                                       {`Este SKU está asignado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} más del acuerdo. Si las vinculas, compartirán el mismo precio y se actualizarán juntas automáticamente en cada cambio de precio.`}
                                     </p>
