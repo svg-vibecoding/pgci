@@ -450,7 +450,7 @@ function AgreementLinesPage() {
                     <Badge color={vig.color}>{vig.label}</Badge>
                   </TableCell>
                   <TableCell>
-                    <div className="flex flex-col gap-1">
+                    <div className="flex flex-col items-start gap-1">
                       {meta && <StatusBadge status={meta.status} label={meta.label} />}
                       {r.status === "pending" && reasons.length > 0 && (
                         <div className="flex flex-wrap gap-1">
