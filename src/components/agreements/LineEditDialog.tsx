@@ -520,7 +520,7 @@ export function LineEditDialog({
                                 </Table>
                               </div>
 
-                              <div className="space-y-2">
+                              <div className="rounded-md border border-border bg-surface-card p-4 space-y-3">
                                 <p className="text-sm font-medium text-foreground">
                                   ¿Esta nueva posición debe usar el mismo precio?
                                 </p>
@@ -576,7 +576,7 @@ export function LineEditDialog({
                                         : null;
                                     return (
                                       <>
-                                        <label className="flex items-start gap-2 text-xs text-foreground">
+                                        <label className="flex items-start gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                                           <RadioGroupItem value="same" className="mt-0.5" />
                                           <span>
                                             Sí, usar el mismo precio{" "}
@@ -589,7 +589,7 @@ export function LineEditDialog({
                                             )}
                                           </span>
                                         </label>
-                                        <label className="flex items-start gap-2 text-xs text-foreground">
+                                        <label className="flex items-start gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                                           <RadioGroupItem value="distinct" className="mt-0.5" />
                                           <span>No, definiré un precio distinto</span>
                                         </label>
