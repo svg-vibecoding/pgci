@@ -420,6 +420,8 @@ export const updateAgreementLine = createServerFn({ method: "POST" })
     }
     return { ok: true, propagated };
   });
+
+class NConflictError extends Error {
   conflicts: SkuConflict[];
   constructor(conflicts: SkuConflict[]) {
     super("N_CONFLICT");
