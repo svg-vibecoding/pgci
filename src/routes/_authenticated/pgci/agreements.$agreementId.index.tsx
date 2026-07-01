@@ -475,7 +475,7 @@ function EditMemberDialog({
   isSaving: boolean;
 }) {
   const [role, setRole] = useState<"agreement_admin" | "agreement_member">("agreement_member");
-  React.useEffect(() => {
+  useEffect(() => {
     if (member) setRole(member.role);
   }, [member]);
   return (
