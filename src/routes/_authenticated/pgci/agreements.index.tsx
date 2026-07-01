@@ -74,12 +74,7 @@ function PositionsCounters({
         </Tooltip>
       ))}
       {agreementId && (
-        <Button
-          asChild
-          size="sm"
-          variant="ghost"
-          className="h-6 px-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-        >
+        <Button asChild size="sm" variant="ghost">
           <Link
             to="/pgci/agreements/$agreementId/lines"
             params={{ agreementId: agreementId as string }}
