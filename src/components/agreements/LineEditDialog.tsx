@@ -371,8 +371,8 @@ export function LineEditDialog({
     if (!hasProduct) {
       return "Las condiciones comerciales se habilitan cuando haya un producto Jaivaná seleccionado.";
     }
-    const start = fmtCatalogDate(agreementStartDate);
-    const end = fmtCatalogDate(agreementEndDate);
+    const start = fmtDateLocal(agreementStartDate);
+    const end = fmtDateLocal(agreementEndDate);
     if (start && end) {
       return `Las fechas de vigencia son opcionales. Si no se indican, se heredan del acuerdo (${start} — ${end}).`;
     }
