@@ -529,6 +529,7 @@ export function LineEditDialog({
                                   onValueChange={(val) => {
                                     const choice = val as "same" | "distinct";
                                     setPriceChoice(choice);
+                                    setChoiceError(false);
                                     if (choice === "same") {
                                       const distinctPrices = Array.from(
                                         new Set(
