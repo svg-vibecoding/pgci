@@ -365,6 +365,7 @@ function AgreementsList() {
               })}
             </TableBody>
           </Table>
+          </TooltipProvider>
         </div>
       </div>
     </div>
