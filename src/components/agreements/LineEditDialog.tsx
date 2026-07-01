@@ -862,8 +862,11 @@ export function LineEditDialog({
           </Button>
           <Button
             onClick={() => {
-              if (v.sku.trim() && !hasSearched) {
-                setSaveError("Valida el código Jaivaná antes de guardar.");
+              // Bloquear solo cuando el usuario escribió en el buscador pero no
+              // seleccionó ningún resultado. Sin producto y buscador vacío es válido
+              // (posición queda en pending / Sin SKU).
+              if (searchQuery.trim() !== "" && !productId) {
+                setSaveError("Selecciona un producto o deja el buscador vacío.");
                 return;
               }
               setSaveError(null);
