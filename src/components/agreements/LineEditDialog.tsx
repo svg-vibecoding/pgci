@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -17,6 +17,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { StatusBadge } from "@/components/sumatec/StatusBadge";
 
 import {
   Table,
@@ -38,6 +40,7 @@ import {
   detectNConflict,
   linkSkuPrice,
   unlinkSkuPrice,
+  searchProducts,
 } from "@/lib/agreements.functions";
 
 export type LineEditValues = {
@@ -147,6 +150,7 @@ export function LineEditDialog({
   const conflictFn = useServerFn(detectNConflict);
   const linkFn = useServerFn(linkSkuPrice);
   const unlinkFn = useServerFn(unlinkSkuPrice);
+  const searchFn = useServerFn(searchProducts);
   const [v, setV] = useState<LineEditValues>(empty);
   const [productMeta, setProductMeta] = useState<ProductMeta | null>(null);
   const [lookup, setLookup] = useState<{
@@ -167,99 +171,100 @@ export function LineEditDialog({
   const [isLinked, setIsLinked] = useState(false);
   const [productId, setProductId] = useState<string | null>(null);
   const [linkError, setLinkError] = useState<string | null>(null);
-  const [hasSearched, setHasSearched] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const lookupSeq = useRef(0);
+
+  // Buscador de productos (combobox)
+  type ProductResult = {
+    id: string;
+    sku: string;
+    erp_description: string | null;
+    commercial_brand: string | null;
+    status: "active" | "inactive";
+  };
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<ProductResult[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchLoadingMore, setSearchLoadingMore] = useState(false);
+  const [searchHasMore, setSearchHasMore] = useState(false);
   const conflictSeq = useRef(0);
+  const searchSeq = useRef(0);
+  const PAGE_SIZE = 20;
 
-
-
-  const runLookup = async (sku: string) => {
+  const runConflict = async (sku: string, pid: string | null) => {
     const trimmed = sku.trim();
     if (!trimmed) {
-      setProductMeta(null);
-      setLookup({ kind: "empty" });
       setNConflict({ kind: "idle", lines: [] });
       setIsLinked(false);
-      setProductId(null);
-      setLinkError(null);
       return;
     }
-    setHasSearched(true);
-    setSaveError(null);
-    const seq = ++lookupSeq.current;
     const cseq = ++conflictSeq.current;
-    setLookup({ kind: "loading" });
     setNConflict({ kind: "loading", lines: [] });
     setLinkError(null);
-
-
-    const lookupPromise = lookupFn({ data: { sku: trimmed } })
-      .then((res) => {
-        if (seq !== lookupSeq.current) return;
-        if (!res.found) {
-          setProductMeta(null);
-          setLookup({ kind: "not_found", catalogUpdatedAt: res.catalog_updated_at });
-          return;
+    try {
+      const res = await conflictFn({
+        data: { agreement_id: agreementId, sku: trimmed },
+      });
+      if (cseq !== conflictSeq.current) return;
+      // Prefer product_id returned from the search selection; fallback to server resolution.
+      if (pid) setProductId(pid);
+      else setProductId(res.product_id ?? null);
+      const linked = !!res.isLinked;
+      setIsLinked(linked);
+      const excludeId = initial?.line_id ?? null;
+      const lines = (res.conflicts ?? []).filter((l) => l.line_id !== excludeId);
+      if (lines.length === 0) {
+        setNConflict({ kind: "none", lines: [] });
+        return;
+      }
+      const sorted = [...lines].sort((a, b) => {
+        const ta = a.updated_at ? Date.parse(a.updated_at) : 0;
+        const tb = b.updated_at ? Date.parse(b.updated_at) : 0;
+        return tb - ta;
+      });
+      setNConflict({ kind: "found", lines: sorted });
+      setNExpanded(true);
+      if (linked && !initial?.line_id) {
+        const linkedPrice = sorted.find((l) => l.current_price != null)?.current_price;
+        if (linkedPrice != null) {
+          setV((prev) =>
+            prev.sale_price.trim() === ""
+              ? { ...prev, sale_price: String(linkedPrice) }
+              : prev,
+          );
         }
-        setProductMeta({
-          erp_description: res.erp_description,
-          commercial_brand: res.commercial_brand,
-        });
-        setLookup({
-          kind: res.status === "active" ? "active" : "inactive",
-          catalogUpdatedAt: res.catalog_updated_at,
-        });
-      })
-      .catch((e: Error) => {
-        if (seq !== lookupSeq.current) return;
+      }
+    } catch (e) {
+      if (cseq !== conflictSeq.current) return;
+      setNConflict({ kind: "idle", lines: [] });
+      setIsLinked(false);
+      console.error("detectNConflict failed", e);
+    }
+  };
+
+  // Solo se usa en modo edición para prepoblar los campos RO del SKU inicial.
+  const prefillFromSku = async (sku: string) => {
+    const trimmed = sku.trim();
+    if (!trimmed) return;
+    try {
+      const res = await lookupFn({ data: { sku: trimmed } });
+      if (!res.found) {
         setProductMeta(null);
-        setLookup({ kind: "idle" });
-        toast.error(e.message);
+        setLookup({ kind: "not_found", catalogUpdatedAt: res.catalog_updated_at });
+        return;
+      }
+      setProductMeta({
+        erp_description: res.erp_description,
+        commercial_brand: res.commercial_brand,
       });
-
-    const conflictPromise = conflictFn({
-      data: { agreement_id: agreementId, sku: trimmed },
-    })
-      .then((res) => {
-        if (cseq !== conflictSeq.current) return;
-        setProductId(res.product_id ?? null);
-        const linked = !!res.isLinked;
-        setIsLinked(linked);
-        const excludeId = initial?.line_id ?? null;
-        const lines = (res.conflicts ?? []).filter((l) => l.line_id !== excludeId);
-        if (lines.length === 0) {
-          setNConflict({ kind: "none", lines: [] });
-          return;
-        }
-        const sorted = [...lines].sort((a, b) => {
-          const ta = a.updated_at ? Date.parse(a.updated_at) : 0;
-          const tb = b.updated_at ? Date.parse(b.updated_at) : 0;
-          return tb - ta;
-        });
-        setNConflict({ kind: "found", lines: sorted });
-        setNExpanded(true);
-        // Precargar precio para nueva posición cuando el SKU ya está vinculado.
-        if (linked && !initial?.line_id) {
-          const linkedPrice = sorted.find((l) => l.current_price != null)?.current_price;
-          if (linkedPrice != null) {
-            setV((prev) =>
-              prev.sale_price.trim() === ""
-                ? { ...prev, sale_price: String(linkedPrice) }
-                : prev,
-            );
-          }
-        }
-      })
-      .catch((e: Error) => {
-        if (cseq !== conflictSeq.current) return;
-        setNConflict({ kind: "idle", lines: [] });
-        setIsLinked(false);
-        setProductId(null);
-        console.error("detectNConflict failed", e);
+      setLookup({
+        kind: res.status === "active" ? "active" : "inactive",
+        catalogUpdatedAt: res.catalog_updated_at,
       });
-
-    await Promise.all([lookupPromise, conflictPromise]);
+    } catch (e) {
+      console.error("lookupProductBySku failed", e);
+    }
+    await runConflict(trimmed, null);
   };
 
   useEffect(() => {
@@ -273,13 +278,85 @@ export function LineEditDialog({
     setProductId(null);
     setLinkError(null);
     setSaveError(null);
-    const editingWithSku = !!initial?.line_id && !!next.sku.trim();
-    setHasSearched(editingWithSku);
-    if (editingWithSku) {
-      void runLookup(next.sku);
+    setSearchOpen(false);
+    setSearchQuery("");
+    setSearchResults([]);
+    setSearchHasMore(false);
+    if (initial?.line_id && next.sku.trim()) {
+      void prefillFromSku(next.sku);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initial]);
+
+  // Debounce del buscador
+  useEffect(() => {
+    if (!searchOpen) return;
+    const q = searchQuery.trim();
+    if (q.length < 2) {
+      setSearchResults([]);
+      setSearchHasMore(false);
+      setSearchLoading(false);
+      return;
+    }
+    const seq = ++searchSeq.current;
+    setSearchLoading(true);
+    const t = setTimeout(async () => {
+      try {
+        const res = await searchFn({ data: { query: q, offset: 0, limit: PAGE_SIZE } });
+        if (seq !== searchSeq.current) return;
+        setSearchResults(res.rows);
+        setSearchHasMore(res.hasMore);
+      } catch (e) {
+        if (seq !== searchSeq.current) return;
+        console.error("searchProducts failed", e);
+        setSearchResults([]);
+        setSearchHasMore(false);
+      } finally {
+        if (seq === searchSeq.current) setSearchLoading(false);
+      }
+    }, 250);
+    return () => clearTimeout(t);
+  }, [searchQuery, searchOpen, searchFn]);
+
+  const loadMoreResults = async () => {
+    const q = searchQuery.trim();
+    if (q.length < 2 || searchLoadingMore) return;
+    const seq = searchSeq.current;
+    setSearchLoadingMore(true);
+    try {
+      const res = await searchFn({
+        data: { query: q, offset: searchResults.length, limit: PAGE_SIZE },
+      });
+      if (seq !== searchSeq.current) return;
+      setSearchResults((prev) => [...prev, ...res.rows]);
+      setSearchHasMore(res.hasMore);
+    } catch (e) {
+      console.error("searchProducts load more failed", e);
+    } finally {
+      setSearchLoadingMore(false);
+    }
+  };
+
+  const onSelectProduct = (p: ProductResult) => {
+    setV((prev) => ({ ...prev, sku: p.sku }));
+    setProductMeta({
+      erp_description: p.erp_description,
+      commercial_brand: p.commercial_brand,
+    });
+    setProductId(p.id);
+    setLookup({ kind: p.status === "active" ? "active" : "inactive" });
+    setSaveError(null);
+    setSearchOpen(false);
+    setSearchQuery("");
+    setSearchResults([]);
+    setSearchHasMore(false);
+    void runConflict(p.sku, p.id);
+  };
+
+  const hasProduct = !!productId;
+  const searchPlaceholder = hasProduct
+    ? "Escribe para cambiar el producto..."
+    : "Busca por código, descripción o marca...";
 
 
 
@@ -360,7 +437,7 @@ export function LineEditDialog({
         `SKU vinculado. Precio aplicado a ${res.updated} ${res.updated === 1 ? "posición" : "posiciones"}.`,
       );
       invalidateLines();
-      if (v.sku.trim()) void runLookup(v.sku);
+      if (v.sku.trim()) void runConflict(v.sku, productId);
     },
     onError: (e: Error) => {
       setLinkError(e.message);
@@ -435,76 +512,131 @@ export function LineEditDialog({
             <section className="space-y-4">
               <SectionHeader title="Información Jaivaná" number="02" />
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="space-y-1.5">
-                  <FieldLabel>Código Jaivaná</FieldLabel>
-                  <div className="relative">
-                    <Input
-                      className={cn(inputClass, "pr-10")}
-                      value={v.sku}
-                      onChange={(e) => {
-                        setV({ ...v, sku: e.target.value });
-                        setProductMeta(null);
-                        setLookup({ kind: e.target.value.trim() ? "idle" : "empty" });
-                        setNConflict({ kind: "idle", lines: [] });
-                        setIsLinked(false);
-                        setProductId(null);
-                        setLinkError(null);
-                        setHasSearched(false);
-                        setSaveError(null);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          if (v.sku.trim() && lookup.kind !== "loading") {
-                            void runLookup(v.sku);
-                          }
-                        }
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => void runLookup(v.sku)}
-                      disabled={!v.sku.trim() || lookup.kind === "loading"}
-                      aria-label="Validar código en catálogo"
-                      className="absolute right-1 top-1 h-7 w-7 inline-flex items-center justify-center rounded-sm text-text-tertiary hover:text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-text-tertiary transition-colors"
+                {/* Buscador — ancho completo */}
+                <div className="space-y-1.5 md:col-span-2">
+                  <FieldLabel>Producto Jaivaná</FieldLabel>
+                  <Popover open={searchOpen} onOpenChange={setSearchOpen}>
+                    <PopoverTrigger asChild>
+                      <div className="relative">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          className={cn(inputClass, "pl-9")}
+                          value={searchQuery}
+                          placeholder={searchPlaceholder}
+                          onFocus={() => setSearchOpen(true)}
+                          onChange={(e) => {
+                            setSearchQuery(e.target.value);
+                            setSearchOpen(true);
+                            setSaveError(null);
+                          }}
+                        />
+                        {searchLoading && (
+                          <Loader2 className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+                        )}
+                      </div>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      align="start"
+                      sideOffset={4}
+                      onOpenAutoFocus={(e) => e.preventDefault()}
+                      className="w-[var(--radix-popover-trigger-width)] p-0"
                     >
-                      {lookup.kind === "loading" ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                      {searchQuery.trim().length < 2 ? (
+                        <p className="px-3 py-4 text-center text-sm text-muted-foreground">
+                          Escribe al menos 2 caracteres para buscar.
+                        </p>
+                      ) : searchLoading && searchResults.length === 0 ? (
+                        <p className="px-3 py-4 text-center text-sm text-muted-foreground">
+                          Buscando…
+                        </p>
+                      ) : searchResults.length === 0 ? (
+                        <p className="px-3 py-4 text-center text-sm text-muted-foreground">
+                          Sin resultados en el catálogo.
+                        </p>
                       ) : (
-                        <Search className="h-4 w-4" />
+                        <div className="max-h-72 overflow-y-auto py-1">
+                          {searchResults.map((p) => (
+                            <button
+                              key={p.id}
+                              type="button"
+                              onClick={() => onSelectProduct(p)}
+                              className="flex w-full flex-col gap-0.5 px-3 py-2 text-left hover:bg-accent focus:bg-accent focus:outline-none"
+                            >
+                              <span className="font-mono text-sm font-medium text-foreground">
+                                {p.sku}
+                              </span>
+                              <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                                <span className="truncate">
+                                  {p.erp_description ?? "—"}
+                                </span>
+                                <span aria-hidden>·</span>
+                                <span>{p.commercial_brand ?? "—"}</span>
+                                <span aria-hidden>·</span>
+                                <StatusBadge
+                                  size="sm"
+                                  status={p.status === "active" ? "active" : "neutral"}
+                                  label={p.status === "active" ? "Activo" : "Inactivo"}
+                                />
+                              </span>
+                            </button>
+                          ))}
+                          {searchHasMore && (
+                            <div className="border-t border-border p-2">
+                              <button
+                                type="button"
+                                onClick={() => void loadMoreResults()}
+                                disabled={searchLoadingMore}
+                                className="flex w-full items-center justify-center gap-2 rounded-sm py-2 text-sm font-medium text-primary hover:bg-accent disabled:opacity-50"
+                              >
+                                {searchLoadingMore && (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                )}
+                                Cargar más
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       )}
-                    </button>
-                  </div>
-                  {v.sku.trim() && !hasSearched && (
-                    <p className="text-xs text-muted-foreground">
-                      Presiona Enter o la lupa para validar.
-                    </p>
-                  )}
+                    </PopoverContent>
+                  </Popover>
                 </div>
-                {hasSearched && (lookup.kind === "active" || lookup.kind === "inactive") && (
-                  <div className="space-y-1.5">
-                    <FieldLabel>Marca</FieldLabel>
-                    <Input
-                      value={productMeta?.commercial_brand ?? ""}
-                      readOnly
-                      tabIndex={-1}
-                      placeholder="—"
-                      className={readonlyClass}
-                    />
-                  </div>
+
+                {/* Campos solo lectura — visibles solo cuando hay producto seleccionado */}
+                {hasProduct && (
+                  <>
+                    <div className="space-y-1.5">
+                      <FieldLabel>Código Jaivaná</FieldLabel>
+                      <Input
+                        value={v.sku}
+                        readOnly
+                        tabIndex={-1}
+                        placeholder="—"
+                        className={readonlyClass}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <FieldLabel>Marca</FieldLabel>
+                      <Input
+                        value={productMeta?.commercial_brand ?? ""}
+                        readOnly
+                        tabIndex={-1}
+                        placeholder="—"
+                        className={readonlyClass}
+                      />
+                    </div>
+                    <div className="space-y-1.5 md:col-span-2">
+                      <FieldLabel>Descripción Jaivaná</FieldLabel>
+                      <Input
+                        value={productMeta?.erp_description ?? ""}
+                        readOnly
+                        tabIndex={-1}
+                        placeholder="—"
+                        className={readonlyClass}
+                      />
+                    </div>
+                  </>
                 )}
-                {hasSearched && (lookup.kind === "active" || lookup.kind === "inactive") && (
-                  <div className="space-y-1.5 md:col-span-2">
-                    <FieldLabel>Descripción Jaivaná</FieldLabel>
-                    <Input
-                      value={productMeta?.erp_description ?? ""}
-                      readOnly
-                      tabIndex={-1}
-                      placeholder="—"
-                      className={readonlyClass}
-                    />
-                  </div>
-                )}
+
 
                 {lookup.kind === "inactive" && (
                   <div className="md:col-span-2">
@@ -730,8 +862,11 @@ export function LineEditDialog({
           </Button>
           <Button
             onClick={() => {
-              if (v.sku.trim() && !hasSearched) {
-                setSaveError("Valida el código Jaivaná antes de guardar.");
+              // Bloquear solo cuando el usuario escribió en el buscador pero no
+              // seleccionó ningún resultado. Sin producto y buscador vacío es válido
+              // (posición queda en pending / Sin SKU).
+              if (searchQuery.trim() !== "" && !productId) {
+                setSaveError("Selecciona un producto o deja el buscador vacío.");
                 return;
               }
               setSaveError(null);

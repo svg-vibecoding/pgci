@@ -557,6 +557,43 @@ export const lookupProductBySku = createServerFn({ method: "POST" })
     };
   });
 
+export const searchProducts = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => {
+    const obj = (d ?? {}) as { query?: unknown; offset?: unknown; limit?: unknown };
+    const query = typeof obj.query === "string" ? obj.query.trim() : "";
+    if (query.length < 2) throw new Error("Query mínimo 2 caracteres");
+    const offset = Number.isFinite(Number(obj.offset)) ? Math.max(0, Number(obj.offset)) : 0;
+    const limitRaw = Number.isFinite(Number(obj.limit)) ? Number(obj.limit) : 20;
+    const limit = Math.min(Math.max(1, limitRaw), 50);
+    return { query, offset, limit };
+  })
+  .handler(async ({ data, context }) => {
+    // Escape PostgREST .or() special chars: comma, paren; escape SQL LIKE wildcards.
+    const safe = data.query.replace(/[,()%_]/g, (c) => `\\${c}`);
+    const pattern = `%${safe}%`;
+    const to = data.offset + data.limit - 1;
+    const { data: rows, error } = await context.supabase
+      .from("products")
+      .select("id, sku, erp_description, commercial_brand, status")
+      .or(
+        `sku.ilike.${pattern},erp_description.ilike.${pattern},commercial_brand.ilike.${pattern}`,
+      )
+      .order("sku", { ascending: true })
+      .range(data.offset, to);
+    if (error) throw new Error(`No se pudo buscar productos: ${error.message}`);
+    return {
+      rows: (rows ?? []).map((r) => ({
+        id: r.id as string,
+        sku: r.sku as string,
+        erp_description: (r.erp_description as string | null) ?? null,
+        commercial_brand: (r.commercial_brand as string | null) ?? null,
+        status: (r.status as string) === "active" ? ("active" as const) : ("inactive" as const),
+      })),
+      hasMore: (rows?.length ?? 0) === data.limit,
+    };
+  });
+
 // ---------------------------------------------------------------------------
 // Conflicto N:1
 // ---------------------------------------------------------------------------
