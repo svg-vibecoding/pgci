@@ -167,8 +167,11 @@ export function LineEditDialog({
   const [isLinked, setIsLinked] = useState(false);
   const [productId, setProductId] = useState<string | null>(null);
   const [linkError, setLinkError] = useState<string | null>(null);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const lookupSeq = useRef(0);
   const conflictSeq = useRef(0);
+
 
 
   const runLookup = async (sku: string) => {
