@@ -565,6 +565,9 @@ export function LineEditDialog({
                                   </>
                                 ) : (
                                   <>
+                                    <h4 className="text-sm font-semibold text-foreground">
+                                      Posiciones no vinculadas
+                                    </h4>
                                     <p className="text-sm text-foreground">
                                       {`Este SKU está asignado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} más del acuerdo. Si las vinculas, compartirán el mismo precio y se actualizarán juntas automáticamente en cada cambio de precio.`}
                                     </p>
