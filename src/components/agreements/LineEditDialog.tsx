@@ -802,53 +802,54 @@ export function LineEditDialog({
             {/* Condiciones comerciales */}
             <section className="space-y-4">
               <SectionHeader title="Condiciones comerciales" number="03" />
-              {!hasProduct ? (
-                <div className="md:col-span-2">
-                  <Alert variant="info">
-                    <AlertDescription>
-                      Las condiciones comerciales se habilitan cuando haya un producto Jaivaná seleccionado.
-                    </AlertDescription>
-                  </Alert>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-                  <div className="space-y-1.5">
-                    <FieldLabel>Precio de venta</FieldLabel>
-                    <Input
-                      className={inputClass}
-                      inputMode="decimal"
-                      value={v.sale_price}
-                      onChange={(e) => setV({ ...v, sale_price: e.target.value })}
-                    />
+              {agreementDatesLabel && (
+                <Alert variant="info">
+                  <AlertDescription>{agreementDatesLabel}</AlertDescription>
+                </Alert>
+              )}
+              {hasProduct && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <FieldLabel>Precio de venta</FieldLabel>
+                      <Input
+                        className={inputClass}
+                        inputMode="decimal"
+                        value={v.sale_price}
+                        onChange={(e) => setV({ ...v, sale_price: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <FieldLabel>Precio par</FieldLabel>
+                      <Input
+                        className={inputClass}
+                        inputMode="decimal"
+                        value={v.par_price}
+                        onChange={(e) => setV({ ...v, par_price: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <FieldLabel>Fecha inicio</FieldLabel>
+                      <Input
+                        className={inputClass}
+                        type="date"
+                        value={v.start_date}
+                        onChange={(e) => setV({ ...v, start_date: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <FieldLabel>Fecha fin</FieldLabel>
+                      <Input
+                        className={inputClass}
+                        type="date"
+                        value={v.end_date}
+                        onChange={(e) => setV({ ...v, end_date: e.target.value })}
+                      />
+                    </div>
                   </div>
                   <div className="space-y-1.5">
-                    <FieldLabel>Precio par</FieldLabel>
-                    <Input
-                      className={inputClass}
-                      inputMode="decimal"
-                      value={v.par_price}
-                      onChange={(e) => setV({ ...v, par_price: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <FieldLabel>Fecha inicio</FieldLabel>
-                    <Input
-                      className={inputClass}
-                      type="date"
-                      value={v.start_date}
-                      onChange={(e) => setV({ ...v, start_date: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <FieldLabel>Fecha fin</FieldLabel>
-                    <Input
-                      className={inputClass}
-                      type="date"
-                      value={v.end_date}
-                      onChange={(e) => setV({ ...v, end_date: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-1.5 md:col-span-4">
                     <FieldLabel>Observaciones</FieldLabel>
                     <Textarea
                       className={inputClass}
@@ -862,11 +863,6 @@ export function LineEditDialog({
                 </div>
               )}
             </section>
-
-            <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
-              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              Si las fechas de inicio y fin no se indican en la posición, se hereda la vigencia del acuerdo.
-            </p>
           </div>
         </div>
 
