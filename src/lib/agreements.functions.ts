@@ -279,16 +279,22 @@ export const createAgreementLine = createServerFn({ method: "POST" })
 
     const product = await resolveProductBySku(context.supabase, data.sku);
     let matchId: string | null = null;
+    let clientProductId: string | null = null;
     if (data.client_code) {
-      const cpId = await ensureClientProduct(context.supabase, clientId, data.client_code);
+      clientProductId = await ensureClientProduct(
+        context.supabase,
+        clientId,
+        data.client_code,
+      );
       if (data.client_description) {
         await context.supabase.from("client_product_history").insert({
-          client_product_id: cpId,
+          client_product_id: clientProductId,
           description: data.client_description,
           valid_from: new Date().toISOString().slice(0, 10),
         });
       }
-      if (product) matchId = await ensureMatch(context.supabase, cpId, product.id);
+      if (product)
+        matchId = await ensureMatch(context.supabase, clientProductId, product.id);
     }
 
     const { data: row, error } = await context.supabase
@@ -297,6 +303,7 @@ export const createAgreementLine = createServerFn({ method: "POST" })
         agreement_id: data.agreement_id,
         product_id: product?.id ?? null,
         client_product_match_id: matchId,
+        client_product_id: clientProductId,
         sale_price: data.sale_price,
         par_price: data.par_price,
         start_date: data.start_date,
