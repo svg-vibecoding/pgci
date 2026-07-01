@@ -256,6 +256,7 @@ export type Database = {
       agreement_products: {
         Row: {
           agreement_id: string
+          client_product_id: string | null
           client_product_match_id: string | null
           created_at: string
           created_by: string | null
@@ -276,6 +277,7 @@ export type Database = {
         }
         Insert: {
           agreement_id: string
+          client_product_id?: string | null
           client_product_match_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -296,6 +298,7 @@ export type Database = {
         }
         Update: {
           agreement_id?: string
+          client_product_id?: string | null
           client_product_match_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -327,6 +330,13 @@ export type Database = {
             columns: ["agreement_id"]
             isOneToOne: false
             referencedRelation: "agreements_with_counts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreement_products_client_product_id_fkey"
+            columns: ["client_product_id"]
+            isOneToOne: false
+            referencedRelation: "client_products"
             referencedColumns: ["id"]
           },
           {
