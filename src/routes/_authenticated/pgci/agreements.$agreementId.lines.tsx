@@ -537,6 +537,8 @@ function AgreementLinesPage() {
         agreementId={agreementId}
         agreementName={agreement?.name as string | undefined}
         clientName={clientName}
+        agreementStartDate={agreement.start_date as string | null | undefined}
+        agreementEndDate={agreement.end_date as string | null | undefined}
         initial={editInitial}
       />
 
