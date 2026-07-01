@@ -508,13 +508,13 @@ export function LineEditDialog({
               </div>
             </section>
 
-            {/* Información Jaivaná */}
+            {/* Información Sumatec */}
             <section className="space-y-4">
-              <SectionHeader title="Información Jaivaná" number="02" />
+              <SectionHeader title="INFORMACIÓN SUMATEC" number="02" />
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {/* Buscador — ancho completo */}
                 <div className="space-y-1.5 md:col-span-2">
-                  <FieldLabel>Producto Jaivaná</FieldLabel>
+                  <FieldLabel>Producto Sumatec</FieldLabel>
                   <Popover open={searchOpen} onOpenChange={setSearchOpen}>
                     <PopoverTrigger asChild>
                       <div className="relative">
@@ -605,7 +605,7 @@ export function LineEditDialog({
                 {hasProduct && (
                   <>
                     <div className="space-y-1.5">
-                      <FieldLabel>Código Jaivaná</FieldLabel>
+                      <FieldLabel>Código Sumatec</FieldLabel>
                       <Input
                         value={v.sku}
                         readOnly
@@ -625,7 +625,7 @@ export function LineEditDialog({
                       />
                     </div>
                     <div className="space-y-1.5 md:col-span-2">
-                      <FieldLabel>Descripción Jaivaná</FieldLabel>
+                      <FieldLabel>Descripción Sumatec</FieldLabel>
                       <Input
                         value={productMeta?.erp_description ?? ""}
                         readOnly
