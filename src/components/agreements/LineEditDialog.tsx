@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { AlertTriangle, ChevronDown, Link, Link2, Loader2, Search, Unlink } from "lucide-react";
+import { AlertTriangle, Calendar, ChevronDown, Link, Link2, Loader2, Search, Unlink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatMoneyCOP } from "@/lib/format";
 import {
@@ -578,7 +578,8 @@ export function LineEditDialog({
             {/* Información Jaivaná */}
             <section className="space-y-4">
               <SectionHeader title="Información Jaivaná" number="02" />
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="rounded-lg bg-muted/40 p-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {/* Buscador — ancho completo */}
                 <div className="space-y-1.5 md:col-span-2">
                   <FieldLabel>Producto Jaivaná</FieldLabel>
@@ -845,6 +846,7 @@ export function LineEditDialog({
                       </Alert>
                   </div>
                 )}
+                </div>
               </div>
             </section>
 
@@ -893,21 +895,45 @@ export function LineEditDialog({
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="space-y-1.5">
                       <FieldLabel>Fecha inicio</FieldLabel>
-                      <Input
-                        className={inputClass}
-                        type="date"
-                        value={v.start_date}
-                        onChange={(e) => setV({ ...v, start_date: e.target.value })}
-                      />
+                      <div className="relative">
+                        <Input
+                          className={cn(
+                            inputClass,
+                            "pr-10",
+                            "[&::-webkit-calendar-picker-indicator]:opacity-0",
+                            "[&::-webkit-calendar-picker-indicator]:absolute",
+                            "[&::-webkit-calendar-picker-indicator]:inset-y-0",
+                            "[&::-webkit-calendar-picker-indicator]:right-0",
+                            "[&::-webkit-calendar-picker-indicator]:w-10",
+                            "[&::-webkit-calendar-picker-indicator]:cursor-pointer",
+                          )}
+                          type="date"
+                          value={v.start_date}
+                          onChange={(e) => setV({ ...v, start_date: e.target.value })}
+                        />
+                        <Calendar className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      </div>
                     </div>
                     <div className="space-y-1.5">
                       <FieldLabel>Fecha fin</FieldLabel>
-                      <Input
-                        className={inputClass}
-                        type="date"
-                        value={v.end_date}
-                        onChange={(e) => setV({ ...v, end_date: e.target.value })}
-                      />
+                      <div className="relative">
+                        <Input
+                          className={cn(
+                            inputClass,
+                            "pr-10",
+                            "[&::-webkit-calendar-picker-indicator]:opacity-0",
+                            "[&::-webkit-calendar-picker-indicator]:absolute",
+                            "[&::-webkit-calendar-picker-indicator]:inset-y-0",
+                            "[&::-webkit-calendar-picker-indicator]:right-0",
+                            "[&::-webkit-calendar-picker-indicator]:w-10",
+                            "[&::-webkit-calendar-picker-indicator]:cursor-pointer",
+                          )}
+                          type="date"
+                          value={v.end_date}
+                          onChange={(e) => setV({ ...v, end_date: e.target.value })}
+                        />
+                        <Calendar className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      </div>
                     </div>
                   </div>
                   <div className="space-y-1.5">
