@@ -435,10 +435,8 @@ export function LineEditDialog({
   const save = useMutation({
     mutationFn: async () => {
       const num = (s: string) => {
-        const t = s.trim();
-        if (t === "") return undefined;
-        const n = Number(t.replace(",", "."));
-        return Number.isFinite(n) ? n : undefined;
+        const n = parsePriceInput(s);
+        return n == null ? undefined : n;
       };
       const txt = (s: string) => (s.trim() === "" ? undefined : s.trim());
       if (isEdit) {
