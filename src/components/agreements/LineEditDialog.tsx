@@ -548,13 +548,14 @@ export function LineEditDialog({
                                       type="button"
                                       size="sm"
                                       variant="outline"
+                                      className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
                                       disabled={unlinkMut.isPending || !productId}
                                       onClick={() => unlinkMut.mutate()}
                                     >
                                       {unlinkMut.isPending ? (
                                         <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
                                       ) : (
-                                        <Link2Off className="mr-2 h-3.5 w-3.5" />
+                                        <Unlink className="mr-2 h-3.5 w-3.5" />
                                       )}
                                       Desvincular
                                     </Button>
@@ -568,13 +569,14 @@ export function LineEditDialog({
                                       type="button"
                                       size="sm"
                                       variant="outline"
+                                      className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
                                       disabled={linkMut.isPending || !productId}
                                       onClick={() => linkMut.mutate()}
                                     >
                                       {linkMut.isPending ? (
                                         <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
                                       ) : (
-                                        <Link2 className="mr-2 h-3.5 w-3.5" />
+                                        <Link className="mr-2 h-3.5 w-3.5" />
                                       )}
                                       Vincular
                                     </Button>
