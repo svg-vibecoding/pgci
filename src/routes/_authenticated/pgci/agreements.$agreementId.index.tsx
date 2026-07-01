@@ -320,16 +320,20 @@ function AgreementDetail() {
                 )}
                 {(members ?? []).map((m) => {
                   const roleLabel = m.role === "agreement_admin" ? "Administrador" : "Miembro";
-                  const erpCode = (m.profile as { erp_user_code?: string | null } | null)?.erp_user_code;
+                  const profile = m.profile as { full_name?: string | null; email?: string | null; status?: string | null; erp_user_code?: string | null } | null;
+                  const erpCode = profile?.erp_user_code;
                   return (
                   <TableRow key={m.id as string}>
                     <TableCell>
                       <div className="flex flex-wrap items-center gap-1.5">
                         <span className="font-medium">
-                          {m.profile?.full_name ?? "—"}
+                          {profile?.full_name ?? "—"}
                         </span>
                         {erpCode && (
                           <Badge color="neutral" variant="soft">{erpCode}</Badge>
+                        )}
+                        {profile?.status === "inactive" && (
+                          <Badge color="error" variant="soft">Inactivo</Badge>
                         )}
                       </div>
                       <div className="text-xs text-muted-foreground">
