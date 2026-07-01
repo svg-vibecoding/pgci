@@ -47,15 +47,8 @@ import {
 
 type Step = "upload" | "preview" | "result";
 
-const fmtMoney = (v: number | null | undefined) =>
-  v == null
-    ? "—"
-    : new Intl.NumberFormat("es-CO", {
-        style: "currency",
-        currency: "COP",
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }).format(v);
+import { formatMoneyCOP } from "@/lib/format";
+const fmtMoney = (v: number | null | undefined) => formatMoneyCOP(v);
 
 export function AgreementImportWizard({
   open,
