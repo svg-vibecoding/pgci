@@ -272,11 +272,15 @@ export function LineEditDialog({
     setIsLinked(false);
     setProductId(null);
     setLinkError(null);
-    if (next.sku.trim()) {
+    setSaveError(null);
+    const editingWithSku = !!initial?.line_id && !!next.sku.trim();
+    setHasSearched(editingWithSku);
+    if (editingWithSku) {
       void runLookup(next.sku);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initial]);
+
 
 
   const isEdit = !!initial?.line_id;
