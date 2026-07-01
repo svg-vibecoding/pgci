@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +11,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+
+const dateInputClass = cn(
+  "pr-10",
+  "[&::-webkit-calendar-picker-indicator]:opacity-0",
+  "[&::-webkit-calendar-picker-indicator]:absolute",
+  "[&::-webkit-calendar-picker-indicator]:inset-y-0",
+  "[&::-webkit-calendar-picker-indicator]:right-0",
+  "[&::-webkit-calendar-picker-indicator]:w-10",
+  "[&::-webkit-calendar-picker-indicator]:cursor-pointer",
+);
 
 export type AgreementFormValues = {
   client_id: string;
