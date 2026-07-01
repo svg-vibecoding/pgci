@@ -83,7 +83,7 @@ function PositionsCounters({
           <Link
             to="/pgci/agreements/$agreementId/lines"
             params={{ agreementId: agreementId as string }}
-            className="inline-flex items-center gap-0.5"
+            className="inline-flex items-center gap-px"
           >
             Abrir <ArrowUpRight className="h-3.5 w-3.5" />
           </Link>
