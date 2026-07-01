@@ -424,29 +424,29 @@ export function LineEditDialog({
                   )}
                   {nConflict.kind === "found" && (
                     <div className="md:col-span-2">
-                      <Alert variant="warning" className="p-0">
+                      <Alert variant="warning" className="p-0 bg-surface-card">
                         <Collapsible open={nExpanded} onOpenChange={setNExpanded}>
                           <CollapsibleTrigger asChild>
                             <button
                               type="button"
-                              className="flex w-full items-center gap-2 px-4 py-3 text-left"
+                              className="flex w-full items-center gap-2 px-4 py-3 text-left bg-warning/10 hover:bg-warning/15 transition-colors"
                             >
-                              <AlertTriangle className="h-4 w-4 shrink-0" />
-                              <span className="flex-1 text-sm font-medium">
+                              <AlertTriangle className="h-4 w-4 shrink-0 text-warning" />
+                              <span className="flex-1 text-sm font-medium text-foreground">
                                 Este SKU ya tiene {nConflict.lines.length}{" "}
                                 {nConflict.lines.length === 1 ? "posición" : "posiciones"} en el acuerdo
                               </span>
                               <ChevronDown
                                 className={cn(
-                                  "h-4 w-4 shrink-0 transition-transform",
+                                  "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
                                   nExpanded && "rotate-180",
                                 )}
                               />
                             </button>
                           </CollapsibleTrigger>
                           <CollapsibleContent>
-                            <div className="border-t border-warning/30 px-4 py-3 space-y-4">
-                              <div className="rounded-md border border-border bg-white overflow-hidden">
+                            <div className="border-t border-border bg-surface-card px-4 py-4 space-y-4">
+                              <div className="rounded-md border border-border bg-surface-card overflow-hidden">
                                 <Table>
                                   <TableHeader>
                                     <TableRow>
@@ -521,7 +521,7 @@ export function LineEditDialog({
                               </div>
 
                               <div className="space-y-2">
-                                <p className="text-xs font-medium text-foreground">
+                                <p className="text-sm font-medium text-foreground">
                                   ¿Esta nueva posición debe usar el mismo precio?
                                 </p>
                                 <RadioGroup
@@ -564,25 +564,32 @@ export function LineEditDialog({
                                           .filter((p): p is number => p != null),
                                       ),
                                     );
-                                    const sameLabel =
-                                      distinctPrices.length === 1
-                                        ? `Sí, usar el mismo precio (${distinctPrices[0].toLocaleString(
-                                            "es-CO",
-                                            {
-                                              style: "currency",
-                                              currency: "COP",
-                                              minimumFractionDigits: 2,
-                                              maximumFractionDigits: 2,
-                                            },
-                                          )})`
-                                        : "Sí, usar el mismo precio (selecciona cuál abajo)";
+                                    const singlePrice = distinctPrices[0] ?? null;
+                                    const singlePriceFmt =
+                                      singlePrice != null
+                                        ? singlePrice.toLocaleString("es-CO", {
+                                            style: "currency",
+                                            currency: "COP",
+                                            minimumFractionDigits: 2,
+                                            maximumFractionDigits: 2,
+                                          })
+                                        : null;
                                     return (
                                       <>
-                                        <label className="flex items-start gap-2 text-xs">
+                                        <label className="flex items-start gap-2 text-xs text-foreground">
                                           <RadioGroupItem value="same" className="mt-0.5" />
-                                          <span>{sameLabel}</span>
+                                          <span>
+                                            Sí, usar el mismo precio{" "}
+                                            {distinctPrices.length === 1 && singlePriceFmt ? (
+                                              <span className="font-semibold">{singlePriceFmt}</span>
+                                            ) : (
+                                              <span className="text-muted-foreground">
+                                                (selecciona cuál abajo)
+                                              </span>
+                                            )}
+                                          </span>
                                         </label>
-                                        <label className="flex items-start gap-2 text-xs">
+                                        <label className="flex items-start gap-2 text-xs text-foreground">
                                           <RadioGroupItem value="distinct" className="mt-0.5" />
                                           <span>No, definiré un precio distinto</span>
                                         </label>
