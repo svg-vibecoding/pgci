@@ -150,6 +150,7 @@ export function LineEditDialog({
   const conflictFn = useServerFn(detectNConflict);
   const linkFn = useServerFn(linkSkuPrice);
   const unlinkFn = useServerFn(unlinkSkuPrice);
+  const searchFn = useServerFn(searchProducts);
   const [v, setV] = useState<LineEditValues>(empty);
   const [productMeta, setProductMeta] = useState<ProductMeta | null>(null);
   const [lookup, setLookup] = useState<{
@@ -170,99 +171,100 @@ export function LineEditDialog({
   const [isLinked, setIsLinked] = useState(false);
   const [productId, setProductId] = useState<string | null>(null);
   const [linkError, setLinkError] = useState<string | null>(null);
-  const [hasSearched, setHasSearched] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const lookupSeq = useRef(0);
+
+  // Buscador de productos (combobox)
+  type ProductResult = {
+    id: string;
+    sku: string;
+    erp_description: string | null;
+    commercial_brand: string | null;
+    status: "active" | "inactive";
+  };
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<ProductResult[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchLoadingMore, setSearchLoadingMore] = useState(false);
+  const [searchHasMore, setSearchHasMore] = useState(false);
   const conflictSeq = useRef(0);
+  const searchSeq = useRef(0);
+  const PAGE_SIZE = 20;
 
-
-
-  const runLookup = async (sku: string) => {
+  const runConflict = async (sku: string, pid: string | null) => {
     const trimmed = sku.trim();
     if (!trimmed) {
-      setProductMeta(null);
-      setLookup({ kind: "empty" });
       setNConflict({ kind: "idle", lines: [] });
       setIsLinked(false);
-      setProductId(null);
-      setLinkError(null);
       return;
     }
-    setHasSearched(true);
-    setSaveError(null);
-    const seq = ++lookupSeq.current;
     const cseq = ++conflictSeq.current;
-    setLookup({ kind: "loading" });
     setNConflict({ kind: "loading", lines: [] });
     setLinkError(null);
-
-
-    const lookupPromise = lookupFn({ data: { sku: trimmed } })
-      .then((res) => {
-        if (seq !== lookupSeq.current) return;
-        if (!res.found) {
-          setProductMeta(null);
-          setLookup({ kind: "not_found", catalogUpdatedAt: res.catalog_updated_at });
-          return;
+    try {
+      const res = await conflictFn({
+        data: { agreement_id: agreementId, sku: trimmed },
+      });
+      if (cseq !== conflictSeq.current) return;
+      // Prefer product_id returned from the search selection; fallback to server resolution.
+      if (pid) setProductId(pid);
+      else setProductId(res.product_id ?? null);
+      const linked = !!res.isLinked;
+      setIsLinked(linked);
+      const excludeId = initial?.line_id ?? null;
+      const lines = (res.conflicts ?? []).filter((l) => l.line_id !== excludeId);
+      if (lines.length === 0) {
+        setNConflict({ kind: "none", lines: [] });
+        return;
+      }
+      const sorted = [...lines].sort((a, b) => {
+        const ta = a.updated_at ? Date.parse(a.updated_at) : 0;
+        const tb = b.updated_at ? Date.parse(b.updated_at) : 0;
+        return tb - ta;
+      });
+      setNConflict({ kind: "found", lines: sorted });
+      setNExpanded(true);
+      if (linked && !initial?.line_id) {
+        const linkedPrice = sorted.find((l) => l.current_price != null)?.current_price;
+        if (linkedPrice != null) {
+          setV((prev) =>
+            prev.sale_price.trim() === ""
+              ? { ...prev, sale_price: String(linkedPrice) }
+              : prev,
+          );
         }
-        setProductMeta({
-          erp_description: res.erp_description,
-          commercial_brand: res.commercial_brand,
-        });
-        setLookup({
-          kind: res.status === "active" ? "active" : "inactive",
-          catalogUpdatedAt: res.catalog_updated_at,
-        });
-      })
-      .catch((e: Error) => {
-        if (seq !== lookupSeq.current) return;
+      }
+    } catch (e) {
+      if (cseq !== conflictSeq.current) return;
+      setNConflict({ kind: "idle", lines: [] });
+      setIsLinked(false);
+      console.error("detectNConflict failed", e);
+    }
+  };
+
+  // Solo se usa en modo edición para prepoblar los campos RO del SKU inicial.
+  const prefillFromSku = async (sku: string) => {
+    const trimmed = sku.trim();
+    if (!trimmed) return;
+    try {
+      const res = await lookupFn({ data: { sku: trimmed } });
+      if (!res.found) {
         setProductMeta(null);
-        setLookup({ kind: "idle" });
-        toast.error(e.message);
+        setLookup({ kind: "not_found", catalogUpdatedAt: res.catalog_updated_at });
+        return;
+      }
+      setProductMeta({
+        erp_description: res.erp_description,
+        commercial_brand: res.commercial_brand,
       });
-
-    const conflictPromise = conflictFn({
-      data: { agreement_id: agreementId, sku: trimmed },
-    })
-      .then((res) => {
-        if (cseq !== conflictSeq.current) return;
-        setProductId(res.product_id ?? null);
-        const linked = !!res.isLinked;
-        setIsLinked(linked);
-        const excludeId = initial?.line_id ?? null;
-        const lines = (res.conflicts ?? []).filter((l) => l.line_id !== excludeId);
-        if (lines.length === 0) {
-          setNConflict({ kind: "none", lines: [] });
-          return;
-        }
-        const sorted = [...lines].sort((a, b) => {
-          const ta = a.updated_at ? Date.parse(a.updated_at) : 0;
-          const tb = b.updated_at ? Date.parse(b.updated_at) : 0;
-          return tb - ta;
-        });
-        setNConflict({ kind: "found", lines: sorted });
-        setNExpanded(true);
-        // Precargar precio para nueva posición cuando el SKU ya está vinculado.
-        if (linked && !initial?.line_id) {
-          const linkedPrice = sorted.find((l) => l.current_price != null)?.current_price;
-          if (linkedPrice != null) {
-            setV((prev) =>
-              prev.sale_price.trim() === ""
-                ? { ...prev, sale_price: String(linkedPrice) }
-                : prev,
-            );
-          }
-        }
-      })
-      .catch((e: Error) => {
-        if (cseq !== conflictSeq.current) return;
-        setNConflict({ kind: "idle", lines: [] });
-        setIsLinked(false);
-        setProductId(null);
-        console.error("detectNConflict failed", e);
+      setLookup({
+        kind: res.status === "active" ? "active" : "inactive",
+        catalogUpdatedAt: res.catalog_updated_at,
       });
-
-    await Promise.all([lookupPromise, conflictPromise]);
+    } catch (e) {
+      console.error("lookupProductBySku failed", e);
+    }
+    await runConflict(trimmed, null);
   };
 
   useEffect(() => {
@@ -276,13 +278,85 @@ export function LineEditDialog({
     setProductId(null);
     setLinkError(null);
     setSaveError(null);
-    const editingWithSku = !!initial?.line_id && !!next.sku.trim();
-    setHasSearched(editingWithSku);
-    if (editingWithSku) {
-      void runLookup(next.sku);
+    setSearchOpen(false);
+    setSearchQuery("");
+    setSearchResults([]);
+    setSearchHasMore(false);
+    if (initial?.line_id && next.sku.trim()) {
+      void prefillFromSku(next.sku);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initial]);
+
+  // Debounce del buscador
+  useEffect(() => {
+    if (!searchOpen) return;
+    const q = searchQuery.trim();
+    if (q.length < 2) {
+      setSearchResults([]);
+      setSearchHasMore(false);
+      setSearchLoading(false);
+      return;
+    }
+    const seq = ++searchSeq.current;
+    setSearchLoading(true);
+    const t = setTimeout(async () => {
+      try {
+        const res = await searchFn({ data: { query: q, offset: 0, limit: PAGE_SIZE } });
+        if (seq !== searchSeq.current) return;
+        setSearchResults(res.rows);
+        setSearchHasMore(res.hasMore);
+      } catch (e) {
+        if (seq !== searchSeq.current) return;
+        console.error("searchProducts failed", e);
+        setSearchResults([]);
+        setSearchHasMore(false);
+      } finally {
+        if (seq === searchSeq.current) setSearchLoading(false);
+      }
+    }, 250);
+    return () => clearTimeout(t);
+  }, [searchQuery, searchOpen, searchFn]);
+
+  const loadMoreResults = async () => {
+    const q = searchQuery.trim();
+    if (q.length < 2 || searchLoadingMore) return;
+    const seq = searchSeq.current;
+    setSearchLoadingMore(true);
+    try {
+      const res = await searchFn({
+        data: { query: q, offset: searchResults.length, limit: PAGE_SIZE },
+      });
+      if (seq !== searchSeq.current) return;
+      setSearchResults((prev) => [...prev, ...res.rows]);
+      setSearchHasMore(res.hasMore);
+    } catch (e) {
+      console.error("searchProducts load more failed", e);
+    } finally {
+      setSearchLoadingMore(false);
+    }
+  };
+
+  const onSelectProduct = (p: ProductResult) => {
+    setV((prev) => ({ ...prev, sku: p.sku }));
+    setProductMeta({
+      erp_description: p.erp_description,
+      commercial_brand: p.commercial_brand,
+    });
+    setProductId(p.id);
+    setLookup({ kind: p.status === "active" ? "active" : "inactive" });
+    setSaveError(null);
+    setSearchOpen(false);
+    setSearchQuery("");
+    setSearchResults([]);
+    setSearchHasMore(false);
+    void runConflict(p.sku, p.id);
+  };
+
+  const hasProduct = !!productId;
+  const searchPlaceholder = hasProduct
+    ? "Escribe para cambiar el producto..."
+    : "Busca por código, descripción o marca...";
 
 
 
