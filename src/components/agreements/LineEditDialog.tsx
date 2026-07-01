@@ -491,8 +491,8 @@ export function LineEditDialog({
                               )}
                               <span className="flex-1 text-sm font-medium">
                                 {isLinked
-                                  ? `Este SKU está vinculado con ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} del acuerdo. Cualquier cambio de precio se aplicará automáticamente a todas.`
-                                  : `Este SKU está asignado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} más del acuerdo. Si las vinculas, compartirán el mismo precio y se actualizarán juntas automáticamente en cada cambio de precio.`}
+                                  ? `Este SKU está vinculado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} del acuerdo.`
+                                  : `Este SKU está asignado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} más del acuerdo.`}
                               </span>
                               <ChevronDown
                                 className={cn(
@@ -516,13 +516,13 @@ export function LineEditDialog({
                                   <TableBody>
                                     {nConflict.lines.map((l) => (
                                       <TableRow key={l.line_id}>
-                                        <TableCell className="font-mono text-xs text-foreground">
+                                        <TableCell className="text-sm text-foreground">
                                           {l.client_code ?? "—"}
                                         </TableCell>
-                                        <TableCell className="text-xs text-foreground">
+                                        <TableCell className="text-sm text-foreground">
                                           {l.client_description ?? "—"}
                                         </TableCell>
-                                        <TableCell className="text-right text-xs tabular-nums text-foreground">
+                                        <TableCell className="text-right text-sm tabular-nums text-foreground">
                                           {l.current_price != null
                                             ? l.current_price.toLocaleString("es-CO", {
                                                 style: "currency",
@@ -541,8 +541,8 @@ export function LineEditDialog({
                               <div className="rounded-md border border-border bg-surface-card p-4 space-y-3">
                                 {isLinked ? (
                                   <>
-                                    <p className="text-sm text-muted-foreground">
-                                      Al editar el precio de esta posición, se aplicará automáticamente a todas las posiciones con el mismo SKU.
+                                    <p className="text-sm text-foreground">
+                                      {`Este SKU está vinculado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} del acuerdo. Cualquier cambio de precio se aplicará automáticamente a todas.`}
                                     </p>
                                     <Button
                                       type="button"
@@ -562,8 +562,8 @@ export function LineEditDialog({
                                   </>
                                 ) : (
                                   <>
-                                    <p className="text-sm text-muted-foreground">
-                                      Al vincular, el precio actual de esta posición se aplicará a todas las posiciones con el mismo SKU y quedarán ligadas.
+                                    <p className="text-sm text-foreground">
+                                      {`Este SKU está asignado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} más del acuerdo. Si las vinculas, compartirán el mismo precio y se actualizarán juntas automáticamente en cada cambio de precio.`}
                                     </p>
                                     <Button
                                       type="button"
