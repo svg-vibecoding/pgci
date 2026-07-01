@@ -678,7 +678,17 @@ export function LineEditDialog({
           >
             Cancelar
           </Button>
-          <Button onClick={() => save.mutate()} disabled={save.isPending}>
+          <Button
+            onClick={() => {
+              if (nConflict.kind === "found" && priceChoice === null) {
+                setChoiceError(true);
+                setNExpanded(true);
+                return;
+              }
+              save.mutate();
+            }}
+            disabled={save.isPending}
+          >
             {save.isPending ? "Guardando…" : "Guardar"}
           </Button>
         </DialogFooter>
