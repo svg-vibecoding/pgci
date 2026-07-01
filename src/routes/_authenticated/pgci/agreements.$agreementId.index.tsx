@@ -285,7 +285,17 @@ function AgreementDetail() {
             </Button>
           )}
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
+          <div className="space-y-1 text-xs text-muted-foreground">
+            <p>
+              <span className="font-medium text-foreground">Administrador:</span>{" "}
+              gestiona el acuerdo, administra posiciones, miembros y empresas vinculadas.
+            </p>
+            <p>
+              <span className="font-medium text-foreground">Miembro:</span> consulta el
+              acuerdo y sus posiciones.
+            </p>
+          </div>
           <TooltipProvider delayDuration={150}>
           <div className="rounded-lg border border-border">
             <Table>
@@ -372,13 +382,6 @@ function AgreementDetail() {
             </Table>
           </div>
           </TooltipProvider>
-          <p className="mt-2 flex items-start gap-1.5 text-xs text-muted-foreground">
-            <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            Al agregar un miembro, se le otorga acceso al cliente del acuerdo automáticamente.
-          </p>
-          <p className="mt-2 text-xs text-muted-foreground">
-            <span className="font-medium text-foreground">Administrador:</span> gestiona el acuerdo, carga y edita posiciones, administra miembros y empresas vinculadas. <span className="font-medium text-foreground">Miembro:</span> consulta el acuerdo y sus posiciones.
-          </p>
         </CardContent>
       </Card>
 
