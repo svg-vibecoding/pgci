@@ -286,16 +286,6 @@ function AgreementDetail() {
           )}
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="space-y-1 text-xs text-muted-foreground">
-            <p>
-              <span className="font-medium text-foreground">Administrador:</span>{" "}
-              gestiona el acuerdo, administra posiciones, miembros y empresas vinculadas.
-            </p>
-            <p>
-              <span className="font-medium text-foreground">Miembro:</span> consulta el
-              acuerdo y sus posiciones.
-            </p>
-          </div>
           <TooltipProvider delayDuration={150}>
           <div className="rounded-lg border border-border">
             <Table>
