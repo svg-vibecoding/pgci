@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { AlertTriangle, ChevronDown, Info, Link2, Link2Off, Loader2, Search } from "lucide-react";
+import { AlertTriangle, ChevronDown, Info, Link, Link2, Loader2, Search, Unlink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
@@ -491,8 +491,8 @@ export function LineEditDialog({
                               )}
                               <span className="flex-1 text-sm font-medium">
                                 {isLinked
-                                  ? `Este SKU está vinculado. El precio se comparte con ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} en el acuerdo.`
-                                  : `Este SKU ya tiene ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} en el acuerdo`}
+                                  ? `Este SKU está vinculado con ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} del acuerdo. Cualquier cambio de precio se aplicará automáticamente a todas.`
+                                  : `Este SKU está asignado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} más del acuerdo. Si las vinculas, compartirán el mismo precio y se actualizarán juntas automáticamente en cada cambio de precio.`}
                               </span>
                               <ChevronDown
                                 className={cn(
@@ -548,13 +548,14 @@ export function LineEditDialog({
                                       type="button"
                                       size="sm"
                                       variant="outline"
+                                      className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
                                       disabled={unlinkMut.isPending || !productId}
                                       onClick={() => unlinkMut.mutate()}
                                     >
                                       {unlinkMut.isPending ? (
                                         <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
                                       ) : (
-                                        <Link2Off className="mr-2 h-3.5 w-3.5" />
+                                        <Unlink className="mr-2 h-3.5 w-3.5" />
                                       )}
                                       Desvincular
                                     </Button>
@@ -568,13 +569,14 @@ export function LineEditDialog({
                                       type="button"
                                       size="sm"
                                       variant="outline"
+                                      className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
                                       disabled={linkMut.isPending || !productId}
                                       onClick={() => linkMut.mutate()}
                                     >
                                       {linkMut.isPending ? (
                                         <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
                                       ) : (
-                                        <Link2 className="mr-2 h-3.5 w-3.5" />
+                                        <Link className="mr-2 h-3.5 w-3.5" />
                                       )}
                                       Vincular
                                     </Button>
