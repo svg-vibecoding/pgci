@@ -360,7 +360,7 @@ function AgreementDetail() {
                             onClick={() =>
                               setEditMember({
                                 id: m.id as string,
-                                name: m.profile?.full_name ?? "—",
+                                name: profile?.full_name ?? "—",
                                 role: m.role as "agreement_admin" | "agreement_member",
                               })
                             }
