@@ -363,12 +363,15 @@ export const updateAgreementLine = createServerFn({ method: "POST" })
 
     // Resolver match si cambió el código del cliente
     let newMatchId: string | null | undefined = undefined;
+    let newClientProductId: string | null | undefined = undefined;
     if (Object.prototype.hasOwnProperty.call(data.patch, "client_code")) {
       const code = data.patch.client_code ?? null;
       if (!code) {
         newMatchId = null;
+        newClientProductId = null;
       } else {
         const cpId = await ensureClientProduct(context.supabase, clientId, code);
+        newClientProductId = cpId;
         if (data.patch.client_description) {
           await context.supabase.from("client_product_history").insert({
             client_product_id: cpId,
