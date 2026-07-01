@@ -337,7 +337,7 @@ function AgreementDetail() {
                         )}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {m.profile?.email ?? ""}
+                        {profile?.email ?? ""}
                       </div>
                     </TableCell>
                     <TableCell className="text-sm">{roleLabel}</TableCell>
