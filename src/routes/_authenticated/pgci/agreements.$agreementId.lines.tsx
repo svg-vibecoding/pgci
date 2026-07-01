@@ -13,6 +13,8 @@ import {
   Download,
   Upload,
   X,
+  AlertTriangle,
+  XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
