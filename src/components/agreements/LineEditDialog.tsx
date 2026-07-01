@@ -651,10 +651,8 @@ export function LineEditDialog({
                           </CollapsibleContent>
                         </Collapsible>
                       </Alert>
-                    </div>
-                  )}
-
-                </div>
+                  </div>
+                )}
               </div>
             </section>
 
