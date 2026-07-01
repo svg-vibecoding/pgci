@@ -541,8 +541,8 @@ export function LineEditDialog({
                               <div className="rounded-md border border-border bg-surface-card p-4 space-y-3">
                                 {isLinked ? (
                                   <>
-                                    <p className="text-sm text-muted-foreground">
-                                      Al editar el precio de esta posición, se aplicará automáticamente a todas las posiciones con el mismo SKU.
+                                    <p className="text-sm text-foreground">
+                                      {`Este SKU está vinculado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} del acuerdo. Cualquier cambio de precio se aplicará automáticamente a todas.`}
                                     </p>
                                     <Button
                                       type="button"
@@ -562,8 +562,8 @@ export function LineEditDialog({
                                   </>
                                 ) : (
                                   <>
-                                    <p className="text-sm text-muted-foreground">
-                                      Al vincular, el precio actual de esta posición se aplicará a todas las posiciones con el mismo SKU y quedarán ligadas.
+                                    <p className="text-sm text-foreground">
+                                      {`Este SKU está asignado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} más del acuerdo. Si las vinculas, compartirán el mismo precio y se actualizarán juntas automáticamente en cada cambio de precio.`}
                                     </p>
                                     <Button
                                       type="button"
