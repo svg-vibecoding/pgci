@@ -190,7 +190,7 @@ function AgreementDetail() {
                 to="/pgci/agreements/$agreementId/lines"
                 params={{ agreementId }}
               >
-                <Boxes className="mr-1.5 h-4 w-4" /> Gestión de Posiciones
+                <Boxes className="mr-1.5 h-4 w-4" /> Posiciones
               </Link>
             </Button>
             <Button variant="outline" asChild size="sm">
