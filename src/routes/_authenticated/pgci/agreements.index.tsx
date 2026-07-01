@@ -262,15 +262,15 @@ function AgreementsList() {
 
         <div className="rounded-lg border border-border bg-card">
           <TooltipProvider delayDuration={150}>
-          <Table>
+          <Table className="table-fixed">
             <TableHeader>
               <TableRow>
-                <TableHead>Acuerdo</TableHead>
-                <TableHead>Cliente</TableHead>
-                <TableHead className="w-[220px] whitespace-nowrap">Posiciones</TableHead>
-                <TableHead className="w-[140px] whitespace-nowrap">Vigencia</TableHead>
-                <TableHead className="w-[110px] whitespace-nowrap">Estado</TableHead>
-                <TableHead className="w-[1%] whitespace-nowrap text-right">Acciones</TableHead>
+                <TableHead className="w-auto min-w-0">Acuerdo</TableHead>
+                <TableHead className="w-auto min-w-0">Cliente</TableHead>
+                <TableHead className="w-fit whitespace-nowrap">Posiciones</TableHead>
+                <TableHead className="w-fit whitespace-nowrap">Vigencia</TableHead>
+                <TableHead className="w-fit whitespace-nowrap">Estado</TableHead>
+                <TableHead className="w-fit whitespace-nowrap text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -302,12 +302,12 @@ function AgreementsList() {
                 ];
                 return (
                   <TableRow key={a.id ?? undefined}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
+                    <TableCell className="font-medium min-w-0">
+                      <div className="flex items-center gap-2 min-w-0">
                         <Link
                           to="/pgci/agreements/$agreementId"
                           params={{ agreementId: a.id as string }}
-                          className="hover:underline"
+                          className="hover:underline truncate"
                         >
                           {a.name}
                         </Link>
@@ -319,20 +319,20 @@ function AgreementsList() {
                         </span>
                       )}
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{clientName}</TableCell>
-                    <TableCell>
+                    <TableCell className="text-muted-foreground min-w-0 truncate">{clientName}</TableCell>
+                    <TableCell className="w-fit whitespace-nowrap">
                       <PositionsCounters counts={counts} />
                     </TableCell>
-                    <TableCell className="whitespace-nowrap">
+                    <TableCell className="w-fit whitespace-nowrap">
                       <Badge color={vig.color}>{vig.label}</Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="w-fit whitespace-nowrap">
                       <StatusBadge
                         status={a.status === "active" ? "active" : "neutral"}
                         label={a.status === "active" ? "Activo" : "Inactivo"}
                       />
                     </TableCell>
-                    <TableCell className="w-[1%] whitespace-nowrap text-right">
+                    <TableCell className="w-fit whitespace-nowrap text-right">
                       <div className="inline-flex items-center gap-1">
                         <Button asChild size="sm" variant="ghost">
                           <Link
