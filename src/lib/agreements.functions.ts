@@ -435,6 +435,8 @@ export const updateAgreementLine = createServerFn({ method: "POST" })
     };
     if (newProductId !== undefined) updatePayload.product_id = newProductId;
     if (newMatchId !== undefined) updatePayload.client_product_match_id = newMatchId;
+    if (newClientProductId !== undefined)
+      (updatePayload as { client_product_id?: string | null }).client_product_id = newClientProductId;
 
     const { error } = await context.supabase
       .from("agreement_products")
