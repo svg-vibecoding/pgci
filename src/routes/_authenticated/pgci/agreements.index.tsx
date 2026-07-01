@@ -311,6 +311,14 @@ function AgreementsList() {
                         </Button>
                         <Button asChild size="sm" variant="ghost">
                           <Link
+                            to="/pgci/agreements/$agreementId/lines"
+                            params={{ agreementId: a.id as string }}
+                          >
+                            Posiciones
+                          </Link>
+                        </Button>
+                        <Button asChild size="sm" variant="ghost">
+                          <Link
                             to="/pgci/agreements/$agreementId/edit"
                             params={{ agreementId: a.id as string }}
                           >
