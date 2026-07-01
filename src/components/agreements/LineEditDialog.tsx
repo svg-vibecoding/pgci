@@ -90,6 +90,13 @@ function fmtCatalogDate(iso: string | null | undefined): string | null {
   return `${dd}/${mm}/${d.getFullYear()}`;
 }
 
+function fmtDateLocal(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  if (!m) return null;
+  return `${m[3]}/${m[2]}/${m[1]}`;
+}
+
 function FieldLabel({
   children,
   className,
