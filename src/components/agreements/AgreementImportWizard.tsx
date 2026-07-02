@@ -125,6 +125,7 @@ export function AgreementImportWizard({
       previewFn({
         data: {
           agreement_id: agreementId,
+          target_client_id: needsCompanyPick ? targetClientId : undefined,
           rows: payload.rows.map((r) => ({
             row_number: r.row_number,
             sku: r.sku,
@@ -154,6 +155,7 @@ export function AgreementImportWizard({
       commitFn({
         data: {
           agreement_id: agreementId,
+          target_client_id: needsCompanyPick ? targetClientId : undefined,
           rows: rows.map((r) => ({
             row_number: r.row_number,
             sku: r.sku,
