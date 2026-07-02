@@ -904,10 +904,6 @@ export type Database = {
         Args: { p_agreement_id: string; p_payload: Json }
         Returns: Json
       }
-      get_agreement_client_id: {
-        Args: { p_agreement_id: string }
-        Returns: string
-      }
       get_agreement_role: { Args: { p_agreement_id: string }; Returns: string }
       has_client_access: { Args: { p_client_id: string }; Returns: boolean }
       is_active_user: { Args: { p_user_id: string }; Returns: boolean }

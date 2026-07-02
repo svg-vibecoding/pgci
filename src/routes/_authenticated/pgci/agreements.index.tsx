@@ -145,10 +145,11 @@ function AgreementsList() {
       const s = search.toLowerCase();
       const hay = [
         a.name,
-        a.client_legal_name,
-        a.client_commercial_name,
+        a.group_name,
+        a.group_client_legal_name,
+        a.group_client_commercial_name,
         a.unit_name,
-        (a as { client_tax_id?: string | null }).client_tax_id,
+        a.group_client_tax_id,
       ]
         .filter(Boolean)
         .some((v) => (v as string).toLowerCase().includes(s));
@@ -317,7 +318,7 @@ function AgreementsList() {
                 </TableRow>
               )}
               {filtered.map((a) => {
-                const clientName = a.client_commercial_name || a.client_legal_name || "—";
+                const clientName = a.group_client_commercial_name || a.group_client_legal_name || a.group_name || "—";
                 const vig = vigenciaBadge(a.end_date ?? null);
                 const counts: CountSpec[] = [
                   { key: "total", label: "Total de posiciones", value: a.lines_total ?? 0, color: "neutral" },

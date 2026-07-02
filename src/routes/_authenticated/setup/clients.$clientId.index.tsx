@@ -85,10 +85,17 @@ function ViewClient() {
   const { data: agreements } = useQuery({
     queryKey: ["clients", clientId, "agreements"],
     queryFn: async () => {
+      const { data: links, error: lErr } = await supabase
+        .from("agreement_companies")
+        .select("agreement_id")
+        .eq("client_id", clientId);
+      if (lErr) throw lErr;
+      const ids = Array.from(new Set((links ?? []).map((l) => l.agreement_id as string)));
+      if (ids.length === 0) return [];
       const { data, error } = await supabase
         .from("agreements")
         .select("id, updated_at, created_at")
-        .eq("client_id", clientId)
+        .in("id", ids)
         .order("updated_at", { ascending: false })
         .limit(10);
       if (error) throw error;

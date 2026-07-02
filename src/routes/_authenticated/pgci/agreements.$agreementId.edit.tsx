@@ -73,7 +73,7 @@ function EditAgreement() {
   }
 
   const initial: AgreementFormValues = {
-    client_id: (agreement.client_id as string) ?? "",
+    client_id: (agreement.group_client_id as string) ?? "",
     name: agreement.name ?? "",
     scope: (agreement.scope as "global" | "unit") ?? "global",
     unit_name: agreement.unit_name ?? "",
@@ -84,9 +84,9 @@ function EditAgreement() {
 
   const clientStub = [
     {
-      id: (agreement.client_id as string) ?? "",
-      legal_name: agreement.client_legal_name ?? "",
-      commercial_name: agreement.client_commercial_name ?? null,
+      id: (agreement.group_client_id as string) ?? "",
+      legal_name: agreement.group_client_legal_name ?? agreement.group_name ?? "",
+      commercial_name: agreement.group_client_commercial_name ?? null,
     },
   ];
 

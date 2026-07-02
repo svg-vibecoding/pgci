@@ -154,8 +154,9 @@ function AgreementDetail() {
   }
 
   const clientName =
-    agreement.client_commercial_name?.trim() ||
-    agreement.client_legal_name ||
+    agreement.group_client_commercial_name?.trim() ||
+    agreement.group_client_legal_name ||
+    agreement.group_name ||
     "—";
   const isActive = agreement.status === "active";
   const total = agreement.lines_total ?? 0;
@@ -237,12 +238,8 @@ function AgreementDetail() {
         <CardContent className="space-y-6">
           <InfoSection>
             <InfoField label="Acuerdo">{agreement.name}</InfoField>
-            <InfoField label="Cliente">{clientName}</InfoField>
-            <InfoField label="Holding">
-              {agreement.parent_commercial_name?.trim() ||
-                agreement.parent_legal_name ||
-                "—"}
-            </InfoField>
+            <InfoField label="Agrupador">{agreement.group_name ?? "—"}</InfoField>
+            <InfoField label="Cliente asociado al agrupador">{clientName}</InfoField>
 
             <InfoField label="Alcance">
               {agreement.scope === "unit"

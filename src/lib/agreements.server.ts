@@ -33,11 +33,14 @@ export async function assertCanCreateForClient(supabase: SB, clientId: string) {
 
 export async function getAgreementClientId(supabase: SB, agreementId: string) {
   const { data, error } = await supabase
-    .from("agreements")
+    .from("agreement_companies")
     .select("client_id")
-    .eq("id", agreementId)
-    .single();
-  if (error) throw new Error("Acuerdo no encontrado");
+    .eq("agreement_id", agreementId)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error("No se pudo resolver la empresa del acuerdo");
+  if (!data?.client_id) throw new Error("Acuerdo sin empresas vinculadas");
   return data.client_id as string;
 }
 

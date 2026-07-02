@@ -221,8 +221,9 @@ function AgreementLinesPage() {
   const canAdmin = !!ctx?.can_admin;
   const isActive = agreement.status === "active";
   const clientName =
-    agreement.client_commercial_name?.trim() ||
-    agreement.client_legal_name ||
+    agreement.group_client_commercial_name?.trim() ||
+    agreement.group_client_legal_name ||
+    agreement.group_name ||
     "—";
 
   const summaryCards: { key: LineCardKey; label: string; value: number }[] = [

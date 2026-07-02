@@ -122,10 +122,41 @@ export const createAgreement = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => agreementCreateSchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertCanCreateForClient(context.supabase, data.client_id);
+
+    // Resolver agrupador: reutilizar el primero existente para este cliente,
+    // o crear uno nuevo con el nombre del cliente. (Paso 3 introduce el selector completo.)
+    let groupId: string | null = null;
+    const { data: existingGroup } = await context.supabase
+      .from("agreement_groups")
+      .select("id")
+      .eq("client_id", data.client_id)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (existingGroup?.id) {
+      groupId = existingGroup.id as string;
+    } else {
+      const { data: cli, error: cErr } = await context.supabase
+        .from("clients")
+        .select("commercial_name, legal_name")
+        .eq("id", data.client_id)
+        .single();
+      if (cErr) throw new Error(`No se pudo leer el cliente: ${cErr.message}`);
+      const groupName =
+        (cli.commercial_name?.trim() || cli.legal_name || "Grupo sin nombre") as string;
+      const { data: newGroup, error: gErr } = await context.supabase
+        .from("agreement_groups")
+        .insert({ group_name: groupName, client_id: data.client_id })
+        .select("id")
+        .single();
+      if (gErr) throw new Error(`No se pudo crear el agrupador: ${gErr.message}`);
+      groupId = newGroup.id as string;
+    }
+
     const { data: row, error } = await context.supabase
       .from("agreements")
       .insert({
-        client_id: data.client_id,
+        group_id: groupId,
         name: data.name,
         scope: data.scope,
         unit_name: data.unit_name,
@@ -137,6 +168,15 @@ export const createAgreement = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (error) throw new Error(`No se pudo crear el acuerdo: ${error.message}`);
+
+    // Vincular al cliente como primera empresa del acuerdo.
+    const { error: acErr } = await context.supabase
+      .from("agreement_companies")
+      .insert({ agreement_id: row.id, client_id: data.client_id });
+    if (acErr && !acErr.message.includes("duplicate")) {
+      throw new Error(`Acuerdo creado pero no se pudo vincular la empresa: ${acErr.message}`);
+    }
+
     // creador como agreement_admin
     const { error: memErr } = await context.supabase
       .from("agreement_members")
@@ -151,6 +191,7 @@ export const createAgreement = createServerFn({ method: "POST" })
     }
     return { agreement_id: row.id as string };
   });
+
 
 export const updateAgreement = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -1056,13 +1097,13 @@ export const listAgreementCompanies = createServerFn({ method: "GET" })
     await assertCanAccess(context.supabase, data.agreement_id);
     const { data: rows, error } = await context.supabase
       .from("agreement_companies")
-      .select("id, agreement_id, tax_id, tax_id_type, legal_name, notes, created_at")
+      .select("id, agreement_id, client_id, notes, created_at")
       .eq("agreement_id", data.agreement_id)
-      .order("legal_name");
+      .order("created_at");
     if (error) throw new Error(error.message);
 
     const base = rows ?? [];
-    const taxIds = base.map((r) => r.tax_id).filter((v): v is string => !!v);
+    const clientIds = base.map((r) => r.client_id).filter((v): v is string => !!v);
     let clients: {
       id: string;
       tax_id: string;
@@ -1071,18 +1112,18 @@ export const listAgreementCompanies = createServerFn({ method: "GET" })
       parent_client_id: string | null;
       type: string;
     }[] = [];
-    if (taxIds.length > 0) {
+    if (clientIds.length > 0) {
       const { data: cRows, error: cErr } = await context.supabase
         .from("clients")
         .select("id, tax_id, commercial_name, legal_name, parent_client_id, type")
-        .in("tax_id", taxIds);
+        .in("id", clientIds);
       if (cErr) throw new Error(cErr.message);
       clients = (cRows ?? []) as typeof clients;
     }
-    const clientByTaxId = new Map<string, (typeof clients)[number]>();
+    const clientById = new Map<string, (typeof clients)[number]>();
     const parentIds = new Set<string>();
     for (const c of clients) {
-      clientByTaxId.set(c.tax_id, c);
+      clientById.set(c.id, c);
       if (c.parent_client_id) parentIds.add(c.parent_client_id);
     }
     const parentNames = new Map<string, string>();
@@ -1101,11 +1142,18 @@ export const listAgreementCompanies = createServerFn({ method: "GET" })
     }
 
     return base.map((r) => {
-      const c = clientByTaxId.get(r.tax_id as string);
-      const displayName = c?.commercial_name?.trim() || c?.legal_name || r.legal_name || r.tax_id;
-      const parentName = c?.parent_client_id ? parentNames.get(c.parent_client_id) ?? null : null;
+      const c = clientById.get(r.client_id as string);
+      const displayName = c?.commercial_name?.trim() || c?.legal_name || "—";
+      const parentName = c?.parent_client_id
+        ? parentNames.get(c.parent_client_id) ?? null
+        : null;
       return {
-        ...r,
+        id: r.id as string,
+        agreement_id: r.agreement_id as string,
+        client_id: r.client_id as string,
+        notes: (r.notes as string | null) ?? null,
+        created_at: r.created_at as string,
+        tax_id: (c?.tax_id ?? null) as string | null,
         client_display_name: displayName,
         client_type: c?.type ?? null,
         parent_client_name: parentName,
@@ -1122,9 +1170,7 @@ export const addAgreementCompany = createServerFn({ method: "POST" })
       .from("agreement_companies")
       .insert({
         agreement_id: data.agreement_id,
-        tax_id: data.tax_id,
-        tax_id_type: data.tax_id_type,
-        legal_name: data.legal_name,
+        client_id: data.client_id,
         notes: data.notes,
       })
       .select("id")
@@ -1132,6 +1178,7 @@ export const addAgreementCompany = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { company_id: row.id as string };
   });
+
 
 export const removeAgreementCompany = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

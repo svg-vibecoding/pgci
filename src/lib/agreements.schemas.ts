@@ -201,9 +201,7 @@ export const memberRemoveSchema = z.object({
 
 export const companyAddSchema = z.object({
   agreement_id: z.string().uuid(),
-  tax_id: z.string().trim().min(1).max(40),
-  tax_id_type: z.string().trim().min(1).max(20).default("NIT"),
-  legal_name: trimmedOptional,
+  client_id: z.string().uuid(),
   notes: trimmedOptional,
 });
 
