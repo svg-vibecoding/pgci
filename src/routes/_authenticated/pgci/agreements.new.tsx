@@ -39,6 +39,7 @@ function NewAgreement() {
     mutationFn: (v: AgreementFormValues) =>
       createFn({
         data: {
+          mode: "new_for_client",
           client_id: v.client_id,
           name: v.name,
           scope: v.scope,
@@ -48,6 +49,7 @@ function NewAgreement() {
           observations: v.observations || undefined,
         },
       }),
+
     onSuccess: (res) =>
       navigate({
         to: "/pgci/agreements/$agreementId",

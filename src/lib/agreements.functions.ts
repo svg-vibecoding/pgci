@@ -121,21 +121,12 @@ export const createAgreement = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => agreementCreateSchema.parse(d))
   .handler(async ({ data, context }) => {
-    await assertCanCreateForClient(context.supabase, data.client_id);
+    // 1) Resolver / crear el agrupador según el modo y validar permisos.
+    let groupId: string;
+    const initialCompanyIds: string[] = [];
 
-    // Resolver agrupador: reutilizar el primero existente para este cliente,
-    // o crear uno nuevo con el nombre del cliente. (Paso 3 introduce el selector completo.)
-    let groupId: string | null = null;
-    const { data: existingGroup } = await context.supabase
-      .from("agreement_groups")
-      .select("id")
-      .eq("client_id", data.client_id)
-      .order("created_at", { ascending: true })
-      .limit(1)
-      .maybeSingle();
-    if (existingGroup?.id) {
-      groupId = existingGroup.id as string;
-    } else {
+    if (data.mode === "new_for_client") {
+      await assertCanCreateForClient(context.supabase, data.client_id);
       const { data: cli, error: cErr } = await context.supabase
         .from("clients")
         .select("commercial_name, legal_name")
@@ -151,8 +142,39 @@ export const createAgreement = createServerFn({ method: "POST" })
         .single();
       if (gErr) throw new Error(`No se pudo crear el agrupador: ${gErr.message}`);
       groupId = newGroup.id as string;
+      initialCompanyIds.push(data.client_id);
+    } else if (data.mode === "existing") {
+      const { data: group, error: gErr } = await context.supabase
+        .from("agreement_groups")
+        .select("id, client_id")
+        .eq("id", data.group_id)
+        .maybeSingle();
+      if (gErr) throw new Error(`No se pudo leer el agrupador: ${gErr.message}`);
+      if (!group) throw new Error("Agrupador no encontrado");
+      if (group.client_id) {
+        await assertCanCreateForClient(context.supabase, group.client_id as string);
+      } else {
+        // Agrupador libre: solo super_admin puede reutilizarlo.
+        const { data: isSuper } = await context.supabase.rpc("is_super_admin");
+        if (!isSuper) throw new Error("Solo super_admin puede usar agrupadores libres");
+      }
+      groupId = group.id as string;
+      // No se vinculan empresas automáticamente en modo 'existing'.
+    } else {
+      // mode === "free": solo super_admin.
+      const { data: isSuper } = await context.supabase.rpc("is_super_admin");
+      if (!isSuper) throw new Error("Solo super_admin puede crear agrupadores libres");
+      const { data: newGroup, error: gErr } = await context.supabase
+        .from("agreement_groups")
+        .insert({ group_name: data.group_name, client_id: null })
+        .select("id")
+        .single();
+      if (gErr) throw new Error(`No se pudo crear el agrupador: ${gErr.message}`);
+      groupId = newGroup.id as string;
+      for (const cid of data.company_ids ?? []) initialCompanyIds.push(cid);
     }
 
+    // 2) Crear el acuerdo dentro del agrupador.
     const { data: row, error } = await context.supabase
       .from("agreements")
       .insert({
@@ -169,15 +191,17 @@ export const createAgreement = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(`No se pudo crear el acuerdo: ${error.message}`);
 
-    // Vincular al cliente como primera empresa del acuerdo.
-    const { error: acErr } = await context.supabase
-      .from("agreement_companies")
-      .insert({ agreement_id: row.id, client_id: data.client_id });
-    if (acErr && !acErr.message.includes("duplicate")) {
-      throw new Error(`Acuerdo creado pero no se pudo vincular la empresa: ${acErr.message}`);
+    // 3) Vincular empresas iniciales (si aplica al modo).
+    for (const clientId of initialCompanyIds) {
+      const { error: acErr } = await context.supabase
+        .from("agreement_companies")
+        .insert({ agreement_id: row.id, client_id: clientId });
+      if (acErr && !acErr.message.toLowerCase().includes("duplicate")) {
+        throw new Error(`Acuerdo creado pero no se pudo vincular la empresa: ${acErr.message}`);
+      }
     }
 
-    // creador como agreement_admin
+    // 4) Registrar al creador como agreement_admin.
     const { error: memErr } = await context.supabase
       .from("agreement_members")
       .insert({
@@ -186,11 +210,80 @@ export const createAgreement = createServerFn({ method: "POST" })
         role: "agreement_admin",
         assigned_by: context.userId,
       });
-    if (memErr && !memErr.message.includes("duplicate")) {
+    if (memErr && !memErr.message.toLowerCase().includes("duplicate")) {
       throw new Error(`Acuerdo creado pero no se pudo asignar admin: ${memErr.message}`);
     }
     return { agreement_id: row.id as string };
   });
+
+// Lista de agrupadores que el usuario puede seleccionar al crear acuerdos.
+// - super_admin: todos.
+// - platform_user: solo agrupadores cuyo client_id el usuario tiene con
+//   can_create_agreements = true.
+// - agrupadores libres (client_id null): solo super_admin.
+export const listAssignableGroups = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: isSuper } = await context.supabase.rpc("is_super_admin");
+
+    let groupsQuery = context.supabase
+      .from("agreement_groups")
+      .select(
+        "id, group_name, client_id, status, notes, created_at, clients:client_id(id, legal_name, commercial_name)",
+      )
+      .eq("status", "active")
+      .order("group_name");
+
+    if (!isSuper) {
+      const { data: access, error: accErr } = await context.supabase
+        .from("user_client_access")
+        .select("client_id")
+        .eq("can_create_agreements", true);
+      if (accErr) throw new Error(accErr.message);
+      const allowedClientIds = (access ?? [])
+        .map((a) => a.client_id as string)
+        .filter(Boolean);
+      if (allowedClientIds.length === 0) return [];
+      groupsQuery = groupsQuery.in("client_id", allowedClientIds);
+    }
+
+    const { data: groups, error } = await groupsQuery;
+    if (error) throw new Error(error.message);
+
+    const rows = groups ?? [];
+    const groupIds = rows.map((g) => g.id as string);
+    const agreementCount = new Map<string, number>();
+    if (groupIds.length > 0) {
+      const { data: ags } = await context.supabase
+        .from("agreements")
+        .select("id, group_id")
+        .in("group_id", groupIds);
+      for (const a of ags ?? []) {
+        const gid = a.group_id as string;
+        agreementCount.set(gid, (agreementCount.get(gid) ?? 0) + 1);
+      }
+    }
+
+    return rows.map((g) => {
+      const client = g.clients as {
+        id: string;
+        legal_name: string;
+        commercial_name: string | null;
+      } | null;
+      return {
+        id: g.id as string,
+        group_name: g.group_name as string,
+        client_id: (g.client_id as string | null) ?? null,
+        client_display_name: client
+          ? (client.commercial_name?.trim() || client.legal_name)
+          : null,
+        status: g.status as string,
+        notes: (g.notes as string | null) ?? null,
+        agreement_count: agreementCount.get(g.id as string) ?? 0,
+      };
+    });
+  });
+
 
 
 export const updateAgreement = createServerFn({ method: "POST" })
@@ -766,7 +859,12 @@ export const importAgreementLinesPreview = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => importPreviewSchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertCanAdmin(context.supabase, data.agreement_id);
-    const clientId = await getAgreementClientId(context.supabase, data.agreement_id);
+    const clientId = await resolveImportTargetClient(
+      context.supabase,
+      data.agreement_id,
+      data.target_client_id ?? null,
+    );
+
 
     // Fechas del acuerdo (fallback cuando la fila no trae start/end), igual
     // que en el trigger recalc_agreement_product_status.
@@ -925,16 +1023,22 @@ export const commitAgreementImport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => importCommitSchema.parse(d))
   .handler(async ({ data, context }) => {
+    // Validar target_client_id contra las empresas del acuerdo antes de invocar la RPC.
+    const targetClientId = await resolveImportTargetClient(
+      context.supabase,
+      data.agreement_id,
+      data.target_client_id ?? null,
+    );
+    const payload = {
+      rows: data.rows,
+      price_resolutions: data.price_resolutions ?? {},
+      target_client_id: targetClientId,
+    } as unknown as import("@/integrations/supabase/types").Json;
     const { data: result, error } = await context.supabase.rpc(
       "commit_agreement_import",
-      {
-        p_agreement_id: data.agreement_id,
-        p_payload: {
-          rows: data.rows,
-          price_resolutions: data.price_resolutions ?? {},
-        },
-      },
+      { p_agreement_id: data.agreement_id, p_payload: payload },
     );
+
     if (error) {
       if (error.code === "42501") throw new Error("No tienes permisos sobre este acuerdo");
       throw new Error(`No se pudo guardar la importación: ${error.message}`);
@@ -947,6 +1051,40 @@ export const commitAgreementImport = createServerFn({ method: "POST" })
       by_status: Record<string, number>;
     };
   });
+
+// Resuelve el cliente destino para la importación:
+//  - Si el acuerdo tiene 1 sola empresa → usa esa (ignora target_client_id).
+//  - Si tiene >1 → target_client_id es requerido y debe estar vinculado.
+async function resolveImportTargetClient(
+  supabase: import("@supabase/supabase-js").SupabaseClient<
+    import("@/integrations/supabase/types").Database
+  >,
+  agreementId: string,
+  targetClientId: string | null,
+): Promise<string> {
+  const { data: rows, error } = await supabase
+    .from("agreement_companies")
+    .select("client_id")
+    .eq("agreement_id", agreementId);
+  if (error) throw new Error(`No se pudieron leer las empresas del acuerdo: ${error.message}`);
+  const clientIds = (rows ?? [])
+    .map((r) => r.client_id as string | null)
+    .filter((v): v is string => !!v);
+  if (clientIds.length === 0) {
+    throw new Error("El acuerdo no tiene empresas vinculadas");
+  }
+  if (clientIds.length === 1) return clientIds[0];
+  if (!targetClientId) {
+    throw new Error(
+      "El acuerdo tiene múltiples empresas: selecciona a cuál asignar los códigos importados",
+    );
+  }
+  if (!clientIds.includes(targetClientId)) {
+    throw new Error("El cliente seleccionado no está vinculado a este acuerdo");
+  }
+  return targetClientId;
+}
+
 
 // ---------------------------------------------------------------------------
 // Miembros
@@ -1191,10 +1329,20 @@ export const removeAgreementCompany = createServerFn({ method: "POST" })
       .single();
     if (cErr || !c) throw new Error("Empresa no encontrada");
     await assertCanAdmin(context.supabase, c.agreement_id as string);
+    // Bloquear la eliminación si es la última empresa vinculada (Decisión 3).
+    const { count: total, error: countErr } = await context.supabase
+      .from("agreement_companies")
+      .select("id", { count: "exact", head: true })
+      .eq("agreement_id", c.agreement_id as string);
+    if (countErr) throw new Error(countErr.message);
+    if ((total ?? 0) <= 1) {
+      throw new Error("No se puede eliminar la última empresa vinculada al acuerdo");
+    }
     const { error } = await context.supabase
       .from("agreement_companies")
       .delete()
       .eq("id", data.company_id);
     if (error) throw new Error(error.message);
+
     return { ok: true };
   });

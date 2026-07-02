@@ -39,25 +39,54 @@ const priceOptional = z
     return n;
   });
 
+const agreementBaseFields = {
+  name: z.string().trim().min(1, "Nombre requerido").max(160),
+  scope: agreementScopeEnum.default("global"),
+  unit_name: z
+    .string()
+    .trim()
+    .max(160)
+    .optional()
+    .transform((v) => (v && v.length ? v : null)),
+  start_date: dateOptional,
+  end_date: dateOptional,
+  observations: trimmedOptional,
+};
+
+const scopeRefine = (d: { scope: "global" | "unit"; unit_name: string | null }) =>
+  d.scope !== "unit" || !!d.unit_name;
+const scopeRefineOpts: { path: (string | number)[]; message: string } = {
+  path: ["unit_name"],
+  message: "Indica el nombre de la unidad",
+};
+
+// Tres modos de creación (Paso 3):
+//  - new_for_client: crea un nuevo agrupador para el cliente indicado.
+//  - existing:       usa un agrupador existente (no vincula empresas).
+//  - free:           agrupador libre (solo super_admin); crea uno con nombre y
+//                    vincula opcionalmente empresas iniciales.
 export const agreementCreateSchema = z
-  .object({
-    client_id: z.string().uuid(),
-    name: z.string().trim().min(1, "Nombre requerido").max(160),
-    scope: agreementScopeEnum.default("global"),
-    unit_name: z
-      .string()
-      .trim()
-      .max(160)
-      .optional()
-      .transform((v) => (v && v.length ? v : null)),
-    start_date: dateOptional,
-    end_date: dateOptional,
-    observations: trimmedOptional,
-  })
-  .refine((d) => d.scope !== "unit" || !!d.unit_name, {
-    path: ["unit_name"],
-    message: "Indica el nombre de la unidad",
-  });
+  .union([
+    z.object({
+      mode: z.literal("new_for_client"),
+      client_id: z.string().uuid(),
+      ...agreementBaseFields,
+    }),
+    z.object({
+      mode: z.literal("existing"),
+      group_id: z.string().uuid(),
+      ...agreementBaseFields,
+    }),
+    z.object({
+      mode: z.literal("free"),
+      group_name: z.string().trim().min(1, "Nombre del agrupador requerido").max(160),
+      company_ids: z.array(z.string().uuid()).optional().default([]),
+      ...agreementBaseFields,
+    }),
+  ])
+  .refine(scopeRefine, scopeRefineOpts);
+
+
 
 export const agreementUpdateSchema = z.object({
   agreement_id: z.string().uuid(),
@@ -170,17 +199,20 @@ export const importRowSchema = z.object({
 
 export const importPreviewSchema = z.object({
   agreement_id: z.string().uuid(),
+  target_client_id: z.string().uuid().optional(),
   rows: z.array(importRowSchema),
 });
 
 export const importCommitSchema = z.object({
   agreement_id: z.string().uuid(),
+  target_client_id: z.string().uuid().optional(),
   rows: z.array(importRowSchema),
   price_resolutions: z
     .record(z.string(), z.enum(["applyAll", "keepDistinct"]))
     .optional()
     .default({}),
 });
+
 
 export const memberAddSchema = z.object({
   agreement_id: z.string().uuid(),
