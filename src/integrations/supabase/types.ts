@@ -167,10 +167,46 @@ export type Database = {
           },
         ]
       }
+      agreement_group_members: {
+        Row: {
+          agreement_group_id: string
+          assigned_by: string | null
+          created_at: string
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          agreement_group_id: string
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          agreement_group_id?: string
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agreement_group_members_agreement_group_id_fkey"
+            columns: ["agreement_group_id"]
+            isOneToOne: false
+            referencedRelation: "agreement_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agreement_groups: {
         Row: {
           client_id: string | null
           created_at: string
+          created_by: string | null
           group_name: string
           id: string
           notes: string | null
@@ -180,6 +216,7 @@ export type Database = {
         Insert: {
           client_id?: string | null
           created_at?: string
+          created_by?: string | null
           group_name: string
           id?: string
           notes?: string | null
@@ -189,6 +226,7 @@ export type Database = {
         Update: {
           client_id?: string | null
           created_at?: string
+          created_by?: string | null
           group_name?: string
           id?: string
           notes?: string | null
