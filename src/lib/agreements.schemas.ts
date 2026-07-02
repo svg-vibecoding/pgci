@@ -241,6 +241,25 @@ export const companyRemoveSchema = z.object({
   company_id: z.string().uuid(),
 });
 
+export const groupMemberAddSchema = z.object({
+  group_id: z.string().uuid(),
+  user_id: z.string().uuid(),
+  role: z.enum(["agreement_group_admin", "agreement_group_member"]),
+});
+
+export const groupMemberUpdateSchema = z.object({
+  member_id: z.string().uuid(),
+  role: z.enum(["agreement_group_admin", "agreement_group_member"]),
+});
+
+export const groupMemberRemoveSchema = z.object({
+  member_id: z.string().uuid(),
+});
+
+export const groupIdSchema = z.object({
+  group_id: z.string().uuid(),
+});
+
 export type AgreementCreateInput = z.input<typeof agreementCreateSchema>;
 export type AgreementUpdateInput = z.input<typeof agreementUpdateSchema>;
 export type LineCreateInput = z.input<typeof lineCreateSchema>;
