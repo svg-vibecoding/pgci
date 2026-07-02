@@ -230,6 +230,36 @@ export function AgreementImportWizard({
         <div className="max-h-[calc(90vh-9rem)] overflow-y-auto px-6 py-4">
           {step === "upload" && (
             <div className="space-y-4">
+              {needsCompanyPick && (
+                <Card>
+                  <CardContent className="space-y-2 py-4">
+                    <div className="text-sm font-medium">
+                      Empresa destino de la importación
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Este acuerdo tiene {companies.length} empresas vinculadas.
+                      Selecciona a cuál asignar los códigos de cliente y descripciones
+                      del archivo.
+                    </p>
+                    <Select
+                      value={targetClientId}
+                      onValueChange={setTargetClientId}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona una empresa vinculada" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {companies.map((c) => (
+                          <SelectItem key={c.id} value={c.client_id as string}>
+                            {c.client_display_name ?? "—"}
+                            {c.tax_id ? ` · ${c.tax_id}` : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </CardContent>
+                </Card>
+              )}
               <Card>
                 <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
                   <Upload className="h-10 w-10 text-muted-foreground" />
@@ -250,7 +280,10 @@ export function AgreementImportWizard({
                     }}
                   />
                   <div className="flex gap-2">
-                    <Button onClick={() => fileRef.current?.click()} disabled={preview.isPending}>
+                    <Button
+                      onClick={() => fileRef.current?.click()}
+                      disabled={preview.isPending || (needsCompanyPick && !targetClientId)}
+                    >
                       <Upload className="mr-1.5 h-4 w-4" />
                       {preview.isPending ? "Analizando…" : "Seleccionar archivo"}
                     </Button>
@@ -258,6 +291,11 @@ export function AgreementImportWizard({
                       <Download className="mr-1.5 h-4 w-4" /> Descargar plantilla
                     </Button>
                   </div>
+                  {needsCompanyPick && !targetClientId && (
+                    <p className="text-xs text-muted-foreground">
+                      Selecciona primero la empresa destino para habilitar la carga.
+                    </p>
+                  )}
                   {fileName && (
                     <div className="text-xs text-muted-foreground">{fileName}</div>
                   )}
