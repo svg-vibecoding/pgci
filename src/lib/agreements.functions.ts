@@ -235,16 +235,33 @@ export const listAssignableGroups = createServerFn({ method: "GET" })
       .order("group_name");
 
     if (!isSuper) {
-      const { data: access, error: accErr } = await context.supabase
-        .from("user_client_access")
-        .select("client_id")
-        .eq("can_create_agreements", true);
+      const [{ data: access, error: accErr }, { data: memberships, error: mErr }] =
+        await Promise.all([
+          context.supabase
+            .from("user_client_access")
+            .select("client_id")
+            .eq("can_create_agreements", true),
+          context.supabase
+            .from("agreement_group_members")
+            .select("agreement_group_id"),
+        ]);
       if (accErr) throw new Error(accErr.message);
+      if (mErr) throw new Error(mErr.message);
       const allowedClientIds = (access ?? [])
         .map((a) => a.client_id as string)
         .filter(Boolean);
-      if (allowedClientIds.length === 0) return [];
-      groupsQuery = groupsQuery.in("client_id", allowedClientIds);
+      const memberGroupIds = (memberships ?? [])
+        .map((m) => m.agreement_group_id as string)
+        .filter(Boolean);
+      if (allowedClientIds.length === 0 && memberGroupIds.length === 0) return [];
+      const clientFilter =
+        allowedClientIds.length > 0
+          ? `client_id.in.(${allowedClientIds.join(",")})`
+          : null;
+      const memberFilter =
+        memberGroupIds.length > 0 ? `id.in.(${memberGroupIds.join(",")})` : null;
+      const orFilter = [clientFilter, memberFilter].filter(Boolean).join(",");
+      groupsQuery = groupsQuery.or(orFilter);
     }
 
     const { data: groups, error } = await groupsQuery;
