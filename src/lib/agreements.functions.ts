@@ -1329,10 +1329,20 @@ export const removeAgreementCompany = createServerFn({ method: "POST" })
       .single();
     if (cErr || !c) throw new Error("Empresa no encontrada");
     await assertCanAdmin(context.supabase, c.agreement_id as string);
+    // Bloquear la eliminación si es la última empresa vinculada (Decisión 3).
+    const { count: total, error: countErr } = await context.supabase
+      .from("agreement_companies")
+      .select("id", { count: "exact", head: true })
+      .eq("agreement_id", c.agreement_id as string);
+    if (countErr) throw new Error(countErr.message);
+    if ((total ?? 0) <= 1) {
+      throw new Error("No se puede eliminar la última empresa vinculada al acuerdo");
+    }
     const { error } = await context.supabase
       .from("agreement_companies")
       .delete()
       .eq("id", data.company_id);
     if (error) throw new Error(error.message);
+
     return { ok: true };
   });
