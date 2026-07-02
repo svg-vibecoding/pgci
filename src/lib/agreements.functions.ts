@@ -137,7 +137,7 @@ export const createAgreement = createServerFn({ method: "POST" })
         (cli.commercial_name?.trim() || cli.legal_name || "Grupo sin nombre") as string;
       const { data: newGroup, error: gErr } = await context.supabase
         .from("agreement_groups")
-        .insert({ group_name: groupName, client_id: data.client_id })
+        .insert({ group_name: groupName, client_id: data.client_id, created_by: context.userId })
         .select("id")
         .single();
       if (gErr) throw new Error(`No se pudo crear el agrupador: ${gErr.message}`);
