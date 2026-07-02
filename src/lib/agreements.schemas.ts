@@ -199,17 +199,20 @@ export const importRowSchema = z.object({
 
 export const importPreviewSchema = z.object({
   agreement_id: z.string().uuid(),
+  target_client_id: z.string().uuid().optional(),
   rows: z.array(importRowSchema),
 });
 
 export const importCommitSchema = z.object({
   agreement_id: z.string().uuid(),
+  target_client_id: z.string().uuid().optional(),
   rows: z.array(importRowSchema),
   price_resolutions: z
     .record(z.string(), z.enum(["applyAll", "keepDistinct"]))
     .optional()
     .default({}),
 });
+
 
 export const memberAddSchema = z.object({
   agreement_id: z.string().uuid(),
