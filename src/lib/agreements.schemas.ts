@@ -55,8 +55,8 @@ const agreementBaseFields = {
 
 const scopeRefine = (d: { scope: "global" | "unit"; unit_name: string | null }) =>
   d.scope !== "unit" || !!d.unit_name;
-const scopeRefineOpts = {
-  path: ["unit_name"] as const,
+const scopeRefineOpts: { path: (string | number)[]; message: string } = {
+  path: ["unit_name"],
   message: "Indica el nombre de la unidad",
 };
 
@@ -65,30 +65,27 @@ const scopeRefineOpts = {
 //  - existing:       usa un agrupador existente (no vincula empresas).
 //  - free:           agrupador libre (solo super_admin); crea uno con nombre y
 //                    vincula opcionalmente empresas iniciales.
-export const agreementCreateSchema = z.discriminatedUnion("mode", [
-  z
-    .object({
+export const agreementCreateSchema = z
+  .union([
+    z.object({
       mode: z.literal("new_for_client"),
       client_id: z.string().uuid(),
       ...agreementBaseFields,
-    })
-    .refine(scopeRefine, scopeRefineOpts),
-  z
-    .object({
+    }),
+    z.object({
       mode: z.literal("existing"),
       group_id: z.string().uuid(),
       ...agreementBaseFields,
-    })
-    .refine(scopeRefine, scopeRefineOpts),
-  z
-    .object({
+    }),
+    z.object({
       mode: z.literal("free"),
       group_name: z.string().trim().min(1, "Nombre del agrupador requerido").max(160),
       company_ids: z.array(z.string().uuid()).optional().default([]),
       ...agreementBaseFields,
-    })
-    .refine(scopeRefine, scopeRefineOpts),
-]);
+    }),
+  ])
+  .refine(scopeRefine, scopeRefineOpts);
+
 
 
 export const agreementUpdateSchema = z.object({
