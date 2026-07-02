@@ -5,7 +5,9 @@ import { z } from "zod";
 import {
   createAgreement,
   listAssignableClients,
+  listAssignableGroups,
 } from "@/lib/agreements.functions";
+import { useIsSuperAdmin } from "@/hooks/use-profile";
 import {
   AgreementForm,
   emptyAgreement,
@@ -27,7 +29,9 @@ export const Route = createFileRoute("/_authenticated/pgci/agreements/new")({
 function NewAgreement() {
   const navigate = useNavigate();
   const { client } = Route.useSearch();
+  const { isSuperAdmin } = useIsSuperAdmin();
   const listClientsFn = useServerFn(listAssignableClients);
+  const listGroupsFn = useServerFn(listAssignableGroups);
   const createFn = useServerFn(createAgreement);
 
   const { data: clients, isLoading: clientsLoading } = useQuery({
@@ -35,21 +39,38 @@ function NewAgreement() {
     queryFn: () => listClientsFn(),
   });
 
-  const m = useMutation({
-    mutationFn: (v: AgreementFormValues) =>
-      createFn({
-        data: {
-          mode: "new_for_client",
-          client_id: v.client_id,
-          name: v.name,
-          scope: v.scope,
-          unit_name: v.scope === "unit" ? v.unit_name : undefined,
-          start_date: v.start_date || undefined,
-          end_date: v.end_date || undefined,
-          observations: v.observations || undefined,
-        },
-      }),
+  const { data: groups, isLoading: groupsLoading } = useQuery({
+    queryKey: ["agreements", "assignable-groups"],
+    queryFn: () => listGroupsFn(),
+  });
 
+  const m = useMutation({
+    mutationFn: (v: AgreementFormValues) => {
+      const base = {
+        name: v.name,
+        scope: v.scope,
+        unit_name: v.scope === "unit" ? v.unit_name : undefined,
+        start_date: v.start_date || undefined,
+        end_date: v.end_date || undefined,
+        observations: v.observations || undefined,
+      };
+      if (v.mode === "existing") {
+        return createFn({ data: { mode: "existing", group_id: v.group_id, ...base } });
+      }
+      if (v.mode === "free") {
+        return createFn({
+          data: {
+            mode: "free",
+            group_name: v.group_name,
+            company_ids: v.company_ids,
+            ...base,
+          },
+        });
+      }
+      return createFn({
+        data: { mode: "new_for_client", client_id: v.client_id, ...base },
+      });
+    },
     onSuccess: (res) =>
       navigate({
         to: "/pgci/agreements/$agreementId",
@@ -58,7 +79,7 @@ function NewAgreement() {
   });
 
   const initial: AgreementFormValues = client
-    ? { ...emptyAgreement, client_id: client }
+    ? { ...emptyAgreement, client_id: client, mode: "new_for_client" }
     : emptyAgreement;
 
   return (
@@ -77,6 +98,9 @@ function NewAgreement() {
         initial={initial}
         clients={clients ?? []}
         clientsLoading={clientsLoading}
+        groups={groups ?? []}
+        groupsLoading={groupsLoading}
+        isSuperAdmin={isSuperAdmin}
         submitting={m.isPending}
         lockClient={Boolean(client)}
         onSubmit={async (v) => {
