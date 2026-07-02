@@ -1029,15 +1029,16 @@ export const commitAgreementImport = createServerFn({ method: "POST" })
       data.agreement_id,
       data.target_client_id ?? null,
     );
-    const payload: Record<string, unknown> = {
+    const payload = {
       rows: data.rows,
       price_resolutions: data.price_resolutions ?? {},
       target_client_id: targetClientId,
-    };
+    } as unknown as import("@/integrations/supabase/types").Json;
     const { data: result, error } = await context.supabase.rpc(
       "commit_agreement_import",
       { p_agreement_id: data.agreement_id, p_payload: payload },
     );
+
     if (error) {
       if (error.code === "42501") throw new Error("No tienes permisos sobre este acuerdo");
       throw new Error(`No se pudo guardar la importación: ${error.message}`);
