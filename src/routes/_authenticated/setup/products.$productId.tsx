@@ -56,12 +56,14 @@ function ProductDetail() {
         .eq("product_id", productId);
       if (err1 || !rows?.length) return 0;
       const ids = [...new Set(rows.map((r) => r.agreement_id))];
-      const { data: agreements, error: err2 } = await supabase
-        .from("agreements")
+      const { data: links, error: err2 } = await supabase
+        .from("agreement_companies")
         .select("client_id")
-        .in("id", ids);
+        .in("agreement_id", ids);
       if (err2) return 0;
-      const clients = new Set(agreements?.map((a) => a.client_id).filter(Boolean) ?? []);
+      const clients = new Set(
+        (links ?? []).map((l) => l.client_id as string | null).filter(Boolean) as string[],
+      );
       return clients.size;
     },
   });

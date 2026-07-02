@@ -59,11 +59,11 @@ function ClientsList() {
             );
           }
         });
-        const { data: agreements } = await supabase
-          .from("agreements")
+        const { data: agreementLinks } = await supabase
+          .from("agreement_companies")
           .select("client_id")
           .in("client_id", ids);
-        (agreements ?? []).forEach((a) => {
+        (agreementLinks ?? []).forEach((a) => {
           if (a.client_id)
             agreementCounts.set(a.client_id, (agreementCounts.get(a.client_id) ?? 0) + 1);
         });

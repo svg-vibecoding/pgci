@@ -77,13 +77,13 @@ export function AgreementCompaniesSection({
     enabled: addOpen,
   });
 
-  const linkedTaxIds = useMemo(
-    () => new Set((companies ?? []).map((c) => c.tax_id as string)),
+  const linkedClientIds = useMemo(
+    () => new Set((companies ?? []).map((c) => c.client_id as string)),
     [companies],
   );
 
   const availableClients = useMemo(() => {
-    const list = (clientsQ.data ?? []).filter((c) => !linkedTaxIds.has(c.tax_id));
+    const list = (clientsQ.data ?? []).filter((c) => !linkedClientIds.has(c.id));
     const q = search.trim().toLowerCase();
     if (!q) return list;
     return list.filter((c) => {
@@ -92,7 +92,7 @@ export function AgreementCompaniesSection({
       const tax = (c.tax_id || "").toLowerCase();
       return name.includes(q) || legal.includes(q) || tax.includes(q);
     });
-  }, [clientsQ.data, linkedTaxIds, search]);
+  }, [clientsQ.data, linkedClientIds, search]);
 
   const toggle = (id: string) => {
     setSelected((prev) => {
@@ -115,9 +115,7 @@ export function AgreementCompaniesSection({
         await addFn({
           data: {
             agreement_id: agreementId,
-            tax_id: c.tax_id,
-            tax_id_type: c.tax_id_type ?? "NIT",
-            legal_name: c.legal_name ?? undefined,
+            client_id: c.id,
           },
         });
       }
