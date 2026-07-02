@@ -238,7 +238,19 @@ function AgreementDetail() {
         <CardContent className="space-y-6">
           <InfoSection>
             <InfoField label="Acuerdo">{agreement.name}</InfoField>
-            <InfoField label="Agrupador">{agreement.group_name ?? "—"}</InfoField>
+            <InfoField label="Agrupador">
+              {agreement.group_id && agreement.group_name ? (
+                <Link
+                  to="/pgci/groups/$groupId"
+                  params={{ groupId: agreement.group_id }}
+                  className="text-primary hover:underline"
+                >
+                  {agreement.group_name}
+                </Link>
+              ) : (
+                agreement.group_name ?? "—"
+              )}
+            </InfoField>
             <InfoField label="Cliente asociado al agrupador">{clientName}</InfoField>
 
             <InfoField label="Alcance">
