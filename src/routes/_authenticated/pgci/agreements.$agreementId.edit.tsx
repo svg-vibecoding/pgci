@@ -8,6 +8,7 @@ import {
 } from "@/lib/agreements.functions";
 import {
   AgreementForm,
+  emptyAgreement,
   type AgreementFormValues,
 } from "@/components/agreements/AgreementForm";
 import { BackLinkChrome, CreateViewShell } from "@/components/setup/CreateViewShell";
@@ -73,6 +74,8 @@ function EditAgreement() {
   }
 
   const initial: AgreementFormValues = {
+    ...emptyAgreement,
+    mode: "new_for_client",
     client_id: (agreement.group_client_id as string) ?? "",
     name: agreement.name ?? "",
     scope: (agreement.scope as "global" | "unit") ?? "global",

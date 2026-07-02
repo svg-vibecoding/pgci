@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
@@ -41,9 +41,17 @@ import {
 import {
   importAgreementLinesPreview,
   commitAgreementImport,
+  listAgreementCompanies,
   type ClassifiedRow,
   type NConflictGroupServer,
 } from "@/lib/agreements.functions";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type Step = "upload" | "preview" | "result";
 
@@ -62,8 +70,18 @@ export function AgreementImportWizard({
   const qc = useQueryClient();
   const previewFn = useServerFn(importAgreementLinesPreview);
   const commitFn = useServerFn(commitAgreementImport);
+  const listCompaniesFn = useServerFn(listAgreementCompanies);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const companiesQ = useQuery({
+    queryKey: ["agreements", "companies", agreementId],
+    queryFn: () => listCompaniesFn({ data: { agreement_id: agreementId } }),
+    enabled: open,
+  });
+  const companies = companiesQ.data ?? [];
+  const needsCompanyPick = companies.length > 1;
+
+  const [targetClientId, setTargetClientId] = useState<string>("");
   const [step, setStep] = useState<Step>("upload");
   const [fileName, setFileName] = useState<string>("");
   const [formatErrors, setFormatErrors] = useState<ParsedImportRow[]>([]);
@@ -93,6 +111,7 @@ export function AgreementImportWizard({
     setNConflicts([]);
     setResolutions({});
     setCommitResult(null);
+    setTargetClientId("");
     if (fileRef.current) fileRef.current.value = "";
   };
 
@@ -106,6 +125,7 @@ export function AgreementImportWizard({
       previewFn({
         data: {
           agreement_id: agreementId,
+          target_client_id: needsCompanyPick ? targetClientId : undefined,
           rows: payload.rows.map((r) => ({
             row_number: r.row_number,
             sku: r.sku,
@@ -135,6 +155,7 @@ export function AgreementImportWizard({
       commitFn({
         data: {
           agreement_id: agreementId,
+          target_client_id: needsCompanyPick ? targetClientId : undefined,
           rows: rows.map((r) => ({
             row_number: r.row_number,
             sku: r.sku,
@@ -209,6 +230,36 @@ export function AgreementImportWizard({
         <div className="max-h-[calc(90vh-9rem)] overflow-y-auto px-6 py-4">
           {step === "upload" && (
             <div className="space-y-4">
+              {needsCompanyPick && (
+                <Card>
+                  <CardContent className="space-y-2 py-4">
+                    <div className="text-sm font-medium">
+                      Empresa destino de la importación
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Este acuerdo tiene {companies.length} empresas vinculadas.
+                      Selecciona a cuál asignar los códigos de cliente y descripciones
+                      del archivo.
+                    </p>
+                    <Select
+                      value={targetClientId}
+                      onValueChange={setTargetClientId}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona una empresa vinculada" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {companies.map((c) => (
+                          <SelectItem key={c.id} value={c.client_id as string}>
+                            {c.client_display_name ?? "—"}
+                            {c.tax_id ? ` · ${c.tax_id}` : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </CardContent>
+                </Card>
+              )}
               <Card>
                 <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
                   <Upload className="h-10 w-10 text-muted-foreground" />
@@ -229,7 +280,10 @@ export function AgreementImportWizard({
                     }}
                   />
                   <div className="flex gap-2">
-                    <Button onClick={() => fileRef.current?.click()} disabled={preview.isPending}>
+                    <Button
+                      onClick={() => fileRef.current?.click()}
+                      disabled={preview.isPending || (needsCompanyPick && !targetClientId)}
+                    >
                       <Upload className="mr-1.5 h-4 w-4" />
                       {preview.isPending ? "Analizando…" : "Seleccionar archivo"}
                     </Button>
@@ -237,6 +291,11 @@ export function AgreementImportWizard({
                       <Download className="mr-1.5 h-4 w-4" /> Descargar plantilla
                     </Button>
                   </div>
+                  {needsCompanyPick && !targetClientId && (
+                    <p className="text-xs text-muted-foreground">
+                      Selecciona primero la empresa destino para habilitar la carga.
+                    </p>
+                  )}
                   {fileName && (
                     <div className="text-xs text-muted-foreground">{fileName}</div>
                   )}

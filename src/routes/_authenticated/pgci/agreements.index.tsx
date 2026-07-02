@@ -293,6 +293,7 @@ function AgreementsList() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-auto">Acuerdo</TableHead>
+                <TableHead className="w-auto">Agrupador</TableHead>
                 <TableHead className="w-auto">Cliente</TableHead>
                 <TableHead className="w-[240px] whitespace-nowrap">Posiciones</TableHead>
                 <TableHead className="w-[112px] whitespace-nowrap">Vigencia</TableHead>
@@ -303,14 +304,14 @@ function AgreementsList() {
             <TableBody>
               {isLoading && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-sm text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center text-sm text-muted-foreground">
                     Cargando…
                   </TableCell>
                 </TableRow>
               )}
               {!isLoading && filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">
+                  <TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-8">
                     {all.length === 0
                       ? "Aún no hay acuerdos. Crea el primero para empezar a registrar información comercial."
                       : "No hay acuerdos que coincidan con los filtros."}
@@ -318,7 +319,9 @@ function AgreementsList() {
                 </TableRow>
               )}
               {filtered.map((a) => {
-                const clientName = a.group_client_commercial_name || a.group_client_legal_name || a.group_name || "—";
+                const clientName = a.group_client_commercial_name || a.group_client_legal_name || "—";
+                const groupName = a.group_name || "—";
+                const isFreeGroup = !a.group_client_id;
                 const vig = vigenciaBadge(a.end_date ?? null);
                 const counts: CountSpec[] = [
                   { key: "total", label: "Total de posiciones", value: a.lines_total ?? 0, color: "neutral" },
@@ -346,7 +349,16 @@ function AgreementsList() {
                         </span>
                       )}
                     </TableCell>
+                    <TableCell className="min-w-0">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="truncate" title={groupName}>{groupName}</span>
+                        {isFreeGroup && (
+                          <Badge color="neutral" variant="soft">Libre</Badge>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell className="text-muted-foreground min-w-0 truncate">{clientName}</TableCell>
+
                     <TableCell className="w-[240px] whitespace-nowrap">
                       <PositionsCounters counts={counts} agreementId={a.id ?? null} />
                     </TableCell>
