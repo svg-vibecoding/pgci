@@ -111,6 +111,7 @@ export function AgreementImportWizard({
     setNConflicts([]);
     setResolutions({});
     setCommitResult(null);
+    setTargetClientId("");
     if (fileRef.current) fileRef.current.value = "";
   };
 
