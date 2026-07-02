@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
@@ -41,9 +41,17 @@ import {
 import {
   importAgreementLinesPreview,
   commitAgreementImport,
+  listAgreementCompanies,
   type ClassifiedRow,
   type NConflictGroupServer,
 } from "@/lib/agreements.functions";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type Step = "upload" | "preview" | "result";
 
