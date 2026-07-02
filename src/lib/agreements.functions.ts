@@ -166,7 +166,7 @@ export const createAgreement = createServerFn({ method: "POST" })
       if (!isSuper) throw new Error("Solo super_admin puede crear agrupadores libres");
       const { data: newGroup, error: gErr } = await context.supabase
         .from("agreement_groups")
-        .insert({ group_name: data.group_name, client_id: null })
+        .insert({ group_name: data.group_name, client_id: null, created_by: context.userId })
         .select("id")
         .single();
       if (gErr) throw new Error(`No se pudo crear el agrupador: ${gErr.message}`);
