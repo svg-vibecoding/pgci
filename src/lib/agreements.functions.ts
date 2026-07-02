@@ -859,7 +859,12 @@ export const importAgreementLinesPreview = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => importPreviewSchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertCanAdmin(context.supabase, data.agreement_id);
-    const clientId = await getAgreementClientId(context.supabase, data.agreement_id);
+    const clientId = await resolveImportTargetClient(
+      context.supabase,
+      data.agreement_id,
+      data.target_client_id ?? null,
+    );
+
 
     // Fechas del acuerdo (fallback cuando la fila no trae start/end), igual
     // que en el trigger recalc_agreement_product_status.
