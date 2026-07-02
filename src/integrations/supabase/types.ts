@@ -945,6 +945,14 @@ export type Database = {
       get_agreement_role: { Args: { p_agreement_id: string }; Returns: string }
       has_client_access: { Args: { p_client_id: string }; Returns: boolean }
       is_active_user: { Args: { p_user_id: string }; Returns: boolean }
+      is_agreement_group_admin: {
+        Args: { p_group_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      is_agreement_group_member: {
+        Args: { p_group_id: string; p_user_id: string }
+        Returns: boolean
+      }
       is_super_admin: { Args: never; Returns: boolean }
       user_can_access_agreement: {
         Args: { p_agreement_id: string; p_user_id: string }
