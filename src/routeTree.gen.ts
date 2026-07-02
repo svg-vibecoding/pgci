@@ -26,6 +26,7 @@ import { Route as AuthenticatedSetupProductsImportRouteImport } from './routes/_
 import { Route as AuthenticatedSetupProductsProductIdRouteImport } from './routes/_authenticated/setup/products.$productId'
 import { Route as AuthenticatedSetupClientsNewRouteImport } from './routes/_authenticated/setup/clients.new'
 import { Route as AuthenticatedSetupClientsClientIdRouteImport } from './routes/_authenticated/setup/clients.$clientId'
+import { Route as AuthenticatedPgciGroupsGroupIdRouteImport } from './routes/_authenticated/pgci/groups.$groupId'
 import { Route as AuthenticatedPgciAgreementsNewRouteImport } from './routes/_authenticated/pgci/agreements.new'
 import { Route as AuthenticatedSetupUsersUserIdIndexRouteImport } from './routes/_authenticated/setup/users.$userId.index'
 import { Route as AuthenticatedSetupClientsClientIdIndexRouteImport } from './routes/_authenticated/setup/clients.$clientId.index'
@@ -131,6 +132,12 @@ const AuthenticatedSetupClientsClientIdRoute =
     path: '/clients/$clientId',
     getParentRoute: () => AuthenticatedSetupRouteRoute,
   } as any)
+const AuthenticatedPgciGroupsGroupIdRoute =
+  AuthenticatedPgciGroupsGroupIdRouteImport.update({
+    id: '/groups/$groupId',
+    path: '/groups/$groupId',
+    getParentRoute: () => AuthenticatedPgciRouteRoute,
+  } as any)
 const AuthenticatedPgciAgreementsNewRoute =
   AuthenticatedPgciAgreementsNewRouteImport.update({
     id: '/agreements/new',
@@ -200,6 +207,7 @@ export interface FileRoutesByFullPath {
   '/pgci/': typeof AuthenticatedPgciIndexRoute
   '/setup/': typeof AuthenticatedSetupIndexRoute
   '/pgci/agreements/new': typeof AuthenticatedPgciAgreementsNewRoute
+  '/pgci/groups/$groupId': typeof AuthenticatedPgciGroupsGroupIdRoute
   '/setup/clients/$clientId': typeof AuthenticatedSetupClientsClientIdRouteWithChildren
   '/setup/clients/new': typeof AuthenticatedSetupClientsNewRoute
   '/setup/products/$productId': typeof AuthenticatedSetupProductsProductIdRoute
@@ -226,6 +234,7 @@ export interface FileRoutesByTo {
   '/pgci': typeof AuthenticatedPgciIndexRoute
   '/setup': typeof AuthenticatedSetupIndexRoute
   '/pgci/agreements/new': typeof AuthenticatedPgciAgreementsNewRoute
+  '/pgci/groups/$groupId': typeof AuthenticatedPgciGroupsGroupIdRoute
   '/setup/clients/new': typeof AuthenticatedSetupClientsNewRoute
   '/setup/products/$productId': typeof AuthenticatedSetupProductsProductIdRoute
   '/setup/products/import': typeof AuthenticatedSetupProductsImportRoute
@@ -254,6 +263,7 @@ export interface FileRoutesById {
   '/_authenticated/pgci/': typeof AuthenticatedPgciIndexRoute
   '/_authenticated/setup/': typeof AuthenticatedSetupIndexRoute
   '/_authenticated/pgci/agreements/new': typeof AuthenticatedPgciAgreementsNewRoute
+  '/_authenticated/pgci/groups/$groupId': typeof AuthenticatedPgciGroupsGroupIdRoute
   '/_authenticated/setup/clients/$clientId': typeof AuthenticatedSetupClientsClientIdRouteWithChildren
   '/_authenticated/setup/clients/new': typeof AuthenticatedSetupClientsNewRoute
   '/_authenticated/setup/products/$productId': typeof AuthenticatedSetupProductsProductIdRoute
@@ -284,6 +294,7 @@ export interface FileRouteTypes {
     | '/pgci/'
     | '/setup/'
     | '/pgci/agreements/new'
+    | '/pgci/groups/$groupId'
     | '/setup/clients/$clientId'
     | '/setup/clients/new'
     | '/setup/products/$productId'
@@ -310,6 +321,7 @@ export interface FileRouteTypes {
     | '/pgci'
     | '/setup'
     | '/pgci/agreements/new'
+    | '/pgci/groups/$groupId'
     | '/setup/clients/new'
     | '/setup/products/$productId'
     | '/setup/products/import'
@@ -337,6 +349,7 @@ export interface FileRouteTypes {
     | '/_authenticated/pgci/'
     | '/_authenticated/setup/'
     | '/_authenticated/pgci/agreements/new'
+    | '/_authenticated/pgci/groups/$groupId'
     | '/_authenticated/setup/clients/$clientId'
     | '/_authenticated/setup/clients/new'
     | '/_authenticated/setup/products/$productId'
@@ -485,6 +498,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSetupClientsClientIdRouteImport
       parentRoute: typeof AuthenticatedSetupRouteRoute
     }
+    '/_authenticated/pgci/groups/$groupId': {
+      id: '/_authenticated/pgci/groups/$groupId'
+      path: '/groups/$groupId'
+      fullPath: '/pgci/groups/$groupId'
+      preLoaderRoute: typeof AuthenticatedPgciGroupsGroupIdRouteImport
+      parentRoute: typeof AuthenticatedPgciRouteRoute
+    }
     '/_authenticated/pgci/agreements/new': {
       id: '/_authenticated/pgci/agreements/new'
       path: '/agreements/new'
@@ -561,6 +581,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedPgciRouteRouteChildren {
   AuthenticatedPgciIndexRoute: typeof AuthenticatedPgciIndexRoute
   AuthenticatedPgciAgreementsNewRoute: typeof AuthenticatedPgciAgreementsNewRoute
+  AuthenticatedPgciGroupsGroupIdRoute: typeof AuthenticatedPgciGroupsGroupIdRoute
   AuthenticatedPgciAgreementsIndexRoute: typeof AuthenticatedPgciAgreementsIndexRoute
   AuthenticatedPgciAgreementsAgreementIdEditRoute: typeof AuthenticatedPgciAgreementsAgreementIdEditRoute
   AuthenticatedPgciAgreementsAgreementIdLinesRoute: typeof AuthenticatedPgciAgreementsAgreementIdLinesRoute
@@ -571,6 +592,7 @@ const AuthenticatedPgciRouteRouteChildren: AuthenticatedPgciRouteRouteChildren =
   {
     AuthenticatedPgciIndexRoute: AuthenticatedPgciIndexRoute,
     AuthenticatedPgciAgreementsNewRoute: AuthenticatedPgciAgreementsNewRoute,
+    AuthenticatedPgciGroupsGroupIdRoute: AuthenticatedPgciGroupsGroupIdRoute,
     AuthenticatedPgciAgreementsIndexRoute:
       AuthenticatedPgciAgreementsIndexRoute,
     AuthenticatedPgciAgreementsAgreementIdEditRoute:
