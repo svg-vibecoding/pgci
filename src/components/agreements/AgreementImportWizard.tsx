@@ -70,8 +70,18 @@ export function AgreementImportWizard({
   const qc = useQueryClient();
   const previewFn = useServerFn(importAgreementLinesPreview);
   const commitFn = useServerFn(commitAgreementImport);
+  const listCompaniesFn = useServerFn(listAgreementCompanies);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const companiesQ = useQuery({
+    queryKey: ["agreements", "companies", agreementId],
+    queryFn: () => listCompaniesFn({ data: { agreement_id: agreementId } }),
+    enabled: open,
+  });
+  const companies = companiesQ.data ?? [];
+  const needsCompanyPick = companies.length > 1;
+
+  const [targetClientId, setTargetClientId] = useState<string>("");
   const [step, setStep] = useState<Step>("upload");
   const [fileName, setFileName] = useState<string>("");
   const [formatErrors, setFormatErrors] = useState<ParsedImportRow[]>([]);
