@@ -1023,15 +1023,20 @@ export const commitAgreementImport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => importCommitSchema.parse(d))
   .handler(async ({ data, context }) => {
+    // Validar target_client_id contra las empresas del acuerdo antes de invocar la RPC.
+    const targetClientId = await resolveImportTargetClient(
+      context.supabase,
+      data.agreement_id,
+      data.target_client_id ?? null,
+    );
+    const payload: Record<string, unknown> = {
+      rows: data.rows,
+      price_resolutions: data.price_resolutions ?? {},
+      target_client_id: targetClientId,
+    };
     const { data: result, error } = await context.supabase.rpc(
       "commit_agreement_import",
-      {
-        p_agreement_id: data.agreement_id,
-        p_payload: {
-          rows: data.rows,
-          price_resolutions: data.price_resolutions ?? {},
-        },
-      },
+      { p_agreement_id: data.agreement_id, p_payload: payload },
     );
     if (error) {
       if (error.code === "42501") throw new Error("No tienes permisos sobre este acuerdo");
@@ -1045,6 +1050,40 @@ export const commitAgreementImport = createServerFn({ method: "POST" })
       by_status: Record<string, number>;
     };
   });
+
+// Resuelve el cliente destino para la importación:
+//  - Si el acuerdo tiene 1 sola empresa → usa esa (ignora target_client_id).
+//  - Si tiene >1 → target_client_id es requerido y debe estar vinculado.
+async function resolveImportTargetClient(
+  supabase: import("@supabase/supabase-js").SupabaseClient<
+    import("@/integrations/supabase/types").Database
+  >,
+  agreementId: string,
+  targetClientId: string | null,
+): Promise<string> {
+  const { data: rows, error } = await supabase
+    .from("agreement_companies")
+    .select("client_id")
+    .eq("agreement_id", agreementId);
+  if (error) throw new Error(`No se pudieron leer las empresas del acuerdo: ${error.message}`);
+  const clientIds = (rows ?? [])
+    .map((r) => r.client_id as string | null)
+    .filter((v): v is string => !!v);
+  if (clientIds.length === 0) {
+    throw new Error("El acuerdo no tiene empresas vinculadas");
+  }
+  if (clientIds.length === 1) return clientIds[0];
+  if (!targetClientId) {
+    throw new Error(
+      "El acuerdo tiene múltiples empresas: selecciona a cuál asignar los códigos importados",
+    );
+  }
+  if (!clientIds.includes(targetClientId)) {
+    throw new Error("El cliente seleccionado no está vinculado a este acuerdo");
+  }
+  return targetClientId;
+}
+
 
 // ---------------------------------------------------------------------------
 // Miembros
