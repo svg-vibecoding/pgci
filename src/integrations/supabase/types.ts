@@ -80,30 +80,24 @@ export type Database = {
       agreement_companies: {
         Row: {
           agreement_id: string
+          client_id: string
           created_at: string
           id: string
-          legal_name: string | null
           notes: string | null
-          tax_id: string
-          tax_id_type: string
         }
         Insert: {
           agreement_id: string
+          client_id: string
           created_at?: string
           id?: string
-          legal_name?: string | null
           notes?: string | null
-          tax_id: string
-          tax_id_type?: string
         }
         Update: {
           agreement_id?: string
+          client_id?: string
           created_at?: string
           id?: string
-          legal_name?: string | null
           notes?: string | null
-          tax_id?: string
-          tax_id_type?: string
         }
         Relationships: [
           {
@@ -118,6 +112,13 @@ export type Database = {
             columns: ["agreement_id"]
             isOneToOne: false
             referencedRelation: "agreements_with_counts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreement_companies_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
             referencedColumns: ["id"]
           },
         ]
@@ -162,6 +163,44 @@ export type Database = {
             columns: ["agreement_product_id"]
             isOneToOne: false
             referencedRelation: "agreement_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agreement_groups: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          group_name: string
+          id: string
+          notes: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          group_name: string
+          id?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          group_name?: string
+          id?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agreement_groups_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
             referencedColumns: ["id"]
           },
         ]
@@ -396,10 +435,10 @@ export type Database = {
       }
       agreements: {
         Row: {
-          client_id: string
           created_at: string
           created_by: string | null
           end_date: string | null
+          group_id: string
           id: string
           name: string
           observations: string | null
@@ -410,10 +449,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          client_id: string
           created_at?: string
           created_by?: string | null
           end_date?: string | null
+          group_id: string
           id?: string
           name: string
           observations?: string | null
@@ -424,10 +463,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          client_id?: string
           created_at?: string
           created_by?: string | null
           end_date?: string | null
+          group_id?: string
           id?: string
           name?: string
           observations?: string | null
@@ -439,10 +478,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "agreements_client_id_fkey"
-            columns: ["client_id"]
+            foreignKeyName: "agreements_group_id_fkey"
+            columns: ["group_id"]
             isOneToOne: false
-            referencedRelation: "clients"
+            referencedRelation: "agreement_groups"
             referencedColumns: ["id"]
           },
         ]
@@ -803,15 +842,16 @@ export type Database = {
     Views: {
       agreements_with_counts: {
         Row: {
-          client_commercial_name: string | null
-          client_id: string | null
-          client_legal_name: string | null
-          client_parent_id: string | null
-          client_tax_id: string | null
           companies_count: number | null
           created_at: string | null
           created_by: string | null
           end_date: string | null
+          group_client_commercial_name: string | null
+          group_client_id: string | null
+          group_client_legal_name: string | null
+          group_client_tax_id: string | null
+          group_id: string | null
+          group_name: string | null
           id: string | null
           lines_active: number | null
           lines_excluded: number | null
@@ -822,8 +862,6 @@ export type Database = {
           my_role: string | null
           name: string | null
           observations: string | null
-          parent_commercial_name: string | null
-          parent_legal_name: string | null
           scope: string | null
           start_date: string | null
           status: string | null
@@ -832,17 +870,17 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "agreements_client_id_fkey"
-            columns: ["client_id"]
+            foreignKeyName: "agreement_groups_client_id_fkey"
+            columns: ["group_client_id"]
             isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "clients_parent_client_id_fkey"
-            columns: ["client_parent_id"]
+            foreignKeyName: "agreements_group_id_fkey"
+            columns: ["group_id"]
             isOneToOne: false
-            referencedRelation: "clients"
+            referencedRelation: "agreement_groups"
             referencedColumns: ["id"]
           },
         ]
