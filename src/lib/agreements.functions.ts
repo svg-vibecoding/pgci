@@ -1367,3 +1367,145 @@ export const removeAgreementCompany = createServerFn({ method: "POST" })
 
     return { ok: true };
   });
+
+// ---------------------------------------------------------------------------
+// Agrupadores (detalle y miembros)
+// ---------------------------------------------------------------------------
+
+export const getAgreementGroup = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => groupIdSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: row, error } = await context.supabase
+      .from("agreement_groups")
+      .select(
+        "id, group_name, client_id, status, notes, created_at, updated_at, created_by, clients:client_id(id, legal_name, commercial_name, tax_id)",
+      )
+      .eq("id", data.group_id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("Agrupador no encontrado");
+    const client = row.clients as {
+      id: string;
+      legal_name: string;
+      commercial_name: string | null;
+      tax_id: string;
+    } | null;
+    return {
+      id: row.id as string,
+      group_name: row.group_name as string,
+      client_id: (row.client_id as string | null) ?? null,
+      status: row.status as string,
+      notes: (row.notes as string | null) ?? null,
+      created_at: row.created_at as string,
+      updated_at: row.updated_at as string,
+      created_by: (row.created_by as string | null) ?? null,
+      client_display_name: client
+        ? client.commercial_name?.trim() || client.legal_name
+        : null,
+      client_tax_id: client?.tax_id ?? null,
+    };
+  });
+
+export const listAgreementGroupMembers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => groupIdSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: members, error } = await context.supabase
+      .from("agreement_group_members")
+      .select("id, agreement_group_id, user_id, role, assigned_by, created_at")
+      .eq("agreement_group_id", data.group_id)
+      .order("created_at");
+    if (error) throw new Error(error.message);
+    const rows = members ?? [];
+    const userIds = rows.map((m) => m.user_id as string);
+    let profilesById = new Map<
+      string,
+      { full_name: string; email: string; status: string }
+    >();
+    if (userIds.length > 0) {
+      const { data: profs } = await context.supabase
+        .from("profiles")
+        .select("user_id, full_name, email, status")
+        .in("user_id", userIds);
+      profilesById = new Map(
+        (profs ?? []).map((p) => [
+          p.user_id as string,
+          {
+            full_name: p.full_name as string,
+            email: p.email as string,
+            status: p.status as string,
+          },
+        ]),
+      );
+    }
+    return rows.map((m) => ({
+      id: m.id as string,
+      agreement_group_id: m.agreement_group_id as string,
+      user_id: m.user_id as string,
+      role: m.role as "agreement_group_admin" | "agreement_group_member",
+      assigned_by: (m.assigned_by as string | null) ?? null,
+      created_at: m.created_at as string,
+      profile: profilesById.get(m.user_id as string) ?? null,
+    }));
+  });
+
+export const addAgreementGroupMember = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => groupMemberAddSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: row, error } = await context.supabase
+      .from("agreement_group_members")
+      .insert({
+        agreement_group_id: data.group_id,
+        user_id: data.user_id,
+        role: data.role,
+        assigned_by: context.userId,
+      })
+      .select("id")
+      .single();
+    if (error) {
+      if (error.message.toLowerCase().includes("duplicate"))
+        throw new Error("Este usuario ya es miembro del agrupador");
+      if (error.message.toLowerCase().includes("row-level"))
+        throw new Error("No tienes permisos para agregar miembros al agrupador");
+      throw new Error(error.message);
+    }
+    return { member_id: row.id as string };
+  });
+
+export const updateAgreementGroupMember = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => groupMemberUpdateSchema.parse(d))
+  .handler(async ({ data, context: _context }) => {
+    const { error } = await _context.supabase
+      .from("agreement_group_members")
+      .update({ role: data.role })
+      .eq("id", data.member_id);
+    if (error) {
+      if (error.message.includes("último agreement_group_admin"))
+        throw new Error("El agrupador no puede quedar sin admin");
+      if (error.message.toLowerCase().includes("row-level"))
+        throw new Error("No tienes permisos para modificar miembros del agrupador");
+      throw new Error(error.message);
+    }
+    return { ok: true };
+  });
+
+export const removeAgreementGroupMember = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => groupMemberRemoveSchema.parse(d))
+  .handler(async ({ data, context: _context }) => {
+    const { error } = await _context.supabase
+      .from("agreement_group_members")
+      .delete()
+      .eq("id", data.member_id);
+    if (error) {
+      if (error.message.includes("último agreement_group_admin"))
+        throw new Error("El agrupador no puede quedar sin admin");
+      if (error.message.toLowerCase().includes("row-level"))
+        throw new Error("No tienes permisos para remover miembros del agrupador");
+      throw new Error(error.message);
+    }
+    return { ok: true };
+  });
