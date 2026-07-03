@@ -98,6 +98,7 @@ const updateUserSchema = z.object({
     .optional()
     .transform((v) => (v && v.length ? v : null)),
   status: z.enum(["active", "inactive"]).default("active"),
+  can_create_agreement_groups: z.boolean().optional().default(false),
   new_password: z.string().min(8, "Mínimo 8 caracteres").optional(),
 });
 
