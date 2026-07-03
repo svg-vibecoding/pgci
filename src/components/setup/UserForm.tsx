@@ -124,7 +124,7 @@ export function UserForm({
           <PermissionRow
             id="super_admin"
             label="Super administrador"
-            helpText="Los super admins tienen acceso total a la plataforma. No requieren configuración de cartera ni permisos adicionales."
+            helpText="Los super administradores tienen acceso total a la plataforma. "
             checked={isSuper}
             onCheckedChange={(checked) =>
               set("role", checked ? "super_admin" : "platform_user")
