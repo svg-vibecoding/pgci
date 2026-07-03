@@ -150,7 +150,7 @@ function UserDetail() {
                 to="/setup/users/$userId/client-access"
                 params={{ userId }}
               >
-                <ShieldCheck className="mr-2 h-4 w-4" /> Gestionar accesos
+                <ShieldCheck className="mr-2 h-4 w-4" /> Clientes y permisos
               </Link>
             </Button>
             <Button asChild variant="outline" size="sm">
@@ -274,7 +274,7 @@ function UserDetail() {
                 to="/setup/users/$userId/client-access"
                 params={{ userId }}
               >
-                <ShieldCheck className="mr-2 h-4 w-4" /> Gestionar accesos
+                <ShieldCheck className="mr-2 h-4 w-4" /> Clientes y permisos
               </Link>
             </Button>
           )}
@@ -297,7 +297,7 @@ function UserDetail() {
                     to="/setup/users/$userId/client-access"
                     params={{ userId }}
                   >
-                    <ShieldCheck className="mr-2 h-4 w-4" /> Gestionar accesos
+                    <ShieldCheck className="mr-2 h-4 w-4" /> Clientes y permisos
                   </Link>
                 </Button>
               )}

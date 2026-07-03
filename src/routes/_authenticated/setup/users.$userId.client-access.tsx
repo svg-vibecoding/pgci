@@ -459,15 +459,8 @@ function ClientAccess() {
 
       <header className="space-y-2">
         <h1 className="text-2xl font-bold tracking-tight">
-          Gestión de capacidades comerciales
+          Clientes y permisos de {user.full_name}
         </h1>
-        <p className="text-base font-semibold text-foreground flex items-center gap-2">
-          <StatusBadge
-            status={user.status === "active" ? "active" : "neutral"}
-            label={user.status === "active" ? "Activo" : "Inactivo"}
-          />
-          {user.full_name}
-        </p>
         <p className="text-sm text-muted-foreground">
           Asígnale al usuario los clientes que podrá ver en la plataforma. También puedes habilitarle permisos de creación de acuerdos, gestión de catálogo del cliente y gestión de matching sobre clientes asignados.
         </p>

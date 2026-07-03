@@ -159,7 +159,7 @@ function NewUser() {
                   });
                 }}
               >
-                Configurar accesos
+                Clientes y permisos
               </Button>
             </div>
           </DialogFooter>
