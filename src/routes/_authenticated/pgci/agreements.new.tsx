@@ -107,7 +107,7 @@ function NewAgreement() {
         groupsLoading={groupsLoading}
         canCreateGroups={!!canCreateGroups}
         submitting={m.isPending}
-        lockClient={Boolean(client)}
+        
         onSubmit={async (v) => {
           await m.mutateAsync(v);
         }}
