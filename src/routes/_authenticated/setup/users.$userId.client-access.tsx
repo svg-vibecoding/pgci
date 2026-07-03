@@ -692,7 +692,7 @@ function ClientAccess() {
               </ul>
             </div>
           )}
-        </CardContent>
+        </div>
       </Card>
 
 
