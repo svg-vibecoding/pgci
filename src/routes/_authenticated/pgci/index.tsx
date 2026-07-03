@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { FileText, Search, Download, Info } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +13,7 @@ export const Route = createFileRoute("/_authenticated/pgci/")({
   head: () => ({ meta: [{ title: "Inicio · PGCI" }] }),
   component: PgciHome,
 });
+
 
 type ModuleStatus = "soon" | "wip";
 
