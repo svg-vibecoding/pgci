@@ -13,6 +13,7 @@ const createUserSchema = z.object({
     .optional()
     .transform((v) => (v && v.length ? v : null)),
   status: z.enum(["active", "inactive"]).default("active"),
+  can_create_agreement_groups: z.boolean().optional().default(false),
 });
 
 export type CreateUserInput = z.input<typeof createUserSchema>;
