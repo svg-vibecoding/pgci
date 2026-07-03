@@ -17,7 +17,19 @@ export const Route = createFileRoute("/_authenticated/setup/users/$userId/client
   component: ClientAccess,
 });
 
-type AccessState = { assigned: boolean; can_create: boolean };
+type AccessState = {
+  assigned: boolean;
+  can_create: boolean;
+  can_manage_client_catalog: boolean;
+  can_manage_matching: boolean;
+};
+
+const DEFAULT_ACCESS_STATE: AccessState = {
+  assigned: false,
+  can_create: false,
+  can_manage_client_catalog: false,
+  can_manage_matching: false,
+};
 
 function ClientAccess() {
   const { userId } = Route.useParams();
@@ -64,7 +76,7 @@ function ClientAccess() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("user_client_access")
-        .select("client_id, can_create_agreements")
+        .select("client_id, can_create_agreements, can_manage_client_catalog, can_manage_matching")
         .eq("user_id", userId);
       if (error) throw error;
       return data ?? [];
@@ -76,13 +88,22 @@ function ClientAccess() {
     if (!clientsQ.data || !accessQ.data) return;
     const next = new Map<string, AccessState>();
     const accessByClient = new Map(
-      accessQ.data.map((a) => [a.client_id, !!a.can_create_agreements]),
+      accessQ.data.map((a) => [
+        a.client_id,
+        {
+          can_create: !!a.can_create_agreements,
+          can_manage_client_catalog: !!a.can_manage_client_catalog,
+          can_manage_matching: !!a.can_manage_matching,
+        },
+      ]),
     );
     clientsQ.data.forEach((c) => {
-      const assigned = accessByClient.has(c.id);
+      const access = accessByClient.get(c.id);
       next.set(c.id, {
-        assigned,
-        can_create: assigned ? !!accessByClient.get(c.id) : false,
+        assigned: !!access,
+        can_create: !!access?.can_create,
+        can_manage_client_catalog: !!access?.can_manage_client_catalog,
+        can_manage_matching: !!access?.can_manage_matching,
       });
     });
     setStateMap(next);
@@ -96,6 +117,16 @@ function ClientAccess() {
 
   const createCount = useMemo(
     () => [...stateMap.values()].filter((s) => s.assigned && s.can_create).length,
+    [stateMap],
+  );
+
+  const catalogCount = useMemo(
+    () => [...stateMap.values()].filter((s) => s.assigned && s.can_manage_client_catalog).length,
+    [stateMap],
+  );
+
+  const matchingCount = useMemo(
+    () => [...stateMap.values()].filter((s) => s.assigned && s.can_manage_matching).length,
     [stateMap],
   );
 
@@ -133,6 +164,16 @@ function ClientAccess() {
     return visibleAssignedClients.every((c) => stateMap.get(c.id)?.can_create);
   }, [visibleAssignedClients, stateMap]);
 
+  const visibleAllCanManageCatalog = useMemo(() => {
+    if (visibleAssignedClients.length === 0) return false;
+    return visibleAssignedClients.every((c) => stateMap.get(c.id)?.can_manage_client_catalog);
+  }, [visibleAssignedClients, stateMap]);
+
+  const visibleAllCanManageMatching = useMemo(() => {
+    if (visibleAssignedClients.length === 0) return false;
+    return visibleAssignedClients.every((c) => stateMap.get(c.id)?.can_manage_matching);
+  }, [visibleAssignedClients, stateMap]);
+
   const assignedClients = useMemo(() => {
     if (!clientsQ.data) return [];
     return clientsQ.data
@@ -145,11 +186,16 @@ function ClientAccess() {
   }, [clientsQ.data, stateMap]);
 
   const summaryText = useMemo(() => {
-    if (createCount === 0) {
-      return `${assignedCount} de ${totalClients} clientes asignados · Sin permiso de creación`;
+    const base = `${assignedCount} de ${totalClients} clientes asignados`;
+    if (createCount === 0 && catalogCount === 0 && matchingCount === 0) {
+      return `${base} · Sin permisos adicionales`;
     }
-    return `${assignedCount} de ${totalClients} clientes asignados · ${createCount} con permiso de creación`;
-  }, [assignedCount, totalClients, createCount]);
+    const parts = [base];
+    if (createCount > 0) parts.push(`${createCount} con permiso de creación`);
+    if (catalogCount > 0) parts.push(`${catalogCount} gestionan catálogo`);
+    if (matchingCount > 0) parts.push(`${matchingCount} gestionan matching`);
+    return parts.join(" · ");
+  }, [assignedCount, totalClients, createCount, catalogCount, matchingCount]);
 
   const initialAssignedCount = useMemo(
     () => [...initialMap.values()].filter((s) => s.assigned).length,
@@ -161,17 +207,37 @@ function ClientAccess() {
     [initialMap],
   );
 
+  const initialCatalogCount = useMemo(
+    () => [...initialMap.values()].filter((s) => s.assigned && s.can_manage_client_catalog).length,
+    [initialMap],
+  );
+
+  const initialMatchingCount = useMemo(
+    () => [...initialMap.values()].filter((s) => s.assigned && s.can_manage_matching).length,
+    [initialMap],
+  );
+
   const initialSummaryText = useMemo(() => {
-    if (initialCreateCount === 0) {
-      return `${initialAssignedCount} de ${totalClients} clientes asignados · Sin permiso de creación`;
+    const base = `${initialAssignedCount} de ${totalClients} clientes asignados`;
+    if (initialCreateCount === 0 && initialCatalogCount === 0 && initialMatchingCount === 0) {
+      return `${base} · Sin permisos adicionales`;
     }
-    return `${initialAssignedCount} de ${totalClients} clientes asignados · ${initialCreateCount} con permiso de creación`;
-  }, [initialAssignedCount, totalClients, initialCreateCount]);
+    const parts = [base];
+    if (initialCreateCount > 0) parts.push(`${initialCreateCount} con permiso de creación`);
+    if (initialCatalogCount > 0) parts.push(`${initialCatalogCount} gestionan catálogo`);
+    if (initialMatchingCount > 0) parts.push(`${initialMatchingCount} gestionan matching`);
+    return parts.join(" · ");
+  }, [initialAssignedCount, totalClients, initialCreateCount, initialCatalogCount, initialMatchingCount]);
 
   const diff = useMemo(() => {
     const toInsert: string[] = [];
     const toDelete: string[] = [];
-    const toUpdate: { client_id: string; can_create_agreements: boolean }[] = [];
+    const toUpdate: {
+      client_id: string;
+      can_create_agreements: boolean;
+      can_manage_client_catalog: boolean;
+      can_manage_matching: boolean;
+    }[] = [];
     stateMap.forEach((curr, id) => {
       const init = initialMap.get(id);
       const wasAssigned = !!init?.assigned;
@@ -179,8 +245,19 @@ function ClientAccess() {
         toInsert.push(id);
       } else if (!curr.assigned && wasAssigned) {
         toDelete.push(id);
-      } else if (curr.assigned && wasAssigned && curr.can_create !== init?.can_create) {
-        toUpdate.push({ client_id: id, can_create_agreements: curr.can_create });
+      } else if (
+        curr.assigned &&
+        wasAssigned &&
+        (curr.can_create !== init?.can_create ||
+          curr.can_manage_client_catalog !== init?.can_manage_client_catalog ||
+          curr.can_manage_matching !== init?.can_manage_matching)
+      ) {
+        toUpdate.push({
+          client_id: id,
+          can_create_agreements: curr.can_create,
+          can_manage_client_catalog: curr.can_manage_client_catalog,
+          can_manage_matching: curr.can_manage_matching,
+        });
       }
     });
     return { toInsert, toDelete, toUpdate };
@@ -192,10 +269,12 @@ function ClientAccess() {
   const setAssigned = (id: string, assigned: boolean) => {
     setStateMap((prev) => {
       const next = new Map(prev);
-      const curr = next.get(id) ?? { assigned: false, can_create: false };
+      const curr = next.get(id) ?? DEFAULT_ACCESS_STATE;
       next.set(id, {
         assigned,
         can_create: assigned ? curr.can_create : false,
+        can_manage_client_catalog: assigned ? curr.can_manage_client_catalog : false,
+        can_manage_matching: assigned ? curr.can_manage_matching : false,
       });
       return next;
     });
@@ -204,9 +283,29 @@ function ClientAccess() {
   const setCanCreate = (id: string, can_create: boolean) => {
     setStateMap((prev) => {
       const next = new Map(prev);
-      const curr = next.get(id) ?? { assigned: false, can_create: false };
+      const curr = next.get(id) ?? DEFAULT_ACCESS_STATE;
       if (!curr.assigned) return prev;
       next.set(id, { ...curr, can_create });
+      return next;
+    });
+  };
+
+  const setCanManageCatalog = (id: string, can_manage_client_catalog: boolean) => {
+    setStateMap((prev) => {
+      const next = new Map(prev);
+      const curr = next.get(id) ?? DEFAULT_ACCESS_STATE;
+      if (!curr.assigned) return prev;
+      next.set(id, { ...curr, can_manage_client_catalog });
+      return next;
+    });
+  };
+
+  const setCanManageMatching = (id: string, can_manage_matching: boolean) => {
+    setStateMap((prev) => {
+      const next = new Map(prev);
+      const curr = next.get(id) ?? DEFAULT_ACCESS_STATE;
+      if (!curr.assigned) return prev;
+      next.set(id, { ...curr, can_manage_matching });
       return next;
     });
   };
@@ -215,10 +314,12 @@ function ClientAccess() {
     setStateMap((prev) => {
       const next = new Map(prev);
       filteredClients.forEach((c) => {
-        const curr = next.get(c.id) ?? { assigned: false, can_create: false };
+        const curr = next.get(c.id) ?? DEFAULT_ACCESS_STATE;
         next.set(c.id, {
           assigned: on,
           can_create: on ? curr.can_create : false,
+          can_manage_client_catalog: on ? curr.can_manage_client_catalog : false,
+          can_manage_matching: on ? curr.can_manage_matching : false,
         });
       });
       return next;
@@ -229,9 +330,33 @@ function ClientAccess() {
     setStateMap((prev) => {
       const next = new Map(prev);
       filteredClients.forEach((c) => {
-        const curr = next.get(c.id) ?? { assigned: false, can_create: false };
+        const curr = next.get(c.id) ?? DEFAULT_ACCESS_STATE;
         if (!curr.assigned) return;
         next.set(c.id, { ...curr, can_create: on });
+      });
+      return next;
+    });
+  };
+
+  const toggleAllCanManageCatalog = (on: boolean) => {
+    setStateMap((prev) => {
+      const next = new Map(prev);
+      filteredClients.forEach((c) => {
+        const curr = next.get(c.id) ?? DEFAULT_ACCESS_STATE;
+        if (!curr.assigned) return;
+        next.set(c.id, { ...curr, can_manage_client_catalog: on });
+      });
+      return next;
+    });
+  };
+
+  const toggleAllCanManageMatching = (on: boolean) => {
+    setStateMap((prev) => {
+      const next = new Map(prev);
+      filteredClients.forEach((c) => {
+        const curr = next.get(c.id) ?? DEFAULT_ACCESS_STATE;
+        if (!curr.assigned) return;
+        next.set(c.id, { ...curr, can_manage_matching: on });
       });
       return next;
     });
@@ -249,6 +374,8 @@ function ClientAccess() {
               user_id: userId,
               client_id,
               can_create_agreements: stateMap.get(client_id)?.can_create ?? false,
+              can_manage_client_catalog: stateMap.get(client_id)?.can_manage_client_catalog ?? false,
+              can_manage_matching: stateMap.get(client_id)?.can_manage_matching ?? false,
             })),
           ),
         );
@@ -266,7 +393,11 @@ function ClientAccess() {
         ops.push(
           supabase
             .from("user_client_access")
-            .update({ can_create_agreements: u.can_create_agreements })
+            .update({
+              can_create_agreements: u.can_create_agreements,
+              can_manage_client_catalog: u.can_manage_client_catalog,
+              can_manage_matching: u.can_manage_matching,
+            })
             .eq("user_id", userId)
             .eq("client_id", u.client_id),
         );
@@ -337,7 +468,7 @@ function ClientAccess() {
           {user.full_name}
         </p>
         <p className="text-sm text-muted-foreground">
-          Asígnale al usuario los clientes que podrá ver en la plataforma. También puedes habilitarle permisos de creación de acuerdos sobre clientes asignados.
+          Asígnale al usuario los clientes que podrá ver en la plataforma. También puedes habilitarle permisos de creación de acuerdos, gestión de catálogo del cliente y gestión de matching sobre clientes asignados.
         </p>
         <p className="text-sm font-medium text-foreground">{initialSummaryText}</p>
       </header>
@@ -381,6 +512,36 @@ function ClientAccess() {
                   onCheckedChange={toggleAllCanCreate}
                 />
               </div>
+              <div
+                className={cn(
+                  "flex items-center justify-end gap-3",
+                  visibleAssignedClients.length === 0 && "opacity-50",
+                )}
+              >
+                <span className="text-right text-xs font-medium text-muted-foreground">
+                  {search.trim() ? "Gestionar catálogo del cliente en clientes visibles asignados" : "Gestionar catálogo del cliente en todos los clientes asignados"}
+                </span>
+                <Switch
+                  checked={visibleAllCanManageCatalog}
+                  disabled={visibleAssignedClients.length === 0}
+                  onCheckedChange={toggleAllCanManageCatalog}
+                />
+              </div>
+              <div
+                className={cn(
+                  "flex items-center justify-end gap-3",
+                  visibleAssignedClients.length === 0 && "opacity-50",
+                )}
+              >
+                <span className="text-right text-xs font-medium text-muted-foreground">
+                  {search.trim() ? "Gestionar matching en clientes visibles asignados" : "Gestionar matching en todos los clientes asignados"}
+                </span>
+                <Switch
+                  checked={visibleAllCanManageMatching}
+                  disabled={visibleAssignedClients.length === 0}
+                  onCheckedChange={toggleAllCanManageMatching}
+                />
+              </div>
             </div>
           </div>
           {search.trim() !== "" && (
@@ -401,7 +562,7 @@ function ClientAccess() {
           ) : (
             <ul className="divide-y divide-border rounded-md border border-border">
               {filteredClients.map((c) => {
-                const st = stateMap.get(c.id) ?? { assigned: false, can_create: false };
+                const st = stateMap.get(c.id) ?? DEFAULT_ACCESS_STATE;
                 const name = c.commercial_name?.trim() || c.legal_name || "—";
                 const parent = c.parent as
                   | { id: string; commercial_name: string | null; legal_name: string }
@@ -451,6 +612,32 @@ function ClientAccess() {
                           onCheckedChange={(v) => setCanCreate(c.id, v)}
                         />
                       </label>
+                      <label
+                        className={cn(
+                          "flex flex-col items-center gap-1 text-xs font-medium text-muted-foreground text-center",
+                          !st.assigned && "opacity-40",
+                        )}
+                      >
+                        Gestionar catálogo del cliente
+                        <Switch
+                          checked={st.can_manage_client_catalog}
+                          disabled={!st.assigned}
+                          onCheckedChange={(v) => setCanManageCatalog(c.id, v)}
+                        />
+                      </label>
+                      <label
+                        className={cn(
+                          "flex flex-col items-center gap-1 text-xs font-medium text-muted-foreground",
+                          !st.assigned && "opacity-40",
+                        )}
+                      >
+                        Gestionar matching
+                        <Switch
+                          checked={st.can_manage_matching}
+                          disabled={!st.assigned}
+                          onCheckedChange={(v) => setCanManageMatching(c.id, v)}
+                        />
+                      </label>
                     </div>
                   </li>
                 );
@@ -480,10 +667,7 @@ function ClientAccess() {
             <div className="max-h-48 overflow-y-auto rounded-md border border-border bg-background p-3">
               <div className="flex flex-wrap gap-2">
                 {assignedClients.map((c) => {
-                  const st = stateMap.get(c.id) ?? {
-                    assigned: false,
-                    can_create: false,
-                  };
+                  const st = stateMap.get(c.id) ?? DEFAULT_ACCESS_STATE;
                   const name = c.commercial_name?.trim() || c.legal_name || "—";
                   return (
                     <Chip
