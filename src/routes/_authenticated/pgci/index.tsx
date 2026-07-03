@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { FileText, Search, Download, Info } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,22 +14,27 @@ export const Route = createFileRoute("/_authenticated/pgci/")({
   component: PgciHome,
 });
 
-type ModuleStatus = "soon" | "wip";
 
-const MODULES: {
+type ModuleStatus = "available" | "soon" | "wip";
+
+type ModuleDef = {
   key: string;
   title: string;
   description: string;
   icon: typeof FileText;
   status: ModuleStatus;
-}[] = [
+  to?: string;
+};
+
+const MODULES: ModuleDef[] = [
   {
     key: "agreements",
     title: "Acuerdos",
     description:
-      "Crea, consulta y mantiene los acuerdos comerciales con tus clientes.",
+      "Gestiona agrupadores, miembros, posiciones e importación de acuerdos comerciales.",
     icon: FileText,
-    status: "soon",
+    status: "available",
+    to: "/pgci/agreements",
   },
   {
     key: "search",
@@ -50,6 +55,12 @@ const MODULES: {
 ];
 
 function statusChip(status: ModuleStatus) {
+  if (status === "available")
+    return (
+      <span className="inline-flex items-center rounded-full bg-[var(--status-success-soft)] px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--status-success-strong)]">
+        Disponible
+      </span>
+    );
   if (status === "soon")
     return (
       <span className="inline-flex items-center rounded-full bg-[var(--status-info-soft)] px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--status-info-strong)]">
@@ -62,6 +73,7 @@ function statusChip(status: ModuleStatus) {
     </span>
   );
 }
+
 
 function PgciHome() {
   const { data: profile } = useMyProfile();
@@ -178,10 +190,17 @@ function PgciHome() {
                     {m.description}
                   </p>
                   <div className="mt-4">
-                    <Button variant="outline" size="sm" disabled className="w-full">
-                      Abrir
-                    </Button>
+                    {m.status === "available" && m.to ? (
+                      <Button asChild variant="outline" size="sm" className="w-full">
+                        <Link to={m.to}>Abrir</Link>
+                      </Button>
+                    ) : (
+                      <Button variant="outline" size="sm" disabled className="w-full">
+                        Abrir
+                      </Button>
+                    )}
                   </div>
+
                 </CardContent>
               </Card>
             );
