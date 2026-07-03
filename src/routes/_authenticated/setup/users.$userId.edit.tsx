@@ -44,6 +44,7 @@ function EditUser() {
           role: v.role,
           erp_user_code: v.erp_user_code.trim() || undefined,
           status: v.status,
+          can_create_agreement_groups: v.can_create_agreement_groups,
           new_password: v.new_password?.trim() ? v.new_password.trim() : undefined,
         },
       }),
@@ -70,6 +71,7 @@ function EditUser() {
     role: (profile.role as UserFormValues["role"]) || "platform_user",
     erp_user_code: profile.erp_user_code ?? "",
     status: (profile.status as "active" | "inactive") ?? "active",
+    can_create_agreement_groups: Boolean(profile.can_create_agreement_groups),
     new_password: "",
   };
 

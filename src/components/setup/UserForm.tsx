@@ -19,6 +19,7 @@ export type UserFormValues = {
   role: "super_admin" | "platform_user";
   erp_user_code: string;
   status: "active" | "inactive";
+  can_create_agreement_groups: boolean;
   new_password?: string;
 };
 
@@ -28,11 +29,41 @@ export const emptyUser: UserFormValues = {
   role: "platform_user",
   erp_user_code: "",
   status: "active",
+  can_create_agreement_groups: false,
   new_password: "",
 };
 
 function Req() {
   return <span className="text-primary"> *</span>;
+}
+
+function PermissionRow({
+  id,
+  label,
+  helpText,
+  checked,
+  onCheckedChange,
+}: {
+  id: string;
+  label: string;
+  helpText: string;
+  checked: boolean;
+  onCheckedChange: (v: boolean) => void;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <div className="space-y-1">
+        <p className="text-sm font-semibold">{label}</p>
+        <p className="text-xs text-muted-foreground">{helpText}</p>
+      </div>
+      <div className="flex items-center gap-2 pt-0.5">
+        <Label htmlFor={id} className="sr-only">
+          {label}
+        </Label>
+        <Switch id={id} checked={checked} onCheckedChange={onCheckedChange} />
+      </div>
+    </div>
+  );
 }
 
 export function UserForm({
@@ -75,138 +106,156 @@ export function UserForm({
 
   return (
     <form
-      className="space-y-5"
+      className="space-y-6"
       onSubmit={(e) => {
         e.preventDefault();
         if (!validate()) return;
-        onSubmit(v);
+        // Super admins never persist granular admin permissions.
+        const payload: UserFormValues = isSuper
+          ? { ...v, can_create_agreement_groups: false }
+          : v;
+        onSubmit(payload);
       }}
     >
-      <div className="grid gap-4 md:grid-cols-2">
-        <div>
-          <Label htmlFor="full_name">
-            Nombre completo<Req />
-          </Label>
-          <Input
-            id="full_name"
-            value={v.full_name}
-            onChange={(e) => set("full_name", e.target.value)}
-            maxLength={120}
-          />
-          {errors.full_name && <p className="mt-1 text-xs text-destructive">{errors.full_name}</p>}
-        </div>
-
-        <div>
-          <Label htmlFor="email">
-            Email<Req />
-          </Label>
-          <Input
-            id="email"
-            type="email"
-            value={v.email}
-            onChange={(e) => set("email", e.target.value)}
-            maxLength={255}
-          />
-          {errors.email && <p className="mt-1 text-xs text-destructive">{errors.email}</p>}
-        </div>
-
-        <div>
-          <Label htmlFor="erp_user_code">Código de usuario ERP</Label>
-          <Input
-            id="erp_user_code"
-            value={v.erp_user_code}
-            onChange={(e) => set("erp_user_code", e.target.value)}
-            maxLength={40}
-            placeholder="Opcional"
+      {/* 1. Rol global */}
+      <section className="space-y-2">
+        <h3 className="text-sm font-semibold">Rol del usuario</h3>
+        <div className="rounded-lg border border-border bg-card p-4">
+          <PermissionRow
+            id="super_admin"
+            label="Super administrador"
+            helpText="Los super admins tienen acceso total a la plataforma. No requieren configuración de cartera ni permisos adicionales."
+            checked={isSuper}
+            onCheckedChange={(checked) =>
+              set("role", checked ? "super_admin" : "platform_user")
+            }
           />
         </div>
+      </section>
 
-        <div>
-          <Label htmlFor="status">Estado</Label>
-          <Select
-            value={v.status}
-            onValueChange={(val) => set("status", val as UserFormValues["status"])}
-          >
-            <SelectTrigger id="status">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="active">Activo</SelectItem>
-              <SelectItem value="inactive">Inactivo</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="md:col-span-2 space-y-2">
-          <h3 className="text-sm font-semibold">Permisos de administración</h3>
-          <div className="rounded-lg border border-border bg-card p-4">
-            <div className="flex items-start justify-between gap-4">
-              <div className="space-y-1">
-                <p className="text-sm font-semibold">Super administrador</p>
-                <p className="text-xs text-muted-foreground">
-                  Los super admins tienen acceso total a la plataforma.
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Label htmlFor="super_admin" className="text-sm font-medium">
-                  Super admin
-                </Label>
-                <Switch
-                  id="super_admin"
-                  checked={isSuper}
-                  onCheckedChange={(checked) =>
-                    set("role", checked ? "super_admin" : "platform_user")
-                  }
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {showPasswordSection && (
-          <div className="md:col-span-2">
-            {!passwordOpen ? (
-              <button
-                type="button"
-                onClick={() => setPasswordOpen(true)}
-                className="text-sm font-medium text-primary hover:text-primary/80 hover:underline"
-              >
-                Asignar nueva contraseña
-              </button>
-            ) : (
-              <div className="space-y-2 border-t border-border pt-4">
-                <h3 className="text-sm font-semibold">Contraseña</h3>
-                <div>
-                  <Label htmlFor="new_password">Nueva contraseña temporal</Label>
-                  <Input
-                    id="new_password"
-                    type="text"
-                    value={v.new_password ?? ""}
-                    onChange={(e) => set("new_password", e.target.value)}
-                    maxLength={72}
-                    placeholder="Opcional"
-                    autoComplete="off"
-                  />
-                  {errors.new_password && (
-                    <p className="mt-1 text-xs text-destructive">{errors.new_password}</p>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPasswordOpen(false);
-                    set("new_password", "");
-                  }}
-                  className="text-sm text-muted-foreground hover:text-foreground hover:underline"
-                >
-                  Cancelar
-                </button>
-              </div>
+      {/* 2. Identidad del usuario */}
+      <section className="space-y-2">
+        <h3 className="text-sm font-semibold">Información del usuario</h3>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div>
+            <Label htmlFor="full_name">
+              Nombre completo<Req />
+            </Label>
+            <Input
+              id="full_name"
+              value={v.full_name}
+              onChange={(e) => set("full_name", e.target.value)}
+              maxLength={120}
+            />
+            {errors.full_name && (
+              <p className="mt-1 text-xs text-destructive">{errors.full_name}</p>
             )}
           </div>
-        )}
-      </div>
 
+          <div>
+            <Label htmlFor="email">
+              Email<Req />
+            </Label>
+            <Input
+              id="email"
+              type="email"
+              value={v.email}
+              onChange={(e) => set("email", e.target.value)}
+              maxLength={255}
+            />
+            {errors.email && <p className="mt-1 text-xs text-destructive">{errors.email}</p>}
+          </div>
+
+          <div>
+            <Label htmlFor="erp_user_code">Código de usuario ERP</Label>
+            <Input
+              id="erp_user_code"
+              value={v.erp_user_code}
+              onChange={(e) => set("erp_user_code", e.target.value)}
+              maxLength={40}
+              placeholder="Opcional"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="status">Estado</Label>
+            <Select
+              value={v.status}
+              onValueChange={(val) => set("status", val as UserFormValues["status"])}
+            >
+              <SelectTrigger id="status">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Activo</SelectItem>
+                <SelectItem value="inactive">Inactivo</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. Permisos de administración — solo para platform_user */}
+      {!isSuper && (
+        <section className="space-y-2">
+          <h3 className="text-sm font-semibold">Permisos de administración</h3>
+          <div className="rounded-lg border border-border bg-card p-4">
+            <PermissionRow
+              id="can_create_agreement_groups"
+              label="Puede crear agrupadores de acuerdos"
+              helpText="Podrá crear agrupadores para reunir y organizar varios acuerdos en un solo lugar."
+              checked={v.can_create_agreement_groups}
+              onCheckedChange={(checked) => set("can_create_agreement_groups", checked)}
+            />
+          </div>
+        </section>
+      )}
+
+      {/* 4. Password (solo edición) */}
+      {showPasswordSection && (
+        <section>
+          {!passwordOpen ? (
+            <button
+              type="button"
+              onClick={() => setPasswordOpen(true)}
+              className="text-sm font-medium text-primary hover:text-primary/80 hover:underline"
+            >
+              Asignar nueva contraseña
+            </button>
+          ) : (
+            <div className="space-y-2 border-t border-border pt-4">
+              <h3 className="text-sm font-semibold">Contraseña</h3>
+              <div>
+                <Label htmlFor="new_password">Nueva contraseña temporal</Label>
+                <Input
+                  id="new_password"
+                  type="text"
+                  value={v.new_password ?? ""}
+                  onChange={(e) => set("new_password", e.target.value)}
+                  maxLength={72}
+                  placeholder="Opcional"
+                  autoComplete="off"
+                />
+                {errors.new_password && (
+                  <p className="mt-1 text-xs text-destructive">{errors.new_password}</p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setPasswordOpen(false);
+                  set("new_password", "");
+                }}
+                className="text-sm text-muted-foreground hover:text-foreground hover:underline"
+              >
+                Cancelar
+              </button>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* 5. Bloque informativo */}
       {!isEditing && (
         <Alert variant="info">
           <Info className="h-4 w-4" />

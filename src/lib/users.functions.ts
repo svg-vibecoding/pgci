@@ -13,6 +13,7 @@ const createUserSchema = z.object({
     .optional()
     .transform((v) => (v && v.length ? v : null)),
   status: z.enum(["active", "inactive"]).default("active"),
+  can_create_agreement_groups: z.boolean().optional().default(false),
 });
 
 export type CreateUserInput = z.input<typeof createUserSchema>;
@@ -67,6 +68,8 @@ export const createUser = createServerFn({ method: "POST" })
       role: data.role,
       status: data.status,
       erp_user_code: data.erp_user_code,
+      can_create_agreement_groups:
+        data.role === "super_admin" ? false : data.can_create_agreement_groups,
       created_by: userId,
     });
 
@@ -95,6 +98,7 @@ const updateUserSchema = z.object({
     .optional()
     .transform((v) => (v && v.length ? v : null)),
   status: z.enum(["active", "inactive"]).default("active"),
+  can_create_agreement_groups: z.boolean().optional().default(false),
   new_password: z.string().min(8, "Mínimo 8 caracteres").optional(),
 });
 
@@ -147,6 +151,8 @@ export const updateUser = createServerFn({ method: "POST" })
         role: data.role,
         status: data.status,
         erp_user_code: data.erp_user_code,
+        can_create_agreement_groups:
+          data.role === "super_admin" ? false : data.can_create_agreement_groups,
         ...(emailToPersist ? { email: emailToPersist } : {}),
       })
       .eq("user_id", data.user_id);
