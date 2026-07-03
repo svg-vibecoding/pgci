@@ -845,6 +845,8 @@ export type Database = {
         Row: {
           assigned_by: string | null
           can_create_agreements: boolean
+          can_manage_client_catalog: boolean
+          can_manage_matching: boolean
           client_id: string
           created_at: string
           id: string
@@ -853,6 +855,8 @@ export type Database = {
         Insert: {
           assigned_by?: string | null
           can_create_agreements?: boolean
+          can_manage_client_catalog?: boolean
+          can_manage_matching?: boolean
           client_id: string
           created_at?: string
           id?: string
@@ -861,6 +865,8 @@ export type Database = {
         Update: {
           assigned_by?: string | null
           can_create_agreements?: boolean
+          can_manage_client_catalog?: boolean
+          can_manage_matching?: boolean
           client_id?: string
           created_at?: string
           id?: string
@@ -937,6 +943,11 @@ export type Database = {
         Args: { p_client_id: string }
         Returns: boolean
       }
+      can_manage_client_catalog: {
+        Args: { p_client_id: string }
+        Returns: boolean
+      }
+      can_manage_matching: { Args: { p_client_id: string }; Returns: boolean }
       can_view_costs: { Args: { p_agreement_id: string }; Returns: boolean }
       commit_agreement_import: {
         Args: { p_agreement_id: string; p_payload: Json }
