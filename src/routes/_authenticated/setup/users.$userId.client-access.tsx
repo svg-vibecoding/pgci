@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge, Chip, StatusBadge } from "@/components/sumatec";
 import { useIsSuperAdmin } from "@/hooks/use-profile";
-import { ArrowLeft, Check, Search } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, FileText, Layers, Search, Settings2, Shuffle } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/setup/users/$userId/client-access")({
   head: () => ({ meta: [{ title: "Acceso a clientes · Setup · PGCI" }] }),
