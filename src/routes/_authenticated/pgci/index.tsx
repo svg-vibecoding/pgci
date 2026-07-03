@@ -190,10 +190,17 @@ function PgciHome() {
                     {m.description}
                   </p>
                   <div className="mt-4">
-                    <Button variant="outline" size="sm" disabled className="w-full">
-                      Abrir
-                    </Button>
+                    {m.status === "available" && m.to ? (
+                      <Button asChild variant="outline" size="sm" className="w-full">
+                        <Link to={m.to}>Abrir</Link>
+                      </Button>
+                    ) : (
+                      <Button variant="outline" size="sm" disabled className="w-full">
+                        Abrir
+                      </Button>
+                    )}
                   </div>
+
                 </CardContent>
               </Card>
             );
