@@ -75,7 +75,7 @@ function EditAgreement() {
 
   const initial: AgreementFormValues = {
     ...emptyAgreement,
-    mode: "new_for_client",
+    company_mode: "single",
     client_id: (agreement.group_client_id as string) ?? "",
     name: agreement.name ?? "",
     scope: (agreement.scope as "global" | "unit") ?? "global",
