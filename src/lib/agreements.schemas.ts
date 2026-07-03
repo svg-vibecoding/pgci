@@ -60,30 +60,37 @@ const scopeRefineOpts: { path: (string | number)[]; message: string } = {
   message: "Indica el nombre de la unidad",
 };
 
-// Tres modos de creación (Paso 3):
-//  - new_for_client: crea un nuevo agrupador para el cliente indicado.
-//  - existing:       usa un agrupador existente (no vincula empresas).
-//  - free:           agrupador libre (solo super_admin); crea uno con nombre y
-//                    vincula opcionalmente empresas iniciales.
+// Creación unificada (Fase 2):
+//  - group_id / group_name: opcionales y mutuamente excluyentes.
+//    · group_id → usar agrupador existente.
+//    · group_name → crear agrupador nuevo (requiere can_create_agreement_groups).
+//    · ninguno → acuerdo sin agrupador (group_id = null).
+//  - client_id / company_ids: opcionales y mutuamente excluyentes.
+//    · client_id → vincular una única empresa al crear.
+//    · company_ids → vincular varias.
+//    · ninguno → sin empresas iniciales.
 export const agreementCreateSchema = z
-  .union([
-    z.object({
-      mode: z.literal("new_for_client"),
-      client_id: z.string().uuid(),
-      ...agreementBaseFields,
-    }),
-    z.object({
-      mode: z.literal("existing"),
-      group_id: z.string().uuid(),
-      ...agreementBaseFields,
-    }),
-    z.object({
-      mode: z.literal("free"),
-      group_name: z.string().trim().min(1, "Nombre del agrupador requerido").max(160),
-      company_ids: z.array(z.string().uuid()).optional().default([]),
-      ...agreementBaseFields,
-    }),
-  ])
+  .object({
+    client_id: z.string().uuid().nullable().optional(),
+    group_id: z.string().uuid().nullable().optional(),
+    group_name: z
+      .string()
+      .trim()
+      .max(160)
+      .nullable()
+      .optional()
+      .transform((v) => (v && v.length ? v : null)),
+    company_ids: z.array(z.string().uuid()).optional().default([]),
+    ...agreementBaseFields,
+  })
+  .refine((d) => !(d.group_id && d.group_name), {
+    path: ["group_name"],
+    message: "Usa un agrupador existente o crea uno nuevo, no ambos.",
+  })
+  .refine((d) => !(d.client_id && (d.company_ids?.length ?? 0) > 0), {
+    path: ["company_ids"],
+    message: "Elige un solo cliente o varias empresas, no ambos.",
+  })
   .refine(scopeRefine, scopeRefineOpts);
 
 
