@@ -476,7 +476,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           end_date: string | null
-          group_id: string
+          group_id: string | null
           id: string
           name: string
           observations: string | null
@@ -490,7 +490,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           end_date?: string | null
-          group_id: string
+          group_id?: string | null
           id?: string
           name: string
           observations?: string | null
@@ -504,7 +504,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           end_date?: string | null
-          group_id?: string
+          group_id?: string | null
           id?: string
           name?: string
           observations?: string | null
@@ -804,6 +804,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          can_create_agreement_groups: boolean
           can_create_agreements: boolean
           created_at: string
           created_by: string | null
@@ -816,6 +817,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          can_create_agreement_groups?: boolean
           can_create_agreements?: boolean
           created_at?: string
           created_by?: string | null
@@ -828,6 +830,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          can_create_agreement_groups?: boolean
           can_create_agreements?: boolean
           created_at?: string
           created_by?: string | null
@@ -939,6 +942,8 @@ export type Database = {
         Args: { p_agreement_id: string }
         Returns: boolean
       }
+      can_create_agreement_groups: { Args: never; Returns: boolean }
+      can_create_agreements: { Args: never; Returns: boolean }
       can_create_agreements_for_client: {
         Args: { p_client_id: string }
         Returns: boolean
