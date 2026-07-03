@@ -7,7 +7,7 @@ import {
   listAssignableClients,
   listAssignableGroups,
 } from "@/lib/agreements.functions";
-import { useIsSuperAdmin } from "@/hooks/use-profile";
+import { supabase } from "@/integrations/supabase/client";
 import {
   AgreementForm,
   emptyAgreement,
@@ -29,7 +29,6 @@ export const Route = createFileRoute("/_authenticated/pgci/agreements/new")({
 function NewAgreement() {
   const navigate = useNavigate();
   const { client } = Route.useSearch();
-  const { isSuperAdmin } = useIsSuperAdmin();
   const listClientsFn = useServerFn(listAssignableClients);
   const listGroupsFn = useServerFn(listAssignableGroups);
   const createFn = useServerFn(createAgreement);
@@ -44,6 +43,15 @@ function NewAgreement() {
     queryFn: () => listGroupsFn(),
   });
 
+  const { data: canCreateGroups } = useQuery({
+    queryKey: ["rpc", "can_create_agreement_groups"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("can_create_agreement_groups");
+      if (error) throw error;
+      return !!data;
+    },
+  });
+
   const m = useMutation({
     mutationFn: (v: AgreementFormValues) => {
       const base = {
@@ -54,21 +62,14 @@ function NewAgreement() {
         end_date: v.end_date || undefined,
         observations: v.observations || undefined,
       };
-      if (v.mode === "existing") {
-        return createFn({ data: { mode: "existing", group_id: v.group_id, ...base } });
-      }
-      if (v.mode === "free") {
-        return createFn({
-          data: {
-            mode: "free",
-            group_name: v.group_name,
-            company_ids: v.company_ids,
-            ...base,
-          },
-        });
-      }
       return createFn({
-        data: { mode: "new_for_client", client_id: v.client_id, ...base },
+        data: {
+          ...base,
+          group_id: v.group_mode === "existing" ? v.group_id : undefined,
+          group_name: v.group_mode === "new" ? v.group_name : undefined,
+          client_id: v.company_mode === "single" ? v.client_id : undefined,
+          company_ids: v.company_mode === "multi" ? v.company_ids : [],
+        },
       });
     },
     onSuccess: (res) =>
@@ -79,7 +80,11 @@ function NewAgreement() {
   });
 
   const initial: AgreementFormValues = client
-    ? { ...emptyAgreement, client_id: client, mode: "new_for_client" }
+    ? {
+        ...emptyAgreement,
+        company_mode: "single",
+        client_id: client,
+      }
     : emptyAgreement;
 
   return (
@@ -100,7 +105,7 @@ function NewAgreement() {
         clientsLoading={clientsLoading}
         groups={groups ?? []}
         groupsLoading={groupsLoading}
-        isSuperAdmin={isSuperAdmin}
+        canCreateGroups={!!canCreateGroups}
         submitting={m.isPending}
         lockClient={Boolean(client)}
         onSubmit={async (v) => {
