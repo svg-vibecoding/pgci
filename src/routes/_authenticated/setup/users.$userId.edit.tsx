@@ -44,6 +44,7 @@ function EditUser() {
           role: v.role,
           erp_user_code: v.erp_user_code.trim() || undefined,
           status: v.status,
+          can_create_agreement_groups: v.can_create_agreement_groups,
           new_password: v.new_password?.trim() ? v.new_password.trim() : undefined,
         },
       }),
