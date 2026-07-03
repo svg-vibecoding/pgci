@@ -68,6 +68,8 @@ export const createUser = createServerFn({ method: "POST" })
       role: data.role,
       status: data.status,
       erp_user_code: data.erp_user_code,
+      can_create_agreement_groups:
+        data.role === "super_admin" ? false : data.can_create_agreement_groups,
       created_by: userId,
     });
 
