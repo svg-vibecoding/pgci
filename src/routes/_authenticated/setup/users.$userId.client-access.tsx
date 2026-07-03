@@ -42,6 +42,7 @@ function ClientAccess() {
   const [initialMap, setInitialMap] = useState<Map<string, AccessState>>(new Map());
   const [saving, setSaving] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   const profileQ = useQuery({
     queryKey: ["users", userId, "profile-min"],
