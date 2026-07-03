@@ -15,22 +15,26 @@ export const Route = createFileRoute("/_authenticated/pgci/")({
 });
 
 
-type ModuleStatus = "soon" | "wip";
+type ModuleStatus = "available" | "soon" | "wip";
 
-const MODULES: {
+type ModuleDef = {
   key: string;
   title: string;
   description: string;
   icon: typeof FileText;
   status: ModuleStatus;
-}[] = [
+  to?: string;
+};
+
+const MODULES: ModuleDef[] = [
   {
     key: "agreements",
     title: "Acuerdos",
     description:
-      "Crea, consulta y mantiene los acuerdos comerciales con tus clientes.",
+      "Gestiona agrupadores, miembros, posiciones e importación de acuerdos comerciales.",
     icon: FileText,
-    status: "soon",
+    status: "available",
+    to: "/pgci/agreements",
   },
   {
     key: "search",
@@ -51,6 +55,12 @@ const MODULES: {
 ];
 
 function statusChip(status: ModuleStatus) {
+  if (status === "available")
+    return (
+      <span className="inline-flex items-center rounded-full bg-[var(--status-success-soft)] px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--status-success-strong)]">
+        Disponible
+      </span>
+    );
   if (status === "soon")
     return (
       <span className="inline-flex items-center rounded-full bg-[var(--status-info-soft)] px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--status-info-strong)]">
@@ -63,6 +73,7 @@ function statusChip(status: ModuleStatus) {
     </span>
   );
 }
+
 
 function PgciHome() {
   const { data: profile } = useMyProfile();
