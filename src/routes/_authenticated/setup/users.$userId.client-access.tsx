@@ -7,10 +7,10 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge, Chip, StatusBadge } from "@/components/sumatec";
 import { useIsSuperAdmin } from "@/hooks/use-profile";
-import { ArrowLeft, Check, Search } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, FileText, Layers, Search, Settings2, Shuffle } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/setup/users/$userId/client-access")({
   head: () => ({ meta: [{ title: "Acceso a clientes · Setup · PGCI" }] }),
@@ -42,6 +42,7 @@ function ClientAccess() {
   const [initialMap, setInitialMap] = useState<Map<string, AccessState>>(new Map());
   const [saving, setSaving] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   const profileQ = useQuery({
     queryKey: ["users", userId, "profile-min"],
@@ -473,84 +474,96 @@ function ClientAccess() {
         <p className="text-sm font-medium text-foreground">{initialSummaryText}</p>
       </header>
 
+      {/* Search */}
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar cliente…"
+          className="pl-9"
+        />
+        {search.trim() !== "" && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            {filteredClients.length} de {totalClients} clientes
+          </p>
+        )}
+      </div>
+
+      {/* Bulk actions — collapsible */}
       <Card>
-        <CardHeader className="space-y-3">
-          <CardTitle className="text-base">Clientes</CardTitle>
-          <div className="flex items-center gap-6">
-            <div className="relative flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar cliente…"
-                className="pl-9"
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-end gap-3">
-                <span className="text-right text-xs font-medium text-muted-foreground">
-                  {search.trim() ? "Acceso a clientes visibles" : "Acceso a todos los clientes"}
-                </span>
-                <Switch
-                  checked={visibleAllAssigned}
-                  disabled={filteredClients.length === 0}
-                  onCheckedChange={toggleAllAssigned}
-                />
-              </div>
-              <div
-                className={cn(
-                  "flex items-center justify-end gap-3",
-                  visibleAssignedClients.length === 0 && "opacity-50",
-                )}
-              >
-                <span className="text-right text-xs font-medium text-muted-foreground">
-                  {search.trim() ? "Crear acuerdos en clientes visibles asignados" : "Crear acuerdos en todos los clientes asignados"}
-                </span>
-                <Switch
-                  checked={visibleAllCanCreate}
-                  disabled={visibleAssignedClients.length === 0}
-                  onCheckedChange={toggleAllCanCreate}
-                />
-              </div>
-              <div
-                className={cn(
-                  "flex items-center justify-end gap-3",
-                  visibleAssignedClients.length === 0 && "opacity-50",
-                )}
-              >
-                <span className="text-right text-xs font-medium text-muted-foreground">
-                  {search.trim() ? "Gestionar catálogo del cliente en clientes visibles asignados" : "Gestionar catálogo del cliente en todos los clientes asignados"}
-                </span>
-                <Switch
-                  checked={visibleAllCanManageCatalog}
-                  disabled={visibleAssignedClients.length === 0}
-                  onCheckedChange={toggleAllCanManageCatalog}
-                />
-              </div>
-              <div
-                className={cn(
-                  "flex items-center justify-end gap-3",
-                  visibleAssignedClients.length === 0 && "opacity-50",
-                )}
-              >
-                <span className="text-right text-xs font-medium text-muted-foreground">
-                  {search.trim() ? "Gestionar matching en clientes visibles asignados" : "Gestionar matching en todos los clientes asignados"}
-                </span>
-                <Switch
-                  checked={visibleAllCanManageMatching}
-                  disabled={visibleAssignedClients.length === 0}
-                  onCheckedChange={toggleAllCanManageMatching}
-                />
-              </div>
+        <button
+          type="button"
+          onClick={() => setBulkOpen((v) => !v)}
+          className="flex w-full items-center justify-between gap-3 px-6 py-4 text-left"
+          aria-expanded={bulkOpen}
+        >
+          <div className="flex items-center gap-2">
+            <Settings2 className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-semibold">Acciones masivas</span>
+          </div>
+          <ChevronDown
+            className={cn(
+              "h-4 w-4 text-muted-foreground transition-transform",
+              bulkOpen && "rotate-180",
+            )}
+          />
+        </button>
+        {bulkOpen && (
+          <div className="border-t border-border px-6 py-4 space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Aplican a los clientes que coincidan con el buscador activo.
+            </p>
+            <div className="divide-y divide-border rounded-md border border-border">
+              {[
+                {
+                  label: "Asignar todos los clientes",
+                  checked: visibleAllAssigned,
+                  disabled: filteredClients.length === 0,
+                  onChange: toggleAllAssigned,
+                },
+                {
+                  label: "Crear acuerdos en asignados",
+                  checked: visibleAllCanCreate,
+                  disabled: visibleAssignedClients.length === 0,
+                  onChange: toggleAllCanCreate,
+                },
+                {
+                  label: "Gestionar catálogo en asignados",
+                  checked: visibleAllCanManageCatalog,
+                  disabled: visibleAssignedClients.length === 0,
+                  onChange: toggleAllCanManageCatalog,
+                },
+                {
+                  label: "Gestionar matching en asignados",
+                  checked: visibleAllCanManageMatching,
+                  disabled: visibleAssignedClients.length === 0,
+                  onChange: toggleAllCanManageMatching,
+                },
+              ].map((row) => (
+                <div
+                  key={row.label}
+                  className={cn(
+                    "flex items-center justify-between gap-4 px-4 py-3",
+                    row.disabled && "opacity-50",
+                  )}
+                >
+                  <span className="text-sm font-medium text-foreground">{row.label}</span>
+                  <Switch
+                    checked={row.checked}
+                    disabled={row.disabled}
+                    onCheckedChange={row.onChange}
+                  />
+                </div>
+              ))}
             </div>
           </div>
-          {search.trim() !== "" && (
-            <p className="text-xs text-muted-foreground">
-              {filteredClients.length} de {totalClients} clientes
-            </p>
-          )}
-        </CardHeader>
-        <CardContent>
+        )}
+      </Card>
+
+      {/* Clients table with sticky header */}
+      <Card>
+        <CardContent className="p-0">
           {totalClients === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
               No hay clientes activos disponibles.
@@ -560,92 +573,125 @@ function ClientAccess() {
               Sin resultados para esa búsqueda.
             </p>
           ) : (
-            <ul className="divide-y divide-border rounded-md border border-border">
-              {filteredClients.map((c) => {
-                const st = stateMap.get(c.id) ?? DEFAULT_ACCESS_STATE;
-                const name = c.commercial_name?.trim() || c.legal_name || "—";
-                const parent = c.parent as
-                  | { id: string; commercial_name: string | null; legal_name: string }
-                  | null;
-                const parentName = parent
-                  ? parent.commercial_name?.trim() || parent.legal_name
-                  : null;
-                return (
-                  <li
-                    key={c.id}
-                    className="flex items-center justify-between gap-4 px-4 py-3"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="truncate font-medium">{name}</span>
-                        {c.type === "holding" && (
-                          <Badge color="accent" variant="soft">
-                            Holding
-                          </Badge>
-                        )}
-                      </div>
-                      {parentName && (
-                        <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                          {parentName}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-6">
-                      <label className="flex flex-col items-center gap-1 text-xs font-medium text-muted-foreground">
-                        Asignar
+            <div className="max-h-[calc(100vh-360px)] min-h-[280px] overflow-y-auto">
+              <div className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-border bg-background px-4 py-2.5">
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Cliente
+                </span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Asignar
+                </span>
+              </div>
+              <ul className="divide-y divide-border">
+                {filteredClients.map((c) => {
+                  const st = stateMap.get(c.id) ?? DEFAULT_ACCESS_STATE;
+                  const name = c.commercial_name?.trim() || c.legal_name || "—";
+                  const parent = c.parent as
+                    | { id: string; commercial_name: string | null; legal_name: string }
+                    | null;
+                  const parentName = parent
+                    ? parent.commercial_name?.trim() || parent.legal_name
+                    : null;
+                  const initials = name
+                    .split(/\s+/)
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .map((w) => w[0]?.toUpperCase() ?? "")
+                    .join("") || "—";
+                  return (
+                    <li key={c.id} className="px-4 py-3">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex min-w-0 flex-1 items-center gap-3">
+                          <div
+                            className={cn(
+                              "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors",
+                              st.assigned
+                                ? "bg-primary/10 text-primary"
+                                : "bg-muted text-muted-foreground",
+                            )}
+                            aria-hidden="true"
+                          >
+                            {initials}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="truncate font-medium">{name}</span>
+                              {c.type === "holding" && (
+                                <Badge color="accent" variant="soft">
+                                  Holding
+                                </Badge>
+                              )}
+                            </div>
+                            {parentName && (
+                              <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                                {parentName}
+                              </p>
+                            )}
+                          </div>
+                        </div>
                         <Switch
                           checked={st.assigned}
                           onCheckedChange={(v) => setAssigned(c.id, v)}
+                          aria-label={`Asignar ${name}`}
                         />
-                      </label>
-                      <label
-                        className={cn(
-                          "flex flex-col items-center gap-1 text-xs font-medium text-muted-foreground",
-                          !st.assigned && "opacity-40",
-                        )}
-                      >
-                        Crear&nbsp;
-                        <Switch
-                          checked={st.can_create}
-                          disabled={!st.assigned}
-                          onCheckedChange={(v) => setCanCreate(c.id, v)}
-                        />
-                      </label>
-                      <label
-                        className={cn(
-                          "flex flex-col items-center gap-1 text-xs font-medium text-muted-foreground text-center",
-                          !st.assigned && "opacity-40",
-                        )}
-                      >
-                        Gestionar catálogo del cliente
-                        <Switch
-                          checked={st.can_manage_client_catalog}
-                          disabled={!st.assigned}
-                          onCheckedChange={(v) => setCanManageCatalog(c.id, v)}
-                        />
-                      </label>
-                      <label
-                        className={cn(
-                          "flex flex-col items-center gap-1 text-xs font-medium text-muted-foreground",
-                          !st.assigned && "opacity-40",
-                        )}
-                      >
-                        Gestionar matching
-                        <Switch
-                          checked={st.can_manage_matching}
-                          disabled={!st.assigned}
-                          onCheckedChange={(v) => setCanManageMatching(c.id, v)}
-                        />
-                      </label>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+                      </div>
+
+                      {st.assigned && (
+                        <div className="mt-3 ml-12 border-l border-border pl-4">
+                          <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                            Permisos avanzados
+                          </div>
+                          <div className="space-y-1">
+                            {[
+                              {
+                                icon: FileText,
+                                label: "Crear acuerdos",
+                                checked: st.can_create,
+                                onChange: (v: boolean) => setCanCreate(c.id, v),
+                              },
+                              {
+                                icon: Layers,
+                                label: "Gestionar catálogo del cliente",
+                                checked: st.can_manage_client_catalog,
+                                onChange: (v: boolean) => setCanManageCatalog(c.id, v),
+                              },
+                              {
+                                icon: Shuffle,
+                                label: "Gestionar matching",
+                                checked: st.can_manage_matching,
+                                onChange: (v: boolean) => setCanManageMatching(c.id, v),
+                              },
+                            ].map((perm) => {
+                              const Icon = perm.icon;
+                              return (
+                                <div
+                                  key={perm.label}
+                                  className="flex items-center justify-between gap-4 py-1.5"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <Icon className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-sm text-foreground">{perm.label}</span>
+                                  </div>
+                                  <Switch
+                                    checked={perm.checked}
+                                    onCheckedChange={perm.onChange}
+                                    aria-label={perm.label}
+                                  />
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           )}
         </CardContent>
       </Card>
+
 
       <div className="sticky bottom-0 z-20 border-t border-border bg-background/95 backdrop-blur">
         <div className="flex flex-col gap-3 py-3">
