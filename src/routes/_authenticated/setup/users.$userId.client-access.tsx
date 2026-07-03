@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge, Chip, StatusBadge } from "@/components/sumatec";
 import { useIsSuperAdmin } from "@/hooks/use-profile";
 import { ArrowLeft, Check, ChevronDown, FileText, Layers, Search, Settings2, Shuffle } from "lucide-react";
@@ -474,96 +474,99 @@ function ClientAccess() {
         <p className="text-sm font-medium text-foreground">{initialSummaryText}</p>
       </header>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar cliente…"
-          className="pl-9"
-        />
-        {search.trim() !== "" && (
-          <p className="mt-2 text-xs text-muted-foreground">
-            {filteredClients.length} de {totalClients} clientes
-          </p>
-        )}
-      </div>
-
-      {/* Bulk actions — collapsible */}
+      {/* Unified clients container: search + bulk actions + table */}
       <Card>
-        <button
-          type="button"
-          onClick={() => setBulkOpen((v) => !v)}
-          className="flex w-full items-center justify-between gap-3 px-6 py-4 text-left"
-          aria-expanded={bulkOpen}
-        >
-          <div className="flex items-center gap-2">
-            <Settings2 className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-semibold">Acciones masivas</span>
+        {/* Search */}
+        <div className="p-4">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar cliente…"
+              className="pl-9"
+            />
           </div>
-          <ChevronDown
-            className={cn(
-              "h-4 w-4 text-muted-foreground transition-transform",
-              bulkOpen && "rotate-180",
-            )}
-          />
-        </button>
-        {bulkOpen && (
-          <div className="border-t border-border px-6 py-4 space-y-3">
-            <p className="text-xs text-muted-foreground">
-              Aplican a los clientes que coincidan con el buscador activo.
+          {search.trim() !== "" && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              {filteredClients.length} de {totalClients} clientes
             </p>
-            <div className="divide-y divide-border rounded-md border border-border">
-              {[
-                {
-                  label: "Asignar todos los clientes",
-                  checked: visibleAllAssigned,
-                  disabled: filteredClients.length === 0,
-                  onChange: toggleAllAssigned,
-                },
-                {
-                  label: "Crear acuerdos en asignados",
-                  checked: visibleAllCanCreate,
-                  disabled: visibleAssignedClients.length === 0,
-                  onChange: toggleAllCanCreate,
-                },
-                {
-                  label: "Gestionar catálogo en asignados",
-                  checked: visibleAllCanManageCatalog,
-                  disabled: visibleAssignedClients.length === 0,
-                  onChange: toggleAllCanManageCatalog,
-                },
-                {
-                  label: "Gestionar matching en asignados",
-                  checked: visibleAllCanManageMatching,
-                  disabled: visibleAssignedClients.length === 0,
-                  onChange: toggleAllCanManageMatching,
-                },
-              ].map((row) => (
-                <div
-                  key={row.label}
-                  className={cn(
-                    "flex items-center justify-between gap-4 px-4 py-3",
-                    row.disabled && "opacity-50",
-                  )}
-                >
-                  <span className="text-sm font-medium text-foreground">{row.label}</span>
-                  <Switch
-                    checked={row.checked}
-                    disabled={row.disabled}
-                    onCheckedChange={row.onChange}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </Card>
+          )}
+        </div>
 
-      {/* Clients table with sticky header */}
-      <Card>
-        <CardContent className="p-0">
+        {/* Bulk actions — collapsible */}
+        <div className="border-t border-border">
+          <button
+            type="button"
+            onClick={() => setBulkOpen((v) => !v)}
+            className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-muted/40"
+            aria-expanded={bulkOpen}
+          >
+            <div className="flex items-center gap-2">
+              <Settings2 className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-semibold">Acciones masivas</span>
+            </div>
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 text-muted-foreground transition-transform",
+                bulkOpen && "rotate-180",
+              )}
+            />
+          </button>
+          {bulkOpen && (
+            <div className="border-t border-border px-4 py-3 space-y-3 bg-muted/20">
+              <p className="text-xs text-muted-foreground">
+                Aplican a los clientes que coincidan con el buscador activo.
+              </p>
+              <div className="divide-y divide-border rounded-md border border-border bg-background">
+                {[
+                  {
+                    label: "Asignar todos los clientes",
+                    checked: visibleAllAssigned,
+                    disabled: filteredClients.length === 0,
+                    onChange: toggleAllAssigned,
+                  },
+                  {
+                    label: "Crear acuerdos en asignados",
+                    checked: visibleAllCanCreate,
+                    disabled: visibleAssignedClients.length === 0,
+                    onChange: toggleAllCanCreate,
+                  },
+                  {
+                    label: "Gestionar catálogo en asignados",
+                    checked: visibleAllCanManageCatalog,
+                    disabled: visibleAssignedClients.length === 0,
+                    onChange: toggleAllCanManageCatalog,
+                  },
+                  {
+                    label: "Gestionar matching en asignados",
+                    checked: visibleAllCanManageMatching,
+                    disabled: visibleAssignedClients.length === 0,
+                    onChange: toggleAllCanManageMatching,
+                  },
+                ].map((row) => (
+                  <div
+                    key={row.label}
+                    className={cn(
+                      "flex items-center justify-between gap-4 px-4 py-3",
+                      row.disabled && "opacity-50",
+                    )}
+                  >
+                    <span className="text-sm font-medium text-foreground">{row.label}</span>
+                    <Switch
+                      checked={row.checked}
+                      disabled={row.disabled}
+                      onCheckedChange={row.onChange}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Clients table with sticky header */}
+        <div className="border-t border-border">
           {totalClients === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
               No hay clientes activos disponibles.
@@ -689,7 +692,7 @@ function ClientAccess() {
               </ul>
             </div>
           )}
-        </CardContent>
+        </div>
       </Card>
 
 
