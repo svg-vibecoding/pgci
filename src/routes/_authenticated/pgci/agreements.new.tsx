@@ -67,6 +67,8 @@ function NewAgreement() {
           ...base,
           group_id: v.group_mode === "existing" ? v.group_id : undefined,
           group_name: v.group_mode === "new" ? v.group_name : undefined,
+          group_observations:
+            v.group_mode === "new" ? v.group_observations || undefined : undefined,
           client_id: v.company_mode === "single" ? v.client_id : undefined,
           company_ids: v.company_mode === "multi" ? v.company_ids : [],
         },
