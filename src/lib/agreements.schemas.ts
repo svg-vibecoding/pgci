@@ -80,6 +80,13 @@ export const agreementCreateSchema = z
       .nullable()
       .optional()
       .transform((v) => (v && v.length ? v : null)),
+    group_observations: z
+      .string()
+      .trim()
+      .max(2000)
+      .nullable()
+      .optional()
+      .transform((v) => (v && v.length ? v : null)),
     company_ids: z.array(z.string().uuid()).optional().default([]),
     ...agreementBaseFields,
   })
