@@ -186,6 +186,7 @@ export const createAgreement = createServerFn({ method: "POST" })
       ? [data.client_id]
       : data.company_ids ?? [];
     for (const clientId of companyIds) {
+      await assertCanCreateForClient(context.supabase, clientId);
       const { error: acErr } = await context.supabase
         .from("agreement_companies")
         .insert({ agreement_id: row.id, client_id: clientId });
