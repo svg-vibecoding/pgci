@@ -691,19 +691,13 @@ function ClientAccess() {
 
       <div className="sticky bottom-0 z-20 border-t border-border bg-background/95 backdrop-blur">
         <div className="flex flex-col gap-3 py-3">
-          <div className="flex w-full items-center justify-between">
-            <p className="text-sm font-medium text-foreground">{summaryText}</p>
-            {assignedCount > 0 && (
-              <Button
-                variant="link"
-                size="sm"
-                className="h-auto px-0 py-0 text-xs font-medium"
-                onClick={() => setShowDetail((v) => !v)}
-              >
-                {showDetail ? "Ocultar" : "Ver detalle"}
-              </Button>
-            )}
-          </div>
+          <SummaryToggle
+            summary={summaryText}
+            open={showDetail}
+            onToggle={() => setShowDetail((v) => !v)}
+            canToggle={assignedCount > 0}
+          />
+
 
           {showDetail && assignedCount > 0 && (
             <div className="max-h-48 overflow-y-auto rounded-md border border-border bg-background p-3">
