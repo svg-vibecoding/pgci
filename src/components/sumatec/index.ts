@@ -40,3 +40,6 @@ export type {
   TableHeadProps,
   TableCellProps,
 } from "./Table";
+
+export { SummaryToggle } from "./SummaryToggle";
+
