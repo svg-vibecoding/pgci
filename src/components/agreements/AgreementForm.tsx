@@ -1,18 +1,26 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Calendar, ChevronDown, Layers, Lock, Search, X } from "lucide-react";
+import {
+  Calendar,
+  ChevronDown,
+  Info,
+  Layers,
+  Lock,
+  Search,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Badge } from "@/components/sumatec";
+import { Badge, SummaryToggle } from "@/components/sumatec";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Select,
@@ -40,6 +48,7 @@ export type AgreementFormValues = {
   group_mode: GroupMode;
   group_id: string;
   group_name: string;
+  group_observations: string;
   company_mode: CompanyMode;
   client_id: string;
   company_ids: string[];
@@ -55,6 +64,7 @@ export const emptyAgreement: AgreementFormValues = {
   group_mode: "none",
   group_id: "",
   group_name: "",
+  group_observations: "",
   company_mode: "multi",
   client_id: "",
   company_ids: [],
@@ -113,6 +123,7 @@ export function AgreementForm({
   const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
   const [serverError, setServerError] = useState<string | null>(null);
   const [companySearch, setCompanySearch] = useState("");
+  const [companiesDetailOpen, setCompaniesDetailOpen] = useState(false);
   const [groupOpen, setGroupOpen] = useState(initial.group_mode !== "none");
 
   const activeClientsQ = useQuery({
@@ -157,6 +168,8 @@ export function AgreementForm({
         company_mode: "multi",
         name: v.name.trim(),
         group_name: v.group_name.trim(),
+        group_observations:
+          v.group_mode === "new" ? v.group_observations.trim() : "",
         unit_name: v.scope === "unit" ? v.unit_name.trim() : "",
         observations: v.observations.trim(),
       });
@@ -214,17 +227,35 @@ export function AgreementForm({
         ? "1 empresa seleccionada"
         : `${selectedCount} empresas seleccionadas`;
 
+  // Al hacer clic sobre una opción ya activa, se deselecciona (vuelve a "none").
+  const chooseGroupMode = (mode: Exclude<GroupMode, "none">) => {
+    setV((prev) => {
+      if (prev.group_mode === mode) {
+        return {
+          ...prev,
+          group_mode: "none",
+          group_id: "",
+          group_name: "",
+          group_observations: "",
+        };
+      }
+      return {
+        ...prev,
+        group_mode: mode,
+        group_id: mode === "existing" ? prev.group_id : "",
+        group_name: mode === "new" ? prev.group_name : "",
+        group_observations: mode === "new" ? prev.group_observations : "",
+      };
+    });
+  };
+
   const submitDisabled =
     submitting || (!lockClient && (!v.name.trim() || selectedCount === 0));
 
   return (
     <form onSubmit={handle} className="space-y-8">
-      {/* ============ Bloque 1 — Información del acuerdo ============ */}
+      {/* ============ Bloque 1 — Información del acuerdo (sin encabezado) ============ */}
       <section className="space-y-4">
-        <header className="border-b border-border pb-2">
-          <h2 className="text-base font-semibold">Información del acuerdo</h2>
-        </header>
-
         <div className="space-y-2">
           <Label htmlFor="name">Nombre del acuerdo<Req /></Label>
           <Input
@@ -329,107 +360,120 @@ export function AgreementForm({
         </div>
       </section>
 
-      {/* ============ Bloque 2 — Empresas cubiertas ============ */}
+      {/* ============ Bloque 2 — Empresas cubiertas (contenedor unificado) ============ */}
       {!lockClient && (
-        <section className="space-y-3">
-          <header className="border-b border-border pb-2">
+        <section className="space-y-2">
+          <div>
             <h2 className="text-base font-semibold">
               Empresas cubiertas<Req />
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Selecciona una o varias empresas que cubre este acuerdo.
             </p>
-          </header>
+          </div>
 
-          {selectedCount > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {v.company_ids.map((id) => {
-                const c = companyById.get(id);
-                const name = c?.commercial_name?.trim() || c?.legal_name || "—";
-                return (
-                  <span
-                    key={id}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 py-1 pl-3 pr-1 text-xs font-medium"
-                  >
-                    <span className="truncate max-w-[16rem]">{name}</span>
-                    <button
-                      type="button"
-                      onClick={() => removeCompany(id)}
-                      className="grid h-5 w-5 place-content-center rounded-full text-muted-foreground hover:bg-background hover:text-foreground"
-                      aria-label={`Quitar ${name}`}
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
-                );
-              })}
+          <div className="overflow-hidden rounded-md border border-border">
+            {/* Fila de resumen + toggle (reusa SummaryToggle) */}
+            <div className="px-3 py-2.5">
+              <SummaryToggle
+                summary={countText}
+                open={companiesDetailOpen}
+                onToggle={() => setCompaniesDetailOpen((o) => !o)}
+                canToggle={selectedCount > 0}
+              />
             </div>
-          )}
 
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={companySearch}
-              onChange={(e) => setCompanySearch(e.target.value)}
-              placeholder="Buscar por nombre o NIT"
-              className="pl-9"
-            />
-          </div>
+            {/* Banda de chips al abrir detalle */}
+            {companiesDetailOpen && selectedCount > 0 && (
+              <div className="border-t border-border bg-muted/30 px-3 py-2.5">
+                <div className="flex flex-wrap gap-2">
+                  {v.company_ids.map((id) => {
+                    const c = companyById.get(id);
+                    const name =
+                      c?.commercial_name?.trim() || c?.legal_name || "—";
+                    return (
+                      <span
+                        key={id}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background py-1 pl-3 pr-1 text-xs font-medium"
+                      >
+                        <span className="truncate max-w-[16rem]">{name}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeCompany(id)}
+                          className="grid h-5 w-5 place-content-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+                          aria-label={`Quitar ${name}`}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
-          <div className="max-h-72 overflow-y-auto rounded-md border border-border">
-            {activeClientsQ.isLoading ? (
-              <p className="py-6 text-center text-sm text-muted-foreground">
-                Cargando…
-              </p>
-            ) : filteredCompanies.length === 0 ? (
-              <p className="py-6 text-center text-sm text-muted-foreground">
-                {companySearch.trim()
-                  ? "Sin resultados."
-                  : "No hay empresas disponibles."}
-              </p>
-            ) : (
-              <ul className="divide-y divide-border">
-                {filteredCompanies.map((c) => {
-                  const name = c.commercial_name?.trim() || c.legal_name || "—";
-                  const checked = v.company_ids.includes(c.id);
-                  return (
-                    <li key={c.id}>
-                      <label className="flex cursor-pointer items-center gap-3 px-3 py-2 hover:bg-muted/40">
-                        <Checkbox
-                          checked={checked}
-                          onCheckedChange={() => toggleCompany(c.id)}
-                        />
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="truncate text-sm font-medium">
-                              {name}
-                            </span>
-                            {c.type === "holding" && (
-                              <Badge color="accent" variant="soft">
-                                Holding
-                              </Badge>
-                            )}
+            {/* Buscador */}
+            <div className="border-t border-border p-3">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={companySearch}
+                  onChange={(e) => setCompanySearch(e.target.value)}
+                  placeholder="Buscar por nombre o NIT"
+                  className="pl-9"
+                />
+              </div>
+            </div>
+
+            {/* Lista de empresas */}
+            <div className="max-h-72 overflow-y-auto border-t border-border">
+              {activeClientsQ.isLoading ? (
+                <p className="py-6 text-center text-sm text-muted-foreground">
+                  Cargando…
+                </p>
+              ) : filteredCompanies.length === 0 ? (
+                <p className="py-6 text-center text-sm text-muted-foreground">
+                  {companySearch.trim()
+                    ? "Sin resultados."
+                    : "No hay empresas disponibles."}
+                </p>
+              ) : (
+                <ul className="divide-y divide-border">
+                  {filteredCompanies.map((c) => {
+                    const name =
+                      c.commercial_name?.trim() || c.legal_name || "—";
+                    const checked = v.company_ids.includes(c.id);
+                    return (
+                      <li key={c.id}>
+                        <label className="flex cursor-pointer items-center gap-3 px-3 py-2 hover:bg-muted/40">
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={() => toggleCompany(c.id)}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="truncate text-sm font-medium">
+                                {name}
+                              </span>
+                              {c.type === "holding" && (
+                                <Badge color="accent" variant="soft">
+                                  Holding
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="mt-0.5 truncate font-mono text-xs text-muted-foreground">
+                              {c.tax_id_type ?? "NIT"} · {c.tax_id}
+                            </p>
                           </div>
-                          <p className="mt-0.5 truncate font-mono text-xs text-muted-foreground">
-                            {c.tax_id_type ?? "NIT"} · {c.tax_id}
-                          </p>
-                        </div>
-                      </label>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
+                        </label>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
           </div>
 
-          <p
-            className={cn(
-              "text-xs",
-              selectedCount === 0 ? "text-muted-foreground" : "text-foreground",
-            )}
-          >
-            {countText}
-          </p>
           {errors.company_ids && (
             <p className="text-sm text-destructive">{errors.company_ids}</p>
           )}
@@ -453,7 +497,7 @@ export function AgreementForm({
                   <span>· opcional</span>
                   {v.group_mode !== "none" && (
                     <Badge color="accent" variant="soft">
-                      {v.group_mode === "existing" ? "Existente" : "Nuevo"}
+                      {v.group_mode === "existing" ? "Existente" : "Nuevo agrupador"}
                     </Badge>
                   )}
                 </span>
@@ -470,68 +514,95 @@ export function AgreementForm({
               <div className="space-y-4 border-t border-border px-4 py-4">
                 <p className="text-sm text-muted-foreground">
                   Un agrupador reúne y organiza varios acuerdos en un solo lugar.
-                  También puedes agruparlo más adelante.
+                  Puedes dejarlo sin agrupador y agruparlo más adelante — vuelve
+                  a hacer clic sobre la opción marcada para desmarcarla.
                 </p>
 
-                <RadioGroup
-                  value={v.group_mode === "none" ? "" : v.group_mode}
-                  onValueChange={(val) =>
-                    setV({
-                      ...v,
-                      group_mode: val as GroupMode,
-                      group_id: val === "existing" ? v.group_id : "",
-                      group_name: val === "new" ? v.group_name : "",
-                    })
-                  }
-                  className="gap-3"
-                >
+                <div className="grid gap-3">
                   {/* Existente */}
-                  <label className="flex cursor-pointer gap-3 rounded-md border border-border bg-background p-3 hover:bg-muted/40">
-                    <RadioGroupItem value="existing" className="mt-0.5" />
-                    <div className="space-y-1">
-                      <div className="text-sm font-medium">
+                  <button
+                    type="button"
+                    onClick={() => chooseGroupMode("existing")}
+                    aria-pressed={v.group_mode === "existing"}
+                    className={cn(
+                      "flex items-start gap-3 rounded-md border p-3 text-left transition",
+                      v.group_mode === "existing"
+                        ? "border-accent bg-accent/5"
+                        : "border-border bg-background hover:bg-muted/40",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "mt-0.5 grid h-4 w-4 shrink-0 place-content-center rounded-full border",
+                        v.group_mode === "existing"
+                          ? "border-accent"
+                          : "border-muted-foreground/40",
+                      )}
+                    >
+                      {v.group_mode === "existing" && (
+                        <span className="h-2 w-2 rounded-full bg-accent" />
+                      )}
+                    </span>
+                    <span className="space-y-1">
+                      <span className="block text-sm font-medium">
                         Elegir un agrupador existente
-                      </div>
-                      <p className="text-xs text-muted-foreground">
+                      </span>
+                      <span className="block text-xs text-muted-foreground">
                         Suma este acuerdo a un agrupador que ya administras.
-                      </p>
-                    </div>
-                  </label>
+                      </span>
+                    </span>
+                  </button>
 
                   {/* Nuevo (deshabilitado si !canCreateGroups) */}
-                  <label
+                  <button
+                    type="button"
+                    onClick={() =>
+                      canCreateGroups ? chooseGroupMode("new") : undefined
+                    }
+                    disabled={!canCreateGroups}
+                    aria-pressed={v.group_mode === "new"}
                     className={cn(
-                      "flex gap-3 rounded-md border border-border bg-background p-3",
+                      "flex items-start gap-3 rounded-md border p-3 text-left transition",
+                      v.group_mode === "new"
+                        ? "border-accent bg-accent/5"
+                        : "border-border bg-background",
                       canCreateGroups
-                        ? "cursor-pointer hover:bg-muted/40"
+                        ? "hover:bg-muted/40"
                         : "cursor-not-allowed opacity-60",
                     )}
                   >
-                    <RadioGroupItem
-                      value="new"
-                      disabled={!canCreateGroups}
-                      className="mt-0.5"
-                    />
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-1.5 text-sm font-medium">
+                    <span
+                      className={cn(
+                        "mt-0.5 grid h-4 w-4 shrink-0 place-content-center rounded-full border",
+                        v.group_mode === "new"
+                          ? "border-accent"
+                          : "border-muted-foreground/40",
+                      )}
+                    >
+                      {v.group_mode === "new" && (
+                        <span className="h-2 w-2 rounded-full bg-accent" />
+                      )}
+                    </span>
+                    <span className="space-y-1">
+                      <span className="flex items-center gap-1.5 text-sm font-medium">
                         Crear un agrupador nuevo
                         {!canCreateGroups && (
                           <Lock className="h-3.5 w-3.5 text-muted-foreground" />
                         )}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
+                      </span>
+                      <span className="block text-xs text-muted-foreground">
                         Empieza un agrupador desde este acuerdo; podrás sumarle
                         otros después.
-                      </p>
+                      </span>
                       {!canCreateGroups && (
-                        <p className="text-xs text-muted-foreground">
+                        <span className="block text-xs text-muted-foreground">
                           Necesitas permiso para crear agrupadores. Solicítalo a
                           un administrador.
-                        </p>
+                        </span>
                       )}
-                    </div>
-                  </label>
-                </RadioGroup>
+                    </span>
+                  </button>
+                </div>
 
                 {v.group_mode === "existing" && (
                   <div className="space-y-2">
@@ -603,6 +674,26 @@ export function AgreementForm({
                         </p>
                       )}
                     </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="group_observations">
+                        Observaciones del agrupador
+                      </Label>
+                      <Textarea
+                        id="group_observations"
+                        rows={3}
+                        placeholder="Condiciones generales del agrupador…"
+                        value={v.group_observations}
+                        onChange={(e) =>
+                          setV({ ...v, group_observations: e.target.value })
+                        }
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Estas observaciones son condiciones generales del
+                        agrupador: se mostrarán en todos los acuerdos que
+                        agrupes aquí.
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>
@@ -610,6 +701,17 @@ export function AgreementForm({
           </section>
         </Collapsible>
       )}
+
+      {/* ============ Aviso informativo ============ */}
+      <Alert variant="info">
+        <Info className="h-4 w-4" />
+        <AlertDescription>
+          Al crear el acuerdo podrás cargar su información comercial —
+          posiciones (productos y precios) — y asignar usuarios para su gestión
+          o consulta. Más adelante también podrás vincular otras empresas
+          cubiertas o agruparlo con otros acuerdos.
+        </AlertDescription>
+      </Alert>
 
       {serverError && <p className="text-sm text-destructive">{serverError}</p>}
       <div className="flex items-center justify-end gap-2 border-t border-border pt-4">
