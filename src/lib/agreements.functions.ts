@@ -156,6 +156,7 @@ export const createAgreement = createServerFn({ method: "POST" })
         .insert({
           group_name: data.group_name,
           client_id: groupClient,
+          notes: data.group_observations ?? null,
           created_by: context.userId,
         })
         .select("id")
