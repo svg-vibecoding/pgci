@@ -507,7 +507,7 @@ function ClientAccess() {
             />
           </button>
           {bulkOpen && (
-            <div className="border-t border-border px-4 py-3 space-y-3 bg-muted/20">
+            <div className="border-t border-border px-4 py-3 space-y-3">
               <p className="text-xs text-muted-foreground">
                 Aplican a los clientes que coincidan con el buscador activo.
               </p>
