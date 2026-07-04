@@ -240,7 +240,8 @@ export const listAssignableGroups = createServerFn({ method: "GET" })
             .eq("can_create_agreements", true),
           context.supabase
             .from("agreement_group_members")
-            .select("agreement_group_id"),
+            .select("agreement_group_id")
+            .eq("role", "agreement_group_admin"),
         ]);
       if (accErr) throw new Error(accErr.message);
       if (mErr) throw new Error(mErr.message);
