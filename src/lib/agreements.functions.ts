@@ -1320,6 +1320,7 @@ export const addAgreementCompany = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => companyAddSchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertCanAdmin(context.supabase, data.agreement_id);
+    await assertCanCreateForClient(context.supabase, data.client_id);
     const { data: row, error } = await context.supabase
       .from("agreement_companies")
       .insert({
