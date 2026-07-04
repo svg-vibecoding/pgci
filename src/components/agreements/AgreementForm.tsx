@@ -372,7 +372,7 @@ export function AgreementForm({
             </p>
           </div>
 
-          <div className="overflow-hidden rounded-md border border-border">
+          <div className="overflow-hidden rounded-md border border-border bg-card">
             {/* Fila de resumen + toggle (reusa SummaryToggle) */}
             <div className="px-3 py-2.5">
               <SummaryToggle
@@ -385,7 +385,7 @@ export function AgreementForm({
 
             {/* Banda de chips al abrir detalle */}
             {companiesDetailOpen && selectedCount > 0 && (
-              <div className="border-t border-border bg-muted/30 px-3 py-2.5">
+              <div className="border-t border-border px-3 py-2.5">
                 <div className="flex flex-wrap gap-2">
                   {v.company_ids.map((id) => {
                     const c = companyById.get(id);
@@ -483,7 +483,7 @@ export function AgreementForm({
       {/* ============ Bloque 3 — Agrupar (opcional, plegable) ============ */}
       {!lockClient && (
         <Collapsible open={groupOpen} onOpenChange={setGroupOpen}>
-          <section className="rounded-md border border-border bg-muted/20">
+          <section className="rounded-md border border-border bg-card">
             <CollapsibleTrigger asChild>
               <button
                 type="button"
