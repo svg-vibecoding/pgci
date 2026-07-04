@@ -186,6 +186,7 @@ export const createAgreement = createServerFn({ method: "POST" })
       ? [data.client_id]
       : data.company_ids ?? [];
     for (const clientId of companyIds) {
+      await assertCanCreateForClient(context.supabase, clientId);
       const { error: acErr } = await context.supabase
         .from("agreement_companies")
         .insert({ agreement_id: row.id, client_id: clientId });
@@ -1319,6 +1320,7 @@ export const addAgreementCompany = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => companyAddSchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertCanAdmin(context.supabase, data.agreement_id);
+    await assertCanCreateForClient(context.supabase, data.client_id);
     const { data: row, error } = await context.supabase
       .from("agreement_companies")
       .insert({
