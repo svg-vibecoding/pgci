@@ -82,8 +82,8 @@ function NewAgreement() {
   const initial: AgreementFormValues = client
     ? {
         ...emptyAgreement,
-        company_mode: "single",
-        client_id: client,
+        company_mode: "multi",
+        company_ids: [client],
       }
     : emptyAgreement;
 
