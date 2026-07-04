@@ -1149,25 +1149,34 @@ export const addAgreementMember = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => memberAddSchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertCanAdmin(context.supabase, data.agreement_id);
-    const clientId = await getAgreementClientId(context.supabase, data.agreement_id);
 
-    // Garantizar fila en user_client_access (RN-AGR-08).
-    const { data: existingAccess } = await context.supabase
-      .from("user_client_access")
-      .select("id")
-      .eq("user_id", data.user_id)
-      .eq("client_id", clientId)
-      .maybeSingle();
-    if (!existingAccess) {
-      const { error: accErr } = await context.supabase
+    // Garantizar fila en user_client_access para cada empresa vinculada (RN-AGR-08 / RN-16).
+    const { data: companies, error: compErr } = await context.supabase
+      .from("agreement_companies")
+      .select("client_id")
+      .eq("agreement_id", data.agreement_id);
+    if (compErr) throw new Error("No se pudieron resolver las empresas del acuerdo");
+    const clientIds = [...new Set((companies ?? []).map((c) => c.client_id as string))];
+    if (clientIds.length === 0) throw new Error("Acuerdo sin empresas vinculadas");
+
+    for (const clientId of clientIds) {
+      const { data: existingAccess } = await context.supabase
         .from("user_client_access")
-        .insert({
-          user_id: data.user_id,
-          client_id: clientId,
-          can_create_agreements: false,
-          assigned_by: context.userId,
-        });
-      if (accErr) throw new Error(`No se pudo asignar el cliente: ${accErr.message}`);
+        .select("id")
+        .eq("user_id", data.user_id)
+        .eq("client_id", clientId)
+        .maybeSingle();
+      if (!existingAccess) {
+        const { error: accErr } = await context.supabase
+          .from("user_client_access")
+          .insert({
+            user_id: data.user_id,
+            client_id: clientId,
+            can_create_agreements: false,
+            assigned_by: context.userId,
+          });
+        if (accErr) throw new Error(`No se pudo asignar el cliente: ${accErr.message}`);
+      }
     }
 
     const { data: row, error } = await context.supabase
