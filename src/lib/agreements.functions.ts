@@ -48,7 +48,30 @@ export const listAgreements = createServerFn({ method: "GET" })
       .select("*")
       .order("updated_at", { ascending: false });
     if (error) throw new Error(`No se pudieron cargar acuerdos: ${error.message}`);
-    return data ?? [];
+    const rows = data ?? [];
+    const ids = rows.map((r) => r.id as string).filter(Boolean);
+    if (ids.length === 0)
+      return rows.map((r) => ({ ...r, companies: [] as string[] }));
+    const { data: comps, error: cErr } = await context.supabase
+      .from("agreement_companies")
+      .select("agreement_id, clients:client_id(commercial_name, legal_name)")
+      .in("agreement_id", ids);
+    if (cErr) throw new Error(`No se pudieron cargar empresas: ${cErr.message}`);
+    const byAgreement = new Map<string, string[]>();
+    for (const c of comps ?? []) {
+      const client = (c as { clients: { commercial_name: string | null; legal_name: string | null } | null }).clients;
+      const name = client?.commercial_name || client?.legal_name || "—";
+      const aid = (c as { agreement_id: string }).agreement_id;
+      const arr = byAgreement.get(aid) ?? [];
+      arr.push(name);
+      byAgreement.set(aid, arr);
+    }
+    return rows.map((r) => ({
+      ...r,
+      companies: (byAgreement.get(r.id as string) ?? []).sort((a, b) =>
+        a.localeCompare(b, "es", { sensitivity: "base" }),
+      ),
+    }));
   });
 
 export const getAgreement = createServerFn({ method: "GET" })
