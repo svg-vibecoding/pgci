@@ -358,13 +358,9 @@ function AgreementsList() {
                         <span className="text-muted-foreground">—</span>
                       ) : (
                         <div className="flex items-center gap-2 min-w-0">
-                          <Chip
-                            size="small"
-                            variant="soft"
-                            color={isMultiple ? "accent" : "neutral"}
-                          >
+                          <Badge color={isMultiple ? "accent" : "neutral"}>
                             {isMultiple ? "Múltiple" : "Directa"}
-                          </Chip>
+                          </Badge>
                           <span className="truncate" title={first ?? undefined}>{first}</span>
                           {extra > 0 && (
                             <Tooltip>
