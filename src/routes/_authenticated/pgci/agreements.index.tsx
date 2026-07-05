@@ -143,13 +143,12 @@ function AgreementsList() {
 
     if (search) {
       const s = search.toLowerCase();
+      const companies = ((a as { companies?: string[] }).companies ?? []).join(" ");
       const hay = [
         a.name,
         a.group_name,
-        a.group_client_legal_name,
-        a.group_client_commercial_name,
         a.unit_name,
-        a.group_client_tax_id,
+        companies,
       ]
         .filter(Boolean)
         .some((v) => (v as string).toLowerCase().includes(s));
