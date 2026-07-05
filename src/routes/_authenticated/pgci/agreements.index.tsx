@@ -317,9 +317,10 @@ function AgreementsList() {
                 </TableRow>
               )}
               {filtered.map((a) => {
-                const clientName = a.group_client_commercial_name || a.group_client_legal_name || "—";
-                const groupName = a.group_name || "—";
-                const isFreeGroup = !a.group_client_id;
+                const companies = ((a as { companies?: string[] }).companies ?? []) as string[];
+                const first = companies[0] ?? null;
+                const extra = companies.length > 1 ? companies.length - 1 : 0;
+                const isMultiple = companies.length > 1;
                 const vig = vigenciaBadge(a.end_date ?? null);
                 const counts: CountSpec[] = [
                   { key: "total", label: "Total de posiciones", value: a.lines_total ?? 0, color: "neutral" },
@@ -331,7 +332,7 @@ function AgreementsList() {
                 return (
                   <TableRow key={a.id ?? undefined}>
                     <TableCell className="font-medium min-w-0">
-                      <div className="flex items-center gap-2 min-w-0">
+                      <div className="flex items-center gap-2 min-w-0 flex-wrap">
                         <Link
                           to="/pgci/agreements/$agreementId"
                           params={{ agreementId: a.id as string }}
@@ -339,6 +340,11 @@ function AgreementsList() {
                         >
                           {a.name}
                         </Link>
+                        {a.group_name && (
+                          <Chip size="small" variant="soft" color="neutral" icon={FolderTree}>
+                            {a.group_name}
+                          </Chip>
+                        )}
                         {a.scope === "unit" && <Badge color="info">Con alcance</Badge>}
                       </div>
                       {a.scope === "unit" && a.unit_name && (
@@ -348,14 +354,37 @@ function AgreementsList() {
                       )}
                     </TableCell>
                     <TableCell className="min-w-0">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="truncate" title={groupName}>{groupName}</span>
-                        {isFreeGroup && (
-                          <Badge color="neutral" variant="soft">Libre</Badge>
-                        )}
-                      </div>
+                      {companies.length === 0 ? (
+                        <span className="text-muted-foreground">—</span>
+                      ) : (
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Chip
+                            size="small"
+                            variant="soft"
+                            color={isMultiple ? "accent" : "neutral"}
+                          >
+                            {isMultiple ? "Múltiple" : "Directa"}
+                          </Chip>
+                          <span className="truncate" title={first ?? undefined}>{first}</span>
+                          {extra > 0 && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="text-xs text-muted-foreground whitespace-nowrap cursor-default">
+                                  +{extra} restantes
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                <ul className="space-y-0.5">
+                                  {companies.map((c) => (
+                                    <li key={c}>{c}</li>
+                                  ))}
+                                </ul>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                        </div>
+                      )}
                     </TableCell>
-                    <TableCell className="text-muted-foreground min-w-0 truncate">{clientName}</TableCell>
 
                     <TableCell className="w-[240px] whitespace-nowrap">
                       <PositionsCounters counts={counts} agreementId={a.id ?? null} />
