@@ -292,8 +292,7 @@ function AgreementsList() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-auto">Acuerdo</TableHead>
-                <TableHead className="w-auto">Agrupador</TableHead>
-                <TableHead className="w-auto">Cliente</TableHead>
+                <TableHead className="w-auto">Cobertura</TableHead>
                 <TableHead className="w-[240px] whitespace-nowrap">Posiciones</TableHead>
                 <TableHead className="w-[112px] whitespace-nowrap">Vigencia</TableHead>
                 <TableHead className="w-[96px] whitespace-nowrap">Estado</TableHead>
