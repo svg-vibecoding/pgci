@@ -3,7 +3,7 @@ import type { CSSProperties } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowUpRight, FolderTree, Plus, Search } from "lucide-react";
+import { ArrowUpRight, Plus, Search } from "lucide-react";
 import { listAgreements } from "@/lib/agreements.functions";
 
 import { Button } from "@/components/ui/button";
