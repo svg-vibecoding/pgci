@@ -188,7 +188,7 @@ function AgreementDetail() {
               label={isActive ? "Activo" : "Inactivo"}
             />
             <span>
-              {`${companiesCount ?? 0} ${(companiesCount ?? 0) === 1 ? "empresa cubierta" : "empresas cubiertas"}`}
+              {`${companiesCount ?? 0} ${(companiesCount ?? 0) === 1 ? "cliente cubierto" : "clientes cubiertos"}`}
               {` · ${members?.length ?? 0} ${(members?.length ?? 0) === 1 ? "miembro" : "miembros"}`}
               {` · ${total} ${total === 1 ? "posición" : "posiciones"}`}
             </span>
@@ -479,7 +479,7 @@ function MemberRoleCostFields({
         <p className="text-xs text-muted-foreground leading-relaxed">
           {role === "agreement_member"
             ? "Consulta el acuerdo y sus posiciones. No puede editar el acuerdo."
-            : "Gestiona el acuerdo, administra posiciones, miembros y empresas vinculadas."}
+            : "Gestiona el acuerdo, administra posiciones, miembros y clientes cubiertos."}
         </p>
       </div>
       <TooltipProvider delayDuration={150}>
