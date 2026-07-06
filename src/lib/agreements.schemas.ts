@@ -280,6 +280,12 @@ export const groupMemberUpdateSchema = z.object({
 
 export const groupMemberRemoveSchema = z.object({
   member_id: z.string().uuid(),
+  reason: z
+    .string()
+    .trim()
+    .max(500)
+    .optional()
+    .transform((v) => (v && v.length ? v : null)),
 });
 
 export const groupIdSchema = z.object({
