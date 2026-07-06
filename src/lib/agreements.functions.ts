@@ -123,15 +123,22 @@ export const getAgreementContext = createServerFn({ method: "GET" })
 export const listAssignableClients = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const displayName = (c: { commercial_name: string | null; legal_name: string }) =>
+      c.commercial_name?.trim() || c.legal_name;
+    const byName = <T extends { commercial_name: string | null; legal_name: string }>(
+      list: T[],
+    ) =>
+      [...list].sort((a, b) =>
+        displayName(a).localeCompare(displayName(b), "es", { sensitivity: "base" }),
+      );
     const { data: isSuper } = await context.supabase.rpc("is_super_admin");
     if (isSuper) {
       const { data, error } = await context.supabase
         .from("clients")
         .select("id, legal_name, commercial_name, status")
-        .eq("status", "active")
-        .order("legal_name");
+        .eq("status", "active");
       if (error) throw new Error(error.message);
-      return data ?? [];
+      return byName(data ?? []);
     }
     const { data, error } = await context.supabase
       .from("user_client_access")
@@ -140,7 +147,7 @@ export const listAssignableClients = createServerFn({ method: "GET" })
       )
       .eq("can_create_agreements", true);
     if (error) throw new Error(error.message);
-    return (data ?? [])
+    const mapped = (data ?? [])
       .map((r) => r.clients as {
         id: string;
         legal_name: string;
@@ -148,6 +155,7 @@ export const listAssignableClients = createServerFn({ method: "GET" })
         status: string;
       } | null)
       .filter((c): c is NonNullable<typeof c> => !!c && c.status === "active");
+    return byName(mapped);
   });
 
 // ---------------------------------------------------------------------------
@@ -1338,24 +1346,30 @@ export const listAgreementCompanies = createServerFn({ method: "GET" })
       }
     }
 
-    return base.map((r) => {
-      const c = clientById.get(r.client_id as string);
-      const displayName = c?.commercial_name?.trim() || c?.legal_name || "—";
-      const parentName = c?.parent_client_id
-        ? parentNames.get(c.parent_client_id) ?? null
-        : null;
-      return {
-        id: r.id as string,
-        agreement_id: r.agreement_id as string,
-        client_id: r.client_id as string,
-        notes: (r.notes as string | null) ?? null,
-        created_at: r.created_at as string,
-        tax_id: (c?.tax_id ?? null) as string | null,
-        client_display_name: displayName,
-        client_type: c?.type ?? null,
-        parent_client_name: parentName,
-      };
-    });
+    return base
+      .map((r) => {
+        const c = clientById.get(r.client_id as string);
+        const displayName = c?.commercial_name?.trim() || c?.legal_name || "—";
+        const parentName = c?.parent_client_id
+          ? parentNames.get(c.parent_client_id) ?? null
+          : null;
+        return {
+          id: r.id as string,
+          agreement_id: r.agreement_id as string,
+          client_id: r.client_id as string,
+          notes: (r.notes as string | null) ?? null,
+          created_at: r.created_at as string,
+          tax_id: (c?.tax_id ?? null) as string | null,
+          client_display_name: displayName,
+          client_type: c?.type ?? null,
+          parent_client_name: parentName,
+        };
+      })
+      .sort((a, b) =>
+        a.client_display_name.localeCompare(b.client_display_name, "es", {
+          sensitivity: "base",
+        }),
+      );
   });
 
 export const addAgreementCompany = createServerFn({ method: "POST" })
