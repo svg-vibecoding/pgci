@@ -207,7 +207,14 @@ export function AgreementCompaniesSection({
                       )}
                     </TableCell>
                     <TableCell className="text-muted-foreground">{c.tax_id as string}</TableCell>
-                    <TableCell className="text-muted-foreground">{formatLinkedDate(c.created_at as string | null)}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      <div>{formatLinkedDate(c.created_at as string | null)}</div>
+                      {(c.linked_by_name as string | null) && (
+                        <div className="text-xs text-muted-foreground">
+                          Vinculado por {c.linked_by_name as string}
+                        </div>
+                      )}
+                    </TableCell>
                     {canAdmin && (
                       <TableCell className="text-right">
                         <Button
