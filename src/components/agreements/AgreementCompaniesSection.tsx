@@ -211,7 +211,7 @@ export function AgreementCompaniesSection({
                       <div>{formatLinkedDate(c.created_at as string | null)}</div>
                       {(c.linked_by_name as string | null) && (
                         <div className="text-xs text-muted-foreground">
-                          Vinculado por {c.linked_by_name as string}
+                          por {c.linked_by_name as string}
                         </div>
                       )}
                     </TableCell>
