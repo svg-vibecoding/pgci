@@ -37,6 +37,7 @@ function GroupDetail() {
         .select("role")
         .eq("agreement_group_id", groupId)
         .eq("user_id", auth.user.id)
+        .is("valid_until", null)
         .maybeSingle();
       return (data?.role as string | null) ?? null;
     },
