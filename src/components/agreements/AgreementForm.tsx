@@ -1,25 +1,12 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Calendar,
-  ChevronDown,
-  Info,
-  Layers,
-  Lock,
-  Search,
-  X,
-} from "lucide-react";
+import { Calendar, Info, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { Badge, SummaryToggle } from "@/components/sumatec";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -30,6 +17,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import {
+  AgreementGroupPicker,
+  type AssignableGroup as PickerAssignableGroup,
+  type GroupMode as PickerGroupMode,
+} from "./AgreementGroupPicker";
+
+export type GroupMode = PickerGroupMode;
+export type AssignableGroup = PickerAssignableGroup;
 
 const dateInputClass = cn(
   "pr-10",
