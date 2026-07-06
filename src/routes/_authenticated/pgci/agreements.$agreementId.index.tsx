@@ -164,11 +164,6 @@ function AgreementDetail() {
     return <div className="text-sm text-muted-foreground">Cargando…</div>;
   }
 
-  const clientName =
-    agreement.group_client_commercial_name?.trim() ||
-    agreement.group_client_legal_name ||
-    agreement.group_name ||
-    "—";
   const isActive = agreement.status === "active";
   const total = agreement.lines_total ?? 0;
   const active = agreement.lines_active ?? 0;
