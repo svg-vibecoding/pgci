@@ -68,7 +68,8 @@ function ClientsList() {
         const { data: agreementLinks } = await supabase
           .from("agreement_companies")
           .select("client_id")
-          .in("client_id", ids);
+          .in("client_id", ids)
+          .is("valid_until", null);
         (agreementLinks ?? []).forEach((a) => {
           if (a.client_id)
             agreementCounts.set(a.client_id, (agreementCounts.get(a.client_id) ?? 0) + 1);
