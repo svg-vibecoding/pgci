@@ -234,10 +234,10 @@ export function AgreementImportWizard({
                 <Card>
                   <CardContent className="space-y-2 py-4">
                     <div className="text-sm font-medium">
-                      Empresa destino de la importación
+                      Cliente destino de la importación
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Este acuerdo tiene {companies.length} empresas vinculadas.
+                      Este acuerdo tiene {companies.length} clientes vinculados.
                       Selecciona a cuál asignar los códigos de cliente y descripciones
                       del archivo.
                     </p>
@@ -246,7 +246,7 @@ export function AgreementImportWizard({
                       onValueChange={setTargetClientId}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecciona una empresa vinculada" />
+                        <SelectValue placeholder="Selecciona un cliente vinculado" />
                       </SelectTrigger>
                       <SelectContent>
                         {companies.map((c) => (
@@ -293,7 +293,7 @@ export function AgreementImportWizard({
                   </div>
                   {needsCompanyPick && !targetClientId && (
                     <p className="text-xs text-muted-foreground">
-                      Selecciona primero la empresa destino para habilitar la carga.
+                      Selecciona primero el cliente destino para habilitar la carga.
                     </p>
                   )}
                   {fileName && (
