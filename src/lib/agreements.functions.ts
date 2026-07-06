@@ -1126,7 +1126,8 @@ async function resolveImportTargetClient(
   const { data: rows, error } = await supabase
     .from("agreement_companies")
     .select("client_id")
-    .eq("agreement_id", agreementId);
+    .eq("agreement_id", agreementId)
+    .is("valid_until", null);
   if (error) throw new Error(`No se pudieron leer los clientes del acuerdo: ${error.message}`);
   const clientIds = (rows ?? [])
     .map((r) => r.client_id as string | null)
