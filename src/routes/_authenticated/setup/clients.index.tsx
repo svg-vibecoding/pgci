@@ -41,11 +41,17 @@ function ClientsList() {
   const { data, isLoading } = useQuery({
     queryKey: ["clients", "list"],
     queryFn: async () => {
-      const { data: clients, error } = await supabase
+      const { data: clientsRaw, error } = await supabase
         .from("clients")
-        .select("id, commercial_name, legal_name, erp_name, tax_id, type, status, parent_client_id, updated_at")
-        .order("commercial_name");
+        .select("id, commercial_name, legal_name, erp_name, tax_id, type, status, parent_client_id, updated_at");
       if (error) throw error;
+      const clients = [...(clientsRaw ?? [])].sort((a, b) =>
+        (a.commercial_name?.trim() || a.legal_name || "").localeCompare(
+          b.commercial_name?.trim() || b.legal_name || "",
+          "es",
+          { sensitivity: "base" },
+        ),
+      );
 
       const ids = (clients ?? []).map((c) => c.id);
       const childCounts = new Map<string, number>();

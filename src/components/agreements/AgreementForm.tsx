@@ -119,10 +119,15 @@ export function AgreementForm({
       const { data, error } = await supabase
         .from("clients")
         .select("id, commercial_name, legal_name, tax_id, tax_id_type, type")
-        .eq("status", "active")
-        .order("legal_name");
+        .eq("status", "active");
       if (error) throw error;
-      return data ?? [];
+      return [...(data ?? [])].sort((a, b) =>
+        (a.commercial_name?.trim() || a.legal_name || "").localeCompare(
+          b.commercial_name?.trim() || b.legal_name || "",
+          "es",
+          { sensitivity: "base" },
+        ),
+      );
     },
     enabled: !lockClient,
   });

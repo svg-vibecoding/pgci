@@ -65,10 +65,15 @@ function ClientAccess() {
         .select(
           "id, commercial_name, legal_name, type, status, parent_client_id, parent:parent_client_id(id, commercial_name, legal_name)",
         )
-        .eq("status", "active")
-        .order("commercial_name");
+        .eq("status", "active");
       if (error) throw error;
-      return data ?? [];
+      return [...(data ?? [])].sort((a, b) =>
+        (a.commercial_name?.trim() || a.legal_name || "").localeCompare(
+          b.commercial_name?.trim() || b.legal_name || "",
+          "es",
+          { sensitivity: "base" },
+        ),
+      );
     },
   });
 
