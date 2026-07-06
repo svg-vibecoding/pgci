@@ -36,6 +36,7 @@ export async function getAgreementClientId(supabase: SB, agreementId: string) {
     .from("agreement_companies")
     .select("client_id")
     .eq("agreement_id", agreementId)
+    .is("valid_until", null)
     .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle();
