@@ -39,8 +39,8 @@ export async function getAgreementClientId(supabase: SB, agreementId: string) {
     .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle();
-  if (error) throw new Error("No se pudo resolver la empresa del acuerdo");
-  if (!data?.client_id) throw new Error("Acuerdo sin empresas vinculadas");
+  if (error) throw new Error("No se pudo resolver el cliente del acuerdo");
+  if (!data?.client_id) throw new Error("Acuerdo sin clientes vinculados");
   return data.client_id as string;
 }
 

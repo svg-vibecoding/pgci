@@ -96,7 +96,7 @@ export const agreementCreateSchema = z
   })
   .refine((d) => !(d.client_id && (d.company_ids?.length ?? 0) > 0), {
     path: ["company_ids"],
-    message: "Elige un solo cliente o varias empresas, no ambos.",
+    message: "Elige un solo cliente o varios clientes, no ambos.",
   })
   .refine(scopeRefine, scopeRefineOpts);
 
