@@ -27,6 +27,7 @@ import { StatusBadge, Badge } from "@/components/sumatec";
 import { IndicatorCard } from "@/components/setup/IndicatorCard";
 import { InfoField, InfoSection } from "@/components/setup/InfoSection";
 import { AgreementCompaniesSection } from "@/components/agreements/AgreementCompaniesSection";
+import { AgreementGroupSection } from "@/components/agreements/AgreementGroupSection";
 import {
   Dialog,
   DialogContent,
