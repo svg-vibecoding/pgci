@@ -1258,12 +1258,17 @@ export const addAgreementMember = createServerFn({ method: "POST" })
         role: data.role,
         can_view_costs: data.can_view_costs ?? false,
         assigned_by: context.userId,
+        started_by: context.userId,
       })
       .select("id")
       .single();
     if (error) {
-      if (error.message.includes("duplicate"))
-        throw new Error("Este usuario ya es miembro del acuerdo");
+      const msg = error.message.toLowerCase();
+      if (
+        msg.includes("duplicate") ||
+        msg.includes("agreement_members_open_period_uniq")
+      )
+        throw new Error("Este usuario ya es miembro vigente del acuerdo");
       throw new Error(error.message);
     }
     return { member_id: row.id as string };
