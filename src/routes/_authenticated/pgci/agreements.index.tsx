@@ -319,8 +319,7 @@ function AgreementsList() {
               {filtered.map((a) => {
                 const companies = ((a as { companies?: string[] }).companies ?? []) as string[];
                 const first = companies[0] ?? null;
-                const extra = companies.length > 1 ? companies.length - 1 : 0;
-                const isMultiple = companies.length > 1;
+                const vig = vigenciaBadge(a.end_date ?? null);
                 const vig = vigenciaBadge(a.end_date ?? null);
                 const counts: CountSpec[] = [
                   { key: "total", label: "Total de posiciones", value: a.lines_total ?? 0, color: "neutral" },
