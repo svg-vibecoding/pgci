@@ -338,19 +338,23 @@ function AgreementsList() {
                         >
                           {a.name}
                         </Link>
-                        {a.group_name && (
-                          <Badge color="neutral">
-                            {a.group_name}
-                          </Badge>
-                        )}
                         {a.scope === "unit" && <Badge color="info">Con alcance</Badge>}
                       </div>
+                      {a.group_name && (
+                        <span
+                          className="block text-xs text-muted-foreground truncate max-w-[260px]"
+                          title={a.group_name}
+                        >
+                          {a.group_name}
+                        </span>
+                      )}
                       {a.scope === "unit" && a.unit_name && (
                         <span className="block text-xs text-muted-foreground truncate max-w-[260px]" title={a.unit_name}>
                           {a.unit_name}
                         </span>
                       )}
                     </TableCell>
+
                     <TableCell className="min-w-0">
                       {companies.length === 0 ? (
                         <span className="text-muted-foreground">—</span>
