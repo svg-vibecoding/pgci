@@ -1228,7 +1228,8 @@ export const addAgreementMember = createServerFn({ method: "POST" })
     const { data: companies, error: compErr } = await context.supabase
       .from("agreement_companies")
       .select("client_id")
-      .eq("agreement_id", data.agreement_id);
+      .eq("agreement_id", data.agreement_id)
+      .is("valid_until", null);
     if (compErr) throw new Error("No se pudieron resolver los clientes del acuerdo");
     const clientIds = [...new Set((companies ?? []).map((c) => c.client_id as string))];
     if (clientIds.length === 0) throw new Error("Acuerdo sin clientes vinculados");
