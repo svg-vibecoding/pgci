@@ -1148,23 +1148,32 @@ async function resolveImportTargetClient(
 // Miembros
 // ---------------------------------------------------------------------------
 
+const listAgreementMembersInput = importPreviewSchema
+  .pick({ agreement_id: true })
+  .extend({ include_history: z.boolean().optional().default(false) });
+
 export const listAgreementMembers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    importPreviewSchema.pick({ agreement_id: true }).parse(d),
-  )
+  .inputValidator((d: unknown) => listAgreementMembersInput.parse(d))
   .handler(async ({ data, context }) => {
     await assertCanAccess(context.supabase, data.agreement_id);
-    const { data: members, error } = await context.supabase
+    let query = context.supabase
       .from("agreement_members")
-      .select("id, agreement_id, user_id, role, can_view_costs, assigned_by, created_at")
-      .eq("agreement_id", data.agreement_id)
-      .order("created_at");
+      .select(
+        "id, agreement_id, user_id, role, can_view_costs, assigned_by, started_by, ended_by, ended_reason, valid_from, valid_until, created_at",
+      )
+      .eq("agreement_id", data.agreement_id);
+    if (!data.include_history) {
+      query = query.is("valid_until", null);
+    }
+    const { data: members, error } = await query.order("created_at");
     if (error) throw new Error(error.message);
     const userIds = new Set<string>();
     for (const m of members ?? []) {
       if (m.user_id) userIds.add(m.user_id as string);
       if (m.assigned_by) userIds.add(m.assigned_by as string);
+      if (m.started_by) userIds.add(m.started_by as string);
+      if (m.ended_by) userIds.add(m.ended_by as string);
     }
     let profilesById = new Map<string, { full_name: string; email: string; status: string; erp_user_code: string | null }>();
     if (userIds.size > 0) {
@@ -1190,6 +1199,10 @@ export const listAgreementMembers = createServerFn({ method: "GET" })
         profile: profilesById.get(m.user_id as string) ?? null,
         assigned_by_name:
           (m.assigned_by && profilesById.get(m.assigned_by as string)?.full_name) ?? null,
+        started_by_name:
+          (m.started_by && profilesById.get(m.started_by as string)?.full_name) ?? null,
+        ended_by_name:
+          (m.ended_by && profilesById.get(m.ended_by as string)?.full_name) ?? null,
       }))
       .sort((a, b) =>
         (a.profile?.full_name ?? "").localeCompare(
