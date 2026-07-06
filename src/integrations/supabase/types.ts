@@ -82,25 +82,40 @@ export type Database = {
           agreement_id: string
           client_id: string
           created_at: string
+          ended_by: string | null
+          ended_reason: string | null
           id: string
           linked_by: string | null
           notes: string | null
+          started_by: string | null
+          valid_from: string
+          valid_until: string | null
         }
         Insert: {
           agreement_id: string
           client_id: string
           created_at?: string
+          ended_by?: string | null
+          ended_reason?: string | null
           id?: string
           linked_by?: string | null
           notes?: string | null
+          started_by?: string | null
+          valid_from?: string
+          valid_until?: string | null
         }
         Update: {
           agreement_id?: string
           client_id?: string
           created_at?: string
+          ended_by?: string | null
+          ended_reason?: string | null
           id?: string
           linked_by?: string | null
           notes?: string | null
+          started_by?: string | null
+          valid_from?: string
+          valid_until?: string | null
         }
         Relationships: [
           {
@@ -175,25 +190,40 @@ export type Database = {
           agreement_group_id: string
           assigned_by: string | null
           created_at: string
+          ended_by: string | null
+          ended_reason: string | null
           id: string
           role: string
+          started_by: string | null
           user_id: string
+          valid_from: string
+          valid_until: string | null
         }
         Insert: {
           agreement_group_id: string
           assigned_by?: string | null
           created_at?: string
+          ended_by?: string | null
+          ended_reason?: string | null
           id?: string
           role: string
+          started_by?: string | null
           user_id: string
+          valid_from?: string
+          valid_until?: string | null
         }
         Update: {
           agreement_group_id?: string
           assigned_by?: string | null
           created_at?: string
+          ended_by?: string | null
+          ended_reason?: string | null
           id?: string
           role?: string
+          started_by?: string | null
           user_id?: string
+          valid_from?: string
+          valid_until?: string | null
         }
         Relationships: [
           {

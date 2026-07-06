@@ -88,7 +88,8 @@ function ViewClient() {
       const { data: links, error: lErr } = await supabase
         .from("agreement_companies")
         .select("agreement_id")
-        .eq("client_id", clientId);
+        .eq("client_id", clientId)
+        .is("valid_until", null);
       if (lErr) throw lErr;
       const ids = Array.from(new Set((links ?? []).map((l) => l.agreement_id as string)));
       if (ids.length === 0) return [];

@@ -112,7 +112,8 @@ function AgreementDetail() {
       const { count, error } = await supabase
         .from("agreement_companies")
         .select("id", { count: "exact", head: true })
-        .eq("agreement_id", agreementId);
+        .eq("agreement_id", agreementId)
+        .is("valid_until", null);
       if (error) throw error;
       return count ?? 0;
     },

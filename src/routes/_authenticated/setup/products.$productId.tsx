@@ -59,7 +59,8 @@ function ProductDetail() {
       const { data: links, error: err2 } = await supabase
         .from("agreement_companies")
         .select("client_id")
-        .in("agreement_id", ids);
+        .in("agreement_id", ids)
+        .is("valid_until", null);
       if (err2) return 0;
       const clients = new Set(
         (links ?? []).map((l) => l.client_id as string | null).filter(Boolean) as string[],
