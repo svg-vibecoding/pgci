@@ -290,7 +290,7 @@ function AgreementDetail() {
                   <TableHead>Usuario</TableHead>
                   <TableHead>Rol</TableHead>
                   <TableHead>Ve costos</TableHead>
-                  <TableHead>Agregado</TableHead>
+                  <TableHead>Vinculado</TableHead>
                   {canAdmin && <TableHead className="w-24 text-right"><span className="sr-only">Acciones</span></TableHead>}
                 </TableRow>
               </TableHeader>
