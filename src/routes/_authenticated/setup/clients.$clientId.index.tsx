@@ -144,7 +144,7 @@ function ViewClient() {
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{displayName}</h1>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
+          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
             <Badge color={isHolding ? "accent" : "neutral"} variant="soft">
               {isHolding ? "Holding" : "Directo"}
             </Badge>
@@ -153,7 +153,7 @@ function ViewClient() {
               label={isActive ? "Activo" : "Inactivo"}
             />
             {parentName && (
-              <span className="text-xs text-muted-foreground">
+              <span>
                 Pertenece a{" "}
                 <Link
                   to="/setup/clients/$clientId"
