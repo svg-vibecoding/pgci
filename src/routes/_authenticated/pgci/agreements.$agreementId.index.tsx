@@ -377,6 +377,12 @@ function AgreementDetail() {
 
       <AgreementCompaniesSection agreementId={agreementId} canAdmin={canAdmin} />
 
+      <AgreementGroupSection
+        agreementId={agreementId}
+        groupId={(agreement as { group_id?: string | null }).group_id ?? null}
+        canAdmin={canAdmin}
+      />
+
 
       <AlertDialog open={statusOpen} onOpenChange={setStatusOpen}>
         <AlertDialogContent>
