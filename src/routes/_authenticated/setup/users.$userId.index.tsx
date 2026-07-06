@@ -76,7 +76,8 @@ function UserDetail() {
       const { data, error } = await supabase
         .from("agreement_members")
         .select("id, agreement_id, role")
-        .eq("user_id", userId);
+        .eq("user_id", userId)
+        .is("valid_until", null);
       if (error) return [];
       return data ?? [];
     },
