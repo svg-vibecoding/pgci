@@ -320,7 +320,6 @@ function AgreementsList() {
                 const companies = ((a as { companies?: string[] }).companies ?? []) as string[];
                 const first = companies[0] ?? null;
                 const vig = vigenciaBadge(a.end_date ?? null);
-                const vig = vigenciaBadge(a.end_date ?? null);
                 const counts: CountSpec[] = [
                   { key: "total", label: "Total de posiciones", value: a.lines_total ?? 0, color: "neutral" },
                   { key: "active", label: "Activas", value: (a as { lines_active?: number }).lines_active ?? 0, color: "success" },
