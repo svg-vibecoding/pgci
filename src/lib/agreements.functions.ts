@@ -1415,9 +1415,11 @@ export const removeAgreementCompany = createServerFn({ method: "POST" })
       .from("agreement_companies")
       .select("agreement_id")
       .eq("id", data.company_id)
-      .single();
-    if (cErr || !c) throw new Error("Cliente no encontrado");
+      .maybeSingle();
+    if (cErr) throw new Error(cErr.message);
+    if (!c) return { ok: true }; // ya fue removido — idempotente
     await assertCanAdmin(context.supabase, c.agreement_id as string);
+
     // Bloquear la eliminación si es la última empresa vinculada (Decisión 3).
     const { count: total, error: countErr } = await context.supabase
       .from("agreement_companies")
