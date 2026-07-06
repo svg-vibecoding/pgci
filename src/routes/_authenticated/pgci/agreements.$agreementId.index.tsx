@@ -237,26 +237,10 @@ function AgreementDetail() {
         </CardHeader>
         <CardContent className="space-y-6">
           <InfoSection>
-            <InfoField label="Acuerdo">{agreement.name}</InfoField>
-            <InfoField label="Agrupador">
-              {agreement.group_id && agreement.group_name ? (
-                <Link
-                  to="/pgci/groups/$groupId"
-                  params={{ groupId: agreement.group_id }}
-                  className="text-primary hover:underline"
-                >
-                  {agreement.group_name}
-                </Link>
-              ) : (
-                agreement.group_name ?? "—"
-              )}
-            </InfoField>
-            <InfoField label="Cliente asociado al agrupador">{clientName}</InfoField>
-
             <InfoField label="Alcance">
               {agreement.scope === "unit"
-                ? `Por unidad${agreement.unit_name ? ` · ${agreement.unit_name}` : ""}`
-                : "Global"}
+                ? `${agreement.unit_name ?? "Unidad"} (cobertura por regional)`
+                : "Global (cobertura nacional)"}
             </InfoField>
             <InfoField label="Vigencia desde">
               {formatDate(agreement.start_date)}
@@ -265,7 +249,9 @@ function AgreementDetail() {
               {formatDate(agreement.end_date)}
             </InfoField>
 
-            <InfoField label="Estado">{isActive ? "Activo" : "Inactivo"}</InfoField>
+            <InfoField label="Creado por">
+              {(agreement as { created_by_name?: string | null }).created_by_name ?? "—"}
+            </InfoField>
             <InfoField label="Creado">{formatDate(agreement.created_at)}</InfoField>
             <InfoField label="Actualizado">{formatDate(agreement.updated_at)}</InfoField>
           </InfoSection>
@@ -273,9 +259,9 @@ function AgreementDetail() {
             <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               Observaciones
             </p>
-            <p className="mt-1 whitespace-pre-wrap text-sm">
-              {agreement.observations?.trim() ? agreement.observations : "—"}
-            </p>
+            <div className="mt-1 min-h-[80px] whitespace-pre-wrap rounded-md border border-input bg-background px-3 py-2 text-sm">
+              {agreement.observations?.trim() ? agreement.observations : ""}
+            </div>
           </div>
         </CardContent>
       </Card>
