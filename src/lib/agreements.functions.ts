@@ -87,7 +87,16 @@ export const getAgreement = createServerFn({ method: "GET" })
       .maybeSingle();
     if (error) throw new Error(`No se pudo cargar el acuerdo: ${error.message}`);
     if (!row) throw new Error("Acuerdo no encontrado");
-    return row;
+    let created_by_name: string | null = null;
+    if (row.created_by) {
+      const { data: prof } = await context.supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("user_id", row.created_by)
+        .maybeSingle();
+      created_by_name = (prof?.full_name as string | null) ?? null;
+    }
+    return { ...row, created_by_name };
   });
 
 export const getAgreementContext = createServerFn({ method: "GET" })
