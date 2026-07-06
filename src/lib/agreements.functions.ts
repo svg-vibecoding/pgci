@@ -20,6 +20,7 @@ import {
   groupMemberAddSchema,
   groupMemberRemoveSchema,
   groupMemberUpdateSchema,
+  assignAgreementGroupSchema,
   nConflictDetectSchema,
   skuLinkSchema,
   skuLinkWithPriceSchema,
