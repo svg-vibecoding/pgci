@@ -1399,6 +1399,7 @@ export const addAgreementCompany = createServerFn({ method: "POST" })
         agreement_id: data.agreement_id,
         client_id: data.client_id,
         notes: data.notes,
+        linked_by: context.userId,
       })
       .select("id")
       .single();
