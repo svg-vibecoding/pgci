@@ -1288,15 +1288,19 @@ export const updateAgreementMember = createServerFn({ method: "POST" })
     const patch: import("@/integrations/supabase/types").TablesUpdate<"agreement_members"> = {};
     if (data.role !== undefined) patch.role = data.role;
     if (data.can_view_costs !== undefined) patch.can_view_costs = data.can_view_costs;
-    const { error } = await context.supabase
+    const { data: updated, error } = await context.supabase
       .from("agreement_members")
       .update(patch)
-      .eq("id", data.member_id);
+      .eq("id", data.member_id)
+      .is("valid_until", null)
+      .select("id");
     if (error) {
       if (error.message.includes("at least one agreement_admin"))
         throw new Error("Un acuerdo no puede quedar sin agreement_admin");
       throw new Error(error.message);
     }
+    if (!updated || updated.length === 0)
+      throw new Error("No se puede editar un período histórico");
     return { ok: true };
   });
 
@@ -1306,20 +1310,30 @@ export const removeAgreementMember = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: m, error: mErr } = await context.supabase
       .from("agreement_members")
-      .select("agreement_id")
+      .select("agreement_id, valid_until")
       .eq("id", data.member_id)
       .single();
     if (mErr || !m) throw new Error("Miembro no encontrado");
+    if (m.valid_until !== null)
+      throw new Error("Este miembro ya tiene un período cerrado");
     await assertCanAdmin(context.supabase, m.agreement_id as string);
-    const { error } = await context.supabase
+    const { data: closed, error } = await context.supabase
       .from("agreement_members")
-      .delete()
-      .eq("id", data.member_id);
+      .update({
+        valid_until: new Date().toISOString(),
+        ended_by: context.userId,
+        ended_reason: data.reason,
+      })
+      .eq("id", data.member_id)
+      .is("valid_until", null)
+      .select("id");
     if (error) {
       if (error.message.includes("at least one agreement_admin"))
         throw new Error("Un acuerdo no puede quedar sin agreement_admin");
       throw new Error(error.message);
     }
+    if (!closed || closed.length === 0)
+      throw new Error("Este miembro ya tiene un período cerrado");
     return { ok: true };
   });
 
