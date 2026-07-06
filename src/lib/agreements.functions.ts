@@ -1317,7 +1317,7 @@ export const listAgreementCompanies = createServerFn({ method: "GET" })
     await assertCanAccess(context.supabase, data.agreement_id);
     const { data: rows, error } = await context.supabase
       .from("agreement_companies")
-      .select("id, agreement_id, client_id, notes, created_at")
+      .select("id, agreement_id, client_id, notes, created_at, linked_by")
       .eq("agreement_id", data.agreement_id)
       .order("created_at");
     if (error) throw new Error(error.message);
@@ -1361,6 +1361,26 @@ export const listAgreementCompanies = createServerFn({ method: "GET" })
       }
     }
 
+    const linkerIds = Array.from(
+      new Set(
+        base
+          .map((r) => r.linked_by as string | null)
+          .filter((v): v is string => !!v),
+      ),
+    );
+    const linkerNames = new Map<string, string>();
+    if (linkerIds.length > 0) {
+      const { data: profRows, error: profErr } = await context.supabase
+        .from("profiles")
+        .select("user_id, full_name")
+        .in("user_id", linkerIds);
+      if (profErr) throw new Error(profErr.message);
+      for (const p of profRows ?? []) {
+        const name = (p.full_name as string | null)?.trim();
+        if (name) linkerNames.set(p.user_id as string, name);
+      }
+    }
+
     return base
       .map((r) => {
         const c = clientById.get(r.client_id as string);
@@ -1368,6 +1388,7 @@ export const listAgreementCompanies = createServerFn({ method: "GET" })
         const parentName = c?.parent_client_id
           ? parentNames.get(c.parent_client_id) ?? null
           : null;
+        const linkedBy = (r.linked_by as string | null) ?? null;
         return {
           id: r.id as string,
           agreement_id: r.agreement_id as string,
@@ -1378,6 +1399,8 @@ export const listAgreementCompanies = createServerFn({ method: "GET" })
           client_display_name: displayName,
           client_type: c?.type ?? null,
           parent_client_name: parentName,
+          linked_by: linkedBy,
+          linked_by_name: linkedBy ? linkerNames.get(linkedBy) ?? null : null,
         };
       })
       .sort((a, b) =>
