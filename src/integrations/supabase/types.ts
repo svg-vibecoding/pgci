@@ -900,8 +900,13 @@ export type Database = {
           can_manage_matching: boolean
           client_id: string
           created_at: string
+          ended_by: string | null
+          ended_reason: string | null
           id: string
+          started_by: string | null
           user_id: string
+          valid_from: string
+          valid_until: string | null
         }
         Insert: {
           assigned_by?: string | null
@@ -910,8 +915,13 @@ export type Database = {
           can_manage_matching?: boolean
           client_id: string
           created_at?: string
+          ended_by?: string | null
+          ended_reason?: string | null
           id?: string
+          started_by?: string | null
           user_id: string
+          valid_from?: string
+          valid_until?: string | null
         }
         Update: {
           assigned_by?: string | null
@@ -920,8 +930,13 @@ export type Database = {
           can_manage_matching?: boolean
           client_id?: string
           created_at?: string
+          ended_by?: string | null
+          ended_reason?: string | null
           id?: string
+          started_by?: string | null
           user_id?: string
+          valid_from?: string
+          valid_until?: string | null
         }
         Relationships: [
           {
