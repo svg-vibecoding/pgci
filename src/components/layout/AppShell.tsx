@@ -16,9 +16,9 @@ type NavItem = {
 
 const SETUP_NAV: NavItem[] = [
   { to: "/setup", label: "Plataforma", icon: Gauge, exact: true },
+  { to: "/setup/users", label: "Usuarios", icon: Users },
   { to: "/setup/clients", label: "Clientes", icon: Building2 },
   { to: "/setup/products", label: "Productos", icon: Package },
-  { to: "/setup/users", label: "Usuarios", icon: Users },
 ];
 
 const PGCI_NAV: NavItem[] = [
