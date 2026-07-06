@@ -1341,18 +1341,25 @@ export const removeAgreementMember = createServerFn({ method: "POST" })
 // Empresas
 // ---------------------------------------------------------------------------
 
+const listAgreementCompaniesInput = importPreviewSchema
+  .pick({ agreement_id: true })
+  .extend({ include_history: z.boolean().optional().default(false) });
+
 export const listAgreementCompanies = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    importPreviewSchema.pick({ agreement_id: true }).parse(d),
-  )
+  .inputValidator((d: unknown) => listAgreementCompaniesInput.parse(d))
   .handler(async ({ data, context }) => {
     await assertCanAccess(context.supabase, data.agreement_id);
-    const { data: rows, error } = await context.supabase
+    let query = context.supabase
       .from("agreement_companies")
-      .select("id, agreement_id, client_id, notes, created_at, linked_by")
-      .eq("agreement_id", data.agreement_id)
-      .order("created_at");
+      .select(
+        "id, agreement_id, client_id, notes, created_at, linked_by, started_by, ended_by, ended_reason, valid_from, valid_until",
+      )
+      .eq("agreement_id", data.agreement_id);
+    if (!data.include_history) {
+      query = query.is("valid_until", null);
+    }
+    const { data: rows, error } = await query.order("created_at");
     if (error) throw new Error(error.message);
 
     const base = rows ?? [];
@@ -1394,23 +1401,25 @@ export const listAgreementCompanies = createServerFn({ method: "GET" })
       }
     }
 
-    const linkerIds = Array.from(
-      new Set(
-        base
-          .map((r) => r.linked_by as string | null)
-          .filter((v): v is string => !!v),
-      ),
-    );
-    const linkerNames = new Map<string, string>();
-    if (linkerIds.length > 0) {
+    const userIds = new Set<string>();
+    for (const r of base) {
+      const linkedBy = r.linked_by as string | null;
+      const startedBy = r.started_by as string | null;
+      const endedBy = r.ended_by as string | null;
+      if (linkedBy) userIds.add(linkedBy);
+      if (startedBy) userIds.add(startedBy);
+      if (endedBy) userIds.add(endedBy);
+    }
+    const userNames = new Map<string, string>();
+    if (userIds.size > 0) {
       const { data: profRows, error: profErr } = await context.supabase
         .from("profiles")
         .select("user_id, full_name")
-        .in("user_id", linkerIds);
+        .in("user_id", Array.from(userIds));
       if (profErr) throw new Error(profErr.message);
       for (const p of profRows ?? []) {
         const name = (p.full_name as string | null)?.trim();
-        if (name) linkerNames.set(p.user_id as string, name);
+        if (name) userNames.set(p.user_id as string, name);
       }
     }
 
@@ -1422,6 +1431,8 @@ export const listAgreementCompanies = createServerFn({ method: "GET" })
           ? parentNames.get(c.parent_client_id) ?? null
           : null;
         const linkedBy = (r.linked_by as string | null) ?? null;
+        const startedBy = (r.started_by as string | null) ?? null;
+        const endedBy = (r.ended_by as string | null) ?? null;
         return {
           id: r.id as string,
           agreement_id: r.agreement_id as string,
@@ -1433,7 +1444,14 @@ export const listAgreementCompanies = createServerFn({ method: "GET" })
           client_type: c?.type ?? null,
           parent_client_name: parentName,
           linked_by: linkedBy,
-          linked_by_name: linkedBy ? linkerNames.get(linkedBy) ?? null : null,
+          linked_by_name: linkedBy ? userNames.get(linkedBy) ?? null : null,
+          started_by: startedBy,
+          started_by_name: startedBy ? userNames.get(startedBy) ?? null : null,
+          ended_by: endedBy,
+          ended_by_name: endedBy ? userNames.get(endedBy) ?? null : null,
+          ended_reason: (r.ended_reason as string | null) ?? null,
+          valid_from: r.valid_from as string,
+          valid_until: (r.valid_until as string | null) ?? null,
         };
       })
       .sort((a, b) =>
@@ -1456,10 +1474,19 @@ export const addAgreementCompany = createServerFn({ method: "POST" })
         client_id: data.client_id,
         notes: data.notes,
         linked_by: context.userId,
+        started_by: context.userId,
       })
       .select("id")
       .single();
-    if (error) throw new Error(error.message);
+    if (error) {
+      const msg = error.message.toLowerCase();
+      if (
+        msg.includes("duplicate") ||
+        msg.includes("agreement_companies_open_uniq")
+      )
+        throw new Error("Esta empresa ya está vinculada al acuerdo");
+      throw new Error(error.message);
+    }
     return { company_id: row.id as string };
   });
 
@@ -1470,30 +1497,42 @@ export const removeAgreementCompany = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: c, error: cErr } = await context.supabase
       .from("agreement_companies")
-      .select("agreement_id")
+      .select("agreement_id, valid_until")
       .eq("id", data.company_id)
       .maybeSingle();
     if (cErr) throw new Error(cErr.message);
     if (!c) return { ok: true }; // ya fue removido — idempotente
+    if (c.valid_until !== null)
+      throw new Error("Esta empresa ya tiene un período cerrado");
     await assertCanAdmin(context.supabase, c.agreement_id as string);
 
-    // Bloquear la eliminación si es la última empresa vinculada (Decisión 3).
+    // Bloquear el cierre si es la última empresa vinculada vigente (Decisión 3).
     const { count: total, error: countErr } = await context.supabase
       .from("agreement_companies")
       .select("id", { count: "exact", head: true })
-      .eq("agreement_id", c.agreement_id as string);
+      .eq("agreement_id", c.agreement_id as string)
+      .is("valid_until", null);
     if (countErr) throw new Error(countErr.message);
     if ((total ?? 0) <= 1) {
       throw new Error("No se puede eliminar el último cliente vinculado al acuerdo");
     }
-    const { error } = await context.supabase
+    const { data: closed, error } = await context.supabase
       .from("agreement_companies")
-      .delete()
-      .eq("id", data.company_id);
+      .update({
+        valid_until: new Date().toISOString(),
+        ended_by: context.userId,
+        ended_reason: data.reason,
+      })
+      .eq("id", data.company_id)
+      .is("valid_until", null)
+      .select("id");
     if (error) throw new Error(error.message);
+    if (!closed || closed.length === 0)
+      throw new Error("Esta empresa ya tiene un período cerrado");
 
     return { ok: true };
   });
+
 
 // ---------------------------------------------------------------------------
 // Agrupadores (detalle y miembros)
