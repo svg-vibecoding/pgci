@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { UserPlus, Trash2, Users, Search } from "lucide-react";
+import { UserPlus, Unlink, Users, Search } from "lucide-react";
 import {
   listAgreementGroupMembers,
   addAgreementGroupMember,
@@ -225,7 +225,7 @@ export function AgreementGroupMembersSection({
                           onClick={() => setRemoveId(m.id)}
                           aria-label="Remover"
                         >
-                          <Trash2 className="h-4 w-4 text-destructive" />
+                          <Unlink className="h-4 w-4 text-destructive" />
                         </Button>
                       </TableCell>
                     )}

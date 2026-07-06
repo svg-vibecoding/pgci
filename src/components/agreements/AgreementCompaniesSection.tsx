@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Plus, Trash2, Building2, Search } from "lucide-react";
+import { Plus, Unlink, Building2, Search } from "lucide-react";
 import {
   listAgreementCompanies,
   addAgreementCompany,
@@ -198,7 +198,7 @@ export function AgreementCompaniesSection({
                           onClick={() => setRemoveId(c.id as string)}
                           aria-label="Remover"
                         >
-                          <Trash2 className="h-4 w-4 text-destructive" />
+                          <Unlink className="h-4 w-4 text-destructive" />
                         </Button>
                       </TableCell>
                     )}
