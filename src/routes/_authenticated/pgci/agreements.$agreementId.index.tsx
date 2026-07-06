@@ -8,7 +8,7 @@ import {
   Pencil,
   Power,
   UserPlus,
-  Trash2,
+  Unlink,
   Boxes,
 } from "lucide-react";
 import {
@@ -359,7 +359,7 @@ function AgreementDetail() {
                             onClick={() => setRemoveId(m.id as string)}
                             aria-label="Remover miembro"
                           >
-                            <Trash2 className="h-4 w-4 text-destructive" />
+                            <Unlink className="h-4 w-4 text-destructive" />
                           </Button>
                         </div>
                       </TableCell>
