@@ -36,7 +36,6 @@ const dateInputClass = cn(
   "[&::-webkit-calendar-picker-indicator]:cursor-pointer",
 );
 
-export type GroupMode = "none" | "existing" | "new";
 export type CompanyMode = "none" | "single" | "multi";
 
 export type AgreementFormValues = {
