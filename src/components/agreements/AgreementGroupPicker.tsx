@@ -117,8 +117,6 @@ export function AgreementGroupPicker({
           <div className="space-y-4 border-t border-border px-4 py-4">
             <p className="text-sm text-muted-foreground">
               Un agrupador reúne y organiza varios acuerdos en un solo lugar.
-              Puedes dejarlo sin agrupador y agruparlo más adelante — vuelve a
-              hacer clic sobre la opción marcada para desmarcarla.
             </p>
 
             <div className="grid gap-3">
