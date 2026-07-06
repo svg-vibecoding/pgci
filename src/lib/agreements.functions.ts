@@ -233,7 +233,7 @@ export const createAgreement = createServerFn({ method: "POST" })
       await assertCanCreateForClient(context.supabase, clientId);
       const { error: acErr } = await context.supabase
         .from("agreement_companies")
-        .insert({ agreement_id: row.id, client_id: clientId });
+        .insert({ agreement_id: row.id, client_id: clientId, started_by: context.userId });
       if (acErr && !acErr.message.toLowerCase().includes("duplicate")) {
         throw new Error(
           `Acuerdo creado pero no se pudo vincular el cliente: ${acErr.message}`,
