@@ -372,6 +372,8 @@ function ClientAccess() {
   const handleSave = async () => {
     setSaving(true);
     try {
+      const { data: authData } = await supabase.auth.getUser();
+      const actorId = authData.user?.id ?? null;
       const ops: PromiseLike<{ error: unknown }>[] = [];
 
       if (diff.toInsert.length) {
@@ -383,7 +385,7 @@ function ClientAccess() {
               can_create_agreements: stateMap.get(client_id)?.can_create ?? false,
               can_manage_client_catalog: stateMap.get(client_id)?.can_manage_client_catalog ?? false,
               can_manage_matching: stateMap.get(client_id)?.can_manage_matching ?? false,
-              started_by: user?.user_id ?? null,
+              started_by: actorId,
             })),
           ),
         );
@@ -396,7 +398,7 @@ function ClientAccess() {
             .from("user_client_access")
             .update({
               valid_until: new Date().toISOString(),
-              ended_by: user?.user_id ?? null,
+              ended_by: actorId,
               ended_reason: null,
             })
             .eq("user_id", userId)
