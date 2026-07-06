@@ -8,7 +8,7 @@ import {
   Pencil,
   Power,
   UserPlus,
-  Trash2,
+  Unlink,
   Boxes,
 } from "lucide-react";
 import {
