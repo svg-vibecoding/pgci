@@ -57,7 +57,8 @@ export const listAgreements = createServerFn({ method: "GET" })
     const { data: comps, error: cErr } = await context.supabase
       .from("agreement_companies")
       .select("agreement_id, clients:client_id(commercial_name, legal_name)")
-      .in("agreement_id", ids);
+      .in("agreement_id", ids)
+      .is("valid_until", null);
     if (cErr) throw new Error(`No se pudieron cargar clientes: ${cErr.message}`);
     const byAgreement = new Map<string, string[]>();
     for (const c of comps ?? []) {
