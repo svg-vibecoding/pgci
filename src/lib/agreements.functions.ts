@@ -286,7 +286,8 @@ export const listAssignableGroups = createServerFn({ method: "GET" })
           context.supabase
             .from("agreement_group_members")
             .select("agreement_group_id")
-            .eq("role", "agreement_group_admin"),
+            .eq("role", "agreement_group_admin")
+            .is("valid_until", null),
         ]);
       if (accErr) throw new Error(accErr.message);
       if (mErr) throw new Error(mErr.message);
