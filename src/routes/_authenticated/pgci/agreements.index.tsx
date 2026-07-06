@@ -356,28 +356,28 @@ function AgreementsList() {
                     <TableCell className="min-w-0">
                       {companies.length === 0 ? (
                         <span className="text-muted-foreground">—</span>
+                      ) : companies.length === 1 ? (
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Badge color="neutral">Cliente</Badge>
+                          <span className="truncate" title={first ?? undefined}>{first}</span>
+                        </div>
                       ) : (
                         <div className="flex items-center gap-2 min-w-0">
-                          <Badge color={isMultiple ? "accent" : "neutral"}>
-                            {isMultiple ? "Múltiple" : "Directa"}
-                          </Badge>
-                          <span className="truncate" title={first ?? undefined}>{first}</span>
-                          {extra > 0 && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <span className="text-xs text-muted-foreground whitespace-nowrap cursor-default">
-                                  +{extra} restantes
-                                </span>
-                              </TooltipTrigger>
-                              <TooltipContent className="max-w-xs">
-                                <ul className="space-y-0.5">
-                                  {companies.map((c) => (
-                                    <li key={c}>{c}</li>
-                                  ))}
-                                </ul>
-                              </TooltipContent>
-                            </Tooltip>
-                          )}
+                          <Badge color="accent">Múltiple</Badge>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="text-sm whitespace-nowrap cursor-default">
+                                {companies.length} Clientes…
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs">
+                              <ul className="space-y-0.5">
+                                {companies.map((c) => (
+                                  <li key={c}>{c}</li>
+                                ))}
+                              </ul>
+                            </TooltipContent>
+                          </Tooltip>
                         </div>
                       )}
                     </TableCell>
