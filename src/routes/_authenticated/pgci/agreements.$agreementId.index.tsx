@@ -105,6 +105,17 @@ function AgreementDetail() {
     queryKey: ["agreements", "members", agreementId],
     queryFn: () => membersFn({ data: { agreement_id: agreementId } }),
   });
+  const { data: companiesCount } = useQuery({
+    queryKey: ["agreements", "companies-count", agreementId],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("agreement_companies")
+        .select("id", { count: "exact", head: true })
+        .eq("agreement_id", agreementId);
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
 
   const canAdmin = !!ctx?.can_admin;
 
@@ -175,20 +186,18 @@ function AgreementDetail() {
 
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight">{agreement.name}</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{agreement.name}</h1>
+          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
             <StatusBadge
               status={isActive ? "active" : "neutral"}
               label={isActive ? "Activo" : "Inactivo"}
             />
-            {agreement.scope === "unit" && <Badge color="info">Con alcance</Badge>}
+            <span>
+              {`${companiesCount ?? 0} ${(companiesCount ?? 0) === 1 ? "empresa cubierta" : "empresas cubiertas"}`}
+              {` · ${members?.length ?? 0} ${(members?.length ?? 0) === 1 ? "miembro" : "miembros"}`}
+              {` · ${total} ${total === 1 ? "posición" : "posiciones"}`}
+            </span>
           </div>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {clientName}
-            {agreement.scope === "unit" && agreement.unit_name && (
-              <> · {agreement.unit_name}</>
-            )}
-          </p>
         </div>
         {canAdmin && (
           <div className="flex flex-wrap gap-2">
