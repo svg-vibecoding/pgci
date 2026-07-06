@@ -290,6 +290,7 @@ function AgreementDetail() {
                   <TableHead>Usuario</TableHead>
                   <TableHead>Rol</TableHead>
                   <TableHead>Ve costos</TableHead>
+                  <TableHead>Agregado</TableHead>
                   {canAdmin && <TableHead className="w-24 text-right"><span className="sr-only">Acciones</span></TableHead>}
                 </TableRow>
               </TableHeader>
@@ -297,7 +298,7 @@ function AgreementDetail() {
                 {(members ?? []).length === 0 && (
                   <TableRow>
                     <TableCell
-                      colSpan={canAdmin ? 4 : 3}
+                      colSpan={canAdmin ? 5 : 4}
                       className="py-6 text-center text-sm text-muted-foreground"
                     >
                       Aún no hay miembros adicionales.
@@ -308,6 +309,7 @@ function AgreementDetail() {
                   const roleLabel = m.role === "agreement_admin" ? "Administrador" : "Miembro";
                   const profile = m.profile as { full_name?: string | null; email?: string | null; status?: string | null; erp_user_code?: string | null } | null;
                   const erpCode = profile?.erp_user_code;
+                  const assignedByName = (m as { assigned_by_name?: string | null }).assigned_by_name ?? null;
                   return (
                   <TableRow key={m.id as string}>
                     <TableCell>
@@ -336,6 +338,14 @@ function AgreementDetail() {
                         </TooltipTrigger>
                         <TooltipContent>Próximamente.</TooltipContent>
                       </Tooltip>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      <div>{formatDate(m.created_at as string | null)}</div>
+                      {assignedByName && (
+                        <div className="text-xs text-muted-foreground/80">
+                          por {assignedByName}
+                        </div>
+                      )}
                     </TableCell>
                     {canAdmin && (
                       <TableCell className="text-right">
@@ -370,6 +380,7 @@ function AgreementDetail() {
                 })}
               </TableBody>
             </Table>
+
           </div>
           </TooltipProvider>
         </CardContent>

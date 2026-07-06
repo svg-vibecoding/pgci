@@ -41,6 +41,17 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/sumatec";
 
+function formatLinkedDate(value: string | null | undefined): string {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "—";
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  return `${dd}/${mm}/${d.getFullYear()}`;
+}
+
+
+
 export function AgreementCompaniesSection({
   agreementId,
   canAdmin,
@@ -173,6 +184,7 @@ export function AgreementCompaniesSection({
                 <TableRow>
                   <TableHead>Cliente</TableHead>
                   <TableHead>NIT</TableHead>
+                  <TableHead>Vinculado</TableHead>
                   {canAdmin && <TableHead className="w-12 text-right"><span className="sr-only">Acciones</span></TableHead>}
                 </TableRow>
               </TableHeader>
@@ -195,6 +207,7 @@ export function AgreementCompaniesSection({
                       )}
                     </TableCell>
                     <TableCell className="text-muted-foreground">{c.tax_id as string}</TableCell>
+                    <TableCell className="text-muted-foreground">{formatLinkedDate(c.created_at as string | null)}</TableCell>
                     {canAdmin && (
                       <TableCell className="text-right">
                         <Button
@@ -212,6 +225,7 @@ export function AgreementCompaniesSection({
               </TableBody>
             </Table>
           </div>
+
         )}
       </CardContent>
 
