@@ -1573,27 +1573,42 @@ export const getAgreementGroup = createServerFn({ method: "GET" })
     };
   });
 
+const listAgreementGroupMembersInput = groupIdSchema.extend({
+  include_history: z.boolean().optional().default(false),
+});
+
 export const listAgreementGroupMembers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => groupIdSchema.parse(d))
+  .inputValidator((d: unknown) => listAgreementGroupMembersInput.parse(d))
   .handler(async ({ data, context }) => {
-    const { data: members, error } = await context.supabase
+    let query = context.supabase
       .from("agreement_group_members")
-      .select("id, agreement_group_id, user_id, role, assigned_by, created_at")
-      .eq("agreement_group_id", data.group_id)
-      .order("created_at");
+      .select(
+        "id, agreement_group_id, user_id, role, assigned_by, started_by, ended_by, ended_reason, valid_from, valid_until, created_at",
+      )
+      .eq("agreement_group_id", data.group_id);
+    if (!data.include_history) {
+      query = query.is("valid_until", null);
+    }
+    const { data: members, error } = await query.order("created_at");
     if (error) throw new Error(error.message);
     const rows = members ?? [];
-    const userIds = rows.map((m) => m.user_id as string);
+    const userIds = new Set<string>();
+    for (const m of rows) {
+      if (m.user_id) userIds.add(m.user_id as string);
+      if (m.assigned_by) userIds.add(m.assigned_by as string);
+      if (m.started_by) userIds.add(m.started_by as string);
+      if (m.ended_by) userIds.add(m.ended_by as string);
+    }
     let profilesById = new Map<
       string,
       { full_name: string; email: string; status: string }
     >();
-    if (userIds.length > 0) {
+    if (userIds.size > 0) {
       const { data: profs } = await context.supabase
         .from("profiles")
         .select("user_id, full_name, email, status")
-        .in("user_id", userIds);
+        .in("user_id", Array.from(userIds));
       profilesById = new Map(
         (profs ?? []).map((p) => [
           p.user_id as string,
@@ -1612,7 +1627,18 @@ export const listAgreementGroupMembers = createServerFn({ method: "GET" })
       role: m.role as "agreement_group_admin" | "agreement_group_member",
       assigned_by: (m.assigned_by as string | null) ?? null,
       created_at: m.created_at as string,
+      started_by: (m.started_by as string | null) ?? null,
+      ended_by: (m.ended_by as string | null) ?? null,
+      ended_reason: (m.ended_reason as string | null) ?? null,
+      valid_from: m.valid_from as string,
+      valid_until: (m.valid_until as string | null) ?? null,
       profile: profilesById.get(m.user_id as string) ?? null,
+      assigned_by_name:
+        (m.assigned_by && profilesById.get(m.assigned_by as string)?.full_name) ?? null,
+      started_by_name:
+        (m.started_by && profilesById.get(m.started_by as string)?.full_name) ?? null,
+      ended_by_name:
+        (m.ended_by && profilesById.get(m.ended_by as string)?.full_name) ?? null,
     }));
   });
 
@@ -1627,13 +1653,18 @@ export const addAgreementGroupMember = createServerFn({ method: "POST" })
         user_id: data.user_id,
         role: data.role,
         assigned_by: context.userId,
+        started_by: context.userId,
       })
       .select("id")
       .single();
     if (error) {
-      if (error.message.toLowerCase().includes("duplicate"))
-        throw new Error("Este usuario ya es miembro del agrupador");
-      if (error.message.toLowerCase().includes("row-level"))
+      const msg = error.message.toLowerCase();
+      if (
+        msg.includes("duplicate") ||
+        msg.includes("agreement_group_members_open_uniq")
+      )
+        throw new Error("Este usuario ya es miembro vigente del agrupador");
+      if (msg.includes("row-level"))
         throw new Error("No tienes permisos para agregar miembros al agrupador");
       throw new Error(error.message);
     }
@@ -1644,10 +1675,12 @@ export const updateAgreementGroupMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => groupMemberUpdateSchema.parse(d))
   .handler(async ({ data, context: _context }) => {
-    const { error } = await _context.supabase
+    const { data: updated, error } = await _context.supabase
       .from("agreement_group_members")
       .update({ role: data.role })
-      .eq("id", data.member_id);
+      .eq("id", data.member_id)
+      .is("valid_until", null)
+      .select("id");
     if (error) {
       if (error.message.includes("último agreement_group_admin"))
         throw new Error("El agrupador no puede quedar sin admin");
@@ -1655,17 +1688,34 @@ export const updateAgreementGroupMember = createServerFn({ method: "POST" })
         throw new Error("No tienes permisos para modificar miembros del agrupador");
       throw new Error(error.message);
     }
+    if (!updated || updated.length === 0)
+      throw new Error("No se puede editar un período histórico");
     return { ok: true };
   });
 
 export const removeAgreementGroupMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => groupMemberRemoveSchema.parse(d))
-  .handler(async ({ data, context: _context }) => {
-    const { error } = await _context.supabase
+  .handler(async ({ data, context }) => {
+    const { data: m, error: mErr } = await context.supabase
       .from("agreement_group_members")
-      .delete()
-      .eq("id", data.member_id);
+      .select("valid_until")
+      .eq("id", data.member_id)
+      .maybeSingle();
+    if (mErr) throw new Error(mErr.message);
+    if (!m) return { ok: true }; // idempotente
+    if (m.valid_until !== null)
+      throw new Error("Este miembro ya tiene un período cerrado");
+    const { data: closed, error } = await context.supabase
+      .from("agreement_group_members")
+      .update({
+        valid_until: new Date().toISOString(),
+        ended_by: context.userId,
+        ended_reason: data.reason,
+      })
+      .eq("id", data.member_id)
+      .is("valid_until", null)
+      .select("id");
     if (error) {
       if (error.message.includes("último agreement_group_admin"))
         throw new Error("El agrupador no puede quedar sin admin");
@@ -1673,8 +1723,11 @@ export const removeAgreementGroupMember = createServerFn({ method: "POST" })
         throw new Error("No tienes permisos para remover miembros del agrupador");
       throw new Error(error.message);
     }
+    if (!closed || closed.length === 0)
+      throw new Error("Este miembro ya tiene un período cerrado");
     return { ok: true };
   });
+
 
 // ---------------------------------------------------------------------------
 // Asignar un acuerdo existente a un agrupador (nuevo o existente).
