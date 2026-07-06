@@ -56,7 +56,8 @@ function UsersList() {
         const { data: access } = await supabase
           .from("user_client_access")
           .select("user_id, can_create_agreements")
-          .in("user_id", ids);
+          .in("user_id", ids)
+          .is("valid_until", null);
         (access ?? []).forEach((a) => {
           if (a.user_id) {
             accessCounts.set(a.user_id, (accessCounts.get(a.user_id) ?? 0) + 1);

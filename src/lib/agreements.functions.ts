@@ -147,7 +147,8 @@ export const listAssignableClients = createServerFn({ method: "GET" })
       .select(
         "client_id, can_create_agreements, clients:client_id(id, legal_name, commercial_name, status)",
       )
-      .eq("can_create_agreements", true);
+      .eq("can_create_agreements", true)
+      .is("valid_until", null);
     if (error) throw new Error(error.message);
     const mapped = (data ?? [])
       .map((r) => r.clients as {
@@ -282,7 +283,8 @@ export const listAssignableGroups = createServerFn({ method: "GET" })
           context.supabase
             .from("user_client_access")
             .select("client_id")
-            .eq("can_create_agreements", true),
+            .eq("can_create_agreements", true)
+            .is("valid_until", null),
           context.supabase
             .from("agreement_group_members")
             .select("agreement_group_id")
@@ -1240,6 +1242,7 @@ export const addAgreementMember = createServerFn({ method: "POST" })
         .select("id")
         .eq("user_id", data.user_id)
         .eq("client_id", clientId)
+        .is("valid_until", null)
         .maybeSingle();
       if (!existingAccess) {
         const { error: accErr } = await context.supabase
@@ -1249,6 +1252,7 @@ export const addAgreementMember = createServerFn({ method: "POST" })
             client_id: clientId,
             can_create_agreements: false,
             assigned_by: context.userId,
+            started_by: context.userId,
           });
         if (accErr) throw new Error(`No se pudo asignar el cliente: ${accErr.message}`);
       }

@@ -37,7 +37,7 @@ function useSetupCounts() {
             .from("profiles")
             .select("*", { count: "exact", head: true })
             .eq("status", "active"),
-          supabase.from("user_client_access").select("*", { count: "exact", head: true }),
+          supabase.from("user_client_access").select("*", { count: "exact", head: true }).is("valid_until", null),
         ]);
       return {
         clients: clients.count ?? 0,
