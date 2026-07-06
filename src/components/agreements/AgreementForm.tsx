@@ -212,27 +212,6 @@ export function AgreementForm({
         ? "1 cliente seleccionado"
         : `${selectedCount} clientes seleccionados`;
 
-  // Al hacer clic sobre una opción ya activa, se deselecciona (vuelve a "none").
-  const chooseGroupMode = (mode: Exclude<GroupMode, "none">) => {
-    setV((prev) => {
-      if (prev.group_mode === mode) {
-        return {
-          ...prev,
-          group_mode: "none",
-          group_id: "",
-          group_name: "",
-          group_observations: "",
-        };
-      }
-      return {
-        ...prev,
-        group_mode: mode,
-        group_id: mode === "existing" ? prev.group_id : "",
-        group_name: mode === "new" ? prev.group_name : "",
-        group_observations: mode === "new" ? prev.group_observations : "",
-      };
-    });
-  };
 
   const submitDisabled =
     submitting || (!lockClient && (!v.name.trim() || selectedCount === 0));
