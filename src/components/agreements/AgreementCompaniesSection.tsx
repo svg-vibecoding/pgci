@@ -173,6 +173,7 @@ export function AgreementCompaniesSection({
                 <TableRow>
                   <TableHead>Cliente</TableHead>
                   <TableHead>NIT</TableHead>
+                  <TableHead>Vinculado</TableHead>
                   {canAdmin && <TableHead className="w-12 text-right"><span className="sr-only">Acciones</span></TableHead>}
                 </TableRow>
               </TableHeader>
@@ -195,6 +196,7 @@ export function AgreementCompaniesSection({
                       )}
                     </TableCell>
                     <TableCell className="text-muted-foreground">{c.tax_id as string}</TableCell>
+                    <TableCell className="text-muted-foreground">{formatLinkedDate(c.created_at as string | null)}</TableCell>
                     {canAdmin && (
                       <TableCell className="text-right">
                         <Button
@@ -212,6 +214,7 @@ export function AgreementCompaniesSection({
               </TableBody>
             </Table>
           </div>
+
         )}
       </CardContent>
 
