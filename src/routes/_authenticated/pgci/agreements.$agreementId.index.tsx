@@ -233,7 +233,7 @@ function AgreementDetail() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Información del acuerdo</CardTitle>
+          <CardTitle className="text-base">Información general</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <InfoSection>
