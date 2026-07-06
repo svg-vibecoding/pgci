@@ -76,13 +76,6 @@ export type AssignableClient = {
   commercial_name: string | null;
 };
 
-export type AssignableGroup = {
-  id: string;
-  group_name: string;
-  client_id: string | null;
-  client_display_name: string | null;
-  agreement_count: number;
-};
 
 function Req() {
   return <span className="text-primary"> *</span>;
