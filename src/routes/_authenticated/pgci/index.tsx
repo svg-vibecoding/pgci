@@ -86,7 +86,8 @@ function PgciHome() {
       const { count, error } = await supabase
         .from("user_client_access")
         .select("client_id", { count: "exact", head: true })
-        .eq("user_id", userId!);
+        .eq("user_id", userId!)
+        .is("valid_until", null);
       if (error) throw error;
       return count ?? 0;
     },

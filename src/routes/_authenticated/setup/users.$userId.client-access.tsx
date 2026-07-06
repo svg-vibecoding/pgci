@@ -83,7 +83,8 @@ function ClientAccess() {
       const { data, error } = await supabase
         .from("user_client_access")
         .select("client_id, can_create_agreements, can_manage_client_catalog, can_manage_matching")
-        .eq("user_id", userId);
+        .eq("user_id", userId)
+        .is("valid_until", null);
       if (error) throw error;
       return data ?? [];
     },
@@ -371,6 +372,8 @@ function ClientAccess() {
   const handleSave = async () => {
     setSaving(true);
     try {
+      const { data: authData } = await supabase.auth.getUser();
+      const actorId = authData.user?.id ?? null;
       const ops: PromiseLike<{ error: unknown }>[] = [];
 
       if (diff.toInsert.length) {
@@ -382,17 +385,25 @@ function ClientAccess() {
               can_create_agreements: stateMap.get(client_id)?.can_create ?? false,
               can_manage_client_catalog: stateMap.get(client_id)?.can_manage_client_catalog ?? false,
               can_manage_matching: stateMap.get(client_id)?.can_manage_matching ?? false,
+              started_by: actorId,
             })),
           ),
         );
       }
       if (diff.toDelete.length) {
+        // Cierre de período: NO se borra la fila (historial). Se UPDATE de la
+        // fila abierta marcándola como cerrada.
         ops.push(
           supabase
             .from("user_client_access")
-            .delete()
+            .update({
+              valid_until: new Date().toISOString(),
+              ended_by: actorId,
+              ended_reason: null,
+            })
             .eq("user_id", userId)
-            .in("client_id", diff.toDelete),
+            .in("client_id", diff.toDelete)
+            .is("valid_until", null),
         );
       }
       diff.toUpdate.forEach((u) => {
@@ -405,7 +416,8 @@ function ClientAccess() {
               can_manage_matching: u.can_manage_matching,
             })
             .eq("user_id", userId)
-            .eq("client_id", u.client_id),
+            .eq("client_id", u.client_id)
+            .is("valid_until", null),
         );
       });
 

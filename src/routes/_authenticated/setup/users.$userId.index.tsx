@@ -64,7 +64,8 @@ function UserDetail() {
       const { data, error } = await supabase
         .from("user_client_access")
         .select("id, client_id, can_create_agreements, created_at, clients ( id, commercial_name, legal_name, type, status )")
-        .eq("user_id", userId);
+        .eq("user_id", userId)
+        .is("valid_until", null);
       if (error) throw error;
       return data ?? [];
     },
