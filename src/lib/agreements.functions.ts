@@ -56,7 +56,7 @@ export const listAgreements = createServerFn({ method: "GET" })
       .from("agreement_companies")
       .select("agreement_id, clients:client_id(commercial_name, legal_name)")
       .in("agreement_id", ids);
-    if (cErr) throw new Error(`No se pudieron cargar empresas: ${cErr.message}`);
+    if (cErr) throw new Error(`No se pudieron cargar clientes: ${cErr.message}`);
     const byAgreement = new Map<string, string[]>();
     for (const c of comps ?? []) {
       const client = (c as { clients: { commercial_name: string | null; legal_name: string | null } | null }).clients;
@@ -225,7 +225,7 @@ export const createAgreement = createServerFn({ method: "POST" })
         .insert({ agreement_id: row.id, client_id: clientId });
       if (acErr && !acErr.message.toLowerCase().includes("duplicate")) {
         throw new Error(
-          `Acuerdo creado pero no se pudo vincular la empresa: ${acErr.message}`,
+          `Acuerdo creado pero no se pudo vincular el cliente: ${acErr.message}`,
         );
       }
     }
@@ -1115,17 +1115,17 @@ async function resolveImportTargetClient(
     .from("agreement_companies")
     .select("client_id")
     .eq("agreement_id", agreementId);
-  if (error) throw new Error(`No se pudieron leer las empresas del acuerdo: ${error.message}`);
+  if (error) throw new Error(`No se pudieron leer los clientes del acuerdo: ${error.message}`);
   const clientIds = (rows ?? [])
     .map((r) => r.client_id as string | null)
     .filter((v): v is string => !!v);
   if (clientIds.length === 0) {
-    throw new Error("El acuerdo no tiene empresas vinculadas");
+    throw new Error("El acuerdo no tiene clientes vinculados");
   }
   if (clientIds.length === 1) return clientIds[0];
   if (!targetClientId) {
     throw new Error(
-      "El acuerdo tiene múltiples empresas: selecciona a cuál asignar los códigos importados",
+      "El acuerdo tiene múltiples clientes: selecciona a cuál asignar los códigos importados",
     );
   }
   if (!clientIds.includes(targetClientId)) {
@@ -1188,9 +1188,9 @@ export const addAgreementMember = createServerFn({ method: "POST" })
       .from("agreement_companies")
       .select("client_id")
       .eq("agreement_id", data.agreement_id);
-    if (compErr) throw new Error("No se pudieron resolver las empresas del acuerdo");
+    if (compErr) throw new Error("No se pudieron resolver los clientes del acuerdo");
     const clientIds = [...new Set((companies ?? []).map((c) => c.client_id as string))];
-    if (clientIds.length === 0) throw new Error("Acuerdo sin empresas vinculadas");
+    if (clientIds.length === 0) throw new Error("Acuerdo sin clientes vinculados");
 
     for (const clientId of clientIds) {
       const { data: existingAccess } = await context.supabase
@@ -1386,7 +1386,7 @@ export const removeAgreementCompany = createServerFn({ method: "POST" })
       .select("agreement_id")
       .eq("id", data.company_id)
       .single();
-    if (cErr || !c) throw new Error("Empresa no encontrada");
+    if (cErr || !c) throw new Error("Cliente no encontrado");
     await assertCanAdmin(context.supabase, c.agreement_id as string);
     // Bloquear la eliminación si es la última empresa vinculada (Decisión 3).
     const { count: total, error: countErr } = await context.supabase
@@ -1395,7 +1395,7 @@ export const removeAgreementCompany = createServerFn({ method: "POST" })
       .eq("agreement_id", c.agreement_id as string);
     if (countErr) throw new Error(countErr.message);
     if ((total ?? 0) <= 1) {
-      throw new Error("No se puede eliminar la última empresa vinculada al acuerdo");
+      throw new Error("No se puede eliminar el último cliente vinculado al acuerdo");
     }
     const { error } = await context.supabase
       .from("agreement_companies")

@@ -122,7 +122,7 @@ export function AgreementCompaniesSection({
       return chosen.length;
     },
     onSuccess: (count) => {
-      toast.success(count === 1 ? "Empresa agregada" : `${count} empresas agregadas`);
+      toast.success(count === 1 ? "Cliente agregado" : `${count} clientes agregados`);
       qc.invalidateQueries({ queryKey: ["agreements", "companies", agreementId] });
       resetPicker();
       setAddOpen(false);
@@ -133,7 +133,7 @@ export function AgreementCompaniesSection({
   const remove = useMutation({
     mutationFn: (id: string) => removeFn({ data: { company_id: id } }),
     onSuccess: () => {
-      toast.success("Empresa removida");
+      toast.success("Cliente removido");
       qc.invalidateQueries({ queryKey: ["agreements", "companies", agreementId] });
       setRemoveId(null);
     },
@@ -144,14 +144,14 @@ export function AgreementCompaniesSection({
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle className="text-base">Empresas vinculadas</CardTitle>
+          <CardTitle className="text-base">Clientes cubiertos</CardTitle>
           <p className="mt-1 text-xs text-muted-foreground">
-            NITs adicionales (filiales, sucursales) que también facturan bajo este acuerdo.
+            Clientes que cubre este acuerdo y bajo los cuales se factura.
           </p>
         </div>
         {canAdmin && (
           <Button size="sm" variant="outline" onClick={() => setAddOpen(true)}>
-            <Plus className="mr-1.5 h-4 w-4" /> Agregar empresa
+            <Plus className="mr-1.5 h-4 w-4" /> Agregar clientes
           </Button>
         )}
       </CardHeader>
@@ -159,7 +159,7 @@ export function AgreementCompaniesSection({
         {(companies ?? []).length === 0 ? (
           <div className="flex flex-col items-center gap-2 rounded-md border border-dashed border-border py-8 text-center text-sm text-muted-foreground">
             <Building2 className="h-6 w-6" />
-            Sin empresas adicionales.
+            Sin clientes adicionales.
           </div>
         ) : (
           <div className="rounded-lg border border-border">
@@ -219,7 +219,7 @@ export function AgreementCompaniesSection({
       >
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Agregar empresas</DialogTitle>
+            <DialogTitle>Agregar clientes</DialogTitle>
             <DialogDescription>
               Selecciona uno o varios clientes disponibles para vincularlos a este acuerdo.
             </DialogDescription>
@@ -301,7 +301,7 @@ export function AgreementCompaniesSection({
       <AlertDialog open={!!removeId} onOpenChange={(o) => !o && setRemoveId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remover empresa</AlertDialogTitle>
+            <AlertDialogTitle>Remover cliente</AlertDialogTitle>
             <AlertDialogDescription>
               Se desvincula del acuerdo. Esta acción no afecta otros acuerdos.
             </AlertDialogDescription>

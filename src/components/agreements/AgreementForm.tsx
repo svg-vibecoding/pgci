@@ -146,7 +146,7 @@ export function AgreementForm({
 
     if (!lockClient) {
       if (v.company_ids.length === 0)
-        next.company_ids = "Selecciona al menos una empresa.";
+        next.company_ids = "Selecciona al menos un cliente.";
       if (v.group_mode === "existing" && !v.group_id)
         next.group_id = "Selecciona un agrupador.";
       if (v.group_mode === "new" && !v.group_name.trim())
@@ -222,10 +222,10 @@ export function AgreementForm({
   const selectedCount = v.company_ids.length;
   const countText =
     selectedCount === 0
-      ? "Ninguna empresa seleccionada"
+      ? "Ningún cliente seleccionado"
       : selectedCount === 1
-        ? "1 empresa seleccionada"
-        : `${selectedCount} empresas seleccionadas`;
+        ? "1 cliente seleccionado"
+        : `${selectedCount} clientes seleccionados`;
 
   // Al hacer clic sobre una opción ya activa, se deselecciona (vuelve a "none").
   const chooseGroupMode = (mode: Exclude<GroupMode, "none">) => {
@@ -360,15 +360,15 @@ export function AgreementForm({
         </div>
       </section>
 
-      {/* ============ Bloque 2 — Empresas cubiertas (contenedor unificado) ============ */}
+      {/* ============ Bloque 2 — Clientes cubiertos (contenedor unificado) ============ */}
       {!lockClient && (
         <section className="space-y-2">
           <div>
             <h2 className="text-base font-semibold">
-              Empresas cubiertas<Req />
+              Clientes cubiertos<Req />
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Selecciona una o varias empresas que cubre este acuerdo.
+              Selecciona uno o varios clientes que cubre este acuerdo.
             </p>
           </div>
 
@@ -425,7 +425,7 @@ export function AgreementForm({
               </div>
             </div>
 
-            {/* Lista de empresas */}
+            {/* Lista de clientes */}
             <div className="max-h-72 overflow-y-auto border-t border-border">
               {activeClientsQ.isLoading ? (
                 <p className="py-6 text-center text-sm text-muted-foreground">
@@ -435,7 +435,7 @@ export function AgreementForm({
                 <p className="py-6 text-center text-sm text-muted-foreground">
                   {companySearch.trim()
                     ? "Sin resultados."
-                    : "No hay empresas disponibles."}
+                    : "No hay clientes disponibles."}
                 </p>
               ) : (
                 <ul className="divide-y divide-border">
@@ -708,8 +708,8 @@ export function AgreementForm({
         <AlertDescription>
           Al crear el acuerdo podrás cargar su información comercial —
           posiciones (productos y precios) — y asignar usuarios para su gestión
-          o consulta. Más adelante también podrás vincular otras empresas
-          cubiertas o agruparlo con otros acuerdos.
+          o consulta. Más adelante también podrás vincular otros clientes
+          cubiertos o agruparlo con otros acuerdos.
         </AlertDescription>
       </Alert>
 
