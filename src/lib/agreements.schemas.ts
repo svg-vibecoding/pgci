@@ -274,6 +274,30 @@ export const groupIdSchema = z.object({
   group_id: z.string().uuid(),
 });
 
+export const assignAgreementGroupSchema = z
+  .object({
+    agreement_id: z.string().uuid(),
+    group_id: z.string().uuid().nullable().optional(),
+    group_name: z
+      .string()
+      .trim()
+      .max(160)
+      .nullable()
+      .optional()
+      .transform((v) => (v && v.length ? v : null)),
+    group_observations: z
+      .string()
+      .trim()
+      .max(2000)
+      .nullable()
+      .optional()
+      .transform((v) => (v && v.length ? v : null)),
+  })
+  .refine((d) => !(d.group_id && d.group_name), {
+    path: ["group_name"],
+    message: "Usa un agrupador existente o crea uno nuevo, no ambos.",
+  });
+
 export type AgreementCreateInput = z.input<typeof agreementCreateSchema>;
 export type AgreementUpdateInput = z.input<typeof agreementUpdateSchema>;
 export type LineCreateInput = z.input<typeof lineCreateSchema>;

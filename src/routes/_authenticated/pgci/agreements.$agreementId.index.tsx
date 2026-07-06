@@ -27,6 +27,7 @@ import { StatusBadge, Badge } from "@/components/sumatec";
 import { IndicatorCard } from "@/components/setup/IndicatorCard";
 import { InfoField, InfoSection } from "@/components/setup/InfoSection";
 import { AgreementCompaniesSection } from "@/components/agreements/AgreementCompaniesSection";
+import { AgreementGroupSection } from "@/components/agreements/AgreementGroupSection";
 import {
   Dialog,
   DialogContent,
@@ -375,6 +376,12 @@ function AgreementDetail() {
       </Card>
 
       <AgreementCompaniesSection agreementId={agreementId} canAdmin={canAdmin} />
+
+      <AgreementGroupSection
+        agreementId={agreementId}
+        groupId={(agreement as { group_id?: string | null }).group_id ?? null}
+        canAdmin={canAdmin}
+      />
 
 
       <AlertDialog open={statusOpen} onOpenChange={setStatusOpen}>
