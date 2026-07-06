@@ -1816,7 +1816,8 @@ export const getAgreementGroupSummary = createServerFn({ method: "GET" })
       const { data: comps } = await context.supabase
         .from("agreement_companies")
         .select("client_id")
-        .in("agreement_id", agreementIds);
+        .in("agreement_id", agreementIds)
+        .is("valid_until", null);
       const set = new Set<string>();
       for (const c of comps ?? []) {
         const cid = (c as { client_id: string | null }).client_id;
