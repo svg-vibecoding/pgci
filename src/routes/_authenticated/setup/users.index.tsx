@@ -72,7 +72,8 @@ function UsersList() {
         const { data: members } = await supabase
           .from("agreement_members")
           .select("user_id, role")
-          .in("user_id", ids);
+          .in("user_id", ids)
+          .is("valid_until", null);
         (members ?? []).forEach((m) => {
           if (!m.user_id) return;
           if (m.role === "agreement_admin") {

@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   agreementCreateSchema,
@@ -1148,23 +1149,32 @@ async function resolveImportTargetClient(
 // Miembros
 // ---------------------------------------------------------------------------
 
+const listAgreementMembersInput = importPreviewSchema
+  .pick({ agreement_id: true })
+  .extend({ include_history: z.boolean().optional().default(false) });
+
 export const listAgreementMembers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    importPreviewSchema.pick({ agreement_id: true }).parse(d),
-  )
+  .inputValidator((d: unknown) => listAgreementMembersInput.parse(d))
   .handler(async ({ data, context }) => {
     await assertCanAccess(context.supabase, data.agreement_id);
-    const { data: members, error } = await context.supabase
+    let query = context.supabase
       .from("agreement_members")
-      .select("id, agreement_id, user_id, role, can_view_costs, assigned_by, created_at")
-      .eq("agreement_id", data.agreement_id)
-      .order("created_at");
+      .select(
+        "id, agreement_id, user_id, role, can_view_costs, assigned_by, started_by, ended_by, ended_reason, valid_from, valid_until, created_at",
+      )
+      .eq("agreement_id", data.agreement_id);
+    if (!data.include_history) {
+      query = query.is("valid_until", null);
+    }
+    const { data: members, error } = await query.order("created_at");
     if (error) throw new Error(error.message);
     const userIds = new Set<string>();
     for (const m of members ?? []) {
       if (m.user_id) userIds.add(m.user_id as string);
       if (m.assigned_by) userIds.add(m.assigned_by as string);
+      if (m.started_by) userIds.add(m.started_by as string);
+      if (m.ended_by) userIds.add(m.ended_by as string);
     }
     let profilesById = new Map<string, { full_name: string; email: string; status: string; erp_user_code: string | null }>();
     if (userIds.size > 0) {
@@ -1190,6 +1200,10 @@ export const listAgreementMembers = createServerFn({ method: "GET" })
         profile: profilesById.get(m.user_id as string) ?? null,
         assigned_by_name:
           (m.assigned_by && profilesById.get(m.assigned_by as string)?.full_name) ?? null,
+        started_by_name:
+          (m.started_by && profilesById.get(m.started_by as string)?.full_name) ?? null,
+        ended_by_name:
+          (m.ended_by && profilesById.get(m.ended_by as string)?.full_name) ?? null,
       }))
       .sort((a, b) =>
         (a.profile?.full_name ?? "").localeCompare(
@@ -1244,12 +1258,17 @@ export const addAgreementMember = createServerFn({ method: "POST" })
         role: data.role,
         can_view_costs: data.can_view_costs ?? false,
         assigned_by: context.userId,
+        started_by: context.userId,
       })
       .select("id")
       .single();
     if (error) {
-      if (error.message.includes("duplicate"))
-        throw new Error("Este usuario ya es miembro del acuerdo");
+      const msg = error.message.toLowerCase();
+      if (
+        msg.includes("duplicate") ||
+        msg.includes("agreement_members_open_period_uniq")
+      )
+        throw new Error("Este usuario ya es miembro vigente del acuerdo");
       throw new Error(error.message);
     }
     return { member_id: row.id as string };
@@ -1269,15 +1288,19 @@ export const updateAgreementMember = createServerFn({ method: "POST" })
     const patch: import("@/integrations/supabase/types").TablesUpdate<"agreement_members"> = {};
     if (data.role !== undefined) patch.role = data.role;
     if (data.can_view_costs !== undefined) patch.can_view_costs = data.can_view_costs;
-    const { error } = await context.supabase
+    const { data: updated, error } = await context.supabase
       .from("agreement_members")
       .update(patch)
-      .eq("id", data.member_id);
+      .eq("id", data.member_id)
+      .is("valid_until", null)
+      .select("id");
     if (error) {
       if (error.message.includes("at least one agreement_admin"))
         throw new Error("Un acuerdo no puede quedar sin agreement_admin");
       throw new Error(error.message);
     }
+    if (!updated || updated.length === 0)
+      throw new Error("No se puede editar un período histórico");
     return { ok: true };
   });
 
@@ -1287,20 +1310,30 @@ export const removeAgreementMember = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: m, error: mErr } = await context.supabase
       .from("agreement_members")
-      .select("agreement_id")
+      .select("agreement_id, valid_until")
       .eq("id", data.member_id)
       .single();
     if (mErr || !m) throw new Error("Miembro no encontrado");
+    if (m.valid_until !== null)
+      throw new Error("Este miembro ya tiene un período cerrado");
     await assertCanAdmin(context.supabase, m.agreement_id as string);
-    const { error } = await context.supabase
+    const { data: closed, error } = await context.supabase
       .from("agreement_members")
-      .delete()
-      .eq("id", data.member_id);
+      .update({
+        valid_until: new Date().toISOString(),
+        ended_by: context.userId,
+        ended_reason: data.reason,
+      })
+      .eq("id", data.member_id)
+      .is("valid_until", null)
+      .select("id");
     if (error) {
       if (error.message.includes("at least one agreement_admin"))
         throw new Error("Un acuerdo no puede quedar sin agreement_admin");
       throw new Error(error.message);
     }
+    if (!closed || closed.length === 0)
+      throw new Error("Este miembro ya tiene un período cerrado");
     return { ok: true };
   });
 

@@ -99,7 +99,8 @@ function PgciHome() {
       const { count, error } = await supabase
         .from("agreement_members")
         .select("agreement_id", { count: "exact", head: true })
-        .eq("user_id", userId!);
+        .eq("user_id", userId!)
+        .is("valid_until", null);
       if (error) throw error;
       return count ?? 0;
     },

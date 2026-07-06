@@ -243,6 +243,12 @@ export const memberUpdateSchema = z.object({
 
 export const memberRemoveSchema = z.object({
   member_id: z.string().uuid(),
+  reason: z
+    .string()
+    .trim()
+    .max(500)
+    .optional()
+    .transform((v) => (v && v.length ? v : null)),
 });
 
 export const companyAddSchema = z.object({
