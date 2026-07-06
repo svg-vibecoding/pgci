@@ -1548,3 +1548,114 @@ export const removeAgreementGroupMember = createServerFn({ method: "POST" })
     }
     return { ok: true };
   });
+
+// ---------------------------------------------------------------------------
+// Asignar un acuerdo existente a un agrupador (nuevo o existente).
+// Reglas:
+//  - Solo administradores del acuerdo pueden asignar.
+//  - Nuevo agrupador: requiere can_create_agreement_groups; trigger
+//    add_creator_as_group_admin registra al creador como admin del agrupador.
+//  - Trigger check_agreement_group_reassignment valida que el usuario sea
+//    super_admin o admin del agrupador destino.
+// ---------------------------------------------------------------------------
+
+export const assignAgreementToGroup = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => assignAgreementGroupSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertCanAdmin(context.supabase, data.agreement_id);
+
+    let groupId: string | null = null;
+    if (data.group_id) {
+      const { data: g, error } = await context.supabase
+        .from("agreement_groups")
+        .select("id")
+        .eq("id", data.group_id)
+        .maybeSingle();
+      if (error) throw new Error(`No se pudo leer el agrupador: ${error.message}`);
+      if (!g) throw new Error("Agrupador no encontrado o sin acceso.");
+      groupId = g.id as string;
+    } else if (data.group_name) {
+      const { data: canGroup } = await context.supabase.rpc(
+        "can_create_agreement_groups",
+      );
+      if (!canGroup)
+        throw new Error("No tienes permiso para crear agrupadores.");
+      const { data: newGroup, error: gErr } = await context.supabase
+        .from("agreement_groups")
+        .insert({
+          group_name: data.group_name,
+          client_id: null,
+          notes: data.group_observations ?? null,
+          created_by: context.userId,
+        })
+        .select("id")
+        .single();
+      if (gErr)
+        throw new Error(`No se pudo crear el agrupador: ${gErr.message}`);
+      groupId = newGroup.id as string;
+    }
+
+    const { error } = await context.supabase
+      .from("agreements")
+      .update({ group_id: groupId })
+      .eq("id", data.agreement_id);
+    if (error) throw new Error(`No se pudo asignar el agrupador: ${error.message}`);
+
+    return { ok: true, group_id: groupId };
+  });
+
+// Resumen del agrupador para mostrar en el detalle de un acuerdo agrupado:
+// nombre, acuerdos hermanos, clientes únicos totales y posiciones totales.
+export const getAgreementGroupSummary = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => groupIdSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: g, error: gErr } = await context.supabase
+      .from("agreement_groups")
+      .select("id, group_name")
+      .eq("id", data.group_id)
+      .maybeSingle();
+    if (gErr) throw new Error(gErr.message);
+    if (!g) throw new Error("Agrupador no encontrado");
+
+    const { data: ags, error: aErr } = await context.supabase
+      .from("agreements_with_counts")
+      .select("id, name, lines_total, status")
+      .eq("group_id", data.group_id)
+      .order("name");
+    if (aErr) throw new Error(aErr.message);
+
+    const agreementIds = (ags ?? []).map((a) => a.id as string);
+    let uniqueClients = 0;
+    if (agreementIds.length > 0) {
+      const { data: comps } = await context.supabase
+        .from("agreement_companies")
+        .select("client_id")
+        .in("agreement_id", agreementIds);
+      const set = new Set<string>();
+      for (const c of comps ?? []) {
+        const cid = (c as { client_id: string | null }).client_id;
+        if (cid) set.add(cid);
+      }
+      uniqueClients = set.size;
+    }
+
+    const totalLines = (ags ?? []).reduce(
+      (acc, a) => acc + Number((a as { lines_total: number | null }).lines_total ?? 0),
+      0,
+    );
+
+    return {
+      id: g.id as string,
+      group_name: g.group_name as string,
+      unique_clients: uniqueClients,
+      total_lines: totalLines,
+      agreements: (ags ?? []).map((a) => ({
+        id: a.id as string,
+        name: a.name as string,
+        lines_total: Number((a as { lines_total: number | null }).lines_total ?? 0),
+        status: a.status as string,
+      })),
+    };
+  });
