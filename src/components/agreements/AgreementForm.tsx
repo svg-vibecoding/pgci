@@ -171,8 +171,6 @@ export function AgreementForm({
     }
   }
 
-  const hasGroups = (groups?.length ?? 0) > 0;
-  const selectedGroup = groups?.find((g) => g.id === v.group_id);
 
   const allCompanies = activeClientsQ.data ?? [];
   const companyById = useMemo(() => {
