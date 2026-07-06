@@ -1161,13 +1161,17 @@ export const listAgreementMembers = createServerFn({ method: "GET" })
       .eq("agreement_id", data.agreement_id)
       .order("created_at");
     if (error) throw new Error(error.message);
-    const userIds = (members ?? []).map((m) => m.user_id as string);
+    const userIds = new Set<string>();
+    for (const m of members ?? []) {
+      if (m.user_id) userIds.add(m.user_id as string);
+      if (m.assigned_by) userIds.add(m.assigned_by as string);
+    }
     let profilesById = new Map<string, { full_name: string; email: string; status: string; erp_user_code: string | null }>();
-    if (userIds.length > 0) {
+    if (userIds.size > 0) {
       const { data: profs } = await context.supabase
         .from("profiles")
         .select("user_id, full_name, email, status, erp_user_code")
-        .in("user_id", userIds);
+        .in("user_id", Array.from(userIds));
       profilesById = new Map(
         (profs ?? []).map((p) => [
           p.user_id as string,
@@ -1180,11 +1184,22 @@ export const listAgreementMembers = createServerFn({ method: "GET" })
         ]),
       );
     }
-    return (members ?? []).map((m) => ({
-      ...m,
-      profile: profilesById.get(m.user_id as string) ?? null,
-    }));
+    return (members ?? [])
+      .map((m) => ({
+        ...m,
+        profile: profilesById.get(m.user_id as string) ?? null,
+        assigned_by_name:
+          (m.assigned_by && profilesById.get(m.assigned_by as string)?.full_name) ?? null,
+      }))
+      .sort((a, b) =>
+        (a.profile?.full_name ?? "").localeCompare(
+          b.profile?.full_name ?? "",
+          "es",
+          { sensitivity: "base" },
+        ),
+      );
   });
+
 
 export const addAgreementMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
