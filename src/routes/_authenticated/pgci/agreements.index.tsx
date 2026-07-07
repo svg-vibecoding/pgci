@@ -360,7 +360,7 @@ function AgreementsList() {
                         <span className="text-muted-foreground">—</span>
                       ) : companies.length === 1 ? (
                         <div className="flex items-center gap-2 min-w-0">
-                          <Chip size="small" variant="soft" color="neutral">Cliente</Chip>
+                          <Badge size="medium" color="neutral">Cliente</Badge>
                           <span className="truncate" title={first ?? undefined}>{first}</span>
                         </div>
                       ) : (
