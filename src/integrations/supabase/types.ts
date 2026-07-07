@@ -143,7 +143,7 @@ export type Database = {
       }
       agreement_costs: {
         Row: {
-          agreement_product_id: string
+          agreement_position_id: string
           cost_source: string | null
           cost_value: number | null
           created_at: string
@@ -154,7 +154,7 @@ export type Database = {
           valid_until: string | null
         }
         Insert: {
-          agreement_product_id: string
+          agreement_position_id: string
           cost_source?: string | null
           cost_value?: number | null
           created_at?: string
@@ -165,7 +165,7 @@ export type Database = {
           valid_until?: string | null
         }
         Update: {
-          agreement_product_id?: string
+          agreement_position_id?: string
           cost_source?: string | null
           cost_value?: number | null
           created_at?: string
@@ -177,10 +177,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "agreement_costs_agreement_product_id_fkey"
-            columns: ["agreement_product_id"]
+            foreignKeyName: "agreement_costs_agreement_position_id_fkey"
+            columns: ["agreement_position_id"]
             isOneToOne: false
-            referencedRelation: "agreement_products"
+            referencedRelation: "agreement_positions"
             referencedColumns: ["id"]
           },
         ]
@@ -336,9 +336,9 @@ export type Database = {
           },
         ]
       }
-      agreement_product_alternatives: {
+      agreement_position_alternatives: {
         Row: {
-          agreement_product_id: string
+          agreement_position_id: string
           created_at: string
           created_by: string | null
           id: string
@@ -346,7 +346,7 @@ export type Database = {
           product_id: string
         }
         Insert: {
-          agreement_product_id: string
+          agreement_position_id: string
           created_at?: string
           created_by?: string | null
           id?: string
@@ -354,7 +354,7 @@ export type Database = {
           product_id: string
         }
         Update: {
-          agreement_product_id?: string
+          agreement_position_id?: string
           created_at?: string
           created_by?: string | null
           id?: string
@@ -363,14 +363,14 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "agreement_product_alternatives_agreement_product_id_fkey"
-            columns: ["agreement_product_id"]
+            foreignKeyName: "agreement_position_alternatives_position_id_fkey"
+            columns: ["agreement_position_id"]
             isOneToOne: false
-            referencedRelation: "agreement_products"
+            referencedRelation: "agreement_positions"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "agreement_product_alternatives_product_id_fkey"
+            foreignKeyName: "agreement_position_alternatives_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
@@ -378,7 +378,89 @@ export type Database = {
           },
         ]
       }
-      agreement_products: {
+      agreement_position_exclusions: {
+        Row: {
+          ended_by: string | null
+          ended_reason: string | null
+          exclusion_reason: string
+          id: string
+          position_id: string
+          started_by: string | null
+          valid_from: string
+          valid_until: string | null
+        }
+        Insert: {
+          ended_by?: string | null
+          ended_reason?: string | null
+          exclusion_reason: string
+          id?: string
+          position_id: string
+          started_by?: string | null
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Update: {
+          ended_by?: string | null
+          ended_reason?: string | null
+          exclusion_reason?: string
+          id?: string
+          position_id?: string
+          started_by?: string | null
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agreement_position_exclusions_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "agreement_positions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agreement_position_price_history: {
+        Row: {
+          change_reason: string | null
+          end_date: string | null
+          id: string
+          position_id: string
+          recorded_at: string
+          recorded_by: string | null
+          sale_price: number
+          start_date: string | null
+        }
+        Insert: {
+          change_reason?: string | null
+          end_date?: string | null
+          id?: string
+          position_id: string
+          recorded_at?: string
+          recorded_by?: string | null
+          sale_price: number
+          start_date?: string | null
+        }
+        Update: {
+          change_reason?: string | null
+          end_date?: string | null
+          id?: string
+          position_id?: string
+          recorded_at?: string
+          recorded_by?: string | null
+          sale_price?: number
+          start_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agreement_position_price_history_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "agreement_positions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agreement_positions: {
         Row: {
           agreement_id: string
           client_product_id: string | null
@@ -386,15 +468,11 @@ export type Database = {
           created_at: string
           created_by: string | null
           end_date: string | null
-          excluded_at: string | null
-          excluded_by: string | null
-          excluded_reason: string | null
           id: string
           observations: string | null
           par_price: number | null
-          pending_reason: string | null
-          product_id: string | null
-          sale_price: number | null
+          product_id: string
+          sale_price: number
           start_date: string | null
           status: string
           updated_at: string
@@ -407,15 +485,11 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           end_date?: string | null
-          excluded_at?: string | null
-          excluded_by?: string | null
-          excluded_reason?: string | null
           id?: string
           observations?: string | null
           par_price?: number | null
-          pending_reason?: string | null
-          product_id?: string | null
-          sale_price?: number | null
+          product_id: string
+          sale_price: number
           start_date?: string | null
           status?: string
           updated_at?: string
@@ -428,15 +502,11 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           end_date?: string | null
-          excluded_at?: string | null
-          excluded_by?: string | null
-          excluded_reason?: string | null
           id?: string
           observations?: string | null
           par_price?: number | null
-          pending_reason?: string | null
-          product_id?: string | null
-          sale_price?: number | null
+          product_id?: string
+          sale_price?: number
           start_date?: string | null
           status?: string
           updated_at?: string
@@ -444,28 +514,28 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "agreement_products_agreement_id_fkey"
+            foreignKeyName: "agreement_positions_agreement_id_fkey"
             columns: ["agreement_id"]
             isOneToOne: false
             referencedRelation: "agreements"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "agreement_products_agreement_id_fkey"
+            foreignKeyName: "agreement_positions_agreement_id_fkey"
             columns: ["agreement_id"]
             isOneToOne: false
             referencedRelation: "agreements_with_counts"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "agreement_products_client_product_id_fkey"
+            foreignKeyName: "agreement_positions_client_product_id_fkey"
             columns: ["client_product_id"]
             isOneToOne: false
             referencedRelation: "client_products"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "agreement_products_product_id_fkey"
+            foreignKeyName: "agreement_positions_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
@@ -512,6 +582,92 @@ export type Database = {
           },
           {
             foreignKeyName: "agreement_sku_links_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agreement_transit_lines: {
+        Row: {
+          agreement_id: string
+          client_product_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          observations: string | null
+          par_price: number | null
+          pending_reason: string
+          product_id: string | null
+          sale_price: number | null
+          sku_raw: string | null
+          start_date: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          agreement_id: string
+          client_product_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          observations?: string | null
+          par_price?: number | null
+          pending_reason: string
+          product_id?: string | null
+          sale_price?: number | null
+          sku_raw?: string | null
+          start_date?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          agreement_id?: string
+          client_product_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          observations?: string | null
+          par_price?: number | null
+          pending_reason?: string
+          product_id?: string | null
+          sale_price?: number | null
+          sku_raw?: string | null
+          start_date?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agreement_transit_lines_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "agreements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreement_transit_lines_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "agreements_with_counts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreement_transit_lines_client_product_id_fkey"
+            columns: ["client_product_id"]
+            isOneToOne: false
+            referencedRelation: "client_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreement_transit_lines_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
@@ -1021,6 +1177,10 @@ export type Database = {
         Args: { p_agreement_id: string; p_payload: Json }
         Returns: Json
       }
+      exclude_agreement_position: {
+        Args: { p_position_id: string; p_reason: string }
+        Returns: undefined
+      }
       get_agreement_role: { Args: { p_agreement_id: string }; Returns: string }
       has_client_access: { Args: { p_client_id: string }; Returns: boolean }
       is_active_user: { Args: { p_user_id: string }; Returns: boolean }
@@ -1033,6 +1193,19 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: never; Returns: boolean }
+      reactivate_agreement_position: {
+        Args: { p_position_id: string; p_reason?: string }
+        Returns: undefined
+      }
+      update_agreement_line: {
+        Args: {
+          p_confirm_n_conflict?: boolean
+          p_kind: string
+          p_line_id: string
+          p_patch: Json
+        }
+        Returns: Json
+      }
       user_can_access_agreement: {
         Args: { p_agreement_id: string; p_user_id: string }
         Returns: boolean
