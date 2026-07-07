@@ -9,10 +9,12 @@ export type SumatecBadgeColor =
   | "warning"
   | "error";
 export type SumatecBadgeVariant = "soft" | "solid";
+export type SumatecBadgeSize = "small" | "medium";
 
 type BadgeProps = HTMLAttributes<HTMLSpanElement> & {
   color?: SumatecBadgeColor;
   variant?: SumatecBadgeVariant;
+  size?: SumatecBadgeSize;
   dot?: boolean;
 };
 
@@ -26,11 +28,17 @@ const palette: Record<SumatecBadgeColor, { main: string; soft: string }> = {
   error: { main: "var(--error-strong)", soft: "var(--error-soft)" },
 };
 
+const sizes: Record<SumatecBadgeSize, { height: number; padding: number; fontSize: number }> = {
+  small: { height: 20, padding: 7, fontSize: 11 },
+  medium: { height: 24, padding: 12, fontSize: 12 },
+};
+
 /** Badge — etiqueta de estado o conteo numérico. Usa `dot` para estado mínimo. */
 export function Badge({
   children,
   color = "neutral",
   variant = "soft",
+  size = "small",
   dot = false,
   style,
   ...rest
@@ -54,17 +62,18 @@ export function Badge({
   }
 
   const solid = variant === "solid";
+  const s = sizes[size];
   const badgeStyle: CSSProperties = {
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
     gap: 4,
-    minWidth: 20,
-    height: 20,
-    padding: "0 7px",
+    minWidth: s.height,
+    height: s.height,
+    padding: `0 ${s.padding}px`,
     fontFamily: "var(--font-ui)",
     fontWeight: "var(--fw-bold)",
-    fontSize: 11,
+    fontSize: s.fontSize,
     lineHeight: 1,
     letterSpacing: "0.02em",
     color: solid ? tone.soft : tone.main,

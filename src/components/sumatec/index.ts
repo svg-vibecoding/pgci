@@ -10,7 +10,11 @@
  * transversal a los productos digitales de Sumatec; PGCI es implementación).
  */
 export { Badge } from "./Badge";
-export type { SumatecBadgeColor, SumatecBadgeVariant } from "./Badge";
+export type {
+  SumatecBadgeColor,
+  SumatecBadgeSize,
+  SumatecBadgeVariant,
+} from "./Badge";
 
 export { Chip } from "./Chip";
 export type {
