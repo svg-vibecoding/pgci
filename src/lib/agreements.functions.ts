@@ -687,10 +687,7 @@ export const reactivateAgreementLine = createServerFn({ method: "POST" })
 
 export const deleteAgreementTransitLine = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    (require("./agreements.schemas") as typeof import("./agreements.schemas"))
-      .transitDeleteSchema.parse(d),
-  )
+  .inputValidator((d: unknown) => transitDeleteSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { data: t, error: tErr } = await context.supabase
       .from("agreement_transit_lines")
