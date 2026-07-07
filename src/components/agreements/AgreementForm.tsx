@@ -91,6 +91,7 @@ export function AgreementForm({
   submitting,
   submitLabel = "Crear acuerdo",
   lockClient = false,
+  hideInfoAlert = false,
   onSubmit,
   onCancel,
 }: {
@@ -103,6 +104,7 @@ export function AgreementForm({
   submitting: boolean;
   submitLabel?: string;
   lockClient?: boolean;
+  hideInfoAlert?: boolean;
   onSubmit: (v: AgreementFormValues) => Promise<void> | void;
   onCancel: () => void;
 }) {
@@ -469,15 +471,17 @@ export function AgreementForm({
       )}
 
       {/* ============ Aviso informativo ============ */}
-      <Alert variant="info">
-        <Info className="h-4 w-4" />
-        <AlertDescription>
-          Al crear el acuerdo podrás cargar su información comercial —
-          posiciones (productos y precios) — y asignar usuarios para su gestión
-          o consulta. Más adelante también podrás vincular otros clientes
-          cubiertos o agruparlo con otros acuerdos.
-        </AlertDescription>
-      </Alert>
+      {!hideInfoAlert && (
+        <Alert variant="info">
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            Al crear el acuerdo podrás cargar su información comercial —
+            posiciones (productos y precios) — y asignar usuarios para su gestión
+            o consulta. Más adelante también podrás vincular otros clientes
+            cubiertos o agruparlo con otros acuerdos.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {serverError && <p className="text-sm text-destructive">{serverError}</p>}
       <div className="flex items-center justify-end gap-2 border-t border-border pt-4">
