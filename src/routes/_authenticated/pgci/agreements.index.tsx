@@ -365,7 +365,7 @@ function AgreementsList() {
                         </div>
                       ) : (
                         <div className="flex items-center gap-2 min-w-0">
-                          <Chip size="small" variant="soft" color="accent">Múltiple</Chip>
+                          <Badge size="medium" color="accent">Múltiple</Badge>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <span className="text-sm whitespace-nowrap cursor-default">
