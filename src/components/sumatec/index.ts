@@ -12,7 +12,6 @@
 export { Badge } from "./Badge";
 export type {
   SumatecBadgeColor,
-  SumatecBadgeSize,
   SumatecBadgeVariant,
 } from "./Badge";
 

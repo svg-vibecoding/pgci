@@ -338,7 +338,7 @@ function AgreementsList() {
                         >
                           {a.name}
                         </Link>
-                        {a.scope === "unit" && <Badge size="medium" color="info">Con alcance</Badge>}
+                        {a.scope === "unit" && <Badge color="info">Con alcance</Badge>}
                       </div>
                       {a.group_name && (
                         <span
@@ -360,12 +360,12 @@ function AgreementsList() {
                         <span className="text-muted-foreground">—</span>
                       ) : companies.length === 1 ? (
                         <div className="flex items-center gap-2 min-w-0">
-                          <Badge size="medium" color="neutral">Cliente</Badge>
+                          <Badge color="neutral">Cliente</Badge>
                           <span className="truncate" title={first ?? undefined}>{first}</span>
                         </div>
                       ) : (
                         <div className="flex items-center gap-2 min-w-0">
-                          <Badge size="medium" color="accent">Múltiple</Badge>
+                          <Badge color="accent">Múltiple</Badge>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <span className="text-sm whitespace-nowrap cursor-default">
