@@ -149,6 +149,7 @@ export const lineCreateSchema = z.object({
 
 export const linePatchSchema = z.object({
   line_id: z.string().uuid(),
+  kind: z.enum(["position", "transit"]).optional().default("position"),
   patch: z
     .object({
       sku: z.string().trim().nullable().optional(),
@@ -162,6 +163,10 @@ export const linePatchSchema = z.object({
     })
     .strict(),
   confirm_n_conflict: z.boolean().optional(),
+});
+
+export const transitDeleteSchema = z.object({
+  transit_id: z.string().uuid(),
 });
 
 export const lineExcludeSchema = z.object({

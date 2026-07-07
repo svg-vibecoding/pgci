@@ -129,7 +129,7 @@ export async function detectSkuConflicts(
   const product = await resolveProductBySku(supabase, sku);
   if (!product) return [];
   const { data: lines, error } = await supabase
-    .from("agreement_products")
+    .from("agreement_positions")
     .select("id, sale_price, client_product_match_id, updated_at")
     .eq("agreement_id", agreementId)
     .eq("product_id", product.id)

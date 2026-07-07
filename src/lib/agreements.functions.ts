@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { transitDeleteSchema } from "./agreements.schemas";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   agreementCreateSchema,
@@ -365,9 +366,9 @@ export const updateAgreement = createServerFn({ method: "POST" })
     if (error) throw new Error(`No se pudo actualizar el acuerdo: ${error.message}`);
 
     if (datesChanged) {
-      // fuerza al trigger a recalcular líneas no excluidas
+      // fuerza al trigger a recalcular posiciones no excluidas
       await context.supabase
-        .from("agreement_products")
+        .from("agreement_positions")
         .update({ updated_at: new Date().toISOString() })
         .eq("agreement_id", data.agreement_id)
         .neq("status", "excluded");
@@ -399,20 +400,47 @@ export const listAgreementLines = createServerFn({ method: "GET" })
   )
   .handler(async ({ data, context }) => {
     await assertCanAccess(context.supabase, data.agreement_id);
-    const { data: lines, error } = await context.supabase
-      .from("agreement_products")
-      .select(
-        "id, agreement_id, product_id, client_product_match_id, client_product_id, sale_price, par_price, start_date, end_date, observations, status, pending_reason, excluded_at, excluded_by, excluded_reason, created_at, updated_at, products:product_id(sku, erp_description, commercial_brand, status)",
-      )
-      .eq("agreement_id", data.agreement_id)
-      .order("created_at", { ascending: false });
-    if (error) throw new Error(error.message);
 
-    const rows = lines ?? [];
+    const [positionsRes, transitRes] = await Promise.all([
+      context.supabase
+        .from("agreement_positions")
+        .select(
+          "id, agreement_id, product_id, client_product_match_id, client_product_id, sale_price, par_price, start_date, end_date, observations, status, created_at, updated_at, products:product_id(sku, erp_description, commercial_brand, status)",
+        )
+        .eq("agreement_id", data.agreement_id)
+        .order("created_at", { ascending: false }),
+      context.supabase
+        .from("agreement_transit_lines")
+        .select(
+          "id, agreement_id, product_id, client_product_id, sku_raw, description, sale_price, par_price, start_date, end_date, observations, pending_reason, created_at, updated_at, products:product_id(sku, erp_description, commercial_brand, status)",
+        )
+        .eq("agreement_id", data.agreement_id)
+        .order("created_at", { ascending: false }),
+    ]);
+    if (positionsRes.error) throw new Error(positionsRes.error.message);
+    if (transitRes.error) throw new Error(transitRes.error.message);
+    const positions = positionsRes.data ?? [];
+    const transit = transitRes.data ?? [];
 
-    // Resolver client_product_id efectivo: directo si existe, sino vía match.
-    const matchIds = rows
-      .map((r) => r.client_product_match_id)
+    // Razones de exclusión (período abierto) para posiciones excluidas.
+    const excludedIds = positions
+      .filter((p) => p.status === "excluded")
+      .map((p) => p.id as string);
+    const exclusionByPos = new Map<string, string>();
+    if (excludedIds.length > 0) {
+      const { data: excs } = await context.supabase
+        .from("agreement_position_exclusions")
+        .select("position_id, exclusion_reason")
+        .in("position_id", excludedIds)
+        .is("valid_until", null);
+      for (const e of excs ?? []) {
+        exclusionByPos.set(e.position_id as string, (e.exclusion_reason as string | null) ?? "");
+      }
+    }
+
+    // Resolver código y descripción del cliente (para posiciones y tránsito).
+    const matchIds = positions
+      .map((r) => r.client_product_match_id as string | null)
       .filter((v): v is string => !!v);
     const cpByMatch = new Map<string, string>();
     if (matchIds.length > 0) {
@@ -426,17 +454,20 @@ export const listAgreementLines = createServerFn({ method: "GET" })
       }
     }
 
-    const effectiveCp = new Map<string, string>();
-    for (const r of rows) {
-      const direct = (r as { client_product_id: string | null }).client_product_id;
-      const fromMatch = r.client_product_match_id
-        ? cpByMatch.get(r.client_product_match_id) ?? null
+    const cpIdsSet = new Set<string>();
+    for (const p of positions) {
+      const direct = p.client_product_id as string | null;
+      const fromMatch = p.client_product_match_id
+        ? cpByMatch.get(p.client_product_match_id as string) ?? null
         : null;
       const cpId = direct ?? fromMatch;
-      if (cpId) effectiveCp.set(r.id as string, cpId);
+      if (cpId) cpIdsSet.add(cpId);
     }
-
-    const cpIds = Array.from(new Set(effectiveCp.values()));
+    for (const t of transit) {
+      const cpId = t.client_product_id as string | null;
+      if (cpId) cpIdsSet.add(cpId);
+    }
+    const cpIds = Array.from(cpIdsSet);
     const codeByCp = new Map<string, string>();
     const descByCp = new Map<string, string | null>();
     if (cpIds.length > 0) {
@@ -457,14 +488,78 @@ export const listAgreementLines = createServerFn({ method: "GET" })
       }
     }
 
-    return rows.map((r) => {
-      const cpId = effectiveCp.get(r.id as string) ?? null;
+    const positionRows = positions.map((r) => {
+      const direct = r.client_product_id as string | null;
+      const fromMatch = r.client_product_match_id
+        ? cpByMatch.get(r.client_product_match_id as string) ?? null
+        : null;
+      const cpId = direct ?? fromMatch;
       return {
-        ...r,
+        kind: "position" as const,
+        id: r.id as string,
+        agreement_id: r.agreement_id as string,
+        product_id: r.product_id as string | null,
+        client_product_match_id: r.client_product_match_id as string | null,
+        client_product_id: r.client_product_id as string | null,
+        sale_price: (r.sale_price as number | null) ?? null,
+        par_price: (r.par_price as number | null) ?? null,
+        start_date: (r.start_date as string | null) ?? null,
+        end_date: (r.end_date as string | null) ?? null,
+        observations: (r.observations as string | null) ?? null,
+        status: r.status as "active" | "requires_review" | "excluded",
+        pending_reason: null as string | null,
+        exclusion_reason: exclusionByPos.get(r.id as string) ?? null,
+        created_at: r.created_at as string,
+        updated_at: r.updated_at as string,
+        products: r.products as {
+          sku: string | null;
+          erp_description: string | null;
+          commercial_brand: string | null;
+          status: string | null;
+        } | null,
         client_code: cpId ? codeByCp.get(cpId) ?? null : null,
         client_description: cpId ? descByCp.get(cpId) ?? null : null,
       };
     });
+
+    const transitRows = transit.map((r) => {
+      const cpId = r.client_product_id as string | null;
+      const products = r.products as {
+        sku: string | null;
+        erp_description: string | null;
+        commercial_brand: string | null;
+        status: string | null;
+      } | null;
+      return {
+        kind: "transit" as const,
+        id: r.id as string,
+        agreement_id: r.agreement_id as string,
+        product_id: r.product_id as string | null,
+        client_product_match_id: null as string | null,
+        client_product_id: cpId,
+        sale_price: (r.sale_price as number | null) ?? null,
+        par_price: (r.par_price as number | null) ?? null,
+        start_date: (r.start_date as string | null) ?? null,
+        end_date: (r.end_date as string | null) ?? null,
+        observations: (r.observations as string | null) ?? null,
+        status: "pending" as const,
+        pending_reason: (r.pending_reason as string | null) ?? null,
+        exclusion_reason: null as string | null,
+        created_at: r.created_at as string,
+        updated_at: r.updated_at as string,
+        products: products ?? (r.sku_raw
+          ? { sku: r.sku_raw as string, erp_description: (r.description as string | null) ?? null, commercial_brand: null, status: null }
+          : null),
+        client_code: cpId ? codeByCp.get(cpId) ?? null : null,
+        client_description: cpId
+          ? descByCp.get(cpId) ?? ((r.description as string | null) ?? null)
+          : ((r.description as string | null) ?? null),
+      };
+    });
+
+    return [...positionRows, ...transitRows].sort((a, b) =>
+      (b.created_at ?? "").localeCompare(a.created_at ?? ""),
+    );
   });
 
 export const createAgreementLine = createServerFn({ method: "POST" })
@@ -474,15 +569,12 @@ export const createAgreementLine = createServerFn({ method: "POST" })
     await assertCanAdmin(context.supabase, data.agreement_id);
     const clientId = await getAgreementClientId(context.supabase, data.agreement_id);
 
+    // Resolver producto y client_product (dentro del server fn autenticado; el
+    // resto de la resolución/promoción vive en update_agreement_line SECURITY DEFINER).
     const product = await resolveProductBySku(context.supabase, data.sku);
-    let matchId: string | null = null;
     let clientProductId: string | null = null;
     if (data.client_code) {
-      clientProductId = await ensureClientProduct(
-        context.supabase,
-        clientId,
-        data.client_code,
-      );
+      clientProductId = await ensureClientProduct(context.supabase, clientId, data.client_code);
       if (data.client_description) {
         await context.supabase.from("client_product_history").insert({
           client_product_id: clientProductId,
@@ -490,173 +582,68 @@ export const createAgreementLine = createServerFn({ method: "POST" })
           valid_from: new Date().toISOString().slice(0, 10),
         });
       }
-      if (product)
-        matchId = await ensureMatch(context.supabase, clientProductId, product.id);
     }
 
-    const { data: row, error } = await context.supabase
-      .from("agreement_products")
+    // Insertar tránsito con los datos capturados.
+    const { data: transit, error: tErr } = await context.supabase
+      .from("agreement_transit_lines")
       .insert({
         agreement_id: data.agreement_id,
         product_id: product?.id ?? null,
-        client_product_match_id: matchId,
         client_product_id: clientProductId,
-        sale_price: data.sale_price,
-        par_price: data.par_price,
-        start_date: data.start_date,
-        end_date: data.end_date,
-        observations: data.observations,
+        sku_raw: data.sku ?? null,
+        description: data.client_description ?? null,
+        sale_price: data.sale_price ?? null,
+        par_price: data.par_price ?? null,
+        start_date: data.start_date ?? null,
+        end_date: data.end_date ?? null,
+        observations: data.observations ?? null,
+        pending_reason: "",
         created_by: context.userId,
         updated_by: context.userId,
       })
       .select("id")
       .single();
-    if (error) throw new Error(`No se pudo crear la posición: ${error.message}`);
+    if (tErr) throw new Error(`No se pudo crear la línea: ${tErr.message}`);
+    const transitId = transit.id as string;
 
-    // Auto-propagación: si el SKU está vinculado en este acuerdo y se guardó
-    // un precio distinto al vigente en las posiciones vinculadas, alinear todas.
-    if (product?.id && data.sale_price != null) {
-      const { data: linkRow } = await context.supabase
-        .from("agreement_sku_links")
-        .select("id")
-        .eq("agreement_id", data.agreement_id)
-        .eq("product_id", product.id)
-        .maybeSingle();
-      if (linkRow) {
-        const { error: propErr } = await context.supabase
-          .from("agreement_products")
-          .update({ sale_price: data.sale_price, updated_by: context.userId })
-          .eq("agreement_id", data.agreement_id)
-          .eq("product_id", product.id)
-          .neq("status", "excluded");
-        if (propErr)
-          throw new Error(`Posición creada pero no se pudo propagar el precio: ${propErr.message}`);
-      }
-    }
-    return { line_id: row.id as string };
+    // Promover si califica.
+    const { data: rpcRes, error: rpcErr } = await context.supabase.rpc(
+      "update_agreement_line",
+      {
+        p_line_id: transitId,
+        p_kind: "transit",
+        p_patch: {} as unknown as import("@/integrations/supabase/types").Json,
+        p_confirm_n_conflict: true,
+      },
+    );
+    if (rpcErr) throw new Error(rpcErr.message);
+    const res = rpcRes as { promoted: boolean; position_id?: string; transit_id?: string };
+    return {
+      line_id: res.promoted ? (res.position_id as string) : transitId,
+      promoted: !!res.promoted,
+    };
   });
 
 export const updateAgreementLine = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => linePatchSchema.parse(d))
   .handler(async ({ data, context }) => {
-    const { data: line, error: lineErr } = await context.supabase
-      .from("agreement_products")
-      .select("agreement_id, product_id, sale_price, client_product_match_id")
-      .eq("id", data.line_id)
-      .single();
-    if (lineErr || !line) throw new Error("Posición no encontrada");
-    const agreementId = line.agreement_id as string;
-    await assertCanAdmin(context.supabase, agreementId);
-
-    const clientId = await getAgreementClientId(context.supabase, agreementId);
-
-    // Resolver nuevo producto si cambió el SKU
-    let newProductId: string | null | undefined = undefined;
-    if (Object.prototype.hasOwnProperty.call(data.patch, "sku")) {
-      const product = await resolveProductBySku(context.supabase, data.patch.sku ?? null);
-      newProductId = product?.id ?? null;
+    const { data: rpcRes, error } = await context.supabase.rpc("update_agreement_line", {
+      p_line_id: data.line_id,
+      p_kind: data.kind,
+      p_patch: data.patch as unknown as import("@/integrations/supabase/types").Json,
+      p_confirm_n_conflict: data.confirm_n_conflict ?? false,
+    });
+    if (error) {
+      if (error.code === "42501") throw new Error("No tienes permisos sobre este acuerdo");
+      throw new Error(`No se pudo actualizar la línea: ${error.message}`);
     }
-
-    // Resolver match si cambió el código del cliente
-    let newMatchId: string | null | undefined = undefined;
-    let newClientProductId: string | null | undefined = undefined;
-    if (Object.prototype.hasOwnProperty.call(data.patch, "client_code")) {
-      const code = data.patch.client_code ?? null;
-      if (!code) {
-        newMatchId = null;
-        newClientProductId = null;
-      } else {
-        const cpId = await ensureClientProduct(context.supabase, clientId, code);
-        newClientProductId = cpId;
-        if (data.patch.client_description) {
-          await context.supabase.from("client_product_history").insert({
-            client_product_id: cpId,
-            description: data.patch.client_description,
-            valid_from: new Date().toISOString().slice(0, 10),
-          });
-        }
-        const productId =
-          newProductId !== undefined ? newProductId : (line.product_id as string | null);
-        newMatchId = productId
-          ? await ensureMatch(context.supabase, cpId, productId)
-          : null;
-      }
-    }
-
-    // product_id efectivo tras el patch
-    const effectiveProductId =
-      newProductId !== undefined ? newProductId : (line.product_id as string | null);
-
-    // ¿SKU vinculado en este acuerdo?
-    let linked = false;
-    if (effectiveProductId) {
-      const { data: linkRow } = await context.supabase
-        .from("agreement_sku_links")
-        .select("id")
-        .eq("agreement_id", agreementId)
-        .eq("product_id", effectiveProductId)
-        .maybeSingle();
-      linked = !!linkRow;
-    }
-
-    // Detección N:1 si cambia precio y NO está vinculado
-    const priceChanged =
-      Object.prototype.hasOwnProperty.call(data.patch, "sale_price") &&
-      data.patch.sale_price !== (line.sale_price as number | null);
-    if (priceChanged && !data.confirm_n_conflict && !linked) {
-      const skuForConflict =
-        newProductId !== undefined
-          ? data.patch.sku ?? null
-          : await skuFromProductId(context.supabase, line.product_id as string | null);
-      if (skuForConflict) {
-        const conflicts = await detectSkuConflicts(
-          context.supabase,
-          agreementId,
-          skuForConflict,
-          data.line_id,
-        );
-        if (conflicts.length > 0) {
-          throw new NConflictError(conflicts);
-        }
-      }
-    }
-
-    const updatePayload: import("@/integrations/supabase/types").TablesUpdate<"agreement_products"> = {
-      ...("sale_price" in data.patch ? { sale_price: data.patch.sale_price } : {}),
-      ...("par_price" in data.patch ? { par_price: data.patch.par_price } : {}),
-      ...("start_date" in data.patch ? { start_date: data.patch.start_date } : {}),
-      ...("end_date" in data.patch ? { end_date: data.patch.end_date } : {}),
-      ...("observations" in data.patch ? { observations: data.patch.observations } : {}),
-      updated_by: context.userId,
+    return rpcRes as {
+      promoted: boolean;
+      position_id?: string;
+      transit_id?: string;
     };
-    if (newProductId !== undefined) updatePayload.product_id = newProductId;
-    if (newMatchId !== undefined) updatePayload.client_product_match_id = newMatchId;
-    if (newClientProductId !== undefined)
-      (updatePayload as { client_product_id?: string | null }).client_product_id = newClientProductId;
-
-    const { error } = await context.supabase
-      .from("agreement_products")
-      .update(updatePayload)
-      .eq("id", data.line_id);
-    if (error) throw new Error(`No se pudo actualizar la posición: ${error.message}`);
-
-    // Auto-propagación cuando el SKU está vinculado y el precio cambió
-    let propagated = 0;
-    if (linked && priceChanged && effectiveProductId && data.patch.sale_price != null) {
-      const { error: propErr, count } = await context.supabase
-        .from("agreement_products")
-        .update(
-          { sale_price: data.patch.sale_price, updated_by: context.userId },
-          { count: "exact" },
-        )
-        .eq("agreement_id", agreementId)
-        .eq("product_id", effectiveProductId)
-        .neq("status", "excluded");
-      if (propErr) throw new Error(`Precio guardado pero no se pudo propagar: ${propErr.message}`);
-      propagated = count ?? 0;
-    }
-    return { ok: true, propagated };
   });
 
 class NConflictError extends Error {
@@ -668,43 +655,18 @@ class NConflictError extends Error {
   }
 }
 
-async function skuFromProductId(
-  supabase: import("@supabase/supabase-js").SupabaseClient<
-    import("@/integrations/supabase/types").Database
-  >,
-  productId: string | null,
-) {
-  if (!productId) return null;
-  const { data } = await supabase
-    .from("products")
-    .select("sku")
-    .eq("id", productId)
-    .maybeSingle();
-  return (data?.sku as string | null) ?? null;
-}
-
 export const excludeAgreementLine = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => lineExcludeSchema.parse(d))
   .handler(async ({ data, context }) => {
-    const { data: line, error: lineErr } = await context.supabase
-      .from("agreement_products")
-      .select("agreement_id")
-      .eq("id", data.line_id)
-      .single();
-    if (lineErr || !line) throw new Error("Posición no encontrada");
-    await assertCanAdmin(context.supabase, line.agreement_id as string);
-    const { error } = await context.supabase
-      .from("agreement_products")
-      .update({
-        status: "excluded",
-        excluded_at: new Date().toISOString(),
-        excluded_by: context.userId,
-        excluded_reason: data.reason,
-        updated_by: context.userId,
-      })
-      .eq("id", data.line_id);
-    if (error) throw new Error(error.message);
+    const { error } = await context.supabase.rpc("exclude_agreement_position", {
+      p_position_id: data.line_id,
+      p_reason: data.reason ?? "",
+    });
+    if (error) {
+      if (error.code === "42501") throw new Error("No tienes permisos sobre este acuerdo");
+      throw new Error(error.message);
+    }
     return { ok: true };
   });
 
@@ -712,24 +674,33 @@ export const reactivateAgreementLine = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => lineReactivateSchema.parse(d))
   .handler(async ({ data, context }) => {
-    const { data: line, error: lineErr } = await context.supabase
-      .from("agreement_products")
+    const { error } = await context.supabase.rpc("reactivate_agreement_position", {
+      p_position_id: data.line_id,
+      p_reason: null as unknown as string,
+    });
+    if (error) {
+      if (error.code === "42501") throw new Error("No tienes permisos sobre este acuerdo");
+      throw new Error(error.message);
+    }
+    return { ok: true };
+  });
+
+export const deleteAgreementTransitLine = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => transitDeleteSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: t, error: tErr } = await context.supabase
+      .from("agreement_transit_lines")
       .select("agreement_id")
-      .eq("id", data.line_id)
-      .single();
-    if (lineErr || !line) throw new Error("Posición no encontrada");
-    await assertCanAdmin(context.supabase, line.agreement_id as string);
-    // limpiar campos de exclusión y dejar que el trigger recalcule
+      .eq("id", data.transit_id)
+      .maybeSingle();
+    if (tErr) throw new Error(tErr.message);
+    if (!t) return { ok: true };
+    await assertCanAdmin(context.supabase, t.agreement_id as string);
     const { error } = await context.supabase
-      .from("agreement_products")
-      .update({
-        status: "pending",
-        excluded_at: null,
-        excluded_by: null,
-        excluded_reason: null,
-        updated_by: context.userId,
-      })
-      .eq("id", data.line_id);
+      .from("agreement_transit_lines")
+      .delete()
+      .eq("id", data.transit_id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -846,7 +817,7 @@ export const applyPriceToSku = createServerFn({ method: "POST" })
     const product = await resolveProductBySku(context.supabase, data.sku);
     if (!product) throw new Error("SKU no encontrado en el catálogo");
     const { error, count } = await context.supabase
-      .from("agreement_products")
+      .from("agreement_positions")
       .update({ sale_price: data.new_price, updated_by: context.userId }, { count: "exact" })
       .eq("agreement_id", data.agreement_id)
       .eq("product_id", product.id)
@@ -890,7 +861,7 @@ export const linkSkuPrice = createServerFn({ method: "POST" })
       throw new Error(`No se pudo vincular el SKU: ${insErr.message}`);
     }
     const { error, count } = await context.supabase
-      .from("agreement_products")
+      .from("agreement_positions")
       .update({ sale_price: data.price, updated_by: context.userId }, { count: "exact" })
       .eq("agreement_id", data.agreement_id)
       .eq("product_id", data.product_id)

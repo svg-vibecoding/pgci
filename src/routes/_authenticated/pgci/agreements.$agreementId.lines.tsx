@@ -490,9 +490,9 @@ function AgreementLinesPage() {
                           )}
                         </div>
                       )}
-                      {isExcluded && r.excluded_reason && (
+                      {isExcluded && r.exclusion_reason && (
                         <div className="text-xs text-muted-foreground line-clamp-2">
-                          {r.excluded_reason}
+                          {r.exclusion_reason}
                         </div>
                       )}
                     </div>
