@@ -94,15 +94,12 @@ function EditAgreement() {
   ];
 
   return (
-    <CreateViewShell
-      backLink={backLink}
-      title="Editar acuerdo"
-      description="Modifica el nombre, alcance, vigencia u observaciones del acuerdo. El cliente no puede cambiarse."
-    >
+    <CreateViewShell backLink={backLink} title="Editar acuerdo">
       <AgreementForm
         initial={initial}
         clients={clientStub}
         lockClient
+        hideInfoAlert
         submitting={m.isPending}
         submitLabel="Guardar cambios"
         onSubmit={async (v) => {

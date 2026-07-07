@@ -91,6 +91,7 @@ export function AgreementForm({
   submitting,
   submitLabel = "Crear acuerdo",
   lockClient = false,
+  hideInfoAlert = false,
   onSubmit,
   onCancel,
 }: {
@@ -103,6 +104,7 @@ export function AgreementForm({
   submitting: boolean;
   submitLabel?: string;
   lockClient?: boolean;
+  hideInfoAlert?: boolean;
   onSubmit: (v: AgreementFormValues) => Promise<void> | void;
   onCancel: () => void;
 }) {
