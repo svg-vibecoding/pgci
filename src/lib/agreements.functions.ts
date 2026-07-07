@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { transitDeleteSchema } from "./agreements.schemas";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   agreementCreateSchema,
