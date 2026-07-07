@@ -819,7 +819,7 @@ export const applyPriceToSku = createServerFn({ method: "POST" })
     const product = await resolveProductBySku(context.supabase, data.sku);
     if (!product) throw new Error("SKU no encontrado en el catálogo");
     const { error, count } = await context.supabase
-      .from("agreement_products")
+      .from("agreement_positions")
       .update({ sale_price: data.new_price, updated_by: context.userId }, { count: "exact" })
       .eq("agreement_id", data.agreement_id)
       .eq("product_id", product.id)
@@ -863,7 +863,7 @@ export const linkSkuPrice = createServerFn({ method: "POST" })
       throw new Error(`No se pudo vincular el SKU: ${insErr.message}`);
     }
     const { error, count } = await context.supabase
-      .from("agreement_products")
+      .from("agreement_positions")
       .update({ sale_price: data.price, updated_by: context.userId }, { count: "exact" })
       .eq("agreement_id", data.agreement_id)
       .eq("product_id", data.product_id)

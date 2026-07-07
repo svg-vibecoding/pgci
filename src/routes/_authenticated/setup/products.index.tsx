@@ -78,7 +78,7 @@ function ProductsList() {
     queryFn: async () => {
       const rows = await fetchAllPaginated(async (from, to) => {
         const res = await supabase
-          .from("agreement_products")
+          .from("agreement_positions")
           .select("product_id")
           .range(from, to);
         return { data: res.data, error: res.error };

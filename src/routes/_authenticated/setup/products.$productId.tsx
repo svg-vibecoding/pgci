@@ -39,7 +39,7 @@ function ProductDetail() {
     queryKey: ["products", productId, "agreement-count"],
     queryFn: async () => {
       const { count, error } = await supabase
-        .from("agreement_products")
+        .from("agreement_positions")
         .select("*", { count: "exact", head: true })
         .eq("product_id", productId);
       if (error) return 0;
@@ -51,7 +51,7 @@ function ProductDetail() {
     queryKey: ["products", productId, "associated-clients"],
     queryFn: async () => {
       const { data: rows, error: err1 } = await supabase
-        .from("agreement_products")
+        .from("agreement_positions")
         .select("agreement_id")
         .eq("product_id", productId);
       if (err1 || !rows?.length) return 0;
