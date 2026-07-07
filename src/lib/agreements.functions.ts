@@ -365,9 +365,9 @@ export const updateAgreement = createServerFn({ method: "POST" })
     if (error) throw new Error(`No se pudo actualizar el acuerdo: ${error.message}`);
 
     if (datesChanged) {
-      // fuerza al trigger a recalcular líneas no excluidas
+      // fuerza al trigger a recalcular posiciones no excluidas
       await context.supabase
-        .from("agreement_products")
+        .from("agreement_positions")
         .update({ updated_at: new Date().toISOString() })
         .eq("agreement_id", data.agreement_id)
         .neq("status", "excluded");
