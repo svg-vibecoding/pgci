@@ -338,7 +338,7 @@ function AgreementsList() {
                         >
                           {a.name}
                         </Link>
-                        {a.scope === "unit" && <Chip size="small" variant="soft" color="info">Con alcance</Chip>}
+                        {a.scope === "unit" && <Badge size="medium" color="info">Con alcance</Badge>}
                       </div>
                       {a.group_name && (
                         <span
