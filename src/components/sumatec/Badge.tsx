@@ -9,10 +9,12 @@ export type SumatecBadgeColor =
   | "warning"
   | "error";
 export type SumatecBadgeVariant = "soft" | "solid";
+export type SumatecBadgeSize = "small" | "medium";
 
 type BadgeProps = HTMLAttributes<HTMLSpanElement> & {
   color?: SumatecBadgeColor;
   variant?: SumatecBadgeVariant;
+  size?: SumatecBadgeSize;
   dot?: boolean;
 };
 
