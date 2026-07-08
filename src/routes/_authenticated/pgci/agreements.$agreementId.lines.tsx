@@ -1000,7 +1000,7 @@ function AgreementLinesPage() {
                   <div className="flex items-center gap-2">
                     <Link2 className="h-4 w-4 text-muted-foreground" />
                     <h3 className="text-sm font-semibold">
-                      Sin vincular ({unlinkedGroups.length})
+                      Posiciones no vinculadas ({unlinkedGroups.length})
                     </h3>
                   </div>
                   <p className="text-xs text-muted-foreground">
