@@ -409,7 +409,56 @@ function AgreementLinesPage() {
             </button>
           )}
         </div>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant={skuConflictOnly ? "default" : "outline"}
+                size="icon"
+                onClick={() => setSkuConflictOnly((v) => !v)}
+                aria-pressed={skuConflictOnly}
+                aria-label="Detectar SKUs con precios distintos"
+                className="relative shrink-0"
+                disabled={conflictGroupsCount === 0 && !skuConflictOnly}
+              >
+                <Wand2 className="h-4 w-4" />
+                {conflictGroupsCount > 0 && !skuConflictOnly && (
+                  <span
+                    className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-semibold"
+                    style={{
+                      background: "var(--warning-strong)",
+                      color: "var(--text-on-brand)",
+                    }}
+                  >
+                    {conflictGroupsCount}
+                  </span>
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              {conflictGroupsCount === 0
+                ? "No hay SKUs con precios distintos"
+                : skuConflictOnly
+                  ? "Mostrando SKUs con precios distintos — clic para quitar"
+                  : `${conflictGroupsCount} ${conflictGroupsCount === 1 ? "SKU" : "SKUs"} con precios distintos entre posiciones`}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
+
+      {skuConflictOnly && conflictGroupsCount > 0 && (
+        <Alert variant="warning">
+          <Wand2 className="h-4 w-4" />
+          <AlertTitle>
+            {conflictGroupsCount} {conflictGroupsCount === 1 ? "SKU tiene" : "SKUs tienen"} precios distintos entre sus posiciones
+          </AlertTitle>
+          <AlertDescription>
+            Abre una posición para revisar los precios y vincular el SKU. Al vincularlo, todas sus posiciones compartirán el mismo precio automáticamente.
+          </AlertDescription>
+        </Alert>
+      )}
+
 
       {(activeCard !== "all" || q.trim()) && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
