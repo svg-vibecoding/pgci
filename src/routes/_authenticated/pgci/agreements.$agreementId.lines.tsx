@@ -256,8 +256,18 @@ function AgreementLinesPage() {
     () => (skuGroups ?? []).filter((g) => g.state === "repeated"),
     [skuGroups],
   );
+  const unifiedGroups = useMemo(
+    () => (skuGroups ?? []).filter((g) => g.state === "unified"),
+    [skuGroups],
+  );
+  // "Sin vincular" = conflict + repeated. Conflictos primero.
+  const unlinkedGroups = useMemo(
+    () => [...conflictGroups, ...repeatedGroups],
+    [conflictGroups, repeatedGroups],
+  );
   const conflictGroupsCount = conflictGroups.length;
-  const repeatedTotalCount = conflictGroups.length + repeatedGroups.length;
+  const repeatedTotalCount =
+    conflictGroups.length + repeatedGroups.length + unifiedGroups.length;
 
   const linkMut = useMutation({
     mutationFn: async (v: { product_id: string; price: number }) => {
@@ -270,6 +280,21 @@ function AgreementLinesPage() {
       toast.success(
         `SKU vinculado. Precio aplicado a ${res.updated} ${res.updated === 1 ? "posición" : "posiciones"}.`,
       );
+      invalidateAll();
+    },
+    onError: (e: Error) => toast.error(e.message),
+    onSettled: () => setLinkingProductId(null),
+  });
+
+  const unlinkMut = useMutation({
+    mutationFn: async (v: { product_id: string }) => {
+      setLinkingProductId(v.product_id);
+      return unlinkFn({
+        data: { agreement_id: agreementId, product_id: v.product_id },
+      });
+    },
+    onSuccess: () => {
+      toast.success("SKU desvinculado. Las posiciones vuelven a tener precios independientes.");
       invalidateAll();
     },
     onError: (e: Error) => toast.error(e.message),
