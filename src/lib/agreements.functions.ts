@@ -1817,10 +1817,22 @@ export const getAgreementGroupSummary = createServerFn({ method: "GET" })
       0,
     );
 
+    const { data: gmems } = await context.supabase
+      .from("agreement_group_members")
+      .select("user_id")
+      .eq("agreement_group_id", data.group_id)
+      .is("valid_until", null);
+    const userSet = new Set<string>();
+    for (const m of gmems ?? []) {
+      const uid = (m as { user_id: string | null }).user_id;
+      if (uid) userSet.add(uid);
+    }
+
     return {
       id: g.id as string,
       group_name: g.group_name as string,
       unique_clients: uniqueClients,
+      unique_users: userSet.size,
       total_lines: totalLines,
       agreements: (ags ?? []).map((a) => ({
         id: a.id as string,
