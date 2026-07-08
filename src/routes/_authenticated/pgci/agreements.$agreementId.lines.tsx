@@ -945,36 +945,18 @@ function AgreementLinesPage() {
                     Estos SKUs tienen precios distintos entre sus posiciones. Revísalos y
                     vincula el SKU al precio correcto.
                   </p>
-                  <ul className="divide-y divide-border rounded-lg border border-border">
+                  <ul className="space-y-2">
                     {conflictGroups.map((g) => (
-                      <li
+                      <SkuGroupCard
                         key={g.product_id}
-                        className="flex items-start justify-between gap-3 p-3"
-                        style={{ background: "var(--warning-subtle)" }}
-                      >
-                        <div className="min-w-0 flex-1">
-                          <div className="font-mono text-sm">{g.sku ?? "—"}</div>
-                          <div className="mt-0.5 text-xs text-muted-foreground">
-                            {g.position_ids.length} posiciones · precios:{" "}
-                            <span className="font-mono">
-                              {g.prices
-                                .slice()
-                                .sort((a, b) => a - b)
-                                .map((p) => fmtMoney(p))
-                                .join(" · ")}
-                            </span>
-                          </div>
-                        </div>
-                        {canAdmin && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => openEditForLine(g.position_ids[0])}
-                          >
-                            Revisar
-                          </Button>
-                        )}
-                      </li>
+                        group={g}
+                        variant="conflict"
+                        defaultOpen
+                        canAdmin={canAdmin}
+                        onAction={() => openEditForLine(g.position_ids[0])}
+                        actionLabel="Revisar"
+                        fmtMoney={fmtMoney}
+                      />
                     ))}
                   </ul>
                 </section>
@@ -992,36 +974,25 @@ function AgreementLinesPage() {
                     Puedes vincularlos ahora de forma preventiva: cuando cambie el precio,
                     cambiará en todas sus posiciones a la vez.
                   </p>
-                  <ul className="divide-y divide-border rounded-lg border border-border">
+                  <ul className="space-y-2">
                     {repeatedGroups.map((g) => {
                       const price = g.prices[0];
                       const busy = linkingProductId === g.product_id;
                       return (
-                        <li
+                        <SkuGroupCard
                           key={g.product_id}
-                          className="flex items-start justify-between gap-3 p-3"
-                        >
-                          <div className="min-w-0 flex-1">
-                            <div className="font-mono text-sm">{g.sku ?? "—"}</div>
-                            <div className="mt-0.5 text-xs text-muted-foreground">
-                              {g.position_ids.length} posiciones · precio común:{" "}
-                              <span className="font-mono">{fmtMoney(price ?? null)}</span>
-                            </div>
-                          </div>
-                          {canAdmin && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              disabled={busy || price == null}
-                              onClick={() =>
-                                price != null &&
-                                linkMut.mutate({ product_id: g.product_id, price })
-                              }
-                            >
-                              {busy ? "Vinculando…" : "Vincular"}
-                            </Button>
-                          )}
-                        </li>
+                          group={g}
+                          variant="repeated"
+                          defaultOpen={false}
+                          canAdmin={canAdmin}
+                          onAction={() =>
+                            price != null &&
+                            linkMut.mutate({ product_id: g.product_id, price })
+                          }
+                          actionLabel={busy ? "Vinculando…" : "Vincular"}
+                          actionDisabled={busy || price == null}
+                          fmtMoney={fmtMoney}
+                        />
                       );
                     })}
                   </ul>
