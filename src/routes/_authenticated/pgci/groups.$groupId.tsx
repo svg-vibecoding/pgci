@@ -194,6 +194,11 @@ function GroupDetail() {
         )}
       </header>
 
+      {/* El agrupador */}
+      <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+        El agrupador
+      </h3>
+
       {/* Resumen — mismo card que "Información comercial / Posiciones en el acuerdo" */}
       <Card>
         <CardHeader>
@@ -214,7 +219,6 @@ function GroupDetail() {
           </div>
         </CardContent>
       </Card>
-
 
       {/* Información general */}
       <Card>
@@ -257,139 +261,144 @@ function GroupDetail() {
         </CardContent>
       </Card>
 
-
-      {/* Acuerdos */}
-      <Card id="agreements" className="scroll-mt-20">
-
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="text-base">Acuerdos</CardTitle>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Acuerdos que pertenecen a este agrupador.
-            </p>
-          </div>
-          {canAdmin && (
-            <Button size="sm" variant="outline" onClick={() => setAddOpen(true)}>
-              <Plus className="mr-1.5 h-4 w-4" /> Agregar acuerdo
-            </Button>
-          )}
-        </CardHeader>
-        <CardContent>
-          <TooltipProvider delayDuration={150}>
-            {(agreements ?? []).length === 0 ? (
-              <div className="flex flex-col items-center gap-2 rounded-md border border-dashed border-border py-8 text-center text-sm text-muted-foreground">
-                <FileText className="h-6 w-6" />
-                Este agrupador aún no contiene acuerdos.
-              </div>
-            ) : (
-              <div className="rounded-lg border border-border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Acuerdo</TableHead>
-                      <TableHead>Cobertura</TableHead>
-                      <TableHead className="w-[120px] whitespace-nowrap">Posiciones</TableHead>
-                      <TableHead className="w-[96px] whitespace-nowrap">Estado</TableHead>
-                      <TableHead className="w-[140px] whitespace-nowrap text-right">
-                        <span className="sr-only">Acciones</span>
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {(agreements ?? []).map((a) => {
-                      const first = a.companies[0] ?? null;
-                      return (
-                        <TableRow key={a.id}>
-                          <TableCell className="font-medium min-w-0">
-                            <Link
-                              to="/pgci/agreements/$agreementId"
-                              params={{ agreementId: a.id }}
-                              className="hover:underline"
-                            >
-                              {a.name}
-                            </Link>
-                          </TableCell>
-                          <TableCell className="min-w-0">
-                            {a.companies.length === 0 ? (
-                              <span className="text-muted-foreground">—</span>
-                            ) : a.companies.length === 1 ? (
-                              <div className="flex items-center gap-2 min-w-0">
-                                <Badge color="neutral">Cliente</Badge>
-                                <span
-                                  className="truncate"
-                                  title={first ?? undefined}
-                                >
-                                  {first}
-                                </span>
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-2 min-w-0">
-                                <Badge color="accent">Múltiple</Badge>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span className="text-sm whitespace-nowrap cursor-default">
-                                      {a.companies.length} Clientes…
-                                    </span>
-                                  </TooltipTrigger>
-                                  <TooltipContent className="max-w-xs">
-                                    <ul className="space-y-0.5">
-                                      {a.companies.map((c) => (
-                                        <li key={c}>{c}</li>
-                                      ))}
-                                    </ul>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </div>
-                            )}
-                          </TableCell>
-                          <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
-                            {a.lines_total}
-                          </TableCell>
-                          <TableCell className="whitespace-nowrap">
-                            <StatusBadge
-                              status={a.status === "active" ? "active" : "neutral"}
-                              label={a.status === "active" ? "Activo" : "Inactivo"}
-                            />
-                          </TableCell>
-                          <TableCell className="whitespace-nowrap text-right">
-                            <div className="inline-flex items-center gap-1">
-                              <Button asChild size="sm" variant="ghost">
-                                <Link
-                                  to="/pgci/agreements/$agreementId"
-                                  params={{ agreementId: a.id }}
-                                >
-                                  Ver <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
-                                </Link>
-                              </Button>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    aria-label="Sacar del agrupador"
-                                    onClick={() => setRemoveAgId(a.id)}
-                                  >
-                                    <Unlink className="h-4 w-4 text-destructive" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Sacar del agrupador</TooltipContent>
-                              </Tooltip>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </TooltipProvider>
-        </CardContent>
-      </Card>
-
       <AgreementGroupMembersSection groupId={groupId} canAdmin={canAdmin} />
 
-      <MembersByAgreementSection groupId={groupId} />
+      {/* Contenido del agrupador */}
+      <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+        Contenido del agrupador
+      </h3>
+
+      <div className="bg-surface-sunken rounded-2xl p-6 md:p-8 space-y-6">
+        {/* Acuerdos */}
+        <Card id="agreements" className="scroll-mt-20">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-base">Acuerdos</CardTitle>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Acuerdos que pertenecen a este agrupador.
+              </p>
+            </div>
+            {canAdmin && (
+              <Button size="sm" variant="outline" onClick={() => setAddOpen(true)}>
+                <Plus className="mr-1.5 h-4 w-4" /> Agregar acuerdo
+              </Button>
+            )}
+          </CardHeader>
+          <CardContent>
+            <TooltipProvider delayDuration={150}>
+              {(agreements ?? []).length === 0 ? (
+                <div className="flex flex-col items-center gap-2 rounded-md border border-dashed border-border py-8 text-center text-sm text-muted-foreground">
+                  <FileText className="h-6 w-6" />
+                  Este agrupador aún no contiene acuerdos.
+                </div>
+              ) : (
+                <div className="rounded-lg border border-border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Acuerdo</TableHead>
+                        <TableHead>Cobertura</TableHead>
+                        <TableHead className="w-[120px] whitespace-nowrap">Posiciones</TableHead>
+                        <TableHead className="w-[96px] whitespace-nowrap">Estado</TableHead>
+                        <TableHead className="w-[140px] whitespace-nowrap text-right">
+                          <span className="sr-only">Acciones</span>
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {(agreements ?? []).map((a) => {
+                        const first = a.companies[0] ?? null;
+                        return (
+                          <TableRow key={a.id}>
+                            <TableCell className="font-medium min-w-0">
+                              <Link
+                                to="/pgci/agreements/$agreementId"
+                                params={{ agreementId: a.id }}
+                                className="hover:underline"
+                              >
+                                {a.name}
+                              </Link>
+                            </TableCell>
+                            <TableCell className="min-w-0">
+                              {a.companies.length === 0 ? (
+                                <span className="text-muted-foreground">—</span>
+                              ) : a.companies.length === 1 ? (
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <Badge color="neutral">Cliente</Badge>
+                                  <span
+                                    className="truncate"
+                                    title={first ?? undefined}
+                                  >
+                                    {first}
+                                  </span>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <Badge color="accent">Múltiple</Badge>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="text-sm whitespace-nowrap cursor-default">
+                                        {a.companies.length} Clientes…
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="max-w-xs">
+                                      <ul className="space-y-0.5">
+                                        {a.companies.map((c) => (
+                                          <li key={c}>{c}</li>
+                                        ))}
+                                      </ul>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </div>
+                              )}
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
+                              {a.lines_total}
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap">
+                              <StatusBadge
+                                status={a.status === "active" ? "active" : "neutral"}
+                                label={a.status === "active" ? "Activo" : "Inactivo"}
+                              />
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap text-right">
+                              <div className="inline-flex items-center gap-1">
+                                <Button asChild size="sm" variant="ghost">
+                                  <Link
+                                    to="/pgci/agreements/$agreementId"
+                                    params={{ agreementId: a.id }}
+                                  >
+                                    Ver <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
+                                  </Link>
+                                </Button>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      aria-label="Sacar del agrupador"
+                                      onClick={() => setRemoveAgId(a.id)}
+                                    >
+                                      <Unlink className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Sacar del agrupador</TooltipContent>
+                                </Tooltip>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </TooltipProvider>
+          </CardContent>
+        </Card>
+
+        <MembersByAgreementSection groupId={groupId} />
+      </div>
 
 
       <RenameGroupDialog
