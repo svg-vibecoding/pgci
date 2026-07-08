@@ -53,11 +53,20 @@ import {
   excludeAgreementLine,
   reactivateAgreementLine,
   deleteAgreementTransitLine,
+  listAgreementSkuGroups,
 } from "@/lib/agreements.functions";
 import { exportAgreementLines } from "@/lib/agreement-export";
 import { PENDING_REASON_LABELS, type ImportPendingReason } from "@/lib/agreement-import";
 import { LineEditDialog, type LineEditValues } from "@/components/agreements/LineEditDialog";
 import { AgreementImportWizard } from "@/components/agreements/AgreementImportWizard";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { formatMoneyCOP } from "@/lib/format";
+
 
 export const Route = createFileRoute(
   "/_authenticated/pgci/agreements/$agreementId/lines",
