@@ -992,6 +992,7 @@ function AgreementLinesPage() {
                                   ? "Vinculando…"
                                   : "Vincular"
                             }
+                            actionType={g.state === "conflict" ? "review" : "link"}
                             actionDisabled={g.state === "repeated" && (busy || !canLink)}
                             fmtMoney={fmtMoney}
                           />
