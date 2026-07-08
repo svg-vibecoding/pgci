@@ -917,6 +917,142 @@ function AgreementLinesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={skuModalOpen} onOpenChange={setSkuModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>SKUs repetidos en el acuerdo</DialogTitle>
+            <DialogDescription>
+              Un mismo SKU aparece en varias posiciones (una por código de cliente).
+              Vincularlo unifica su precio y mantiene todas las posiciones sincronizadas.
+            </DialogDescription>
+          </DialogHeader>
+
+          {repeatedTotalCount === 0 ? (
+            <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+              No hay SKUs repetidos en este acuerdo.
+            </div>
+          ) : (
+            <div className="max-h-[60vh] space-y-6 overflow-y-auto pr-1">
+              {conflictGroups.length > 0 && (
+                <section className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-[color:var(--warning-strong)]" />
+                    <h3 className="text-sm font-semibold">
+                      Requieren decisión ({conflictGroups.length})
+                    </h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Estos SKUs tienen precios distintos entre sus posiciones. Revísalos y
+                    vincula el SKU al precio correcto.
+                  </p>
+                  <ul className="divide-y divide-border rounded-lg border border-border">
+                    {conflictGroups.map((g) => (
+                      <li
+                        key={g.product_id}
+                        className="flex items-start justify-between gap-3 p-3"
+                        style={{ background: "var(--warning-subtle)" }}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="font-mono text-sm">{g.sku ?? "—"}</div>
+                          <div className="mt-0.5 text-xs text-muted-foreground">
+                            {g.position_ids.length} posiciones · precios:{" "}
+                            <span className="font-mono">
+                              {g.prices
+                                .slice()
+                                .sort((a, b) => a - b)
+                                .map((p) => fmtMoney(p))
+                                .join(" · ")}
+                            </span>
+                          </div>
+                        </div>
+                        {canAdmin && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => openEditForLine(g.position_ids[0])}
+                          >
+                            Revisar
+                          </Button>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {repeatedGroups.length > 0 && (
+                <section className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Link2 className="h-4 w-4 text-muted-foreground" />
+                    <h3 className="text-sm font-semibold">
+                      Repetidos al mismo precio ({repeatedGroups.length})
+                    </h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Puedes vincularlos ahora de forma preventiva: cuando cambie el precio,
+                    cambiará en todas sus posiciones a la vez.
+                  </p>
+                  <ul className="divide-y divide-border rounded-lg border border-border">
+                    {repeatedGroups.map((g) => {
+                      const price = g.prices[0];
+                      const busy = linkingProductId === g.product_id;
+                      return (
+                        <li
+                          key={g.product_id}
+                          className="flex items-start justify-between gap-3 p-3"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="font-mono text-sm">{g.sku ?? "—"}</div>
+                            <div className="mt-0.5 text-xs text-muted-foreground">
+                              {g.position_ids.length} posiciones · precio común:{" "}
+                              <span className="font-mono">{fmtMoney(price ?? null)}</span>
+                            </div>
+                          </div>
+                          {canAdmin && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={busy || price == null}
+                              onClick={() =>
+                                price != null &&
+                                linkMut.mutate({ product_id: g.product_id, price })
+                              }
+                            >
+                              {busy ? "Vinculando…" : "Vincular"}
+                            </Button>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </section>
+              )}
+            </div>
+          )}
+
+          <DialogFooter className="sm:justify-between">
+            {conflictGroupsCount > 0 ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSkuModalOpen(false);
+                  setSkuConflictOnly(true);
+                }}
+              >
+                Ver conflictos en la tabla
+              </Button>
+            ) : (
+              <span />
+            )}
+            <Button type="button" variant="outline" onClick={() => setSkuModalOpen(false)}>
+              Cerrar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
