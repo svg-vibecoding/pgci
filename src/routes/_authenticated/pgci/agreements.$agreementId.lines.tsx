@@ -271,6 +271,20 @@ function AgreementLinesPage() {
   const repeatedTotalCount =
     conflictGroups.length + repeatedGroups.length + unifiedGroups.length;
 
+  const conflictPositionCount = useMemo(
+    () => conflictGroups.reduce((sum, g) => sum + (g.position_ids.length ?? 0), 0),
+    [conflictGroups],
+  );
+  const unlinkedPositionCount = useMemo(
+    () => unlinkedGroups.reduce((sum, g) => sum + (g.position_ids.length ?? 0), 0),
+    [unlinkedGroups],
+  );
+  const unifiedPositionCount = useMemo(
+    () => unifiedGroups.reduce((sum, g) => sum + (g.position_ids.length ?? 0), 0),
+    [unifiedGroups],
+  );
+
+
   const linkMut = useMutation({
     mutationFn: async (v: { product_id: string; price: number }) => {
       setLinkingProductId(v.product_id);
