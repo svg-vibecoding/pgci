@@ -1824,20 +1824,6 @@ export const getAgreementGroupSummary = createServerFn({ method: "GET" })
 // Vista dedicada del agrupador
 // ---------------------------------------------------------------------------
 
-async function loadCompaniesByAgreement(
-  supabase: Awaited<ReturnType<typeof requireSupabaseAuth>> extends never
-    ? never
-    : Parameters<typeof getAgreementGroupSummary>[0] extends never
-      ? never
-      : never,
-  _agreementIds: string[],
-): Promise<Map<string, string[]>> {
-  // placeholder for typing; real function below uses context.supabase directly.
-  void supabase;
-  void _agreementIds;
-  return new Map();
-}
-void loadCompaniesByAgreement;
 
 export const getAgreementGroupRollup = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
