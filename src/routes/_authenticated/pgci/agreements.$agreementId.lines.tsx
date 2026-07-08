@@ -405,7 +405,7 @@ function AgreementLinesPage() {
         </div>
       )}
 
-      {!loadingLines && activeCard === "transit" && filtered.length === 0 ? (
+      {!loadingLines && activeCard === "transit" && !q.trim() && filtered.length === 0 ? (
         <Alert variant="info">
           <Info className="h-4 w-4" />
           <AlertTitle>No hay información en tránsito</AlertTitle>
