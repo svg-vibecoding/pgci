@@ -530,7 +530,7 @@ function AgreementLinesPage() {
         <Alert variant="info">
           <Info className="h-4 w-4" />
           <AlertTitle>
-            {conflictGroupsCount} {conflictGroupsCount === 1 ? "SKU con" : "SKUs con"} precios (2) entre sus posiciones
+            {conflictGroupsCount} {conflictGroupsCount === 1 ? "SKU con" : "SKUs con"} precios distintos entre sus posiciones
           </AlertTitle>
           <AlertDescription>
             Al vincular un SKU, sus posiciones comparten el mismo precio automáticamente.
