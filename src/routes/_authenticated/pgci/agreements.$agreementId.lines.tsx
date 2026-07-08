@@ -141,7 +141,9 @@ function AgreementLinesPage() {
 
 
   const [activeCard, setActiveCard] = useState<LineCardKey>("all");
+  const [skuConflictOnly, setSkuConflictOnly] = useState(false);
   const [q, setQ] = useState("");
+
   const [importOpen, setImportOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editInitial, setEditInitial] = useState<Partial<LineEditValues> | null>(null);
