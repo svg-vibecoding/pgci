@@ -500,7 +500,7 @@ function AgreementLinesPage() {
                 variant="outline"
                 size="icon"
                 onClick={() => setSkuModalOpen(true)}
-                aria-label="Unificación de Precios"
+                aria-label="Códigos en múltiples posiciones"
                 className="relative shrink-0"
                 disabled={repeatedTotalCount === 0}
               >
@@ -983,9 +983,9 @@ function AgreementLinesPage() {
       <Dialog open={skuModalOpen} onOpenChange={setSkuModalOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Unificación de Precios</DialogTitle>
+            <DialogTitle>Códigos en múltiples posiciones</DialogTitle>
             <DialogDescription>
-              Códigos Jaivaná que aparecen en más de una posición del acuerdo. Vincular un código hace que sus posiciones compartan el mismo precio; desvincularlo las vuelve independientes.
+              Códigos Jaivaná que participan en más de una posición en el acuerdo. Las posiciones pueden vincularse para compartir un mismo precio; las no vinculadas se gestionan de forma independiente.
             </DialogDescription>
           </DialogHeader>
 
