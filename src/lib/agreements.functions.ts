@@ -1819,3 +1819,286 @@ export const getAgreementGroupSummary = createServerFn({ method: "GET" })
       })),
     };
   });
+
+// ---------------------------------------------------------------------------
+// Vista dedicada del agrupador
+// ---------------------------------------------------------------------------
+
+async function loadCompaniesByAgreement(
+  supabase: Awaited<ReturnType<typeof requireSupabaseAuth>> extends never
+    ? never
+    : Parameters<typeof getAgreementGroupSummary>[0] extends never
+      ? never
+      : never,
+  _agreementIds: string[],
+): Promise<Map<string, string[]>> {
+  // placeholder for typing; real function below uses context.supabase directly.
+  void supabase;
+  void _agreementIds;
+  return new Map();
+}
+void loadCompaniesByAgreement;
+
+export const getAgreementGroupRollup = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => groupIdSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: ags, error: aErr } = await context.supabase
+      .from("agreements_with_counts")
+      .select("id, lines_total, start_date, end_date")
+      .eq("group_id", data.group_id);
+    if (aErr) throw new Error(aErr.message);
+    const rows = ags ?? [];
+    const agreementIds = rows.map((a) => a.id as string);
+
+    let uniqueClients = 0;
+    let uniqueUsers = 0;
+    if (agreementIds.length > 0) {
+      const [{ data: comps, error: cErr }, { data: mems, error: mErr }] =
+        await Promise.all([
+          context.supabase
+            .from("agreement_companies")
+            .select("client_id")
+            .in("agreement_id", agreementIds)
+            .is("valid_until", null),
+          context.supabase
+            .from("agreement_members")
+            .select("user_id")
+            .in("agreement_id", agreementIds)
+            .is("valid_until", null),
+        ]);
+      if (cErr) throw new Error(cErr.message);
+      if (mErr) throw new Error(mErr.message);
+      const cset = new Set<string>();
+      for (const c of comps ?? []) {
+        const cid = (c as { client_id: string | null }).client_id;
+        if (cid) cset.add(cid);
+      }
+      uniqueClients = cset.size;
+      const uset = new Set<string>();
+      for (const m of mems ?? []) {
+        const uid = (m as { user_id: string | null }).user_id;
+        if (uid) uset.add(uid);
+      }
+      uniqueUsers = uset.size;
+    }
+
+    let minStart: string | null = null;
+    let maxEnd: string | null = null;
+    for (const r of rows) {
+      const s = (r as { start_date: string | null }).start_date;
+      const e = (r as { end_date: string | null }).end_date;
+      if (s && (!minStart || s < minStart)) minStart = s;
+      if (e && (!maxEnd || e > maxEnd)) maxEnd = e;
+    }
+
+    const totalLines = rows.reduce(
+      (acc, a) => acc + Number((a as { lines_total: number | null }).lines_total ?? 0),
+      0,
+    );
+
+    return {
+      agreements_count: rows.length,
+      unique_clients: uniqueClients,
+      unique_users: uniqueUsers,
+      total_lines: totalLines,
+      min_start: minStart,
+      max_end: maxEnd,
+    };
+  });
+
+export const listAgreementsInGroup = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => groupIdSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: ags, error } = await context.supabase
+      .from("agreements_with_counts")
+      .select("id, name, status, lines_total")
+      .eq("group_id", data.group_id)
+      .order("name");
+    if (error) throw new Error(error.message);
+    const rows = ags ?? [];
+    const ids = rows.map((r) => r.id as string).filter(Boolean);
+    const byAgreement = new Map<string, string[]>();
+    if (ids.length > 0) {
+      const { data: comps, error: cErr } = await context.supabase
+        .from("agreement_companies")
+        .select("agreement_id, clients:client_id(commercial_name, legal_name)")
+        .in("agreement_id", ids)
+        .is("valid_until", null);
+      if (cErr) throw new Error(cErr.message);
+      for (const c of comps ?? []) {
+        const client = (c as { clients: { commercial_name: string | null; legal_name: string | null } | null }).clients;
+        const name = client?.commercial_name?.trim() || client?.legal_name || "—";
+        const aid = (c as { agreement_id: string }).agreement_id;
+        const arr = byAgreement.get(aid) ?? [];
+        arr.push(name);
+        byAgreement.set(aid, arr);
+      }
+    }
+    return rows.map((r) => ({
+      id: r.id as string,
+      name: r.name as string,
+      status: r.status as string,
+      lines_total: Number((r as { lines_total: number | null }).lines_total ?? 0),
+      companies: (byAgreement.get(r.id as string) ?? []).sort((a, b) =>
+        a.localeCompare(b, "es", { sensitivity: "base" }),
+      ),
+    }));
+  });
+
+// Acuerdos elegibles para meter en este agrupador:
+// - group_id IS NULL (aún no pertenecen a ninguno)
+// - el usuario actual es agreement_admin activo (o super_admin)
+export const listEligibleAgreementsForGroup = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: isSuper } = await context.supabase.rpc("is_super_admin");
+    let agreementIds: string[] | null = null;
+    if (!isSuper) {
+      const { data: mems, error: mErr } = await context.supabase
+        .from("agreement_members")
+        .select("agreement_id")
+        .eq("user_id", context.userId)
+        .eq("role", "agreement_admin")
+        .is("valid_until", null);
+      if (mErr) throw new Error(mErr.message);
+      agreementIds = (mems ?? [])
+        .map((m) => m.agreement_id as string)
+        .filter(Boolean);
+      if (agreementIds.length === 0) return [];
+    }
+
+    let q = context.supabase
+      .from("agreements_with_counts")
+      .select("id, name, status, lines_total, group_id")
+      .is("group_id", null)
+      .order("name");
+    if (agreementIds) q = q.in("id", agreementIds);
+
+    const { data: ags, error } = await q;
+    if (error) throw new Error(error.message);
+    const rows = ags ?? [];
+    const ids = rows.map((r) => r.id as string).filter(Boolean);
+    const byAgreement = new Map<string, string[]>();
+    if (ids.length > 0) {
+      const { data: comps } = await context.supabase
+        .from("agreement_companies")
+        .select("agreement_id, clients:client_id(commercial_name, legal_name)")
+        .in("agreement_id", ids)
+        .is("valid_until", null);
+      for (const c of comps ?? []) {
+        const client = (c as { clients: { commercial_name: string | null; legal_name: string | null } | null }).clients;
+        const name = client?.commercial_name?.trim() || client?.legal_name || "—";
+        const aid = (c as { agreement_id: string }).agreement_id;
+        const arr = byAgreement.get(aid) ?? [];
+        arr.push(name);
+        byAgreement.set(aid, arr);
+      }
+    }
+    return rows.map((r) => ({
+      id: r.id as string,
+      name: r.name as string,
+      status: r.status as string,
+      lines_total: Number((r as { lines_total: number | null }).lines_total ?? 0),
+      companies: (byAgreement.get(r.id as string) ?? []).sort((a, b) =>
+        a.localeCompare(b, "es", { sensitivity: "base" }),
+      ),
+    }));
+  });
+
+const addAgreementsToGroupSchema = z.object({
+  group_id: z.string().uuid(),
+  agreement_ids: z.array(z.string().uuid()).min(1),
+});
+
+export const addAgreementsToGroup = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => addAgreementsToGroupSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    // Verificar cada acuerdo: user debe ser admin y group_id debe ser null.
+    for (const aid of data.agreement_ids) {
+      await assertCanAdmin(context.supabase, aid);
+      const { data: row, error } = await context.supabase
+        .from("agreements")
+        .select("group_id")
+        .eq("id", aid)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      if (!row) throw new Error("Acuerdo no encontrado");
+      if (row.group_id !== null)
+        throw new Error("Uno de los acuerdos ya pertenece a un agrupador");
+    }
+    // Trigger check_agreement_group_reassignment valida admin del grupo destino.
+    const { error } = await context.supabase
+      .from("agreements")
+      .update({ group_id: data.group_id })
+      .in("id", data.agreement_ids);
+    if (error) throw new Error(error.message);
+    return { ok: true, count: data.agreement_ids.length };
+  });
+
+const removeAgreementFromGroupSchema = z.object({
+  agreement_id: z.string().uuid(),
+});
+
+export const removeAgreementFromGroup = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => removeAgreementFromGroupSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertCanAdmin(context.supabase, data.agreement_id);
+    const { error } = await context.supabase
+      .from("agreements")
+      .update({ group_id: null })
+      .eq("id", data.agreement_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+const updateAgreementGroupSchema = z.object({
+  group_id: z.string().uuid(),
+  group_name: z.string().trim().min(1).max(160).optional(),
+  notes: z
+    .string()
+    .max(4000)
+    .nullable()
+    .optional()
+    .transform((v) => (v === undefined ? undefined : v && v.trim().length ? v : null)),
+});
+
+export const updateAgreementGroup = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => updateAgreementGroupSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const patch: { group_name?: string; notes?: string | null } = {};
+    if (data.group_name !== undefined) patch.group_name = data.group_name;
+    if (data.notes !== undefined) patch.notes = data.notes;
+    if (Object.keys(patch).length === 0) return { ok: true };
+    const { error } = await context.supabase
+      .from("agreement_groups")
+      .update(patch)
+      .eq("id", data.group_id);
+    if (error) {
+      if (error.message.toLowerCase().includes("row-level"))
+        throw new Error("No tienes permisos para editar el agrupador");
+      throw new Error(error.message);
+    }
+    return { ok: true };
+  });
+
+export const deleteAgreementGroup = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => groupIdSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    // ON DELETE SET NULL en agreements.group_id.
+    const { error } = await context.supabase
+      .from("agreement_groups")
+      .delete()
+      .eq("id", data.group_id);
+    if (error) {
+      if (error.message.toLowerCase().includes("row-level"))
+        throw new Error("No tienes permisos para borrar el agrupador");
+      throw new Error(error.message);
+    }
+    return { ok: true };
+  });
