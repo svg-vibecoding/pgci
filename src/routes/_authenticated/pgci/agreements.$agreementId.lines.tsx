@@ -55,6 +55,7 @@ import {
   deleteAgreementTransitLine,
   listAgreementSkuGroups,
   linkSkuPrice,
+  unlinkSkuPrice,
 } from "@/lib/agreements.functions";
 import {
   Dialog,
@@ -131,6 +132,7 @@ function AgreementLinesPage() {
   const deleteTransitFn = useServerFn(deleteAgreementTransitLine);
   const skuGroupsFn = useServerFn(listAgreementSkuGroups);
   const linkFn = useServerFn(linkSkuPrice);
+  const unlinkFn = useServerFn(unlinkSkuPrice);
 
   const { data: agreement, isLoading: loadingAgreement } = useQuery({
     queryKey: ["agreements", "detail", agreementId],
@@ -254,8 +256,18 @@ function AgreementLinesPage() {
     () => (skuGroups ?? []).filter((g) => g.state === "repeated"),
     [skuGroups],
   );
+  const unifiedGroups = useMemo(
+    () => (skuGroups ?? []).filter((g) => g.state === "unified"),
+    [skuGroups],
+  );
+  // "Sin vincular" = conflict + repeated. Conflictos primero.
+  const unlinkedGroups = useMemo(
+    () => [...conflictGroups, ...repeatedGroups],
+    [conflictGroups, repeatedGroups],
+  );
   const conflictGroupsCount = conflictGroups.length;
-  const repeatedTotalCount = conflictGroups.length + repeatedGroups.length;
+  const repeatedTotalCount =
+    conflictGroups.length + repeatedGroups.length + unifiedGroups.length;
 
   const linkMut = useMutation({
     mutationFn: async (v: { product_id: string; price: number }) => {
@@ -268,6 +280,21 @@ function AgreementLinesPage() {
       toast.success(
         `SKU vinculado. Precio aplicado a ${res.updated} ${res.updated === 1 ? "posición" : "posiciones"}.`,
       );
+      invalidateAll();
+    },
+    onError: (e: Error) => toast.error(e.message),
+    onSettled: () => setLinkingProductId(null),
+  });
+
+  const unlinkMut = useMutation({
+    mutationFn: async (v: { product_id: string }) => {
+      setLinkingProductId(v.product_id);
+      return unlinkFn({
+        data: { agreement_id: agreementId, product_id: v.product_id },
+      });
+    },
+    onSuccess: () => {
+      toast.success("SKU desvinculado. Las posiciones vuelven a tener precios independientes.");
       invalidateAll();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -479,10 +506,7 @@ function AgreementLinesPage() {
                   <span
                     className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-semibold"
                     style={{
-                      background:
-                        conflictGroupsCount > 0
-                          ? "var(--warning-strong)"
-                          : "var(--muted-foreground)",
+                      background: "var(--gray-800)",
                       color: "var(--text-on-brand)",
                     }}
                   >
@@ -494,22 +518,20 @@ function AgreementLinesPage() {
             <TooltipContent side="bottom">
               {repeatedTotalCount === 0
                 ? "No hay SKUs repetidos en este acuerdo"
-                : conflictGroupsCount > 0
-                  ? `${repeatedTotalCount} ${repeatedTotalCount === 1 ? "SKU repetido" : "SKUs repetidos"} · ${conflictGroupsCount} con precios distintos`
-                  : `${repeatedTotalCount} ${repeatedTotalCount === 1 ? "SKU repetido" : "SKUs repetidos"} al mismo precio`}
+                : `${repeatedTotalCount} ${repeatedTotalCount === 1 ? "SKU repetido" : "SKUs repetidos"} en este acuerdo`}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>
 
       {skuConflictOnly && conflictGroupsCount > 0 && (
-        <Alert variant="warning">
-          <Wand2 className="h-4 w-4" />
+        <Alert variant="info">
+          <Info className="h-4 w-4" />
           <AlertTitle>
-            {conflictGroupsCount} {conflictGroupsCount === 1 ? "SKU tiene" : "SKUs tienen"} precios distintos entre sus posiciones
+            {conflictGroupsCount} {conflictGroupsCount === 1 ? "SKU con" : "SKUs con"} precios distintos entre sus posiciones
           </AlertTitle>
           <AlertDescription>
-            Abre una posición para revisar los precios y vincular el SKU. Al vincularlo, todas sus posiciones compartirán el mismo precio automáticamente.
+            Al vincular un SKU, sus posiciones comparten el mismo precio automáticamente.
           </AlertDescription>
         </Alert>
       )}
@@ -634,8 +656,8 @@ function AgreementLinesPage() {
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <span>
-                                    <Chip size="small" variant="soft" color="warning">
-                                      <AlertTriangle className="h-3 w-3" />
+                                    <Chip size="small" variant="soft" color="neutral">
+                                      <Info className="h-3 w-3" />
                                       Precios distintos ({g.position_ids.length})
                                     </Chip>
                                   </span>
@@ -651,9 +673,6 @@ function AgreementLinesPage() {
                                         .sort((a, b) => a - b)
                                         .map((p) => fmtMoney(p))
                                         .join(" · ")}
-                                    </div>
-                                    <div className="text-xs opacity-80">
-                                      Abre la posición para vincular el SKU y unificar el precio.
                                     </div>
                                   </div>
                                 </TooltipContent>
@@ -923,7 +942,7 @@ function AgreementLinesPage() {
           <DialogHeader>
             <DialogTitle>Unificación de Precios</DialogTitle>
             <DialogDescription>
-              Cuando un mismo SKU aparece en varias posiciones, puedes vincularlos para unificar su precio, esto mantiene todas las posiciones sincronizadas.
+              Códigos Jaivaná que aparecen en más de una posición del acuerdo. Vincular un código hace que sus posiciones compartan el mismo precio; desvincularlo las vuelve independientes.
             </DialogDescription>
           </DialogHeader>
 
@@ -933,67 +952,81 @@ function AgreementLinesPage() {
             </div>
           ) : (
             <div className="max-h-[60vh] space-y-6 overflow-y-auto pr-1">
-              {conflictGroups.length > 0 && (
+              {unlinkedGroups.length > 0 && (
                 <section className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <AlertTriangle className="h-4 w-4 text-[color:var(--warning-strong)]" />
+                    <Link2 className="h-4 w-4 text-muted-foreground" />
                     <h3 className="text-sm font-semibold">
-                      Requieren decisión ({conflictGroups.length})
+                      Sin vincular ({unlinkedGroups.length})
                     </h3>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Estos SKUs tienen precios distintos entre sus posiciones. Revísalos y
-                    vincula el SKU al precio correcto.
+                    Códigos Jaivaná que aparecen en más de una posición de este acuerdo y aún no están vinculados.
                   </p>
                   <div className="rounded-lg border border-border bg-muted/20 p-3">
                     <ul className="space-y-2">
-                      {conflictGroups.map((g) => (
-                        <SkuGroupCard
-                          key={g.product_id}
-                          group={g}
-                          variant="conflict"
-                          defaultOpen={false}
-                          canAdmin={canAdmin}
-                          onAction={() => openEditForLine(g.position_ids[0])}
-                          actionLabel="Revisar"
-                          fmtMoney={fmtMoney}
-                        />
-                      ))}
+                      {unlinkedGroups.map((g) => {
+                        const busy = linkingProductId === g.product_id;
+                        const price = g.prices[0];
+                        const canLink = g.state === "repeated" && price != null;
+                        return (
+                          <SkuGroupCard
+                            key={g.product_id}
+                            group={g}
+                            variant={g.state === "conflict" ? "conflict" : "repeated"}
+                            defaultOpen={false}
+                            canAdmin={canAdmin}
+                            onAction={() => {
+                              if (g.state === "conflict") {
+                                openEditForLine(g.position_ids[0]);
+                              } else if (canLink) {
+                                linkMut.mutate({ product_id: g.product_id, price });
+                              }
+                            }}
+                            actionLabel={
+                              g.state === "conflict"
+                                ? "Revisar"
+                                : busy
+                                  ? "Vinculando…"
+                                  : "Vincular"
+                            }
+                            actionDisabled={g.state === "repeated" && (busy || !canLink)}
+                            fmtMoney={fmtMoney}
+                          />
+                        );
+                      })}
                     </ul>
                   </div>
                 </section>
               )}
 
-              {repeatedGroups.length > 0 && (
+              {unifiedGroups.length > 0 && (
                 <section className="space-y-2">
                   <div className="flex items-center gap-2">
                     <Link2 className="h-4 w-4 text-muted-foreground" />
                     <h3 className="text-sm font-semibold">
-                      Repetidos al mismo precio ({repeatedGroups.length})
+                      Vinculados ({unifiedGroups.length})
                     </h3>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Puedes vincularlos ahora de forma preventiva: cuando cambie el precio,
-                    cambiará en todas sus posiciones a la vez.
+                    Estos códigos ya comparten el mismo precio en todas sus posiciones.
                   </p>
                   <div className="rounded-lg border border-border bg-muted/20 p-3">
                     <ul className="space-y-2">
-                      {repeatedGroups.map((g) => {
-                        const price = g.prices[0];
+                      {unifiedGroups.map((g) => {
                         const busy = linkingProductId === g.product_id;
                         return (
                           <SkuGroupCard
                             key={g.product_id}
                             group={g}
-                            variant="repeated"
+                            variant="unified"
                             defaultOpen={false}
                             canAdmin={canAdmin}
                             onAction={() =>
-                              price != null &&
-                              linkMut.mutate({ product_id: g.product_id, price })
+                              unlinkMut.mutate({ product_id: g.product_id })
                             }
-                            actionLabel={busy ? "Vinculando…" : "Vincular"}
-                            actionDisabled={busy || price == null}
+                            actionLabel={busy ? "Desvinculando…" : "Desvincular"}
+                            actionDisabled={busy}
                             fmtMoney={fmtMoney}
                           />
                         );
@@ -1016,7 +1049,7 @@ function AgreementLinesPage() {
                   setSkuConflictOnly(true);
                 }}
               >
-                Ver conflictos en la tabla
+                Ver en la tabla
               </Button>
             ) : (
               <span />
@@ -1053,7 +1086,7 @@ function SkuGroupCard({
     }[];
     prices: number[];
   };
-  variant: "conflict" | "repeated";
+  variant: "conflict" | "repeated" | "unified";
   defaultOpen: boolean;
   canAdmin: boolean;
   onAction: () => void;
@@ -1070,7 +1103,9 @@ function SkuGroupCard({
           .sort((a, b) => a - b)
           .map((p) => fmtMoney(p))
           .join(" · ")}`
-      : `${count} posiciones · precio común: ${fmtMoney(group.prices[0] ?? null)}`;
+      : variant === "unified"
+        ? `${count} posiciones · precio vinculado: ${fmtMoney(group.prices[0] ?? null)}`
+        : `${count} posiciones · precio común: ${fmtMoney(group.prices[0] ?? null)}`;
 
   return (
     <li className="rounded-lg border border-border bg-card p-3">
