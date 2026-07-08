@@ -151,6 +151,8 @@ function AgreementLinesPage() {
 
 
   const [activeCard, setActiveCard] = useState<LineCardKey>("all");
+  const [skuModalOpen, setSkuModalOpen] = useState(false);
+  const [linkingProductId, setLinkingProductId] = useState<string | null>(null);
   const [skuConflictOnly, setSkuConflictOnly] = useState(false);
   const [q, setQ] = useState("");
 
