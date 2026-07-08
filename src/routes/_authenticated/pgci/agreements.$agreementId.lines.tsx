@@ -1004,7 +1004,7 @@ function AgreementLinesPage() {
                     </h3>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Códigos Jaivaná que aparecen en más de una posición de este acuerdo y aún no están vinculados.
+                    Códigos Jaivaná presentes en más de una posición. Al no estar vinculados, el precio de cada posición se gestiona de forma independiente.
                   </p>
                   <div className="rounded-lg border border-border bg-muted/20 p-3">
                     <ul className="space-y-2">
@@ -1053,7 +1053,7 @@ function AgreementLinesPage() {
                     </h3>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Estos códigos ya comparten el mismo precio en todas sus posiciones.
+                    Códigos Jaivaná presentes en más de una posición. Al estar vinculados, cualquier cambio de precio se aplicará automáticamente a todas las posiciones.
                   </p>
                   <div className="rounded-lg border border-border bg-muted/20 p-3">
                     <ul className="space-y-2">
