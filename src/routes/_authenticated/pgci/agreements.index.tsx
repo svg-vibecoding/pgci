@@ -321,11 +321,18 @@ function AgreementsList() {
                 const first = companies[0] ?? null;
                 const vig = vigenciaBadge(a.end_date ?? null);
                 const counts: CountSpec[] = [
-                  { key: "total", label: "Total de posiciones", value: a.lines_total ?? 0, color: "neutral" },
+                  {
+                    key: "total",
+                    label: "Total de posiciones",
+                    value:
+                      ((a as { lines_active?: number }).lines_active ?? 0) +
+                      (a.lines_review ?? 0) +
+                      ((a as { lines_excluded?: number }).lines_excluded ?? 0),
+                    color: "neutral",
+                  },
                   { key: "active", label: "Activas", value: (a as { lines_active?: number }).lines_active ?? 0, color: "success" },
-                  { key: "pending", label: "Pendientes", value: a.lines_pending ?? 0, color: "warning" },
-                  { key: "review", label: "Requieren revisión", value: a.lines_review ?? 0, color: "error" },
-                  { key: "excluded", label: "Excluidas", value: (a as { lines_excluded?: number }).lines_excluded ?? 0, color: "error", variant: "solid" },
+                  { key: "review", label: "Requieren revisión", value: a.lines_review ?? 0, color: "warning" },
+                  { key: "transit", label: "En tránsito", value: (a as { lines_transit?: number }).lines_transit ?? 0, color: "warning" },
                 ];
                 return (
                   <TableRow key={a.id ?? undefined}>
