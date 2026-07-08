@@ -118,6 +118,17 @@ function AgreementDetail() {
       return count ?? 0;
     },
   });
+  const { data: transitCount } = useQuery({
+    queryKey: ["agreements", "transit-count", agreementId],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("agreement_transit_lines")
+        .select("id", { count: "exact", head: true })
+        .eq("agreement_id", agreementId);
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
 
   const canAdmin = !!ctx?.can_admin;
 
@@ -169,7 +180,7 @@ function AgreementDetail() {
   const isActive = agreement.status === "active";
   const total = agreement.lines_total ?? 0;
   const active = agreement.lines_active ?? 0;
-  const pending = agreement.lines_pending ?? 0;
+  const transit = transitCount ?? 0;
   const review = agreement.lines_review ?? 0;
   const excluded = agreement.lines_excluded ?? 0;
 
@@ -232,7 +243,7 @@ function AgreementDetail() {
             <IndicatorCard label="Activas" value={active} />
             <IndicatorCard label="Requieren revisión" value={review} />
             <IndicatorCard label="Excluidas" value={excluded} />
-            <IndicatorCard label="En tránsito" value={pending} />
+            <IndicatorCard label="En tránsito" value={transit} />
           </div>
         </CardContent>
       </Card>
