@@ -180,7 +180,7 @@ function AgreementDetail() {
   const isActive = agreement.status === "active";
   const total = agreement.lines_total ?? 0;
   const active = agreement.lines_active ?? 0;
-  const pending = agreement.lines_pending ?? 0;
+  const transit = transitCount ?? 0;
   const review = agreement.lines_review ?? 0;
   const excluded = agreement.lines_excluded ?? 0;
 
