@@ -246,10 +246,51 @@ function AgreementLinesPage() {
     return s;
   }, [skuGroups]);
 
-  const conflictGroupsCount = useMemo(
-    () => (skuGroups ?? []).filter((g) => g.state === "conflict").length,
+  const conflictGroups = useMemo(
+    () => (skuGroups ?? []).filter((g) => g.state === "conflict"),
     [skuGroups],
   );
+  const repeatedGroups = useMemo(
+    () => (skuGroups ?? []).filter((g) => g.state === "repeated"),
+    [skuGroups],
+  );
+  const conflictGroupsCount = conflictGroups.length;
+  const repeatedTotalCount = conflictGroups.length + repeatedGroups.length;
+
+  const linkMut = useMutation({
+    mutationFn: async (v: { product_id: string; price: number }) => {
+      setLinkingProductId(v.product_id);
+      return linkFn({
+        data: { agreement_id: agreementId, product_id: v.product_id, price: v.price },
+      });
+    },
+    onSuccess: (res) => {
+      toast.success(
+        `SKU vinculado. Precio aplicado a ${res.updated} ${res.updated === 1 ? "posición" : "posiciones"}.`,
+      );
+      invalidateAll();
+    },
+    onError: (e: Error) => toast.error(e.message),
+    onSettled: () => setLinkingProductId(null),
+  });
+
+  const openEditForLine = (lineId: string) => {
+    const r = (lines ?? []).find((x) => x.id === lineId) as Line | undefined;
+    if (!r) return;
+    setEditInitial({
+      line_id: r.id as string,
+      sku: r.products?.sku ?? "",
+      client_code: r.client_code ?? "",
+      client_description: r.client_description ?? "",
+      sale_price: r.sale_price?.toString() ?? "",
+      par_price: r.par_price?.toString() ?? "",
+      start_date: r.start_date ?? "",
+      end_date: r.end_date ?? "",
+      observations: r.observations ?? "",
+    });
+    setSkuModalOpen(false);
+    setEditOpen(true);
+  };
 
   const filtered = useMemo<Line[]>(() => {
     const rows = (lines ?? []) as Line[];
