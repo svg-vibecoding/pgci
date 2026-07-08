@@ -668,10 +668,10 @@ function AgreementLinesPage() {
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <span>
-                                    <Chip size="small" variant="soft" color="neutral">
+                                    <Badge color="neutral" variant="soft">
                                       <Info className="h-3 w-3" />
                                       Precios ({new Set(g.prices).size})
-                                    </Chip>
+                                    </Badge>
                                   </span>
                                 </TooltipTrigger>
                                 <TooltipContent side="top" className="max-w-xs">
@@ -1134,10 +1134,10 @@ function SkuGroupCard({
               {group.sku ?? "—"}
             </span>
             {hasDistinctPrices && (
-              <Chip color="neutral" size="small" variant="soft">
+              <Badge color="neutral" variant="soft">
                 <Info className="h-3 w-3" />
                 Precios ({distinctPrices})
-              </Chip>
+              </Badge>
             )}
           </div>
           {group.product_description && (
