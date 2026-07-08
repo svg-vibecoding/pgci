@@ -283,6 +283,12 @@ function AgreementLinesPage() {
     () => unifiedGroups.reduce((sum, g) => sum + (g.position_ids.length ?? 0), 0),
     [unifiedGroups],
   );
+  const repeatedPositionCount = useMemo(
+    () => repeatedGroups.reduce((sum, g) => sum + (g.position_ids.length ?? 0), 0),
+    [repeatedGroups],
+  );
+
+
 
 
   const linkMut = useMutation({
