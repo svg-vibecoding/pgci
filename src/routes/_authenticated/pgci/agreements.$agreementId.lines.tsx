@@ -506,10 +506,7 @@ function AgreementLinesPage() {
                   <span
                     className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-semibold"
                     style={{
-                      background:
-                        conflictGroupsCount > 0
-                          ? "var(--warning-strong)"
-                          : "var(--muted-foreground)",
+                      background: "var(--gray-800)",
                       color: "var(--text-on-brand)",
                     }}
                   >
@@ -521,9 +518,7 @@ function AgreementLinesPage() {
             <TooltipContent side="bottom">
               {repeatedTotalCount === 0
                 ? "No hay SKUs repetidos en este acuerdo"
-                : conflictGroupsCount > 0
-                  ? `${repeatedTotalCount} ${repeatedTotalCount === 1 ? "SKU repetido" : "SKUs repetidos"} · ${conflictGroupsCount} con precios distintos`
-                  : `${repeatedTotalCount} ${repeatedTotalCount === 1 ? "SKU repetido" : "SKUs repetidos"} al mismo precio`}
+                : `${repeatedTotalCount} ${repeatedTotalCount === 1 ? "SKU repetido" : "SKUs repetidos"} en este acuerdo`}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
