@@ -242,10 +242,10 @@ function AgreementLinesPage() {
     return m;
   }, [skuGroups]);
 
-  const conflictPositionIds = useMemo(() => {
+  const repeatedPositionIds = useMemo(() => {
     const s = new Set<string>();
     for (const g of skuGroups ?? []) {
-      if (g.state === "conflict") for (const pid of g.position_ids) s.add(pid);
+      for (const pid of g.position_ids) s.add(pid);
     }
     return s;
   }, [skuGroups]);
