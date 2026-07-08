@@ -1910,6 +1910,74 @@ export const getAgreementGroupRollup = createServerFn({ method: "GET" })
     };
   });
 
+export const listGroupAgreementMembers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => groupIdSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: ags, error: aErr } = await context.supabase
+      .from("agreements")
+      .select("id, name")
+      .eq("group_id", data.group_id);
+    if (aErr) throw new Error(aErr.message);
+    const agreements = ags ?? [];
+    const agreementIds = agreements.map((a) => a.id as string);
+    if (agreementIds.length === 0) return [];
+    const agreementNameById = new Map(
+      agreements.map((a) => [a.id as string, a.name as string]),
+    );
+
+    const { data: mems, error: mErr } = await context.supabase
+      .from("agreement_members")
+      .select("id, agreement_id, user_id, role, can_view_costs, created_at")
+      .in("agreement_id", agreementIds)
+      .is("valid_until", null);
+    if (mErr) throw new Error(mErr.message);
+    const rows = mems ?? [];
+    const userIds = Array.from(
+      new Set(rows.map((m) => m.user_id as string).filter(Boolean)),
+    );
+    let profilesById = new Map<string, { full_name: string; email: string }>();
+    if (userIds.length > 0) {
+      const { data: profs } = await context.supabase
+        .from("profiles")
+        .select("user_id, full_name, email")
+        .in("user_id", userIds);
+      profilesById = new Map(
+        (profs ?? []).map((p) => [
+          p.user_id as string,
+          {
+            full_name: (p.full_name as string) ?? "",
+            email: (p.email as string) ?? "",
+          },
+        ]),
+      );
+    }
+
+    return rows
+      .map((m) => ({
+        id: m.id as string,
+        agreement_id: m.agreement_id as string,
+        agreement_name: agreementNameById.get(m.agreement_id as string) ?? "",
+        user_id: m.user_id as string,
+        role: m.role as string,
+        can_view_costs: !!m.can_view_costs,
+        created_at: m.created_at as string,
+        user_name: profilesById.get(m.user_id as string)?.full_name ?? "",
+        user_email: profilesById.get(m.user_id as string)?.email ?? "",
+      }))
+      .sort((a, b) => {
+        const n = a.user_name.localeCompare(b.user_name, "es", {
+          sensitivity: "base",
+        });
+        if (n !== 0) return n;
+        return a.agreement_name.localeCompare(b.agreement_name, "es", {
+          sensitivity: "base",
+        });
+      });
+  });
+
+
+
 
 export const listAgreementsInGroup = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
