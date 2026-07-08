@@ -589,6 +589,9 @@ function AgreementLinesPage() {
           </TableBody>
         </Table>
       </div>
+      )}
+
+
 
       <LineEditDialog
         open={editOpen}
