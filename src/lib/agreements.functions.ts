@@ -54,7 +54,7 @@ export const listAgreements = createServerFn({ method: "GET" })
     const rows = data ?? [];
     const ids = rows.map((r) => r.id as string).filter(Boolean);
     if (ids.length === 0)
-      return rows.map((r) => ({ ...r, companies: [] as string[] }));
+      return rows.map((r) => ({ ...r, companies: [] as string[], lines_transit: 0 }));
     const { data: comps, error: cErr } = await context.supabase
       .from("agreement_companies")
       .select("agreement_id, clients:client_id(commercial_name, legal_name)")
@@ -70,11 +70,22 @@ export const listAgreements = createServerFn({ method: "GET" })
       arr.push(name);
       byAgreement.set(aid, arr);
     }
+    const { data: transitRows, error: tErr } = await context.supabase
+      .from("agreement_transit_lines")
+      .select("agreement_id")
+      .in("agreement_id", ids);
+    if (tErr) throw new Error(`No se pudieron cargar líneas en tránsito: ${tErr.message}`);
+    const transitByAgreement = new Map<string, number>();
+    for (const t of transitRows ?? []) {
+      const aid = (t as { agreement_id: string }).agreement_id;
+      transitByAgreement.set(aid, (transitByAgreement.get(aid) ?? 0) + 1);
+    }
     return rows.map((r) => ({
       ...r,
       companies: (byAgreement.get(r.id as string) ?? []).sort((a, b) =>
         a.localeCompare(b, "es", { sensitivity: "base" }),
       ),
+      lines_transit: transitByAgreement.get(r.id as string) ?? 0,
     }));
   });
 
