@@ -93,7 +93,7 @@ export const Route = createFileRoute("/_authenticated/pgci/agreements/")({
   component: AgreementsList,
 });
 
-type CardKey = "all" | "active" | "pending" | "review";
+type CardKey = "all" | "active" | "review" | "transit";
 type StatusFilter = "all" | "active" | "inactive";
 
 type VigenciaBadge = {
@@ -131,13 +131,19 @@ function AgreementsList() {
 
   const totalCount = all.length;
   const activeCount = all.filter((a) => a.status === "active").length;
-  const pendingCount = all.filter((a) => (a.lines_pending ?? 0) > 0).length;
-  const reviewCount = all.filter((a) => (a.lines_review ?? 0) > 0).length;
+  const reviewCount = all.filter(
+    (a) => ((a as { lines_review?: number }).lines_review ?? 0) > 0,
+  ).length;
+  const transitCount = all.filter(
+    (a) => ((a as { lines_transit?: number }).lines_transit ?? 0) > 0,
+  ).length;
 
   const filtered = all.filter((a) => {
     if (activeCard === "active" && a.status !== "active") return false;
-    if (activeCard === "pending" && (a.lines_pending ?? 0) === 0) return false;
-    if (activeCard === "review" && (a.lines_review ?? 0) === 0) return false;
+    if (activeCard === "review" && ((a as { lines_review?: number }).lines_review ?? 0) === 0)
+      return false;
+    if (activeCard === "transit" && ((a as { lines_transit?: number }).lines_transit ?? 0) === 0)
+      return false;
 
     if (statusF !== "all" && a.status !== statusF) return false;
 
@@ -159,17 +165,16 @@ function AgreementsList() {
 
   const summaryCards: { key: CardKey; label: string; value: number }[] = [
     { key: "all", label: "Acuerdos", value: totalCount },
-    { key: "active", label: "Activos", value: activeCount },
-    { key: "pending", label: "Con pendientes", value: pendingCount },
+    { key: "active", label: "Acuerdos activos", value: activeCount },
     { key: "review", label: "Requieren revisión", value: reviewCount },
+    { key: "transit", label: "En tránsito", value: transitCount },
   ];
 
   const cardLabelByKey: Record<CardKey, string> = {
     all: "Acuerdos",
-    active: "Activos",
-    pending: "Con pendientes",
+    active: "Acuerdos activos",
     review: "Requieren revisión",
-
+    transit: "En tránsito",
   };
 
   const hasActiveFilters =
