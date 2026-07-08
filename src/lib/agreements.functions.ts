@@ -1851,36 +1851,35 @@ export const getAgreementGroupRollup = createServerFn({ method: "GET" })
     const agreementIds = rows.map((a) => a.id as string);
 
     let uniqueClients = 0;
-    let uniqueUsers = 0;
     if (agreementIds.length > 0) {
-      const [{ data: comps, error: cErr }, { data: mems, error: mErr }] =
-        await Promise.all([
-          context.supabase
-            .from("agreement_companies")
-            .select("client_id")
-            .in("agreement_id", agreementIds)
-            .is("valid_until", null),
-          context.supabase
-            .from("agreement_members")
-            .select("user_id")
-            .in("agreement_id", agreementIds)
-            .is("valid_until", null),
-        ]);
+      const { data: comps, error: cErr } = await context.supabase
+        .from("agreement_companies")
+        .select("client_id")
+        .in("agreement_id", agreementIds)
+        .is("valid_until", null);
       if (cErr) throw new Error(cErr.message);
-      if (mErr) throw new Error(mErr.message);
       const cset = new Set<string>();
       for (const c of comps ?? []) {
         const cid = (c as { client_id: string | null }).client_id;
         if (cid) cset.add(cid);
       }
       uniqueClients = cset.size;
-      const uset = new Set<string>();
-      for (const m of mems ?? []) {
-        const uid = (m as { user_id: string | null }).user_id;
-        if (uid) uset.add(uid);
-      }
-      uniqueUsers = uset.size;
     }
+
+    // Miembros del agrupador (agreement_group_members) — deduplicados por user_id.
+    const { data: gmems, error: gmErr } = await context.supabase
+      .from("agreement_group_members")
+      .select("user_id")
+      .eq("agreement_group_id", data.group_id)
+      .is("valid_until", null);
+    if (gmErr) throw new Error(gmErr.message);
+    const gset = new Set<string>();
+    for (const m of gmems ?? []) {
+      const uid = (m as { user_id: string | null }).user_id;
+      if (uid) gset.add(uid);
+    }
+    const uniqueUsers = gset.size;
+
 
     let minStart: string | null = null;
     let maxEnd: string | null = null;
