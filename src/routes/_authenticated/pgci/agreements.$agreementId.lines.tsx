@@ -1124,8 +1124,9 @@ function SkuGroupCard({
               {group.sku ?? "—"}
             </span>
             {hasDistinctPrices && (
-              <Chip color="neutral" size="small">
-                Precios (2)
+              <Chip color="neutral" size="small" variant="soft">
+                <Info className="h-3 w-3" />
+                Precios ({distinctPrices})
               </Chip>
             )}
           </div>
