@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import {
   ArrowLeft,
   ArrowUpRight,
+  Boxes,
   FileText,
   Pencil,
   Plus,
@@ -13,6 +14,7 @@ import {
   Trash2,
   Unlink,
 } from "lucide-react";
+
 import {
   addAgreementsToGroup,
   deleteAgreementGroup,
