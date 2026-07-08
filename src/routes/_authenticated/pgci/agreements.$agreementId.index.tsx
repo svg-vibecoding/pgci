@@ -230,9 +230,9 @@ function AgreementDetail() {
           <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
             <IndicatorCard label="Posiciones" value={total} />
             <IndicatorCard label="Activas" value={active} />
-            <IndicatorCard label="Pendientes" value={pending} />
             <IndicatorCard label="Requieren revisión" value={review} />
             <IndicatorCard label="Excluidas" value={excluded} />
+            <IndicatorCard label="En tránsito" value={pending} />
           </div>
         </CardContent>
       </Card>
