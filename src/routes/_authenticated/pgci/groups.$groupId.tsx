@@ -136,8 +136,8 @@ function GroupDetail() {
   const uniqueClients = rollup?.unique_clients ?? 0;
   const uniqueUsers = rollup?.unique_users ?? 0;
   const totalLines = rollup?.total_lines ?? 0;
-  const hasCoverage =
-    !!rollup && agreementsCount > 0 && (rollup.min_start || rollup.max_end);
+
+
 
 
   const invalidateAll = () => {
@@ -210,60 +210,51 @@ function GroupDetail() {
             />
             <IndicatorCard label="Excluidas" value={rollup?.lines_excluded ?? 0} />
           </div>
-          {hasCoverage && (
-            <p className="text-sm text-muted-foreground">
-              Vigencia derivada:{" "}
-              <span className="font-medium text-foreground">
-                {formatDate(rollup?.min_start ?? null)}
-              </span>{" "}
-              →{" "}
-              <span className="font-medium text-foreground">
-                {formatDate(rollup?.max_end ?? null)}
-              </span>
-            </p>
-          )}
         </CardContent>
       </Card>
 
 
-      {/* Info básica */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Información del agrupador</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <InfoSection>
-            <InfoField label="Nombre">{group.group_name}</InfoField>
-            <InfoField label="Cliente asociado">
-              {group.client_display_name ?? "—"}
-            </InfoField>
-            <InfoField label="NIT">{group.client_tax_id ?? "—"}</InfoField>
-
-          </InfoSection>
-        </CardContent>
-      </Card>
-
-      {/* Condiciones generales (notes) */}
+      {/* Información general */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="text-base">Condiciones generales</CardTitle>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Aplican a todos los acuerdos del agrupador.
-            </p>
-          </div>
+          <CardTitle className="text-base">Información general</CardTitle>
           {canAdmin && (
             <Button size="sm" variant="outline" onClick={() => setNotesOpen(true)}>
-              <Pencil className="mr-1.5 h-4 w-4" /> Editar
+              <Pencil className="mr-1.5 h-4 w-4" /> Editar condiciones
             </Button>
           )}
         </CardHeader>
-        <CardContent>
-          <div className="min-h-[80px] whitespace-pre-wrap rounded-md border border-input bg-background px-3 py-2 text-sm">
-            {group.notes?.trim() ? group.notes : ""}
+        <CardContent className="space-y-6">
+          <InfoSection>
+            <InfoField label="Acuerdos">{agreementsCount}</InfoField>
+            <InfoField label="Clientes">{uniqueClients}</InfoField>
+            <InfoField label="Usuarios">{uniqueUsers}</InfoField>
+
+            <InfoField label="Vigencia derivada desde">
+              {formatDate(rollup?.min_start ?? null)}
+            </InfoField>
+            <InfoField label="Vigencia derivada hasta">
+              {formatDate(rollup?.max_end ?? null)}
+            </InfoField>
+            <div className="hidden lg:block" />
+
+            <InfoField label="Creado por">
+              {group.created_by_name ?? "—"}
+            </InfoField>
+            <InfoField label="Creado">{formatDate(group.created_at)}</InfoField>
+            <InfoField label="Actualizado">{formatDate(group.updated_at)}</InfoField>
+          </InfoSection>
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Condiciones generales
+            </p>
+            <div className="mt-1 min-h-[80px] whitespace-pre-wrap rounded-md border border-input bg-background px-3 py-2 text-sm">
+              {group.notes?.trim() ? group.notes : ""}
+            </div>
           </div>
         </CardContent>
       </Card>
+
 
       {/* Acuerdos */}
       <Card id="agreements" className="scroll-mt-20">

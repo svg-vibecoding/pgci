@@ -1536,6 +1536,15 @@ export const getAgreementGroup = createServerFn({ method: "GET" })
       commercial_name: string | null;
       tax_id: string;
     } | null;
+    let created_by_name: string | null = null;
+    if (row.created_by) {
+      const { data: prof } = await context.supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("user_id", row.created_by as string)
+        .maybeSingle();
+      created_by_name = (prof?.full_name as string | null) ?? null;
+    }
     return {
       id: row.id as string,
       group_name: row.group_name as string,
@@ -1545,12 +1554,14 @@ export const getAgreementGroup = createServerFn({ method: "GET" })
       created_at: row.created_at as string,
       updated_at: row.updated_at as string,
       created_by: (row.created_by as string | null) ?? null,
+      created_by_name,
       client_display_name: client
         ? client.commercial_name?.trim() || client.legal_name
         : null,
       client_tax_id: client?.tax_id ?? null,
     };
   });
+
 
 const listAgreementGroupMembersInput = groupIdSchema.extend({
   include_history: z.boolean().optional().default(false),
