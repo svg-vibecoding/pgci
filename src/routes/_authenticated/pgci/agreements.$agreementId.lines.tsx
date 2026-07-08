@@ -333,7 +333,7 @@ function AgreementLinesPage() {
         if (r.kind === "transit" || r.status !== activeCard) return false;
       }
       if (skuConflictOnly) {
-        if (r.kind === "transit" || !conflictPositionIds.has(r.id as string)) return false;
+        if (r.kind === "transit" || !repeatedPositionIds.has(r.id as string)) return false;
       }
       if (!term) return true;
       const sku = r.products?.sku ?? "";
@@ -343,7 +343,7 @@ function AgreementLinesPage() {
       const desc = r.client_description ?? "";
       return [sku, erp, brand, code, desc].some((s) => s.toLowerCase().includes(term));
     });
-  }, [lines, activeCard, q, skuConflictOnly, conflictPositionIds]);
+  }, [lines, activeCard, q, skuConflictOnly, repeatedPositionIds]);
 
 
   const handleExport = () => {
