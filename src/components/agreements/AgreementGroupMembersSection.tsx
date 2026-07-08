@@ -150,9 +150,10 @@ export function AgreementGroupMembersSection({
         <div>
           <CardTitle className="text-base">Miembros del agrupador</CardTitle>
           <p className="mt-1 text-xs text-muted-foreground">
-            Usuarios con acceso al agrupador. Los admins pueden gestionar miembros y
-            editar el agrupador.
+            Personas con rol en el agrupador: pueden renombrar, editar condiciones
+            generales y gestionar los acuerdos del grupo.
           </p>
+
         </div>
         {canAdmin && (
           <Button size="sm" variant="outline" onClick={() => setAddOpen(true)}>
