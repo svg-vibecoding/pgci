@@ -184,7 +184,6 @@ function AgreementLinesPage() {
   const counts = useMemo(() => {
     const c = { all: 0, active: 0, requires_review: 0, excluded: 0, transit: 0 };
     for (const r of (lines ?? []) as Line[]) {
-      c.all++;
       if (r.kind === "transit") {
         c.transit++;
       } else {
@@ -192,6 +191,7 @@ function AgreementLinesPage() {
         if (k in c) c[k]++;
       }
     }
+    c.all = c.active + c.requires_review + c.excluded;
     return c;
   }, [lines]);
 
@@ -199,9 +199,12 @@ function AgreementLinesPage() {
     const rows = (lines ?? []) as Line[];
     const term = q.trim().toLowerCase();
     return rows.filter((r) => {
-      if (activeCard !== "all") {
-        if (activeCard === "transit") return r.kind === "transit";
-        return r.status === activeCard;
+      if (activeCard === "all") {
+        if (r.kind === "transit") return false;
+      } else if (activeCard === "transit") {
+        if (r.kind !== "transit") return false;
+      } else {
+        if (r.kind === "transit" || r.status !== activeCard) return false;
       }
       if (!term) return true;
       const sku = r.products?.sku ?? "";
