@@ -389,6 +389,9 @@ function GroupDetail() {
 
       <AgreementGroupMembersSection groupId={groupId} canAdmin={canAdmin} />
 
+      <MembersByAgreementSection groupId={groupId} />
+
+
       <RenameGroupDialog
         open={renameOpen}
         onOpenChange={setRenameOpen}
