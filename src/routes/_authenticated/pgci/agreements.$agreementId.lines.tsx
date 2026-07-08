@@ -671,6 +671,35 @@ function AgreementLinesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog
+        open={!!deleteTransitTarget}
+        onOpenChange={(o) => {
+          if (!o) setDeleteTransitTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar línea en tránsito</AlertDialogTitle>
+            <AlertDialogDescription>
+              La línea en tránsito se eliminará permanentemente. Esta acción no se
+              puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteTransit.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                if (deleteTransitTarget) deleteTransit.mutate(deleteTransitTarget.id);
+              }}
+              disabled={deleteTransit.isPending}
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
