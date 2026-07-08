@@ -952,7 +952,7 @@ function AgreementLinesPage() {
                           key={g.product_id}
                           group={g}
                           variant="conflict"
-                          defaultOpen
+                          defaultOpen={false}
                           canAdmin={canAdmin}
                           onAction={() => openEditForLine(g.position_ids[0])}
                           actionLabel="Revisar"
