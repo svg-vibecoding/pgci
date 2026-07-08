@@ -180,7 +180,10 @@ function AgreementLinesPage() {
     const rows = (lines ?? []) as Line[];
     const term = q.trim().toLowerCase();
     return rows.filter((r) => {
-      if (activeCard !== "all" && r.status !== activeCard) return false;
+      if (activeCard !== "all") {
+        if (activeCard === "transit") return r.kind === "transit";
+        return r.status === activeCard;
+      }
       if (!term) return true;
       const sku = r.products?.sku ?? "";
       const erp = r.products?.erp_description ?? "";
