@@ -217,6 +217,28 @@ function AgreementLinesPage() {
     return c;
   }, [lines]);
 
+  // Mapa por posición → grupo SKU (para chips) y set de ids en conflicto (para filtrar).
+  const groupByPositionId = useMemo(() => {
+    const m = new Map<string, NonNullable<typeof skuGroups>[number]>();
+    for (const g of skuGroups ?? []) {
+      for (const pid of g.position_ids) m.set(pid, g);
+    }
+    return m;
+  }, [skuGroups]);
+
+  const conflictPositionIds = useMemo(() => {
+    const s = new Set<string>();
+    for (const g of skuGroups ?? []) {
+      if (g.state === "conflict") for (const pid of g.position_ids) s.add(pid);
+    }
+    return s;
+  }, [skuGroups]);
+
+  const conflictGroupsCount = useMemo(
+    () => (skuGroups ?? []).filter((g) => g.state === "conflict").length,
+    [skuGroups],
+  );
+
   const filtered = useMemo<Line[]>(() => {
     const rows = (lines ?? []) as Line[];
     const term = q.trim().toLowerCase();
@@ -228,6 +250,9 @@ function AgreementLinesPage() {
       } else {
         if (r.kind === "transit" || r.status !== activeCard) return false;
       }
+      if (skuConflictOnly) {
+        if (r.kind === "transit" || !conflictPositionIds.has(r.id as string)) return false;
+      }
       if (!term) return true;
       const sku = r.products?.sku ?? "";
       const erp = r.products?.erp_description ?? "";
@@ -236,7 +261,8 @@ function AgreementLinesPage() {
       const desc = r.client_description ?? "";
       return [sku, erp, brand, code, desc].some((s) => s.toLowerCase().includes(term));
     });
-  }, [lines, activeCard, q]);
+  }, [lines, activeCard, q, skuConflictOnly, conflictPositionIds]);
+
 
   const handleExport = () => {
     if (!lines) return;
