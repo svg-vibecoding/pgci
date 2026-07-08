@@ -132,10 +132,13 @@ function GroupDetail() {
     return <div className="text-sm text-muted-foreground">Cargando…</div>;
   }
 
-  const isActive = group.status === "active";
   const agreementsCount = rollup?.agreements_count ?? 0;
+  const uniqueClients = rollup?.unique_clients ?? 0;
+  const uniqueUsers = rollup?.unique_users ?? 0;
+  const totalLines = rollup?.total_lines ?? 0;
   const hasCoverage =
     !!rollup && agreementsCount > 0 && (rollup.min_start || rollup.max_end);
+
 
   const invalidateAll = () => {
     qc.invalidateQueries({ queryKey: ["agreement-groups"] });
