@@ -153,6 +153,7 @@ function AgreementLinesPage() {
   });
 
   type Line = NonNullable<typeof lines>[number] & {
+    kind: "position" | "transit";
     products?: {
       sku?: string | null;
       erp_description?: string | null;
@@ -162,11 +163,15 @@ function AgreementLinesPage() {
   };
 
   const counts = useMemo(() => {
-    const c = { all: 0, active: 0, pending: 0, requires_review: 0, excluded: 0 };
+    const c = { all: 0, active: 0, requires_review: 0, excluded: 0, transit: 0 };
     for (const r of (lines ?? []) as Line[]) {
       c.all++;
-      const k = r.status as keyof typeof c;
-      if (k in c) c[k]++;
+      if (r.kind === "transit") {
+        c.transit++;
+      } else {
+        const k = r.status as keyof typeof c;
+        if (k in c) c[k]++;
+      }
     }
     return c;
   }, [lines]);
