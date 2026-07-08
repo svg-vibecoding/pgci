@@ -400,7 +400,17 @@ function AgreementLinesPage() {
         </div>
       )}
 
-
+      {!loadingLines && activeCard === "transit" && filtered.length === 0 ? (
+        <Alert variant="info">
+          <Info className="h-4 w-4" />
+          <AlertTitle>No hay información en tránsito</AlertTitle>
+          <AlertDescription>
+            Aquí aparecen las filas cargadas al acuerdo que aún no son posiciones porque
+            les falta SKU, precio o vigencia. Cuando se completan, pasan automáticamente
+            a Posiciones.
+          </AlertDescription>
+        </Alert>
+      ) : (
       <div className="overflow-x-auto rounded-lg border border-border bg-card">
         <Table className="table-fixed">
           <TableHeader>
