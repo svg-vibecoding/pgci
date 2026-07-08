@@ -664,6 +664,9 @@ function AgreementLinesPage() {
                         const g = groupByPositionId.get(r.id as string);
                         if (!g) return null;
                         if (g.state === "conflict") {
+                          const conflictPrices = g.prices.slice().sort((a, b) => a - b);
+                          const minPrice = conflictPrices[0] ?? null;
+                          const maxPrice = conflictPrices[conflictPrices.length - 1] ?? null;
                           return (
                             <TooltipProvider>
                               <Tooltip>
@@ -678,14 +681,10 @@ function AgreementLinesPage() {
                                 <TooltipContent side="top" className="max-w-xs">
                                   <div className="space-y-1">
                                     <div className="font-medium">
-                                      Este SKU está en {g.position_ids.length} posiciones con precios distintos:
+                                      SKU en {g.position_ids.length} posiciones
                                     </div>
-                                    <div className="font-mono text-xs">
-                                      {g.prices
-                                        .slice()
-                                        .sort((a, b) => a - b)
-                                        .map((p) => fmtMoney(p))
-                                        .join(" · ")}
+                                    <div>
+                                      Precios no vinculados ({fmtMoney(minPrice)} – {fmtMoney(maxPrice)})
                                     </div>
                                   </div>
                                 </TooltipContent>
@@ -703,8 +702,15 @@ function AgreementLinesPage() {
                                     aria-label="SKU repetido"
                                   />
                                 </TooltipTrigger>
-                                <TooltipContent side="top">
-                                  SKU repetido en {g.position_ids.length} posiciones con el mismo precio
+                                <TooltipContent side="top" className="max-w-xs">
+                                  <div className="space-y-1">
+                                    <div className="font-medium">
+                                      SKU en {g.position_ids.length} posiciones
+                                    </div>
+                                    <div>
+                                      Precios no vinculados ({fmtMoney(g.prices[0] ?? null)})
+                                    </div>
+                                  </div>
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
@@ -720,8 +726,15 @@ function AgreementLinesPage() {
                                     aria-label="SKU vinculado"
                                   />
                                 </TooltipTrigger>
-                                <TooltipContent side="top">
-                                  SKU vinculado — precio unificado en {g.position_ids.length} posiciones
+                                <TooltipContent side="top" className="max-w-xs">
+                                  <div className="space-y-1">
+                                    <div className="font-medium">
+                                      SKU en {g.position_ids.length} posiciones
+                                    </div>
+                                    <div>
+                                      Precios vinculados ({fmtMoney(g.prices[0] ?? null)})
+                                    </div>
+                                  </div>
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
