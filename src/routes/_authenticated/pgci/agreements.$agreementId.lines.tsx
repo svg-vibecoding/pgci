@@ -660,7 +660,7 @@ function AgreementLinesPage() {
                                   <span>
                                     <Chip size="small" variant="soft" color="neutral">
                                       <Info className="h-3 w-3" />
-                                      Precios distintos ({g.position_ids.length})
+                                      Precios ({new Set(g.prices).size})
                                     </Chip>
                                   </span>
                                 </TooltipTrigger>
