@@ -1049,7 +1049,7 @@ function AgreementLinesPage() {
                   <div className="flex items-center gap-2">
                     <Link2 className="h-4 w-4 text-muted-foreground" />
                     <h3 className="text-sm font-semibold">
-                      Vinculados ({unifiedGroups.length})
+                      Posiciones vinculadas ({unifiedGroups.length})
                     </h3>
                   </div>
                   <p className="text-xs text-muted-foreground">
