@@ -942,7 +942,7 @@ function AgreementLinesPage() {
           <DialogHeader>
             <DialogTitle>Unificación de Precios</DialogTitle>
             <DialogDescription>
-              Cuando un mismo SKU aparece en varias posiciones, puedes vincularlos para unificar su precio, esto mantiene todas las posiciones sincronizadas.
+              Códigos Jaivaná que aparecen en más de una posición del acuerdo. Vincular un código hace que sus posiciones compartan el mismo precio; desvincularlo las vuelve independientes.
             </DialogDescription>
           </DialogHeader>
 
@@ -952,67 +952,81 @@ function AgreementLinesPage() {
             </div>
           ) : (
             <div className="max-h-[60vh] space-y-6 overflow-y-auto pr-1">
-              {conflictGroups.length > 0 && (
+              {unlinkedGroups.length > 0 && (
                 <section className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <AlertTriangle className="h-4 w-4 text-[color:var(--warning-strong)]" />
+                    <Link2 className="h-4 w-4 text-muted-foreground" />
                     <h3 className="text-sm font-semibold">
-                      Requieren decisión ({conflictGroups.length})
+                      Sin vincular ({unlinkedGroups.length})
                     </h3>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Estos SKUs tienen precios distintos entre sus posiciones. Revísalos y
-                    vincula el SKU al precio correcto.
+                    Códigos Jaivaná que aparecen en más de una posición de este acuerdo y aún no están vinculados.
                   </p>
                   <div className="rounded-lg border border-border bg-muted/20 p-3">
                     <ul className="space-y-2">
-                      {conflictGroups.map((g) => (
-                        <SkuGroupCard
-                          key={g.product_id}
-                          group={g}
-                          variant="conflict"
-                          defaultOpen={false}
-                          canAdmin={canAdmin}
-                          onAction={() => openEditForLine(g.position_ids[0])}
-                          actionLabel="Revisar"
-                          fmtMoney={fmtMoney}
-                        />
-                      ))}
+                      {unlinkedGroups.map((g) => {
+                        const busy = linkingProductId === g.product_id;
+                        const price = g.prices[0];
+                        const canLink = g.state === "repeated" && price != null;
+                        return (
+                          <SkuGroupCard
+                            key={g.product_id}
+                            group={g}
+                            variant={g.state === "conflict" ? "conflict" : "repeated"}
+                            defaultOpen={false}
+                            canAdmin={canAdmin}
+                            onAction={() => {
+                              if (g.state === "conflict") {
+                                openEditForLine(g.position_ids[0]);
+                              } else if (canLink) {
+                                linkMut.mutate({ product_id: g.product_id, price });
+                              }
+                            }}
+                            actionLabel={
+                              g.state === "conflict"
+                                ? "Revisar"
+                                : busy
+                                  ? "Vinculando…"
+                                  : "Vincular"
+                            }
+                            actionDisabled={g.state === "repeated" && (busy || !canLink)}
+                            fmtMoney={fmtMoney}
+                          />
+                        );
+                      })}
                     </ul>
                   </div>
                 </section>
               )}
 
-              {repeatedGroups.length > 0 && (
+              {unifiedGroups.length > 0 && (
                 <section className="space-y-2">
                   <div className="flex items-center gap-2">
                     <Link2 className="h-4 w-4 text-muted-foreground" />
                     <h3 className="text-sm font-semibold">
-                      Repetidos al mismo precio ({repeatedGroups.length})
+                      Vinculados ({unifiedGroups.length})
                     </h3>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Puedes vincularlos ahora de forma preventiva: cuando cambie el precio,
-                    cambiará en todas sus posiciones a la vez.
+                    Estos códigos ya comparten el mismo precio en todas sus posiciones.
                   </p>
                   <div className="rounded-lg border border-border bg-muted/20 p-3">
                     <ul className="space-y-2">
-                      {repeatedGroups.map((g) => {
-                        const price = g.prices[0];
+                      {unifiedGroups.map((g) => {
                         const busy = linkingProductId === g.product_id;
                         return (
                           <SkuGroupCard
                             key={g.product_id}
                             group={g}
-                            variant="repeated"
+                            variant="unified"
                             defaultOpen={false}
                             canAdmin={canAdmin}
                             onAction={() =>
-                              price != null &&
-                              linkMut.mutate({ product_id: g.product_id, price })
+                              unlinkMut.mutate({ product_id: g.product_id })
                             }
-                            actionLabel={busy ? "Vinculando…" : "Vincular"}
-                            actionDisabled={busy || price == null}
+                            actionLabel={busy ? "Desvinculando…" : "Desvincular"}
+                            actionDisabled={busy}
                             fmtMoney={fmtMoney}
                           />
                         );
@@ -1035,7 +1049,7 @@ function AgreementLinesPage() {
                   setSkuConflictOnly(true);
                 }}
               >
-                Ver conflictos en la tabla
+                Ver en la tabla
               </Button>
             ) : (
               <span />
