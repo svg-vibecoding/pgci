@@ -1,30 +1,17 @@
-## Ajuste
+## Plan
 
-En la vista de posiciones del acuerdo (`src/routes/_authenticated/pgci/agreements.$agreementId.lines.tsx`), la línea 2 del encabezado actualmente muestra:
+### Cambios en `src/routes/_authenticated/pgci/agreements.$agreementId.lines.tsx`
 
-```
-Posiciones · {clientName}
-```
+1. **Botón del modal "Códigos en múltiples posiciones"**
+   - Reemplazar el icono `Wand2` por `Layers` en el botón que abre el modal (línea ~507).
+   - El import de `Layers` ya existe en el archivo; el import de `Wand2` quedará sin uso y se puede eliminar.
 
-donde `clientName` se resuelve a partir del agrupador/cliente del acuerdo, y si no hay dato cae en `"—"`.
+2. **Columna Jaivaná en la tabla**
+   - Para las filas con estado `repeated` (códigos no vinculados), reemplazar el icono `Layers` por `Unlink` (línea ~700).
+   - El tooltip y el resto del comportamiento se conservan igual.
+   - El import de `Unlink` ya existe en el archivo.
 
-## Cambio a realizar
-
-Reemplazar ese texto dinámico por el texto fijo:
-
-```
-Posiciones en el acuerdo
-```
-
-Sin dato de cliente, sin separador `·`, sin guión.
-
-## Alcance y restricciones
-
-- Solo se modifica el subtítulo del encabezado de la vista de posiciones.
-- La variable `clientName` se conserva porque todavía se pasa a `<LineEditDialog />` para su propio encabezado interno; no se altera ese diálogo.
-- El resto de la vista (cards de resumen, tabla, acciones) queda sin cambios.
-
-## Verificación
-
-- Revisar visualmente que el encabezado muestre exactamente "Posiciones en el acuerdo".
-- Confirmar que no queda referencia al guión ni al nombre de cliente en esa línea.
+### Notas
+- No se toca la lógica de negocio ni el comportamiento de los tooltips.
+- No se requieren nuevas dependencias.
+- Se actualizará el import de `lucide-react` para eliminar `Wand2` si queda sin referencias.

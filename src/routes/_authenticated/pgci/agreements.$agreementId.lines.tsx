@@ -17,7 +17,6 @@ import {
   XCircle,
   Trash2,
   Info,
-  Wand2,
   Link2,
   Unlink,
   Eye,
@@ -504,7 +503,7 @@ function AgreementLinesPage() {
                 className="relative shrink-0"
                 disabled={repeatedTotalCount === 0}
               >
-                <Wand2 className="h-4 w-4" />
+                <Layers className="h-4 w-4" />
                 {repeatedTotalCount > 0 && (
                   <span
                     className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-semibold"
@@ -697,7 +696,7 @@ function AgreementLinesPage() {
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <Layers
+                                  <Unlink
                                     className="h-3.5 w-3.5 text-muted-foreground"
                                     aria-label="SKU repetido"
                                   />
