@@ -54,7 +54,16 @@ import {
   reactivateAgreementLine,
   deleteAgreementTransitLine,
   listAgreementSkuGroups,
+  linkSkuPrice,
 } from "@/lib/agreements.functions";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { exportAgreementLines } from "@/lib/agreement-export";
 import { PENDING_REASON_LABELS, type ImportPendingReason } from "@/lib/agreement-import";
 import { LineEditDialog, type LineEditValues } from "@/components/agreements/LineEditDialog";
@@ -121,6 +130,7 @@ function AgreementLinesPage() {
   const reactivateFn = useServerFn(reactivateAgreementLine);
   const deleteTransitFn = useServerFn(deleteAgreementTransitLine);
   const skuGroupsFn = useServerFn(listAgreementSkuGroups);
+  const linkFn = useServerFn(linkSkuPrice);
 
   const { data: agreement, isLoading: loadingAgreement } = useQuery({
     queryKey: ["agreements", "detail", agreementId],
@@ -141,6 +151,8 @@ function AgreementLinesPage() {
 
 
   const [activeCard, setActiveCard] = useState<LineCardKey>("all");
+  const [skuModalOpen, setSkuModalOpen] = useState(false);
+  const [linkingProductId, setLinkingProductId] = useState<string | null>(null);
   const [skuConflictOnly, setSkuConflictOnly] = useState(false);
   const [q, setQ] = useState("");
 
@@ -234,10 +246,51 @@ function AgreementLinesPage() {
     return s;
   }, [skuGroups]);
 
-  const conflictGroupsCount = useMemo(
-    () => (skuGroups ?? []).filter((g) => g.state === "conflict").length,
+  const conflictGroups = useMemo(
+    () => (skuGroups ?? []).filter((g) => g.state === "conflict"),
     [skuGroups],
   );
+  const repeatedGroups = useMemo(
+    () => (skuGroups ?? []).filter((g) => g.state === "repeated"),
+    [skuGroups],
+  );
+  const conflictGroupsCount = conflictGroups.length;
+  const repeatedTotalCount = conflictGroups.length + repeatedGroups.length;
+
+  const linkMut = useMutation({
+    mutationFn: async (v: { product_id: string; price: number }) => {
+      setLinkingProductId(v.product_id);
+      return linkFn({
+        data: { agreement_id: agreementId, product_id: v.product_id, price: v.price },
+      });
+    },
+    onSuccess: (res) => {
+      toast.success(
+        `SKU vinculado. Precio aplicado a ${res.updated} ${res.updated === 1 ? "posición" : "posiciones"}.`,
+      );
+      invalidateAll();
+    },
+    onError: (e: Error) => toast.error(e.message),
+    onSettled: () => setLinkingProductId(null),
+  });
+
+  const openEditForLine = (lineId: string) => {
+    const r = (lines ?? []).find((x) => x.id === lineId) as Line | undefined;
+    if (!r) return;
+    setEditInitial({
+      line_id: r.id as string,
+      sku: r.products?.sku ?? "",
+      client_code: r.client_code ?? "",
+      client_description: r.client_description ?? "",
+      sale_price: r.sale_price?.toString() ?? "",
+      par_price: r.par_price?.toString() ?? "",
+      start_date: r.start_date ?? "",
+      end_date: r.end_date ?? "",
+      observations: r.observations ?? "",
+    });
+    setSkuModalOpen(false);
+    setEditOpen(true);
+  };
 
   const filtered = useMemo<Line[]>(() => {
     const rows = (lines ?? []) as Line[];
@@ -414,34 +467,36 @@ function AgreementLinesPage() {
             <TooltipTrigger asChild>
               <Button
                 type="button"
-                variant={skuConflictOnly ? "default" : "outline"}
+                variant="outline"
                 size="icon"
-                onClick={() => setSkuConflictOnly((v) => !v)}
-                aria-pressed={skuConflictOnly}
-                aria-label="Detectar SKUs con precios distintos"
+                onClick={() => setSkuModalOpen(true)}
+                aria-label="SKUs repetidos en el acuerdo"
                 className="relative shrink-0"
-                disabled={conflictGroupsCount === 0 && !skuConflictOnly}
+                disabled={repeatedTotalCount === 0}
               >
                 <Wand2 className="h-4 w-4" />
-                {conflictGroupsCount > 0 && !skuConflictOnly && (
+                {repeatedTotalCount > 0 && (
                   <span
                     className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-semibold"
                     style={{
-                      background: "var(--warning-strong)",
+                      background:
+                        conflictGroupsCount > 0
+                          ? "var(--warning-strong)"
+                          : "var(--muted-foreground)",
                       color: "var(--text-on-brand)",
                     }}
                   >
-                    {conflictGroupsCount}
+                    {repeatedTotalCount}
                   </span>
                 )}
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">
-              {conflictGroupsCount === 0
-                ? "No hay SKUs con precios distintos"
-                : skuConflictOnly
-                  ? "Mostrando SKUs con precios distintos — clic para quitar"
-                  : `${conflictGroupsCount} ${conflictGroupsCount === 1 ? "SKU" : "SKUs"} con precios distintos entre posiciones`}
+              {repeatedTotalCount === 0
+                ? "No hay SKUs repetidos en este acuerdo"
+                : conflictGroupsCount > 0
+                  ? `${repeatedTotalCount} ${repeatedTotalCount === 1 ? "SKU repetido" : "SKUs repetidos"} · ${conflictGroupsCount} con precios distintos`
+                  : `${repeatedTotalCount} ${repeatedTotalCount === 1 ? "SKU repetido" : "SKUs repetidos"} al mismo precio`}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -862,6 +917,142 @@ function AgreementLinesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={skuModalOpen} onOpenChange={setSkuModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>SKUs repetidos en el acuerdo</DialogTitle>
+            <DialogDescription>
+              Un mismo SKU aparece en varias posiciones (una por código de cliente).
+              Vincularlo unifica su precio y mantiene todas las posiciones sincronizadas.
+            </DialogDescription>
+          </DialogHeader>
+
+          {repeatedTotalCount === 0 ? (
+            <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+              No hay SKUs repetidos en este acuerdo.
+            </div>
+          ) : (
+            <div className="max-h-[60vh] space-y-6 overflow-y-auto pr-1">
+              {conflictGroups.length > 0 && (
+                <section className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-[color:var(--warning-strong)]" />
+                    <h3 className="text-sm font-semibold">
+                      Requieren decisión ({conflictGroups.length})
+                    </h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Estos SKUs tienen precios distintos entre sus posiciones. Revísalos y
+                    vincula el SKU al precio correcto.
+                  </p>
+                  <ul className="divide-y divide-border rounded-lg border border-border">
+                    {conflictGroups.map((g) => (
+                      <li
+                        key={g.product_id}
+                        className="flex items-start justify-between gap-3 p-3"
+                        style={{ background: "var(--warning-subtle)" }}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="font-mono text-sm">{g.sku ?? "—"}</div>
+                          <div className="mt-0.5 text-xs text-muted-foreground">
+                            {g.position_ids.length} posiciones · precios:{" "}
+                            <span className="font-mono">
+                              {g.prices
+                                .slice()
+                                .sort((a, b) => a - b)
+                                .map((p) => fmtMoney(p))
+                                .join(" · ")}
+                            </span>
+                          </div>
+                        </div>
+                        {canAdmin && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => openEditForLine(g.position_ids[0])}
+                          >
+                            Revisar
+                          </Button>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {repeatedGroups.length > 0 && (
+                <section className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Link2 className="h-4 w-4 text-muted-foreground" />
+                    <h3 className="text-sm font-semibold">
+                      Repetidos al mismo precio ({repeatedGroups.length})
+                    </h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Puedes vincularlos ahora de forma preventiva: cuando cambie el precio,
+                    cambiará en todas sus posiciones a la vez.
+                  </p>
+                  <ul className="divide-y divide-border rounded-lg border border-border">
+                    {repeatedGroups.map((g) => {
+                      const price = g.prices[0];
+                      const busy = linkingProductId === g.product_id;
+                      return (
+                        <li
+                          key={g.product_id}
+                          className="flex items-start justify-between gap-3 p-3"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="font-mono text-sm">{g.sku ?? "—"}</div>
+                            <div className="mt-0.5 text-xs text-muted-foreground">
+                              {g.position_ids.length} posiciones · precio común:{" "}
+                              <span className="font-mono">{fmtMoney(price ?? null)}</span>
+                            </div>
+                          </div>
+                          {canAdmin && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={busy || price == null}
+                              onClick={() =>
+                                price != null &&
+                                linkMut.mutate({ product_id: g.product_id, price })
+                              }
+                            >
+                              {busy ? "Vinculando…" : "Vincular"}
+                            </Button>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </section>
+              )}
+            </div>
+          )}
+
+          <DialogFooter className="sm:justify-between">
+            {conflictGroupsCount > 0 ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSkuModalOpen(false);
+                  setSkuConflictOnly(true);
+                }}
+              >
+                Ver conflictos en la tabla
+              </Button>
+            ) : (
+              <span />
+            )}
+            <Button type="button" variant="outline" onClick={() => setSkuModalOpen(false)}>
+              Cerrar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
