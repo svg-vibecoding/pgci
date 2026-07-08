@@ -470,7 +470,7 @@ function AgreementLinesPage() {
                 variant="outline"
                 size="icon"
                 onClick={() => setSkuModalOpen(true)}
-                aria-label="SKUs repetidos en el acuerdo"
+                aria-label="Unificación de Precios"
                 className="relative shrink-0"
                 disabled={repeatedTotalCount === 0}
               >
@@ -921,10 +921,9 @@ function AgreementLinesPage() {
       <Dialog open={skuModalOpen} onOpenChange={setSkuModalOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>SKUs repetidos en el acuerdo</DialogTitle>
+            <DialogTitle>Unificación de Precios</DialogTitle>
             <DialogDescription>
-              Un mismo SKU aparece en varias posiciones (una por código de cliente).
-              Vincularlo unifica su precio y mantiene todas las posiciones sincronizadas.
+              Cuando un mismo SKU aparece en varias posiciones, puedes vincularlos para unificar su precio, esto mantiene todas las posiciones sincronizadas.
             </DialogDescription>
           </DialogHeader>
 
