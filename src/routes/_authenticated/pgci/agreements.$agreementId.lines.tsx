@@ -19,6 +19,8 @@ import {
   Info,
   Wand2,
   Link2,
+  Unlink,
+  Eye,
 } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
