@@ -331,7 +331,7 @@ function AgreementsList() {
                     color: "neutral",
                   },
                   { key: "active", label: "Activas", value: (a as { lines_active?: number }).lines_active ?? 0, color: "success" },
-                  { key: "review", label: "Requieren revisión", value: a.lines_review ?? 0, color: "warning" },
+                  { key: "review", label: "Requieren revisión", value: a.lines_review ?? 0, color: "error" },
                   { key: "transit", label: "En tránsito", value: (a as { lines_transit?: number }).lines_transit ?? 0, color: "warning" },
                 ];
                 return (
