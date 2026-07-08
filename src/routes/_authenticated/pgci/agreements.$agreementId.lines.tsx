@@ -1074,8 +1074,7 @@ function SkuGroupCard({
 
   return (
     <li
-      className="rounded-lg border border-border p-3"
-      style={variant === "conflict" ? { background: "var(--warning-subtle)" } : undefined}
+      className="rounded-lg border border-border bg-card p-3"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1 space-y-0.5">
