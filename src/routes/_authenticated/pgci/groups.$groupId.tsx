@@ -136,8 +136,8 @@ function GroupDetail() {
   const uniqueClients = rollup?.unique_clients ?? 0;
   const uniqueUsers = rollup?.unique_users ?? 0;
   const totalLines = rollup?.total_lines ?? 0;
-  const hasCoverage =
-    !!rollup && agreementsCount > 0 && (rollup.min_start || rollup.max_end);
+
+
 
 
   const invalidateAll = () => {
