@@ -21,6 +21,7 @@ import {
   Link2,
   Unlink,
   Eye,
+  Layers,
 } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -687,6 +688,23 @@ function AgreementLinesPage() {
                                         .join(" · ")}
                                     </div>
                                   </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          );
+                        }
+                        if (g.state === "repeated") {
+                          return (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Layers
+                                    className="h-3.5 w-3.5 text-muted-foreground"
+                                    aria-label="SKU repetido"
+                                  />
+                                </TooltipTrigger>
+                                <TooltipContent side="top">
+                                  SKU repetido en {g.position_ids.length} posiciones con el mismo precio
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
