@@ -896,6 +896,92 @@ export const unlinkSkuPrice = createServerFn({ method: "POST" })
   });
 
 // ---------------------------------------------------------------------------
+// Detección N:1 en la vista de posiciones — agrupa por product_id
+// ---------------------------------------------------------------------------
+
+export type AgreementSkuGroup = {
+  product_id: string;
+  sku: string | null;
+  position_ids: string[];
+  prices: number[];
+  linked: boolean;
+  state: "conflict" | "unified" | "repeated";
+};
+
+export const listAgreementSkuGroups = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ agreement_id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<AgreementSkuGroup[]> => {
+    await assertCanAccess(context.supabase, data.agreement_id);
+
+    const { data: positions, error } = await context.supabase
+      .from("agreement_positions")
+      .select("id, product_id, sale_price, products:product_id(sku)")
+      .eq("agreement_id", data.agreement_id)
+      .neq("status", "excluded")
+      .not("product_id", "is", null);
+    if (error) throw new Error(`No se pudieron cargar posiciones: ${error.message}`);
+
+    type Row = {
+      id: string;
+      product_id: string;
+      sale_price: number | null;
+      products: { sku: string | null } | null;
+    };
+    const byProduct = new Map<
+      string,
+      { sku: string | null; ids: string[]; prices: Set<number> }
+    >();
+    for (const r of (positions ?? []) as Row[]) {
+      if (!r.product_id) continue;
+      const entry = byProduct.get(r.product_id) ?? {
+        sku: r.products?.sku ?? null,
+        ids: [],
+        prices: new Set<number>(),
+      };
+      entry.ids.push(r.id);
+      if (typeof r.sale_price === "number") entry.prices.add(r.sale_price);
+      byProduct.set(r.product_id, entry);
+    }
+
+    const repeated = Array.from(byProduct.entries()).filter(
+      ([, v]) => v.ids.length >= 2,
+    );
+    if (repeated.length === 0) return [];
+
+    const productIds = repeated.map(([pid]) => pid);
+    const { data: links, error: linkErr } = await context.supabase
+      .from("agreement_sku_links")
+      .select("product_id")
+      .eq("agreement_id", data.agreement_id)
+      .in("product_id", productIds);
+    if (linkErr) throw new Error(`No se pudieron cargar vínculos: ${linkErr.message}`);
+    const linkedSet = new Set((links ?? []).map((l) => l.product_id as string));
+
+    return repeated.map(([product_id, v]) => {
+      const prices = Array.from(v.prices);
+      const linked = linkedSet.has(product_id);
+      const state: AgreementSkuGroup["state"] = linked
+        ? "unified"
+        : prices.length > 1
+          ? "conflict"
+          : "repeated";
+      return {
+        product_id,
+        sku: v.sku,
+        position_ids: v.ids,
+        prices,
+        linked,
+        state,
+      };
+    });
+  });
+
+
+
+// ---------------------------------------------------------------------------
 // Importación
 // ---------------------------------------------------------------------------
 

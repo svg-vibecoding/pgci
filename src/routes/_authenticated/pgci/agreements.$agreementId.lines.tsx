@@ -17,7 +17,10 @@ import {
   XCircle,
   Trash2,
   Info,
+  Wand2,
+  Link2,
 } from "lucide-react";
+
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -50,11 +53,20 @@ import {
   excludeAgreementLine,
   reactivateAgreementLine,
   deleteAgreementTransitLine,
+  listAgreementSkuGroups,
 } from "@/lib/agreements.functions";
 import { exportAgreementLines } from "@/lib/agreement-export";
 import { PENDING_REASON_LABELS, type ImportPendingReason } from "@/lib/agreement-import";
 import { LineEditDialog, type LineEditValues } from "@/components/agreements/LineEditDialog";
 import { AgreementImportWizard } from "@/components/agreements/AgreementImportWizard";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { formatMoneyCOP } from "@/lib/format";
+
 
 export const Route = createFileRoute(
   "/_authenticated/pgci/agreements/$agreementId/lines",
@@ -73,10 +85,8 @@ const STATUS_META: Record<
   requires_review: { label: "Revisar", status: "danger" },
   excluded: { label: "Excluida", status: "neutral" },
 };
-
-
-import { formatMoneyCOP } from "@/lib/format";
 const fmtMoney = (v: number | null) => formatMoneyCOP(v);
+
 
 type VigenciaBadge = {
   color: "info" | "warning" | "error" | "neutral";
@@ -110,6 +120,7 @@ function AgreementLinesPage() {
   const excludeFn = useServerFn(excludeAgreementLine);
   const reactivateFn = useServerFn(reactivateAgreementLine);
   const deleteTransitFn = useServerFn(deleteAgreementTransitLine);
+  const skuGroupsFn = useServerFn(listAgreementSkuGroups);
 
   const { data: agreement, isLoading: loadingAgreement } = useQuery({
     queryKey: ["agreements", "detail", agreementId],
@@ -123,9 +134,16 @@ function AgreementLinesPage() {
     queryKey: ["agreements", "lines", agreementId],
     queryFn: () => linesFn({ data: { agreement_id: agreementId } }),
   });
+  const { data: skuGroups } = useQuery({
+    queryKey: ["agreements", "sku-groups", agreementId],
+    queryFn: () => skuGroupsFn({ data: { agreement_id: agreementId } }),
+  });
+
 
   const [activeCard, setActiveCard] = useState<LineCardKey>("all");
+  const [skuConflictOnly, setSkuConflictOnly] = useState(false);
   const [q, setQ] = useState("");
+
   const [importOpen, setImportOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editInitial, setEditInitial] = useState<Partial<LineEditValues> | null>(null);
@@ -137,13 +155,18 @@ function AgreementLinesPage() {
   );
   const [reason, setReason] = useState("");
 
+  const invalidateAll = () => {
+    qc.invalidateQueries({ queryKey: ["agreements", "lines", agreementId] });
+    qc.invalidateQueries({ queryKey: ["agreements", "detail", agreementId] });
+    qc.invalidateQueries({ queryKey: ["agreements", "sku-groups", agreementId] });
+  };
+
   const exclude = useMutation({
     mutationFn: (vars: { line_id: string; reason: string | null }) =>
       excludeFn({ data: vars }),
     onSuccess: () => {
       toast.success("Posición excluida");
-      qc.invalidateQueries({ queryKey: ["agreements", "lines", agreementId] });
-      qc.invalidateQueries({ queryKey: ["agreements", "detail", agreementId] });
+      invalidateAll();
       setExcludeTarget(null);
       setReason("");
     },
@@ -154,8 +177,7 @@ function AgreementLinesPage() {
     mutationFn: (lineId: string) => reactivateFn({ data: { line_id: lineId } }),
     onSuccess: () => {
       toast.success("Posición reactivada");
-      qc.invalidateQueries({ queryKey: ["agreements", "lines", agreementId] });
-      qc.invalidateQueries({ queryKey: ["agreements", "detail", agreementId] });
+      invalidateAll();
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -164,12 +186,12 @@ function AgreementLinesPage() {
     mutationFn: (transitId: string) => deleteTransitFn({ data: { transit_id: transitId } }),
     onSuccess: () => {
       toast.success("Línea eliminada");
-      qc.invalidateQueries({ queryKey: ["agreements", "lines", agreementId] });
-      qc.invalidateQueries({ queryKey: ["agreements", "detail", agreementId] });
+      invalidateAll();
       setDeleteTransitTarget(null);
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   type Line = NonNullable<typeof lines>[number] & {
     kind: "position" | "transit";
@@ -195,6 +217,28 @@ function AgreementLinesPage() {
     return c;
   }, [lines]);
 
+  // Mapa por posición → grupo SKU (para chips) y set de ids en conflicto (para filtrar).
+  const groupByPositionId = useMemo(() => {
+    const m = new Map<string, NonNullable<typeof skuGroups>[number]>();
+    for (const g of skuGroups ?? []) {
+      for (const pid of g.position_ids) m.set(pid, g);
+    }
+    return m;
+  }, [skuGroups]);
+
+  const conflictPositionIds = useMemo(() => {
+    const s = new Set<string>();
+    for (const g of skuGroups ?? []) {
+      if (g.state === "conflict") for (const pid of g.position_ids) s.add(pid);
+    }
+    return s;
+  }, [skuGroups]);
+
+  const conflictGroupsCount = useMemo(
+    () => (skuGroups ?? []).filter((g) => g.state === "conflict").length,
+    [skuGroups],
+  );
+
   const filtered = useMemo<Line[]>(() => {
     const rows = (lines ?? []) as Line[];
     const term = q.trim().toLowerCase();
@@ -206,6 +250,9 @@ function AgreementLinesPage() {
       } else {
         if (r.kind === "transit" || r.status !== activeCard) return false;
       }
+      if (skuConflictOnly) {
+        if (r.kind === "transit" || !conflictPositionIds.has(r.id as string)) return false;
+      }
       if (!term) return true;
       const sku = r.products?.sku ?? "";
       const erp = r.products?.erp_description ?? "";
@@ -214,7 +261,8 @@ function AgreementLinesPage() {
       const desc = r.client_description ?? "";
       return [sku, erp, brand, code, desc].some((s) => s.toLowerCase().includes(term));
     });
-  }, [lines, activeCard, q]);
+  }, [lines, activeCard, q, skuConflictOnly, conflictPositionIds]);
+
 
   const handleExport = () => {
     if (!lines) return;
@@ -361,7 +409,56 @@ function AgreementLinesPage() {
             </button>
           )}
         </div>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant={skuConflictOnly ? "default" : "outline"}
+                size="icon"
+                onClick={() => setSkuConflictOnly((v) => !v)}
+                aria-pressed={skuConflictOnly}
+                aria-label="Detectar SKUs con precios distintos"
+                className="relative shrink-0"
+                disabled={conflictGroupsCount === 0 && !skuConflictOnly}
+              >
+                <Wand2 className="h-4 w-4" />
+                {conflictGroupsCount > 0 && !skuConflictOnly && (
+                  <span
+                    className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-semibold"
+                    style={{
+                      background: "var(--warning-strong)",
+                      color: "var(--text-on-brand)",
+                    }}
+                  >
+                    {conflictGroupsCount}
+                  </span>
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              {conflictGroupsCount === 0
+                ? "No hay SKUs con precios distintos"
+                : skuConflictOnly
+                  ? "Mostrando SKUs con precios distintos — clic para quitar"
+                  : `${conflictGroupsCount} ${conflictGroupsCount === 1 ? "SKU" : "SKUs"} con precios distintos entre posiciones`}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
+
+      {skuConflictOnly && conflictGroupsCount > 0 && (
+        <Alert variant="warning">
+          <Wand2 className="h-4 w-4" />
+          <AlertTitle>
+            {conflictGroupsCount} {conflictGroupsCount === 1 ? "SKU tiene" : "SKUs tienen"} precios distintos entre sus posiciones
+          </AlertTitle>
+          <AlertDescription>
+            Abre una posición para revisar los precios y vincular el SKU. Al vincularlo, todas sus posiciones compartirán el mismo precio automáticamente.
+          </AlertDescription>
+        </Alert>
+      )}
+
 
       {(activeCard !== "all" || q.trim()) && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -397,11 +494,13 @@ function AgreementLinesPage() {
             onClick={() => {
               setActiveCard("all");
               setQ("");
+              setSkuConflictOnly(false);
             }}
             className="text-sm font-medium text-primary hover:underline"
           >
             Limpiar filtros
           </button>
+
         </div>
       )}
 
@@ -469,11 +568,69 @@ function AgreementLinesPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="font-mono text-sm">{r.products?.sku ?? "—"}</div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-mono text-sm">{r.products?.sku ?? "—"}</span>
+                      {r.kind === "position" && (() => {
+                        const g = groupByPositionId.get(r.id as string);
+                        if (!g) return null;
+                        if (g.state === "conflict") {
+                          return (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span>
+                                    <Chip size="small" variant="soft" color="warning">
+                                      <AlertTriangle className="h-3 w-3" />
+                                      Precios distintos ({g.position_ids.length})
+                                    </Chip>
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs">
+                                  <div className="space-y-1">
+                                    <div className="font-medium">
+                                      Este SKU está en {g.position_ids.length} posiciones con precios distintos:
+                                    </div>
+                                    <div className="font-mono text-xs">
+                                      {g.prices
+                                        .slice()
+                                        .sort((a, b) => a - b)
+                                        .map((p) => fmtMoney(p))
+                                        .join(" · ")}
+                                    </div>
+                                    <div className="text-xs opacity-80">
+                                      Abre la posición para vincular el SKU y unificar el precio.
+                                    </div>
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          );
+                        }
+                        if (g.state === "unified") {
+                          return (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Link2
+                                    className="h-3.5 w-3.5 text-muted-foreground"
+                                    aria-label="SKU vinculado"
+                                  />
+                                </TooltipTrigger>
+                                <TooltipContent side="top">
+                                  SKU vinculado — precio unificado en {g.position_ids.length} posiciones
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
                     <div className="text-xs text-muted-foreground line-clamp-2">
                       {r.products?.erp_description ?? "—"}
                     </div>
                   </TableCell>
+
                   <TableCell className="text-sm">
                     {r.products?.commercial_brand ?? "—"}
                   </TableCell>

@@ -485,6 +485,7 @@ export function LineEditDialog({
       toast.success(isEdit ? "Posición actualizada" : "Posición creada");
       qc.invalidateQueries({ queryKey: ["agreements", "lines", agreementId] });
       qc.invalidateQueries({ queryKey: ["agreements", "detail", agreementId] });
+      qc.invalidateQueries({ queryKey: ["agreements", "sku-groups", agreementId] });
       onOpenChange(false);
     },
     onError: (e: Error) => toast.error(e.message),
@@ -493,7 +494,9 @@ export function LineEditDialog({
   const invalidateLines = () => {
     qc.invalidateQueries({ queryKey: ["agreements", "lines", agreementId] });
     qc.invalidateQueries({ queryKey: ["agreements", "detail", agreementId] });
+    qc.invalidateQueries({ queryKey: ["agreements", "sku-groups", agreementId] });
   };
+
 
   const linkMut = useMutation({
     mutationFn: async () => {
