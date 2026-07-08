@@ -1029,6 +1029,7 @@ function AgreementLinesPage() {
                               unlinkMut.mutate({ product_id: g.product_id })
                             }
                             actionLabel={busy ? "Desvinculando…" : "Desvincular"}
+                            actionType="unlink"
                             actionDisabled={busy}
                             fmtMoney={fmtMoney}
                           />
