@@ -1086,7 +1086,7 @@ function SkuGroupCard({
     }[];
     prices: number[];
   };
-  variant: "conflict" | "repeated";
+  variant: "conflict" | "repeated" | "unified";
   defaultOpen: boolean;
   canAdmin: boolean;
   onAction: () => void;
@@ -1103,7 +1103,9 @@ function SkuGroupCard({
           .sort((a, b) => a - b)
           .map((p) => fmtMoney(p))
           .join(" · ")}`
-      : `${count} posiciones · precio común: ${fmtMoney(group.prices[0] ?? null)}`;
+      : variant === "unified"
+        ? `${count} posiciones · precio vinculado: ${fmtMoney(group.prices[0] ?? null)}`
+        : `${count} posiciones · precio común: ${fmtMoney(group.prices[0] ?? null)}`;
 
   return (
     <li className="rounded-lg border border-border bg-card p-3">
