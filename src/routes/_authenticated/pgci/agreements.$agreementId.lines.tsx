@@ -160,6 +160,17 @@ function AgreementLinesPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const deleteTransit = useMutation({
+    mutationFn: (transitId: string) => deleteTransitFn({ data: { transit_id: transitId } }),
+    onSuccess: () => {
+      toast.success("Línea eliminada");
+      qc.invalidateQueries({ queryKey: ["agreements", "lines", agreementId] });
+      qc.invalidateQueries({ queryKey: ["agreements", "detail", agreementId] });
+      setDeleteTransitTarget(null);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   type Line = NonNullable<typeof lines>[number] & {
     kind: "position" | "transit";
     products?: {
