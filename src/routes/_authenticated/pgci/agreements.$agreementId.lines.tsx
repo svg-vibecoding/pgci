@@ -656,8 +656,8 @@ function AgreementLinesPage() {
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <span>
-                                    <Chip size="small" variant="soft" color="warning">
-                                      <AlertTriangle className="h-3 w-3" />
+                                    <Chip size="small" variant="soft" color="neutral">
+                                      <Info className="h-3 w-3" />
                                       Precios distintos ({g.position_ids.length})
                                     </Chip>
                                   </span>
@@ -673,9 +673,6 @@ function AgreementLinesPage() {
                                         .sort((a, b) => a - b)
                                         .map((p) => fmtMoney(p))
                                         .join(" · ")}
-                                    </div>
-                                    <div className="text-xs opacity-80">
-                                      Abre la posición para vincular el SKU y unificar el precio.
                                     </div>
                                   </div>
                                 </TooltipContent>
