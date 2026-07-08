@@ -927,7 +927,9 @@ export const listAgreementSkuGroups = createServerFn({ method: "POST" })
 
     const { data: positions, error } = await context.supabase
       .from("agreement_positions")
-      .select("id, product_id, sale_price, client_code, client_description, products:product_id(sku, erp_description)")
+      .select(
+        "id, product_id, sale_price, client_product_id, client_product_match_id, products:product_id(sku, erp_description)",
+      )
       .eq("agreement_id", data.agreement_id)
       .neq("status", "excluded")
       .not("product_id", "is", null);
@@ -937,10 +939,55 @@ export const listAgreementSkuGroups = createServerFn({ method: "POST" })
       id: string;
       product_id: string;
       sale_price: number | null;
-      client_code: string | null;
-      client_description: string | null;
+      client_product_id: string | null;
+      client_product_match_id: string | null;
       products: { sku: string | null; erp_description: string | null } | null;
     };
+    const rows = (positions ?? []) as Row[];
+
+    // Resolver client_code / client_description igual que listAgreementLines.
+    const matchIds = rows
+      .map((r) => r.client_product_match_id)
+      .filter((v): v is string => !!v);
+    const cpByMatch = new Map<string, string>();
+    if (matchIds.length > 0) {
+      const { data: matches } = await context.supabase
+        .from("client_product_match")
+        .select("id, client_product_id")
+        .in("id", matchIds);
+      for (const m of matches ?? []) {
+        if (m.client_product_id)
+          cpByMatch.set(m.id as string, m.client_product_id as string);
+      }
+    }
+    const cpIdsSet = new Set<string>();
+    for (const r of rows) {
+      const cpId =
+        r.client_product_id ??
+        (r.client_product_match_id ? cpByMatch.get(r.client_product_match_id) ?? null : null);
+      if (cpId) cpIdsSet.add(cpId);
+    }
+    const codeByCp = new Map<string, string>();
+    const descByCp = new Map<string, string | null>();
+    if (cpIdsSet.size > 0) {
+      const cpIds = Array.from(cpIdsSet);
+      const { data: cps } = await context.supabase
+        .from("client_products")
+        .select("id, client_code")
+        .in("id", cpIds);
+      for (const c of cps ?? []) codeByCp.set(c.id as string, c.client_code as string);
+      const { data: hist } = await context.supabase
+        .from("client_product_history")
+        .select("client_product_id, description, valid_from")
+        .in("client_product_id", cpIds)
+        .order("valid_from", { ascending: false });
+      for (const h of hist ?? []) {
+        if (!descByCp.has(h.client_product_id as string)) {
+          descByCp.set(h.client_product_id as string, (h.description as string) ?? null);
+        }
+      }
+    }
+
     const byProduct = new Map<
       string,
       {
@@ -951,8 +998,11 @@ export const listAgreementSkuGroups = createServerFn({ method: "POST" })
         prices: Set<number>;
       }
     >();
-    for (const r of (positions ?? []) as Row[]) {
+    for (const r of rows) {
       if (!r.product_id) continue;
+      const cpId =
+        r.client_product_id ??
+        (r.client_product_match_id ? cpByMatch.get(r.client_product_match_id) ?? null : null);
       const entry = byProduct.get(r.product_id) ?? {
         sku: r.products?.sku ?? null,
         description: r.products?.erp_description ?? null,
@@ -963,8 +1013,8 @@ export const listAgreementSkuGroups = createServerFn({ method: "POST" })
       entry.ids.push(r.id);
       entry.positions.push({
         id: r.id,
-        client_code: r.client_code,
-        client_description: r.client_description,
+        client_code: cpId ? codeByCp.get(cpId) ?? null : null,
+        client_description: cpId ? descByCp.get(cpId) ?? null : null,
         sale_price: r.sale_price,
       });
       if (typeof r.sale_price === "number") entry.prices.add(r.sale_price);
