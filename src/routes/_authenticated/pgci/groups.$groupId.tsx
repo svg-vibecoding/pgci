@@ -162,7 +162,7 @@ function GroupDetail() {
               label={isActive ? "Activo" : "Inactivo"}
             />
             <span>
-              {group.client_display_name ?? "Agrupador sin cliente asociado"}
+              {group.client_display_name ?? ""}
             </span>
           </div>
         </div>
