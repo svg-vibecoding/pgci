@@ -130,6 +130,7 @@ function AgreementLinesPage() {
   const reactivateFn = useServerFn(reactivateAgreementLine);
   const deleteTransitFn = useServerFn(deleteAgreementTransitLine);
   const skuGroupsFn = useServerFn(listAgreementSkuGroups);
+  const linkFn = useServerFn(linkSkuPrice);
 
   const { data: agreement, isLoading: loadingAgreement } = useQuery({
     queryKey: ["agreements", "detail", agreementId],
