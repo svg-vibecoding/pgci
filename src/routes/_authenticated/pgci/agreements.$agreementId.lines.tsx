@@ -15,7 +15,10 @@ import {
   X,
   AlertTriangle,
   XCircle,
+  Trash2,
+  Info,
 } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -46,6 +49,7 @@ import {
   listAgreementLines,
   excludeAgreementLine,
   reactivateAgreementLine,
+  deleteAgreementTransitLine,
 } from "@/lib/agreements.functions";
 import { exportAgreementLines } from "@/lib/agreement-export";
 import { PENDING_REASON_LABELS, type ImportPendingReason } from "@/lib/agreement-import";
@@ -105,6 +109,7 @@ function AgreementLinesPage() {
   const linesFn = useServerFn(listAgreementLines);
   const excludeFn = useServerFn(excludeAgreementLine);
   const reactivateFn = useServerFn(reactivateAgreementLine);
+  const deleteTransitFn = useServerFn(deleteAgreementTransitLine);
 
   const { data: agreement, isLoading: loadingAgreement } = useQuery({
     queryKey: ["agreements", "detail", agreementId],
@@ -125,6 +130,9 @@ function AgreementLinesPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [editInitial, setEditInitial] = useState<Partial<LineEditValues> | null>(null);
   const [excludeTarget, setExcludeTarget] = useState<{ id: string; sku: string | null } | null>(
+    null,
+  );
+  const [deleteTransitTarget, setDeleteTransitTarget] = useState<{ id: string; sku: string | null } | null>(
     null,
   );
   const [reason, setReason] = useState("");
@@ -148,6 +156,17 @@ function AgreementLinesPage() {
       toast.success("Posición reactivada");
       qc.invalidateQueries({ queryKey: ["agreements", "lines", agreementId] });
       qc.invalidateQueries({ queryKey: ["agreements", "detail", agreementId] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const deleteTransit = useMutation({
+    mutationFn: (transitId: string) => deleteTransitFn({ data: { transit_id: transitId } }),
+    onSuccess: () => {
+      toast.success("Línea eliminada");
+      qc.invalidateQueries({ queryKey: ["agreements", "lines", agreementId] });
+      qc.invalidateQueries({ queryKey: ["agreements", "detail", agreementId] });
+      setDeleteTransitTarget(null);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -381,7 +400,17 @@ function AgreementLinesPage() {
         </div>
       )}
 
-
+      {!loadingLines && activeCard === "transit" && filtered.length === 0 ? (
+        <Alert variant="info">
+          <Info className="h-4 w-4" />
+          <AlertTitle>No hay información en tránsito</AlertTitle>
+          <AlertDescription>
+            Aquí aparecen las filas cargadas al acuerdo que aún no son posiciones porque
+            les falta SKU, precio o vigencia. Cuando se completan, pasan automáticamente
+            a Posiciones.
+          </AlertDescription>
+        </Alert>
+      ) : (
       <div className="overflow-x-auto rounded-lg border border-border bg-card">
         <Table className="table-fixed">
           <TableHeader>
@@ -535,20 +564,37 @@ function AgreementLinesPage() {
                             >
                               <Pencil className="h-4 w-4" />
                             </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() =>
-                                setExcludeTarget({
-                                  id: r.id as string,
-                                  sku: r.products?.sku ?? null,
-                                })
-                              }
-                              aria-label="Excluir"
-                              title="Excluir"
-                            >
-                              <Ban className="h-4 w-4 text-destructive" />
-                            </Button>
+                            {r.kind === "transit" ? (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() =>
+                                  setDeleteTransitTarget({
+                                    id: r.id as string,
+                                    sku: r.products?.sku ?? null,
+                                  })
+                                }
+                                aria-label="Eliminar"
+                                title="Eliminar"
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            ) : (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() =>
+                                  setExcludeTarget({
+                                    id: r.id as string,
+                                    sku: r.products?.sku ?? null,
+                                  })
+                                }
+                                aria-label="Excluir"
+                                title="Excluir"
+                              >
+                                <Ban className="h-4 w-4 text-destructive" />
+                              </Button>
+                            )}
                           </>
                         )}
                       </div>
@@ -560,6 +606,9 @@ function AgreementLinesPage() {
           </TableBody>
         </Table>
       </div>
+      )}
+
+
 
       <LineEditDialog
         open={editOpen}
@@ -618,6 +667,35 @@ function AgreementLinesPage() {
               disabled={exclude.isPending}
             >
               Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={!!deleteTransitTarget}
+        onOpenChange={(o) => {
+          if (!o) setDeleteTransitTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar línea en tránsito</AlertDialogTitle>
+            <AlertDialogDescription>
+              La línea en tránsito se eliminará permanentemente. Esta acción no se
+              puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteTransit.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                if (deleteTransitTarget) deleteTransit.mutate(deleteTransitTarget.id);
+              }}
+              disabled={deleteTransit.isPending}
+            >
+              Eliminar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
