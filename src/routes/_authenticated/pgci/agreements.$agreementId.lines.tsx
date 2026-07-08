@@ -539,7 +539,7 @@ function AgreementLinesPage() {
       )}
 
 
-      {(activeCard !== "all" || q.trim()) && (
+      {(activeCard !== "all" || q.trim() || skuConflictOnly) && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <p className="text-sm text-muted-foreground">
             {activeCard === "transit"
@@ -565,6 +565,16 @@ function AgreementLinesPage() {
                 onRemove={() => setQ("")}
               >
                 Búsqueda: {q.trim()}
+              </Chip>
+            )}
+            {skuConflictOnly && (
+              <Chip
+                size="small"
+                variant="soft"
+                color="neutral"
+                onRemove={() => setSkuConflictOnly(false)}
+              >
+                SKUs repetidos
               </Chip>
             )}
           </div>
