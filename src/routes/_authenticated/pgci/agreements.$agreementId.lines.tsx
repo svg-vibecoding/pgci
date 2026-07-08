@@ -548,11 +548,11 @@ function AgreementLinesPage() {
 
       {skuConflictOnly && repeatedTotalCount > 0 && (
         <Alert variant="info" className="py-2">
-          <div className="flex items-start gap-2">
-            <Layers className="h-4 w-4 shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <AlertTitle className="m-0">Estado de códigos en múltiples posiciones</AlertTitle>
-              <AlertDescription className="mt-1 pl-0">
+          <div className="flex items-center gap-2">
+            <Layers className="h-4 w-4 shrink-0" />
+            <AlertTitle className="m-0">Estado de códigos en múltiples posiciones</AlertTitle>
+          </div>
+          <AlertDescription className="mt-1 pl-0">
                 <div className="space-y-0.5 text-sm">
                   <p>
                     {conflictGroups.length} códigos en <span className="font-semibold">{conflictPositionCount}</span> posiciones no vinculadas con precios distintos
