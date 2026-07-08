@@ -467,34 +467,36 @@ function AgreementLinesPage() {
             <TooltipTrigger asChild>
               <Button
                 type="button"
-                variant={skuConflictOnly ? "default" : "outline"}
+                variant="outline"
                 size="icon"
-                onClick={() => setSkuConflictOnly((v) => !v)}
-                aria-pressed={skuConflictOnly}
-                aria-label="Detectar SKUs con precios distintos"
+                onClick={() => setSkuModalOpen(true)}
+                aria-label="SKUs repetidos en el acuerdo"
                 className="relative shrink-0"
-                disabled={conflictGroupsCount === 0 && !skuConflictOnly}
+                disabled={repeatedTotalCount === 0}
               >
                 <Wand2 className="h-4 w-4" />
-                {conflictGroupsCount > 0 && !skuConflictOnly && (
+                {repeatedTotalCount > 0 && (
                   <span
                     className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-semibold"
                     style={{
-                      background: "var(--warning-strong)",
+                      background:
+                        conflictGroupsCount > 0
+                          ? "var(--warning-strong)"
+                          : "var(--muted-foreground)",
                       color: "var(--text-on-brand)",
                     }}
                   >
-                    {conflictGroupsCount}
+                    {repeatedTotalCount}
                   </span>
                 )}
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">
-              {conflictGroupsCount === 0
-                ? "No hay SKUs con precios distintos"
-                : skuConflictOnly
-                  ? "Mostrando SKUs con precios distintos — clic para quitar"
-                  : `${conflictGroupsCount} ${conflictGroupsCount === 1 ? "SKU" : "SKUs"} con precios distintos entre posiciones`}
+              {repeatedTotalCount === 0
+                ? "No hay SKUs repetidos en este acuerdo"
+                : conflictGroupsCount > 0
+                  ? `${repeatedTotalCount} ${repeatedTotalCount === 1 ? "SKU repetido" : "SKUs repetidos"} · ${conflictGroupsCount} con precios distintos`
+                  : `${repeatedTotalCount} ${repeatedTotalCount === 1 ? "SKU repetido" : "SKUs repetidos"} al mismo precio`}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
