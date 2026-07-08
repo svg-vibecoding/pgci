@@ -194,11 +194,6 @@ function GroupDetail() {
         )}
       </header>
 
-      {/* El agrupador */}
-      <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-        El agrupador
-      </h3>
-
       {/* Resumen — mismo card que "Información comercial / Posiciones en el acuerdo" */}
       <Card>
         <CardHeader>
