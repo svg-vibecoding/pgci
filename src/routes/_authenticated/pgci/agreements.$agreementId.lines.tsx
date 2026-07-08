@@ -525,13 +525,13 @@ function AgreementLinesPage() {
       </div>
 
       {skuConflictOnly && conflictGroupsCount > 0 && (
-        <Alert variant="warning">
-          <Wand2 className="h-4 w-4" />
+        <Alert variant="info">
+          <Info className="h-4 w-4" />
           <AlertTitle>
-            {conflictGroupsCount} {conflictGroupsCount === 1 ? "SKU tiene" : "SKUs tienen"} precios distintos entre sus posiciones
+            {conflictGroupsCount} {conflictGroupsCount === 1 ? "SKU con" : "SKUs con"} precios distintos entre sus posiciones
           </AlertTitle>
           <AlertDescription>
-            Abre una posición para revisar los precios y vincular el SKU. Al vincularlo, todas sus posiciones compartirán el mismo precio automáticamente.
+            Al vincular un SKU, sus posiciones comparten el mismo precio automáticamente.
           </AlertDescription>
         </Alert>
       )}
