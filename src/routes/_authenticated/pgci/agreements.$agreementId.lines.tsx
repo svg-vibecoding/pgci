@@ -1073,14 +1073,16 @@ function SkuGroupCard({
       : `${count} posiciones · precio común: ${fmtMoney(group.prices[0] ?? null)}`;
 
   return (
-    <li
-      className="rounded-lg border border-border bg-card p-3"
-    >
+    <li className="rounded-lg border border-border bg-card p-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1 space-y-0.5">
-          <div className="font-mono text-sm">{group.sku ?? "—"}</div>
+          <div className="font-mono text-sm font-medium">
+            {group.sku ?? "—"}
+          </div>
           {group.product_description && (
-            <div className="text-sm text-foreground">{group.product_description}</div>
+            <div className="text-sm text-secondary">
+              {group.product_description}
+            </div>
           )}
           <div className="text-xs text-muted-foreground">{summary}</div>
         </div>
@@ -1111,9 +1113,13 @@ function SkuGroupCard({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-32">Código cliente</TableHead>
-                <TableHead>Descripción cliente</TableHead>
-                <TableHead className="w-32 whitespace-nowrap text-right">
+                <TableHead className="w-32 py-1.5 px-2 text-[11px] font-normal text-muted-foreground">
+                  Código cliente
+                </TableHead>
+                <TableHead className="py-1.5 px-2 text-[11px] font-normal text-muted-foreground">
+                  Descripción cliente
+                </TableHead>
+                <TableHead className="w-32 whitespace-nowrap py-1.5 px-2 text-right text-[11px] font-normal text-muted-foreground">
                   Precio actual
                 </TableHead>
               </TableRow>
@@ -1121,13 +1127,13 @@ function SkuGroupCard({
             <TableBody>
               {group.positions.map((p) => (
                 <TableRow key={p.id}>
-                  <TableCell className="font-mono text-sm">
+                  <TableCell className="py-1.5 px-2 font-mono text-xs text-muted-foreground">
                     {p.client_code ?? "—"}
                   </TableCell>
-                  <TableCell className="text-sm">
+                  <TableCell className="py-1.5 px-2 text-xs text-muted-foreground">
                     {p.client_description ?? "—"}
                   </TableCell>
-                  <TableCell className="text-right tabular-nums">
+                  <TableCell className="py-1.5 px-2 text-right text-xs tabular-nums text-muted-foreground">
                     {fmtMoney(p.sale_price ?? null)}
                   </TableCell>
                 </TableRow>
