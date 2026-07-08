@@ -49,6 +49,7 @@ import {
   listAgreementLines,
   excludeAgreementLine,
   reactivateAgreementLine,
+  deleteAgreementTransitLine,
 } from "@/lib/agreements.functions";
 import { exportAgreementLines } from "@/lib/agreement-export";
 import { PENDING_REASON_LABELS, type ImportPendingReason } from "@/lib/agreement-import";
