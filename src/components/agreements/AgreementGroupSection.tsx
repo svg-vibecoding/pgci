@@ -87,12 +87,12 @@ function GroupedSummary({
             <p className="text-sm text-muted-foreground">
               {data.agreements.length}{" "}
               {data.agreements.length === 1 ? "acuerdo" : "acuerdos"} · {data.unique_clients}{" "}
-              {data.unique_clients === 1 ? "cliente único" : "clientes únicos"} ·{" "}
-              {data.total_lines}{" "}
-              {data.total_lines === 1 ? "posición" : "posiciones"} en total
+              {data.unique_clients === 1 ? "cliente" : "clientes"} · {data.unique_users}{" "}
+              {data.unique_users === 1 ? "miembro" : "miembros"} · {data.total_lines}{" "}
+              {data.total_lines === 1 ? "posición" : "posiciones"}
             </p>
 
-            {data.agreements.length > 1 && (
+            {data.agreements.filter((a) => a.id !== currentAgreementId).length > 0 ? (
               <div className="space-y-2">
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   Otros acuerdos del agrupador
@@ -123,6 +123,10 @@ function GroupedSummary({
                     ))}
                 </ul>
               </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Este es el único acuerdo del agrupador.
+              </p>
             )}
           </>
         )}
