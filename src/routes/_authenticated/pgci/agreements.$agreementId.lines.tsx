@@ -242,10 +242,10 @@ function AgreementLinesPage() {
     return m;
   }, [skuGroups]);
 
-  const conflictPositionIds = useMemo(() => {
+  const repeatedPositionIds = useMemo(() => {
     const s = new Set<string>();
     for (const g of skuGroups ?? []) {
-      if (g.state === "conflict") for (const pid of g.position_ids) s.add(pid);
+      for (const pid of g.position_ids) s.add(pid);
     }
     return s;
   }, [skuGroups]);
@@ -333,7 +333,7 @@ function AgreementLinesPage() {
         if (r.kind === "transit" || r.status !== activeCard) return false;
       }
       if (skuConflictOnly) {
-        if (r.kind === "transit" || !conflictPositionIds.has(r.id as string)) return false;
+        if (r.kind === "transit" || !repeatedPositionIds.has(r.id as string)) return false;
       }
       if (!term) return true;
       const sku = r.products?.sku ?? "";
@@ -343,7 +343,7 @@ function AgreementLinesPage() {
       const desc = r.client_description ?? "";
       return [sku, erp, brand, code, desc].some((s) => s.toLowerCase().includes(term));
     });
-  }, [lines, activeCard, q, skuConflictOnly, conflictPositionIds]);
+  }, [lines, activeCard, q, skuConflictOnly, repeatedPositionIds]);
 
 
   const handleExport = () => {
@@ -539,7 +539,7 @@ function AgreementLinesPage() {
       )}
 
 
-      {(activeCard !== "all" || q.trim()) && (
+      {(activeCard !== "all" || q.trim() || skuConflictOnly) && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <p className="text-sm text-muted-foreground">
             {activeCard === "transit"
@@ -565,6 +565,16 @@ function AgreementLinesPage() {
                 onRemove={() => setQ("")}
               >
                 Búsqueda: {q.trim()}
+              </Chip>
+            )}
+            {skuConflictOnly && (
+              <Chip
+                size="small"
+                variant="soft"
+                color="neutral"
+                onRemove={() => setSkuConflictOnly(false)}
+              >
+                SKUs repetidos
               </Chip>
             )}
           </div>
@@ -660,7 +670,7 @@ function AgreementLinesPage() {
                                   <span>
                                     <Chip size="small" variant="soft" color="neutral">
                                       <Info className="h-3 w-3" />
-                                      Precios distintos ({g.position_ids.length})
+                                      Precios ({new Set(g.prices).size})
                                     </Chip>
                                   </span>
                                 </TooltipTrigger>
@@ -1124,8 +1134,9 @@ function SkuGroupCard({
               {group.sku ?? "—"}
             </span>
             {hasDistinctPrices && (
-              <Chip color="neutral" size="small">
-                Precios (2)
+              <Chip color="neutral" size="small" variant="soft">
+                <Info className="h-3 w-3" />
+                Precios ({distinctPrices})
               </Chip>
             )}
           </div>
