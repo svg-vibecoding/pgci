@@ -27,7 +27,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge, Chip, StatusBadge, type StatusBadgeStatus } from "@/components/sumatec";
+import { Badge, Chip, StatusBadge, SummaryToggle, type StatusBadgeStatus } from "@/components/sumatec";
 import {
   Table,
   TableBody,
@@ -945,36 +945,18 @@ function AgreementLinesPage() {
                     Estos SKUs tienen precios distintos entre sus posiciones. Revísalos y
                     vincula el SKU al precio correcto.
                   </p>
-                  <ul className="divide-y divide-border rounded-lg border border-border">
+                  <ul className="space-y-2">
                     {conflictGroups.map((g) => (
-                      <li
+                      <SkuGroupCard
                         key={g.product_id}
-                        className="flex items-start justify-between gap-3 p-3"
-                        style={{ background: "var(--warning-subtle)" }}
-                      >
-                        <div className="min-w-0 flex-1">
-                          <div className="font-mono text-sm">{g.sku ?? "—"}</div>
-                          <div className="mt-0.5 text-xs text-muted-foreground">
-                            {g.position_ids.length} posiciones · precios:{" "}
-                            <span className="font-mono">
-                              {g.prices
-                                .slice()
-                                .sort((a, b) => a - b)
-                                .map((p) => fmtMoney(p))
-                                .join(" · ")}
-                            </span>
-                          </div>
-                        </div>
-                        {canAdmin && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => openEditForLine(g.position_ids[0])}
-                          >
-                            Revisar
-                          </Button>
-                        )}
-                      </li>
+                        group={g}
+                        variant="conflict"
+                        defaultOpen
+                        canAdmin={canAdmin}
+                        onAction={() => openEditForLine(g.position_ids[0])}
+                        actionLabel="Revisar"
+                        fmtMoney={fmtMoney}
+                      />
                     ))}
                   </ul>
                 </section>
@@ -992,36 +974,25 @@ function AgreementLinesPage() {
                     Puedes vincularlos ahora de forma preventiva: cuando cambie el precio,
                     cambiará en todas sus posiciones a la vez.
                   </p>
-                  <ul className="divide-y divide-border rounded-lg border border-border">
+                  <ul className="space-y-2">
                     {repeatedGroups.map((g) => {
                       const price = g.prices[0];
                       const busy = linkingProductId === g.product_id;
                       return (
-                        <li
+                        <SkuGroupCard
                           key={g.product_id}
-                          className="flex items-start justify-between gap-3 p-3"
-                        >
-                          <div className="min-w-0 flex-1">
-                            <div className="font-mono text-sm">{g.sku ?? "—"}</div>
-                            <div className="mt-0.5 text-xs text-muted-foreground">
-                              {g.position_ids.length} posiciones · precio común:{" "}
-                              <span className="font-mono">{fmtMoney(price ?? null)}</span>
-                            </div>
-                          </div>
-                          {canAdmin && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              disabled={busy || price == null}
-                              onClick={() =>
-                                price != null &&
-                                linkMut.mutate({ product_id: g.product_id, price })
-                              }
-                            >
-                              {busy ? "Vinculando…" : "Vincular"}
-                            </Button>
-                          )}
-                        </li>
+                          group={g}
+                          variant="repeated"
+                          defaultOpen={false}
+                          canAdmin={canAdmin}
+                          onAction={() =>
+                            price != null &&
+                            linkMut.mutate({ product_id: g.product_id, price })
+                          }
+                          actionLabel={busy ? "Vinculando…" : "Vincular"}
+                          actionDisabled={busy || price == null}
+                          fmtMoney={fmtMoney}
+                        />
                       );
                     })}
                   </ul>
@@ -1053,5 +1024,120 @@ function AgreementLinesPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function SkuGroupCard({
+  group,
+  variant,
+  defaultOpen,
+  canAdmin,
+  onAction,
+  actionLabel,
+  actionDisabled,
+  fmtMoney,
+}: {
+  group: {
+    product_id: string;
+    sku: string | null;
+    product_description: string | null;
+    positions: {
+      id: string;
+      client_code: string | null;
+      client_description: string | null;
+      sale_price: number | null;
+    }[];
+    prices: number[];
+  };
+  variant: "conflict" | "repeated";
+  defaultOpen: boolean;
+  canAdmin: boolean;
+  onAction: () => void;
+  actionLabel: string;
+  actionDisabled?: boolean;
+  fmtMoney: (v: number | null) => string;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  const count = group.positions.length;
+  const summary =
+    variant === "conflict"
+      ? `${count} posiciones · precios: ${group.prices
+          .slice()
+          .sort((a, b) => a - b)
+          .map((p) => fmtMoney(p))
+          .join(" · ")}`
+      : `${count} posiciones · precio común: ${fmtMoney(group.prices[0] ?? null)}`;
+
+  return (
+    <li
+      className="rounded-lg border border-border p-3"
+      style={variant === "conflict" ? { background: "var(--warning-subtle)" } : undefined}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="text-sm">
+            <span className="font-mono">{group.sku ?? "—"}</span>
+            {group.product_description && (
+              <>
+                <span className="text-muted-foreground"> · </span>
+                <span className="text-foreground">{group.product_description}</span>
+              </>
+            )}
+          </div>
+          <div className="mt-0.5 text-xs text-muted-foreground">{summary}</div>
+        </div>
+        {canAdmin && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onAction}
+            disabled={actionDisabled}
+          >
+            {actionLabel}
+          </Button>
+        )}
+      </div>
+
+      <div className="mt-2">
+        <SummaryToggle
+          summary=""
+          open={open}
+          onToggle={() => setOpen((v) => !v)}
+          openLabel="Ocultar posiciones"
+          closedLabel="Ver posiciones"
+        />
+      </div>
+
+      {open && (
+        <div className="mt-2 overflow-x-auto rounded-md border border-border bg-card">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-32">Código cliente</TableHead>
+                <TableHead>Descripción cliente</TableHead>
+                <TableHead className="w-32 whitespace-nowrap text-right">
+                  Precio actual
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {group.positions.map((p) => (
+                <TableRow key={p.id}>
+                  <TableCell className="font-mono text-sm">
+                    {p.client_code ?? "—"}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {p.client_description ?? "—"}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {fmtMoney(p.sale_price ?? null)}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </li>
   );
 }
