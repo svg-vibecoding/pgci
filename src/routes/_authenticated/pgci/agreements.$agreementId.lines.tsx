@@ -120,6 +120,7 @@ function AgreementLinesPage() {
   const excludeFn = useServerFn(excludeAgreementLine);
   const reactivateFn = useServerFn(reactivateAgreementLine);
   const deleteTransitFn = useServerFn(deleteAgreementTransitLine);
+  const skuGroupsFn = useServerFn(listAgreementSkuGroups);
 
   const { data: agreement, isLoading: loadingAgreement } = useQuery({
     queryKey: ["agreements", "detail", agreementId],
@@ -133,6 +134,11 @@ function AgreementLinesPage() {
     queryKey: ["agreements", "lines", agreementId],
     queryFn: () => linesFn({ data: { agreement_id: agreementId } }),
   });
+  const { data: skuGroups } = useQuery({
+    queryKey: ["agreements", "sku-groups", agreementId],
+    queryFn: () => skuGroupsFn({ data: { agreement_id: agreementId } }),
+  });
+
 
   const [activeCard, setActiveCard] = useState<LineCardKey>("all");
   const [q, setQ] = useState("");
