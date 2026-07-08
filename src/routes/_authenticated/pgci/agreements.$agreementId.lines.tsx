@@ -565,8 +565,6 @@ function AgreementLinesPage() {
                   Las posiciones pueden vincularse para compartir un mismo precio; las no vinculadas se gestionan de forma independiente.
                 </p>
               </AlertDescription>
-            </div>
-          </div>
         </Alert>
       )}
 
