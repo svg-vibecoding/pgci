@@ -264,13 +264,7 @@ function AgreementLinesPage() {
             />
             {agreement.scope === "unit" && <Badge color="info">Con alcance</Badge>}
           </div>
-          <p className="mt-1 text-sm">
-            <span className="font-semibold text-foreground">Posiciones</span>
-            <span className="text-muted-foreground"> · {clientName}</span>
-            {agreement.scope === "unit" && agreement.unit_name && (
-              <span className="text-muted-foreground"> · {agreement.unit_name}</span>
-            )}
-          </p>
+          <p className="mt-1 text-sm text-foreground">Posiciones en el acuerdo</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" size="sm" onClick={handleExport} disabled={!lines?.length}>
