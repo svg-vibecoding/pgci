@@ -1080,7 +1080,7 @@ function SkuGroupCard({
             {group.sku ?? "—"}
           </div>
           {group.product_description && (
-            <div className="text-sm text-secondary">
+            <div className="text-sm text-text-secondary">
               {group.product_description}
             </div>
           )}
