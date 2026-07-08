@@ -494,11 +494,13 @@ function AgreementLinesPage() {
             onClick={() => {
               setActiveCard("all");
               setQ("");
+              setSkuConflictOnly(false);
             }}
             className="text-sm font-medium text-primary hover:underline"
           >
             Limpiar filtros
           </button>
+
         </div>
       )}
 
