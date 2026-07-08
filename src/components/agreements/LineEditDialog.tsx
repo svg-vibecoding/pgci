@@ -441,6 +441,14 @@ export function LineEditDialog({
         return n == null ? undefined : n;
       };
       const txt = (s: string) => (s.trim() === "" ? undefined : s.trim());
+      const sale = num(v.sale_price);
+      if (sale !== undefined && sale <= 0) {
+        throw new Error("El precio de venta debe ser mayor a 0");
+      }
+      const par = num(v.par_price);
+      if (par !== undefined && par <= 0) {
+        throw new Error("El precio par debe ser mayor a 0");
+      }
       if (isEdit) {
         return patchFn({
           data: {
