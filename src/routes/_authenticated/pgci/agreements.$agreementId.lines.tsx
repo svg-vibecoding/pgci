@@ -945,20 +945,22 @@ function AgreementLinesPage() {
                     Estos SKUs tienen precios distintos entre sus posiciones. Revísalos y
                     vincula el SKU al precio correcto.
                   </p>
-                  <ul className="space-y-2">
-                    {conflictGroups.map((g) => (
-                      <SkuGroupCard
-                        key={g.product_id}
-                        group={g}
-                        variant="conflict"
-                        defaultOpen
-                        canAdmin={canAdmin}
-                        onAction={() => openEditForLine(g.position_ids[0])}
-                        actionLabel="Revisar"
-                        fmtMoney={fmtMoney}
-                      />
-                    ))}
-                  </ul>
+                  <div className="rounded-lg border border-border bg-muted/20 p-3">
+                    <ul className="space-y-2">
+                      {conflictGroups.map((g) => (
+                        <SkuGroupCard
+                          key={g.product_id}
+                          group={g}
+                          variant="conflict"
+                          defaultOpen
+                          canAdmin={canAdmin}
+                          onAction={() => openEditForLine(g.position_ids[0])}
+                          actionLabel="Revisar"
+                          fmtMoney={fmtMoney}
+                        />
+                      ))}
+                    </ul>
+                  </div>
                 </section>
               )}
 
@@ -974,28 +976,30 @@ function AgreementLinesPage() {
                     Puedes vincularlos ahora de forma preventiva: cuando cambie el precio,
                     cambiará en todas sus posiciones a la vez.
                   </p>
-                  <ul className="space-y-2">
-                    {repeatedGroups.map((g) => {
-                      const price = g.prices[0];
-                      const busy = linkingProductId === g.product_id;
-                      return (
-                        <SkuGroupCard
-                          key={g.product_id}
-                          group={g}
-                          variant="repeated"
-                          defaultOpen={false}
-                          canAdmin={canAdmin}
-                          onAction={() =>
-                            price != null &&
-                            linkMut.mutate({ product_id: g.product_id, price })
-                          }
-                          actionLabel={busy ? "Vinculando…" : "Vincular"}
-                          actionDisabled={busy || price == null}
-                          fmtMoney={fmtMoney}
-                        />
-                      );
-                    })}
-                  </ul>
+                  <div className="rounded-lg border border-border bg-muted/20 p-3">
+                    <ul className="space-y-2">
+                      {repeatedGroups.map((g) => {
+                        const price = g.prices[0];
+                        const busy = linkingProductId === g.product_id;
+                        return (
+                          <SkuGroupCard
+                            key={g.product_id}
+                            group={g}
+                            variant="repeated"
+                            defaultOpen={false}
+                            canAdmin={canAdmin}
+                            onAction={() =>
+                              price != null &&
+                              linkMut.mutate({ product_id: g.product_id, price })
+                            }
+                            actionLabel={busy ? "Vinculando…" : "Vincular"}
+                            actionDisabled={busy || price == null}
+                            fmtMoney={fmtMoney}
+                          />
+                        );
+                      })}
+                    </ul>
+                  </div>
                 </section>
               )}
             </div>
@@ -1074,17 +1078,12 @@ function SkuGroupCard({
       style={variant === "conflict" ? { background: "var(--warning-subtle)" } : undefined}
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="text-sm">
-            <span className="font-mono">{group.sku ?? "—"}</span>
-            {group.product_description && (
-              <>
-                <span className="text-muted-foreground"> · </span>
-                <span className="text-foreground">{group.product_description}</span>
-              </>
-            )}
-          </div>
-          <div className="mt-0.5 text-xs text-muted-foreground">{summary}</div>
+        <div className="min-w-0 flex-1 space-y-0.5">
+          <div className="font-mono text-sm">{group.sku ?? "—"}</div>
+          {group.product_description && (
+            <div className="text-sm text-foreground">{group.product_description}</div>
+          )}
+          <div className="text-xs text-muted-foreground">{summary}</div>
         </div>
         {canAdmin && (
           <Button
