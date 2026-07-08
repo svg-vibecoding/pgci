@@ -519,8 +519,8 @@ function AgreementLinesPage() {
             </TooltipTrigger>
             <TooltipContent side="bottom">
               {repeatedTotalCount === 0
-                ? "No hay SKUs repetidos en este acuerdo"
-                : `${repeatedTotalCount} ${repeatedTotalCount === 1 ? "SKU repetido" : "SKUs repetidos"} en este acuerdo`}
+                ? "No hay SKUs en múltiples posiciones en este acuerdo"
+                : `${repeatedTotalCount} ${repeatedTotalCount === 1 ? "SKU en múltiples posiciones" : "SKUs en múltiples posiciones"} en este acuerdo`}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -574,7 +574,7 @@ function AgreementLinesPage() {
                 color="neutral"
                 onRemove={() => setSkuConflictOnly(false)}
               >
-                SKUs repetidos
+                SKUs en múltiples posiciones
               </Chip>
             )}
           </div>
