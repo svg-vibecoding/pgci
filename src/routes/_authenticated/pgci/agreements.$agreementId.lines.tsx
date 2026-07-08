@@ -271,6 +271,20 @@ function AgreementLinesPage() {
   const repeatedTotalCount =
     conflictGroups.length + repeatedGroups.length + unifiedGroups.length;
 
+  const conflictPositionCount = useMemo(
+    () => conflictGroups.reduce((sum, g) => sum + (g.position_ids.length ?? 0), 0),
+    [conflictGroups],
+  );
+  const unlinkedPositionCount = useMemo(
+    () => unlinkedGroups.reduce((sum, g) => sum + (g.position_ids.length ?? 0), 0),
+    [unlinkedGroups],
+  );
+  const unifiedPositionCount = useMemo(
+    () => unifiedGroups.reduce((sum, g) => sum + (g.position_ids.length ?? 0), 0),
+    [unifiedGroups],
+  );
+
+
   const linkMut = useMutation({
     mutationFn: async (v: { product_id: string; price: number }) => {
       setLinkingProductId(v.product_id);
@@ -526,17 +540,29 @@ function AgreementLinesPage() {
         </TooltipProvider>
       </div>
 
-      {skuConflictOnly && conflictGroupsCount > 0 && (
+      {skuConflictOnly && repeatedTotalCount > 0 && (
         <Alert variant="info">
           <Info className="h-4 w-4" />
-          <AlertTitle>
-            {conflictGroupsCount} {conflictGroupsCount === 1 ? "SKU con" : "SKUs con"} precios distintos entre sus posiciones
-          </AlertTitle>
+          <AlertTitle>Resumen de códigos en múltiples posiciones</AlertTitle>
           <AlertDescription>
-            Al vincular un SKU, sus posiciones comparten el mismo precio automáticamente.
+            <div className="space-y-0.5">
+              <p>
+                {conflictPositionCount} {conflictPositionCount === 1 ? "posición no vinculada con precios distintos" : "posiciones no vinculadas con precios distintos"}
+              </p>
+              <p>
+                {unlinkedPositionCount} {unlinkedPositionCount === 1 ? "posición no vinculada" : "posiciones no vinculadas"}
+              </p>
+              <p>
+                {unifiedPositionCount} {unifiedPositionCount === 1 ? "posición vinculada" : "posiciones vinculadas"}
+              </p>
+            </div>
+            <p className="mt-2">
+              Las posiciones pueden vincularse para compartir un mismo precio; las no vinculadas se gestionan de forma independiente.
+            </p>
           </AlertDescription>
         </Alert>
       )}
+
 
 
       {(activeCard !== "all" || q.trim() || skuConflictOnly) && (
