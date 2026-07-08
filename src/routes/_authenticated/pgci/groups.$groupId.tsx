@@ -238,7 +238,7 @@ function GroupDetail() {
               {group.client_display_name ?? "—"}
             </InfoField>
             <InfoField label="NIT">{group.client_tax_id ?? "—"}</InfoField>
-            <InfoField label="Estado">{isActive ? "Activo" : "Inactivo"}</InfoField>
+
           </InfoSection>
         </CardContent>
       </Card>
