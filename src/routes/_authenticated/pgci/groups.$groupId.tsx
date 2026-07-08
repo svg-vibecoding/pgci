@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import {
   ArrowLeft,
   ArrowUpRight,
+  Boxes,
   FileText,
   Pencil,
   Plus,
@@ -13,6 +14,7 @@ import {
   Trash2,
   Unlink,
 } from "lucide-react";
+
 import {
   addAgreementsToGroup,
   deleteAgreementGroup,
@@ -130,10 +132,13 @@ function GroupDetail() {
     return <div className="text-sm text-muted-foreground">Cargando…</div>;
   }
 
-  const isActive = group.status === "active";
   const agreementsCount = rollup?.agreements_count ?? 0;
+  const uniqueClients = rollup?.unique_clients ?? 0;
+  const uniqueUsers = rollup?.unique_users ?? 0;
+  const totalLines = rollup?.total_lines ?? 0;
   const hasCoverage =
     !!rollup && agreementsCount > 0 && (rollup.min_start || rollup.max_end);
+
 
   const invalidateAll = () => {
     qc.invalidateQueries({ queryKey: ["agreement-groups"] });
@@ -157,19 +162,23 @@ function GroupDetail() {
         <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-tight">{group.group_name}</h1>
           <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
-            <StatusBadge
-              status={isActive ? "active" : "neutral"}
-              label={isActive ? "Activo" : "Inactivo"}
-            />
             <span>
-              {group.client_display_name ?? ""}
+              {`${agreementsCount} ${agreementsCount === 1 ? "acuerdo" : "acuerdos"}`}
+              {` · ${uniqueClients} ${uniqueClients === 1 ? "cliente" : "clientes"}`}
+              {` · ${uniqueUsers} ${uniqueUsers === 1 ? "miembro" : "miembros"}`}
+              {` · ${totalLines} ${totalLines === 1 ? "posición" : "posiciones"}`}
             </span>
           </div>
         </div>
         {canAdmin && (
           <div className="flex flex-wrap gap-2">
+            <Button asChild size="sm" variant="outline">
+              <a href="#agreements">
+                <Boxes className="mr-1.5 h-4 w-4" /> Acuerdos
+              </a>
+            </Button>
             <Button size="sm" variant="outline" onClick={() => setRenameOpen(true)}>
-              <Pencil className="mr-1.5 h-4 w-4" /> Renombrar
+              <Pencil className="mr-1.5 h-4 w-4" /> Editar
             </Button>
             <Button
               size="sm"
@@ -183,26 +192,23 @@ function GroupDetail() {
         )}
       </header>
 
-      {/* Rollup */}
+      {/* Resumen — mismo card que "Información comercial / Posiciones en el acuerdo" */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Resumen del agrupador</CardTitle>
+          <CardTitle className="text-base">
+            Información comercial / Posiciones en el agrupador
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            <IndicatorCard label="Acuerdos" value={agreementsCount} />
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+            <IndicatorCard label="Posiciones" value={totalLines} />
+            <IndicatorCard label="Activas" value={rollup?.lines_active ?? 0} />
+            <IndicatorCard label="Pendientes" value={rollup?.lines_pending ?? 0} />
             <IndicatorCard
-              label="Clientes únicos"
-              value={rollup?.unique_clients ?? 0}
+              label="Requieren revisión"
+              value={rollup?.lines_review ?? 0}
             />
-            <IndicatorCard
-              label="Usuarios con acceso"
-              value={rollup?.unique_users ?? 0}
-            />
-            <IndicatorCard
-              label="Posiciones agregadas"
-              value={rollup?.total_lines ?? 0}
-            />
+            <IndicatorCard label="Excluidas" value={rollup?.lines_excluded ?? 0} />
           </div>
           {hasCoverage && (
             <p className="text-sm text-muted-foreground">
@@ -219,6 +225,7 @@ function GroupDetail() {
         </CardContent>
       </Card>
 
+
       {/* Info básica */}
       <Card>
         <CardHeader>
@@ -231,7 +238,7 @@ function GroupDetail() {
               {group.client_display_name ?? "—"}
             </InfoField>
             <InfoField label="NIT">{group.client_tax_id ?? "—"}</InfoField>
-            <InfoField label="Estado">{isActive ? "Activo" : "Inactivo"}</InfoField>
+
           </InfoSection>
         </CardContent>
       </Card>
@@ -259,7 +266,8 @@ function GroupDetail() {
       </Card>
 
       {/* Acuerdos */}
-      <Card>
+      <Card id="agreements" className="scroll-mt-20">
+
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle className="text-base">Acuerdos</CardTitle>
