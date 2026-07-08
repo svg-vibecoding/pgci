@@ -132,6 +132,9 @@ function AgreementLinesPage() {
   const [excludeTarget, setExcludeTarget] = useState<{ id: string; sku: string | null } | null>(
     null,
   );
+  const [deleteTransitTarget, setDeleteTransitTarget] = useState<{ id: string; sku: string | null } | null>(
+    null,
+  );
   const [reason, setReason] = useState("");
 
   const exclude = useMutation({
