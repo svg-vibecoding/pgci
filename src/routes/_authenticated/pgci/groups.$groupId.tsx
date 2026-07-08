@@ -228,7 +228,7 @@ function GroupDetail() {
           <InfoSection>
             <InfoField label="Acuerdos">{agreementsCount}</InfoField>
             <InfoField label="Clientes">{uniqueClients}</InfoField>
-            <InfoField label="Usuarios">{uniqueUsers}</InfoField>
+            <InfoField label="Miembros del agrupador">{uniqueUsers}</InfoField>
 
             <InfoField label="Vigencia derivada desde">
               {formatDate(rollup?.min_start ?? null)}
