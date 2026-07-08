@@ -266,7 +266,8 @@ function GroupDetail() {
       </Card>
 
       {/* Acuerdos */}
-      <Card>
+      <Card id="agreements" className="scroll-mt-20">
+
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle className="text-base">Acuerdos</CardTitle>
