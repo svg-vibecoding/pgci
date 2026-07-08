@@ -668,10 +668,10 @@ function AgreementLinesPage() {
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <span>
-                                    <Chip size="small" variant="soft" color="neutral">
+                                    <Badge color="neutral" variant="soft">
                                       <Info className="h-3 w-3" />
                                       Precios ({new Set(g.prices).size})
-                                    </Chip>
+                                    </Badge>
                                   </span>
                                 </TooltipTrigger>
                                 <TooltipContent side="top" className="max-w-xs">
