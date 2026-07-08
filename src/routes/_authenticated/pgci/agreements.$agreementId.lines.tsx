@@ -85,10 +85,8 @@ const STATUS_META: Record<
   requires_review: { label: "Revisar", status: "danger" },
   excluded: { label: "Excluida", status: "neutral" },
 };
-
-
-import { formatMoneyCOP } from "@/lib/format";
 const fmtMoney = (v: number | null) => formatMoneyCOP(v);
+
 
 type VigenciaBadge = {
   color: "info" | "warning" | "error" | "neutral";
