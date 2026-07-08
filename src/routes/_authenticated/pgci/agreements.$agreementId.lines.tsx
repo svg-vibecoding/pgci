@@ -153,13 +153,18 @@ function AgreementLinesPage() {
   );
   const [reason, setReason] = useState("");
 
+  const invalidateAll = () => {
+    qc.invalidateQueries({ queryKey: ["agreements", "lines", agreementId] });
+    qc.invalidateQueries({ queryKey: ["agreements", "detail", agreementId] });
+    qc.invalidateQueries({ queryKey: ["agreements", "sku-groups", agreementId] });
+  };
+
   const exclude = useMutation({
     mutationFn: (vars: { line_id: string; reason: string | null }) =>
       excludeFn({ data: vars }),
     onSuccess: () => {
       toast.success("Posición excluida");
-      qc.invalidateQueries({ queryKey: ["agreements", "lines", agreementId] });
-      qc.invalidateQueries({ queryKey: ["agreements", "detail", agreementId] });
+      invalidateAll();
       setExcludeTarget(null);
       setReason("");
     },
@@ -170,8 +175,7 @@ function AgreementLinesPage() {
     mutationFn: (lineId: string) => reactivateFn({ data: { line_id: lineId } }),
     onSuccess: () => {
       toast.success("Posición reactivada");
-      qc.invalidateQueries({ queryKey: ["agreements", "lines", agreementId] });
-      qc.invalidateQueries({ queryKey: ["agreements", "detail", agreementId] });
+      invalidateAll();
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -180,12 +184,12 @@ function AgreementLinesPage() {
     mutationFn: (transitId: string) => deleteTransitFn({ data: { transit_id: transitId } }),
     onSuccess: () => {
       toast.success("Línea eliminada");
-      qc.invalidateQueries({ queryKey: ["agreements", "lines", agreementId] });
-      qc.invalidateQueries({ queryKey: ["agreements", "detail", agreementId] });
+      invalidateAll();
       setDeleteTransitTarget(null);
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   type Line = NonNullable<typeof lines>[number] & {
     kind: "position" | "transit";
