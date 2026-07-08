@@ -19,6 +19,8 @@ import {
   Info,
   Wand2,
   Link2,
+  Unlink,
+  Eye,
 } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -990,6 +992,7 @@ function AgreementLinesPage() {
                                   ? "Vinculando…"
                                   : "Vincular"
                             }
+                            actionType={g.state === "conflict" ? "review" : "link"}
                             actionDisabled={g.state === "repeated" && (busy || !canLink)}
                             fmtMoney={fmtMoney}
                           />
@@ -1026,6 +1029,7 @@ function AgreementLinesPage() {
                               unlinkMut.mutate({ product_id: g.product_id })
                             }
                             actionLabel={busy ? "Desvinculando…" : "Desvincular"}
+                            actionType="unlink"
                             actionDisabled={busy}
                             fmtMoney={fmtMoney}
                           />
@@ -1071,6 +1075,7 @@ function SkuGroupCard({
   canAdmin,
   onAction,
   actionLabel,
+  actionType,
   actionDisabled,
   fmtMoney,
 }: {
@@ -1091,11 +1096,14 @@ function SkuGroupCard({
   canAdmin: boolean;
   onAction: () => void;
   actionLabel: string;
+  actionType?: "link" | "unlink" | "review";
   actionDisabled?: boolean;
   fmtMoney: (v: number | null) => string;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const count = group.positions.length;
+  const distinctPrices = new Set(group.prices).size;
+  const hasDistinctPrices = distinctPrices > 1;
   const summary =
     variant === "conflict"
       ? `${count} posiciones · precios: ${group.prices
@@ -1111,8 +1119,15 @@ function SkuGroupCard({
     <li className="rounded-lg border border-border bg-card p-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1 space-y-0.5">
-          <div className="font-mono text-sm font-medium">
-            {group.sku ?? "—"}
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-sm font-medium">
+              {group.sku ?? "—"}
+            </span>
+            {hasDistinctPrices && (
+              <Chip color="neutral" size="small">
+                Precios distintos
+              </Chip>
+            )}
           </div>
           {group.product_description && (
             <div className="text-sm text-text-secondary">
@@ -1128,6 +1143,9 @@ function SkuGroupCard({
             onClick={onAction}
             disabled={actionDisabled}
           >
+            {actionType === "link" && <Link2 />}
+            {actionType === "unlink" && <Unlink />}
+            {actionType === "review" && <Eye />}
             {actionLabel}
           </Button>
         )}
