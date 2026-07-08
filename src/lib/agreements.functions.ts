@@ -1787,7 +1787,23 @@ export const getAgreementGroupSummary = createServerFn({ method: "GET" })
       .eq("id", data.group_id)
       .maybeSingle();
     if (gErr) throw new Error(gErr.message);
-    if (!g) throw new Error("Agrupador no encontrado");
+    if (!g) {
+      // Sin acceso al agrupador (RLS) o eliminado: devolver un resumen vacío
+      // para que la sección del detalle del acuerdo no rompa la vista.
+      return {
+        id: data.group_id,
+        group_name: "Agrupador",
+        unique_clients: 0,
+        unique_users: 0,
+        total_lines: 0,
+        agreements: [] as Array<{
+          id: string;
+          name: string;
+          lines_total: number;
+          status: "active" | "inactive";
+        }>,
+      };
+    }
 
     const { data: ags, error: aErr } = await context.supabase
       .from("agreements_with_counts")
