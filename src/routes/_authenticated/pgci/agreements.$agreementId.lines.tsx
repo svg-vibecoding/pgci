@@ -283,6 +283,12 @@ function AgreementLinesPage() {
     () => unifiedGroups.reduce((sum, g) => sum + (g.position_ids.length ?? 0), 0),
     [unifiedGroups],
   );
+  const repeatedPositionCount = useMemo(
+    () => repeatedGroups.reduce((sum, g) => sum + (g.position_ids.length ?? 0), 0),
+    [repeatedGroups],
+  );
+
+
 
 
   const linkMut = useMutation({
@@ -541,25 +547,24 @@ function AgreementLinesPage() {
       </div>
 
       {skuConflictOnly && repeatedTotalCount > 0 && (
-        <Alert variant="info">
-          <Info className="h-4 w-4" />
-          <AlertTitle>Resumen de códigos en múltiples posiciones</AlertTitle>
-          <AlertDescription>
-            <div className="space-y-0.5">
-              <p>
-                {conflictPositionCount} {conflictPositionCount === 1 ? "posición no vinculada con precios distintos" : "posiciones no vinculadas con precios distintos"}
-              </p>
-              <p>
-                {unlinkedPositionCount} {unlinkedPositionCount === 1 ? "posición no vinculada" : "posiciones no vinculadas"}
-              </p>
-              <p>
-                {unifiedPositionCount} {unifiedPositionCount === 1 ? "posición vinculada" : "posiciones vinculadas"}
-              </p>
-            </div>
-            <p className="mt-2">
-              Las posiciones pueden vincularse para compartir un mismo precio; las no vinculadas se gestionan de forma independiente.
-            </p>
-          </AlertDescription>
+        <Alert variant="info" className="py-2">
+          <div className="flex items-center gap-2">
+            <Layers className="h-4 w-4 shrink-0" />
+            <AlertTitle className="m-0">Estado de códigos en múltiples posiciones</AlertTitle>
+          </div>
+          <AlertDescription className="mt-1 pl-0">
+                <div className="space-y-0.5 text-sm">
+                  <p>
+                    {conflictGroups.length} códigos en <span className="font-semibold">{conflictPositionCount}</span> posiciones no vinculadas con precios distintos
+                  </p>
+                  <p>
+                    {repeatedGroups.length} códigos en <span className="font-semibold">{repeatedPositionCount}</span> posiciones no vinculadas / {unifiedGroups.length} códigos en <span className="font-semibold">{unifiedPositionCount}</span> posiciones vinculadas
+                  </p>
+                </div>
+                <p className="mt-1 text-xs opacity-90">
+                  Las posiciones pueden vincularse para compartir un mismo precio; las no vinculadas se gestionan de forma independiente.
+                </p>
+              </AlertDescription>
         </Alert>
       )}
 
