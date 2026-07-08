@@ -1125,7 +1125,7 @@ function SkuGroupCard({
             </span>
             {hasDistinctPrices && (
               <Chip color="neutral" size="small">
-                Precios distintos
+                Precios (2)
               </Chip>
             )}
           </div>
