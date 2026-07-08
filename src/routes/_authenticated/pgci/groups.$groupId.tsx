@@ -22,9 +22,11 @@ import {
   getAgreementGroupRollup,
   listAgreementsInGroup,
   listEligibleAgreementsForGroup,
+  listGroupAgreementMembers,
   removeAgreementFromGroup,
   updateAgreementGroup,
 } from "@/lib/agreements.functions";
+
 import { AgreementGroupMembersSection } from "@/components/agreements/AgreementGroupMembersSection";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -228,7 +230,7 @@ function GroupDetail() {
           <InfoSection>
             <InfoField label="Acuerdos">{agreementsCount}</InfoField>
             <InfoField label="Clientes">{uniqueClients}</InfoField>
-            <InfoField label="Usuarios">{uniqueUsers}</InfoField>
+            <InfoField label="Miembros del agrupador">{uniqueUsers}</InfoField>
 
             <InfoField label="Vigencia derivada desde">
               {formatDate(rollup?.min_start ?? null)}
@@ -387,6 +389,9 @@ function GroupDetail() {
 
       <AgreementGroupMembersSection groupId={groupId} canAdmin={canAdmin} />
 
+      <MembersByAgreementSection groupId={groupId} />
+
+
       <RenameGroupDialog
         open={renameOpen}
         onOpenChange={setRenameOpen}
@@ -425,6 +430,97 @@ function GroupDetail() {
     </div>
   );
 }
+
+function MembersByAgreementSection({ groupId }: { groupId: string }) {
+  const listFn = useServerFn(listGroupAgreementMembers);
+  const { data: rows, isLoading } = useQuery({
+    queryKey: ["agreement-groups", "members-by-agreement", groupId],
+    queryFn: () => listFn({ data: { group_id: groupId } }),
+  });
+
+  const roleLabel = (r: string) => {
+    switch (r) {
+      case "agreement_admin":
+        return "Admin del acuerdo";
+      case "agreement_member":
+        return "Miembro del acuerdo";
+      default:
+        return r;
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Miembros por acuerdo</CardTitle>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Personas con acceso a los acuerdos que agrupa este grupo.
+        </p>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">Cargando…</p>
+        ) : (rows ?? []).length === 0 ? (
+          <div className="flex flex-col items-center gap-2 rounded-md border border-dashed border-border py-8 text-center text-sm text-muted-foreground">
+            Sin miembros en los acuerdos del grupo.
+          </div>
+        ) : (
+          <div className="rounded-lg border border-border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Usuario</TableHead>
+                  <TableHead>Acuerdo</TableHead>
+                  <TableHead>Rol</TableHead>
+                  <TableHead>Ve costos</TableHead>
+                  <TableHead>Agregado</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(rows ?? []).map((m) => (
+                  <TableRow key={m.id}>
+                    <TableCell className="font-medium">
+                      <div className="flex flex-col">
+                        <span>{m.user_name || "—"}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {m.user_email}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Link
+                        to="/pgci/agreements/$agreementId"
+                        params={{ agreementId: m.agreement_id }}
+                        className="hover:underline"
+                      >
+                        {m.agreement_name}
+                      </Link>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        color={m.role === "agreement_admin" ? "accent" : "neutral"}
+                        variant="soft"
+                      >
+                        {roleLabel(m.role)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {m.can_view_costs ? "Sí" : "No"}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {formatDate(m.created_at)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 
 function RenameGroupDialog({
   open,
