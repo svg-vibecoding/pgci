@@ -37,6 +37,9 @@ const priceOptional = z
     const n = typeof v === "number" ? v : Number(v);
     if (Number.isNaN(n)) return null;
     return n;
+  })
+  .refine((v) => v === null || v > 0, {
+    message: "El precio debe ser mayor a 0",
   });
 
 const agreementBaseFields = {
