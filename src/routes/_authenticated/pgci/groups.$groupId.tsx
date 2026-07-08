@@ -1,13 +1,69 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft } from "lucide-react";
-import { getAgreementGroup } from "@/lib/agreements.functions";
+import { toast } from "sonner";
+import {
+  ArrowLeft,
+  ArrowUpRight,
+  FileText,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+  Unlink,
+} from "lucide-react";
+import {
+  addAgreementsToGroup,
+  deleteAgreementGroup,
+  getAgreementGroup,
+  getAgreementGroupRollup,
+  listAgreementsInGroup,
+  listEligibleAgreementsForGroup,
+  removeAgreementFromGroup,
+  updateAgreementGroup,
+} from "@/lib/agreements.functions";
 import { AgreementGroupMembersSection } from "@/components/agreements/AgreementGroupMembersSection";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { InfoField, InfoSection } from "@/components/setup/InfoSection";
+import { IndicatorCard } from "@/components/setup/IndicatorCard";
 import { StatusBadge, Badge } from "@/components/sumatec";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useIsSuperAdmin } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -16,17 +72,36 @@ export const Route = createFileRoute("/_authenticated/pgci/groups/$groupId")({
   component: GroupDetail,
 });
 
+function formatDate(value: string | null | undefined) {
+  if (!value) return "—";
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : value;
+}
+
 function GroupDetail() {
   const { groupId } = Route.useParams();
-  const getFn = useServerFn(getAgreementGroup);
+  const qc = useQueryClient();
   const { isSuperAdmin } = useIsSuperAdmin();
+
+  const getFn = useServerFn(getAgreementGroup);
+  const rollupFn = useServerFn(getAgreementGroupRollup);
+  const listAgFn = useServerFn(listAgreementsInGroup);
 
   const { data: group, isLoading } = useQuery({
     queryKey: ["agreement-groups", "detail", groupId],
     queryFn: () => getFn({ data: { group_id: groupId } }),
   });
 
-  // Determinar si el usuario actual es agreement_group_admin.
+  const { data: rollup } = useQuery({
+    queryKey: ["agreement-groups", "rollup", groupId],
+    queryFn: () => rollupFn({ data: { group_id: groupId } }),
+  });
+
+  const { data: agreements } = useQuery({
+    queryKey: ["agreement-groups", "agreements", groupId],
+    queryFn: () => listAgFn({ data: { group_id: groupId } }),
+  });
+
   const { data: myRole } = useQuery({
     queryKey: ["agreement-groups", "my-role", groupId],
     queryFn: async () => {
@@ -45,11 +120,25 @@ function GroupDetail() {
 
   const canAdmin = isSuperAdmin || myRole === "agreement_group_admin";
 
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [notesOpen, setNotesOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [removeAgId, setRemoveAgId] = useState<string | null>(null);
+
   if (isLoading || !group) {
     return <div className="text-sm text-muted-foreground">Cargando…</div>;
   }
 
   const isActive = group.status === "active";
+  const agreementsCount = rollup?.agreements_count ?? 0;
+  const hasCoverage =
+    !!rollup && agreementsCount > 0 && (rollup.min_start || rollup.max_end);
+
+  const invalidateAll = () => {
+    qc.invalidateQueries({ queryKey: ["agreement-groups"] });
+    qc.invalidateQueries({ queryKey: ["agreements"] });
+  };
 
   return (
     <div className="space-y-6">
@@ -66,20 +155,71 @@ function GroupDetail() {
 
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight">{group.group_name}</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{group.group_name}</h1>
+          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
             <StatusBadge
               status={isActive ? "active" : "neutral"}
               label={isActive ? "Activo" : "Inactivo"}
             />
-            {!group.client_id && <Badge color="accent" variant="soft">Libre</Badge>}
+            <span>
+              {group.client_display_name ?? "Agrupador sin cliente asociado"}
+            </span>
           </div>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {group.client_display_name ?? "Agrupador sin cliente asociado"}
-          </p>
         </div>
+        {canAdmin && (
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={() => setRenameOpen(true)}>
+              <Pencil className="mr-1.5 h-4 w-4" /> Renombrar
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setDeleteOpen(true)}
+              className="text-destructive hover:text-destructive"
+            >
+              <Trash2 className="mr-1.5 h-4 w-4" /> Borrar
+            </Button>
+          </div>
+        )}
       </header>
 
+      {/* Rollup */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Resumen del agrupador</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <IndicatorCard label="Acuerdos" value={agreementsCount} />
+            <IndicatorCard
+              label="Clientes únicos"
+              value={rollup?.unique_clients ?? 0}
+            />
+            <IndicatorCard
+              label="Usuarios con acceso"
+              value={rollup?.unique_users ?? 0}
+            />
+            <IndicatorCard
+              label="Posiciones agregadas"
+              value={rollup?.total_lines ?? 0}
+            />
+          </div>
+          {hasCoverage && (
+            <p className="text-sm text-muted-foreground">
+              Vigencia derivada:{" "}
+              <span className="font-medium text-foreground">
+                {formatDate(rollup?.min_start ?? null)}
+              </span>{" "}
+              →{" "}
+              <span className="font-medium text-foreground">
+                {formatDate(rollup?.max_end ?? null)}
+              </span>
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Info básica */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Información del agrupador</CardTitle>
@@ -96,7 +236,575 @@ function GroupDetail() {
         </CardContent>
       </Card>
 
+      {/* Condiciones generales (notes) */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-base">Condiciones generales</CardTitle>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Aplican a todos los acuerdos del agrupador.
+            </p>
+          </div>
+          {canAdmin && (
+            <Button size="sm" variant="outline" onClick={() => setNotesOpen(true)}>
+              <Pencil className="mr-1.5 h-4 w-4" /> Editar
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent>
+          <div className="min-h-[80px] whitespace-pre-wrap rounded-md border border-input bg-background px-3 py-2 text-sm">
+            {group.notes?.trim() ? group.notes : ""}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Acuerdos */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-base">Acuerdos</CardTitle>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Acuerdos que pertenecen a este agrupador.
+            </p>
+          </div>
+          {canAdmin && (
+            <Button size="sm" variant="outline" onClick={() => setAddOpen(true)}>
+              <Plus className="mr-1.5 h-4 w-4" /> Agregar acuerdo
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent>
+          <TooltipProvider delayDuration={150}>
+            {(agreements ?? []).length === 0 ? (
+              <div className="flex flex-col items-center gap-2 rounded-md border border-dashed border-border py-8 text-center text-sm text-muted-foreground">
+                <FileText className="h-6 w-6" />
+                Este agrupador aún no contiene acuerdos.
+              </div>
+            ) : (
+              <div className="rounded-lg border border-border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Acuerdo</TableHead>
+                      <TableHead>Cobertura</TableHead>
+                      <TableHead className="w-[120px] whitespace-nowrap">Posiciones</TableHead>
+                      <TableHead className="w-[96px] whitespace-nowrap">Estado</TableHead>
+                      <TableHead className="w-[140px] whitespace-nowrap text-right">
+                        <span className="sr-only">Acciones</span>
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(agreements ?? []).map((a) => {
+                      const first = a.companies[0] ?? null;
+                      return (
+                        <TableRow key={a.id}>
+                          <TableCell className="font-medium min-w-0">
+                            <Link
+                              to="/pgci/agreements/$agreementId"
+                              params={{ agreementId: a.id }}
+                              className="hover:underline"
+                            >
+                              {a.name}
+                            </Link>
+                          </TableCell>
+                          <TableCell className="min-w-0">
+                            {a.companies.length === 0 ? (
+                              <span className="text-muted-foreground">—</span>
+                            ) : a.companies.length === 1 ? (
+                              <div className="flex items-center gap-2 min-w-0">
+                                <Badge color="neutral">Cliente</Badge>
+                                <span
+                                  className="truncate"
+                                  title={first ?? undefined}
+                                >
+                                  {first}
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2 min-w-0">
+                                <Badge color="accent">Múltiple</Badge>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="text-sm whitespace-nowrap cursor-default">
+                                      {a.companies.length} Clientes…
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="max-w-xs">
+                                    <ul className="space-y-0.5">
+                                      {a.companies.map((c) => (
+                                        <li key={c}>{c}</li>
+                                      ))}
+                                    </ul>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
+                            {a.lines_total}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <StatusBadge
+                              status={a.status === "active" ? "active" : "neutral"}
+                              label={a.status === "active" ? "Activo" : "Inactivo"}
+                            />
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap text-right">
+                            <div className="inline-flex items-center gap-1">
+                              <Button asChild size="sm" variant="ghost">
+                                <Link
+                                  to="/pgci/agreements/$agreementId"
+                                  params={{ agreementId: a.id }}
+                                >
+                                  Ver <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
+                                </Link>
+                              </Button>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    aria-label="Sacar del agrupador"
+                                    onClick={() => setRemoveAgId(a.id)}
+                                  >
+                                    <Unlink className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Sacar del agrupador</TooltipContent>
+                              </Tooltip>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </TooltipProvider>
+        </CardContent>
+      </Card>
+
       <AgreementGroupMembersSection groupId={groupId} canAdmin={canAdmin} />
+
+      <RenameGroupDialog
+        open={renameOpen}
+        onOpenChange={setRenameOpen}
+        groupId={groupId}
+        currentName={group.group_name}
+        onDone={invalidateAll}
+      />
+
+      <NotesDialog
+        open={notesOpen}
+        onOpenChange={setNotesOpen}
+        groupId={groupId}
+        currentNotes={group.notes}
+        onDone={invalidateAll}
+      />
+
+      <DeleteGroupDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        groupId={groupId}
+        agreementsCount={agreementsCount}
+      />
+
+      <AddAgreementsDialog
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        groupId={groupId}
+        onDone={invalidateAll}
+      />
+
+      <RemoveAgreementDialog
+        agreementId={removeAgId}
+        onClose={() => setRemoveAgId(null)}
+        onDone={invalidateAll}
+      />
     </div>
+  );
+}
+
+function RenameGroupDialog({
+  open,
+  onOpenChange,
+  groupId,
+  currentName,
+  onDone,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  groupId: string;
+  currentName: string;
+  onDone: () => void;
+}) {
+  const [name, setName] = useState(currentName);
+  const fn = useServerFn(updateAgreementGroup);
+  const mut = useMutation({
+    mutationFn: () => fn({ data: { group_id: groupId, group_name: name.trim() } }),
+    onSuccess: () => {
+      toast.success("Agrupador renombrado");
+      onDone();
+      onOpenChange(false);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        onOpenChange(o);
+        if (o) setName(currentName);
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Renombrar agrupador</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">
+            Nombre <span className="text-primary">*</span>
+          </label>
+          <Input
+            autoFocus
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            maxLength={160}
+          />
+        </div>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={mut.isPending}
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={() => mut.mutate()}
+            disabled={mut.isPending || !name.trim() || name.trim() === currentName}
+          >
+            Guardar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function NotesDialog({
+  open,
+  onOpenChange,
+  groupId,
+  currentNotes,
+  onDone,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  groupId: string;
+  currentNotes: string | null;
+  onDone: () => void;
+}) {
+  const [text, setText] = useState(currentNotes ?? "");
+  const fn = useServerFn(updateAgreementGroup);
+  const mut = useMutation({
+    mutationFn: () => fn({ data: { group_id: groupId, notes: text } }),
+    onSuccess: () => {
+      toast.success("Condiciones actualizadas");
+      onDone();
+      onOpenChange(false);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        onOpenChange(o);
+        if (o) setText(currentNotes ?? "");
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Condiciones generales del agrupador</DialogTitle>
+          <DialogDescription>
+            Aplican a todos los acuerdos del agrupador.
+          </DialogDescription>
+        </DialogHeader>
+        <Textarea
+          autoFocus
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          rows={8}
+          maxLength={4000}
+        />
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={mut.isPending}
+          >
+            Cancelar
+          </Button>
+          <Button onClick={() => mut.mutate()} disabled={mut.isPending}>
+            Guardar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DeleteGroupDialog({
+  open,
+  onOpenChange,
+  groupId,
+  agreementsCount,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  groupId: string;
+  agreementsCount: number;
+}) {
+  const fn = useServerFn(deleteAgreementGroup);
+  const mut = useMutation({
+    mutationFn: () => fn({ data: { group_id: groupId } }),
+    onSuccess: () => {
+      toast.success("Agrupador borrado");
+      // Navegar de vuelta a acuerdos.
+      window.location.href = "/pgci/agreements";
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  return (
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Borrar agrupador</AlertDialogTitle>
+          <AlertDialogDescription>
+            {agreementsCount === 0
+              ? "Se eliminará el agrupador. No contiene acuerdos."
+              : `Se eliminará el agrupador. ${agreementsCount} ${
+                  agreementsCount === 1 ? "acuerdo quedará" : "acuerdos quedarán"
+                } sin agrupador (no se borran).`}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={mut.isPending}>Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={(e) => {
+              e.preventDefault();
+              mut.mutate();
+            }}
+            disabled={mut.isPending}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            Borrar agrupador
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+function AddAgreementsDialog({
+  open,
+  onOpenChange,
+  groupId,
+  onDone,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  groupId: string;
+  onDone: () => void;
+}) {
+  const listFn = useServerFn(listEligibleAgreementsForGroup);
+  const addFn = useServerFn(addAgreementsToGroup);
+  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  const { data: eligible, isLoading } = useQuery({
+    queryKey: ["agreement-groups", "eligible-agreements"],
+    queryFn: () => listFn(),
+    enabled: open,
+  });
+
+  const filtered = useMemo(() => {
+    const list = eligible ?? [];
+    const q = search.trim().toLowerCase();
+    if (!q) return list;
+    return list.filter((a) => {
+      const hay = [a.name, ...a.companies].join(" ").toLowerCase();
+      return hay.includes(q);
+    });
+  }, [eligible, search]);
+
+  const toggle = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const reset = () => {
+    setSelected(new Set());
+    setSearch("");
+  };
+
+  const mut = useMutation({
+    mutationFn: () =>
+      addFn({
+        data: { group_id: groupId, agreement_ids: Array.from(selected) },
+      }),
+    onSuccess: (r) => {
+      toast.success(
+        r.count === 1 ? "Acuerdo agregado" : `${r.count} acuerdos agregados`,
+      );
+      reset();
+      onDone();
+      onOpenChange(false);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        onOpenChange(o);
+        if (!o) reset();
+      }}
+    >
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Agregar acuerdo al agrupador</DialogTitle>
+          <DialogDescription>
+            Se listan acuerdos que administras y que no pertenecen aún a ningún
+            agrupador.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-3">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              autoFocus
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar por nombre o cliente…"
+              className="pl-9"
+            />
+          </div>
+
+          <div className="max-h-80 overflow-y-auto rounded-md border border-border">
+            {isLoading ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                Cargando…
+              </p>
+            ) : filtered.length === 0 ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                {search.trim()
+                  ? "Sin resultados para esa búsqueda."
+                  : "No hay acuerdos disponibles para agregar."}
+              </p>
+            ) : (
+              <ul className="divide-y divide-border">
+                {filtered.map((a) => {
+                  const isChecked = selected.has(a.id);
+                  const coverage =
+                    a.companies.length === 0
+                      ? "Sin clientes"
+                      : a.companies.length === 1
+                        ? a.companies[0]
+                        : `${a.companies.length} clientes`;
+                  return (
+                    <li key={a.id}>
+                      <label className="flex cursor-pointer items-center gap-3 px-4 py-3 hover:bg-muted/40">
+                        <Checkbox
+                          checked={isChecked}
+                          onCheckedChange={() => toggle(a.id)}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate font-medium">{a.name}</div>
+                          <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                            {coverage} · {a.lines_total}{" "}
+                            {a.lines_total === 1 ? "posición" : "posiciones"}
+                          </p>
+                        </div>
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={mut.isPending}
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={() => mut.mutate()}
+            disabled={selected.size === 0 || mut.isPending}
+          >
+            {selected.size > 1 ? `Agregar (${selected.size})` : "Agregar"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function RemoveAgreementDialog({
+  agreementId,
+  onClose,
+  onDone,
+}: {
+  agreementId: string | null;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const fn = useServerFn(removeAgreementFromGroup);
+  const mut = useMutation({
+    mutationFn: (id: string) => fn({ data: { agreement_id: id } }),
+    onSuccess: () => {
+      toast.success("Acuerdo desvinculado del agrupador");
+      onDone();
+      onClose();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  return (
+    <AlertDialog open={!!agreementId} onOpenChange={(o) => !o && onClose()}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Sacar acuerdo del agrupador</AlertDialogTitle>
+          <AlertDialogDescription>
+            El acuerdo sigue existiendo, solo deja de pertenecer a este agrupador.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={mut.isPending}>Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={(e) => {
+              e.preventDefault();
+              if (agreementId) mut.mutate(agreementId);
+            }}
+            disabled={mut.isPending}
+          >
+            Sacar del agrupador
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
