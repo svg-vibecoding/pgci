@@ -378,6 +378,91 @@ export type Database = {
           },
         ]
       }
+      agreement_position_client_codes: {
+        Row: {
+          agreement_id: string
+          agreement_position_id: string
+          client_id: string
+          client_product_id: string
+          client_product_match_id: string | null
+          ended_by: string | null
+          ended_reason: string | null
+          id: string
+          started_by: string | null
+          valid_from: string
+          valid_until: string | null
+        }
+        Insert: {
+          agreement_id: string
+          agreement_position_id: string
+          client_id: string
+          client_product_id: string
+          client_product_match_id?: string | null
+          ended_by?: string | null
+          ended_reason?: string | null
+          id?: string
+          started_by?: string | null
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Update: {
+          agreement_id?: string
+          agreement_position_id?: string
+          client_id?: string
+          client_product_id?: string
+          client_product_match_id?: string | null
+          ended_by?: string | null
+          ended_reason?: string | null
+          id?: string
+          started_by?: string | null
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agreement_position_client_codes_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "agreements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreement_position_client_codes_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "agreements_with_counts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreement_position_client_codes_agreement_position_id_fkey"
+            columns: ["agreement_position_id"]
+            isOneToOne: false
+            referencedRelation: "agreement_positions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreement_position_client_codes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreement_position_client_codes_client_product_id_fkey"
+            columns: ["client_product_id"]
+            isOneToOne: false
+            referencedRelation: "client_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreement_position_client_codes_client_product_match_id_fkey"
+            columns: ["client_product_match_id"]
+            isOneToOne: false
+            referencedRelation: "client_product_match"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agreement_position_exclusions: {
         Row: {
           ended_by: string | null
@@ -463,8 +548,6 @@ export type Database = {
       agreement_positions: {
         Row: {
           agreement_id: string
-          client_product_id: string | null
-          client_product_match_id: string | null
           created_at: string
           created_by: string | null
           end_date: string | null
@@ -480,8 +563,6 @@ export type Database = {
         }
         Insert: {
           agreement_id: string
-          client_product_id?: string | null
-          client_product_match_id?: string | null
           created_at?: string
           created_by?: string | null
           end_date?: string | null
@@ -497,8 +578,6 @@ export type Database = {
         }
         Update: {
           agreement_id?: string
-          client_product_id?: string | null
-          client_product_match_id?: string | null
           created_at?: string
           created_by?: string | null
           end_date?: string | null
@@ -525,13 +604,6 @@ export type Database = {
             columns: ["agreement_id"]
             isOneToOne: false
             referencedRelation: "agreements_with_counts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "agreement_positions_client_product_id_fkey"
-            columns: ["client_product_id"]
-            isOneToOne: false
-            referencedRelation: "client_products"
             referencedColumns: ["id"]
           },
           {
@@ -589,10 +661,94 @@ export type Database = {
           },
         ]
       }
+      agreement_transit_client_codes: {
+        Row: {
+          agreement_id: string
+          agreement_transit_id: string
+          client_id: string
+          client_product_id: string
+          client_product_match_id: string | null
+          ended_by: string | null
+          ended_reason: string | null
+          id: string
+          started_by: string | null
+          valid_from: string
+          valid_until: string | null
+        }
+        Insert: {
+          agreement_id: string
+          agreement_transit_id: string
+          client_id: string
+          client_product_id: string
+          client_product_match_id?: string | null
+          ended_by?: string | null
+          ended_reason?: string | null
+          id?: string
+          started_by?: string | null
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Update: {
+          agreement_id?: string
+          agreement_transit_id?: string
+          client_id?: string
+          client_product_id?: string
+          client_product_match_id?: string | null
+          ended_by?: string | null
+          ended_reason?: string | null
+          id?: string
+          started_by?: string | null
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agreement_transit_client_codes_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "agreements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreement_transit_client_codes_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "agreements_with_counts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreement_transit_client_codes_agreement_transit_id_fkey"
+            columns: ["agreement_transit_id"]
+            isOneToOne: false
+            referencedRelation: "agreement_transit_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreement_transit_client_codes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreement_transit_client_codes_client_product_id_fkey"
+            columns: ["client_product_id"]
+            isOneToOne: false
+            referencedRelation: "client_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreement_transit_client_codes_client_product_match_id_fkey"
+            columns: ["client_product_match_id"]
+            isOneToOne: false
+            referencedRelation: "client_product_match"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agreement_transit_lines: {
         Row: {
           agreement_id: string
-          client_product_id: string | null
           created_at: string
           created_by: string | null
           description: string | null
@@ -610,7 +766,6 @@ export type Database = {
         }
         Insert: {
           agreement_id: string
-          client_product_id?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -628,7 +783,6 @@ export type Database = {
         }
         Update: {
           agreement_id?: string
-          client_product_id?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -657,13 +811,6 @@ export type Database = {
             columns: ["agreement_id"]
             isOneToOne: false
             referencedRelation: "agreements_with_counts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "agreement_transit_lines_client_product_id_fkey"
-            columns: ["client_product_id"]
-            isOneToOne: false
-            referencedRelation: "client_products"
             referencedColumns: ["id"]
           },
           {
@@ -1153,6 +1300,23 @@ export type Database = {
       }
     }
     Functions: {
+      _resolve_client_code: {
+        Args: {
+          p_client_code: string
+          p_client_id: string
+          p_description: string
+          p_product_id: string
+          p_source: string
+        }
+        Returns: {
+          client_product_id: string
+          client_product_match_id: string
+        }[]
+      }
+      _validate_client_codes: {
+        Args: { p_agreement_id: string; p_codes: Json }
+        Returns: Json
+      }
       can_access_agreement: {
         Args: { p_agreement_id: string }
         Returns: boolean
@@ -1174,6 +1338,10 @@ export type Database = {
       can_manage_matching: { Args: { p_client_id: string }; Returns: boolean }
       can_view_costs: { Args: { p_agreement_id: string }; Returns: boolean }
       commit_agreement_import: {
+        Args: { p_agreement_id: string; p_payload: Json }
+        Returns: Json
+      }
+      create_agreement_line: {
         Args: { p_agreement_id: string; p_payload: Json }
         Returns: Json
       }
