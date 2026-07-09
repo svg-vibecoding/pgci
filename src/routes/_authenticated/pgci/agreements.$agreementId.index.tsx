@@ -179,30 +179,32 @@ function AgreementDetail() {
 
       <header className="flex flex-wrap items-start justify-between gap-4">
         <AgreementHeader agreementId={agreementId} />
-        {canAdmin && (
-          <div className="flex flex-wrap gap-2">
-            <Button asChild size="sm" variant="outline">
-              <Link
-                to="/pgci/agreements/$agreementId/lines"
-                params={{ agreementId }}
-              >
-                <Boxes className="mr-1.5 h-4 w-4" /> Posiciones
-              </Link>
-            </Button>
-            <Button variant="outline" asChild size="sm">
-              <Link
-                to="/pgci/agreements/$agreementId/edit"
-                params={{ agreementId }}
-              >
-                <Pencil className="mr-1.5 h-4 w-4" /> Editar
-              </Link>
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setStatusOpen(true)}>
-              <Power className="mr-1.5 h-4 w-4" />
-              {isActive ? "Inactivar" : "Activar"}
-            </Button>
-          </div>
-        )}
+        <div className="flex flex-wrap gap-2">
+          <Button asChild size="sm" variant="outline">
+            <Link
+              to="/pgci/agreements/$agreementId/lines"
+              params={{ agreementId }}
+            >
+              <Boxes className="mr-1.5 h-4 w-4" /> Posiciones
+            </Link>
+          </Button>
+          {canAdmin && (
+            <>
+              <Button variant="outline" asChild size="sm">
+                <Link
+                  to="/pgci/agreements/$agreementId/edit"
+                  params={{ agreementId }}
+                >
+                  <Pencil className="mr-1.5 h-4 w-4" /> Editar
+                </Link>
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setStatusOpen(true)}>
+                <Power className="mr-1.5 h-4 w-4" />
+                {isActive ? "Inactivar" : "Activar"}
+              </Button>
+            </>
+          )}
+        </div>
       </header>
 
       <Card>
@@ -273,7 +275,7 @@ function AgreementDetail() {
                 <TableRow>
                   <TableHead>Usuario</TableHead>
                   <TableHead>Rol</TableHead>
-                  <TableHead>Ve costos</TableHead>
+                  {canAdmin && <TableHead>Ve costos</TableHead>}
                   <TableHead>Vinculado</TableHead>
                   {canAdmin && <TableHead className="w-24 text-right"><span className="sr-only">Acciones</span></TableHead>}
                 </TableRow>
@@ -282,7 +284,7 @@ function AgreementDetail() {
                 {(members ?? []).length === 0 && (
                   <TableRow>
                     <TableCell
-                      colSpan={canAdmin ? 5 : 4}
+                      colSpan={canAdmin ? 5 : 3}
                       className="py-6 text-center text-sm text-muted-foreground"
                     >
                       Aún no hay miembros adicionales.
@@ -313,16 +315,18 @@ function AgreementDetail() {
                       </div>
                     </TableCell>
                     <TableCell className="text-sm">{roleLabel}</TableCell>
-                    <TableCell>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span tabIndex={0} className="inline-flex">
-                            <Switch checked={!!m.can_view_costs} disabled />
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent>Próximamente.</TooltipContent>
-                      </Tooltip>
-                    </TableCell>
+                    {canAdmin && (
+                      <TableCell>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span tabIndex={0} className="inline-flex">
+                              <Switch checked={!!m.can_view_costs} disabled />
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>Próximamente.</TooltipContent>
+                        </Tooltip>
+                      </TableCell>
+                    )}
                     <TableCell className="text-sm text-muted-foreground">
                       <div>{formatDate(m.created_at as string | null)}</div>
                       {assignedByName && (
