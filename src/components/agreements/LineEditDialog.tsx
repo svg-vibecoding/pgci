@@ -1,8 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { AlertTriangle, Calendar, ChevronDown, Link, Link2, Loader2, Lock, Search, Unlink } from "lucide-react";
+import {
+  AlertTriangle,
+  Calendar,
+  ChevronDown,
+  Info,
+  Link,
+  Link2,
+  Loader2,
+  Lock,
+  Pencil,
+  Plus,
+  Search,
+  Unlink,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatMoneyCOP } from "@/lib/format";
 import {
@@ -12,6 +26,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,6 +65,9 @@ import {
   linkSkuPrice,
   unlinkSkuPrice,
   searchProducts,
+  searchClientCodes,
+  reactivateAgreementLine,
+  type ClientCodeSearchResult,
 } from "@/lib/agreements.functions";
 
 export type LineEditClientCode = {
