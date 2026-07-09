@@ -978,13 +978,10 @@ function AgreementLinesPage() {
         agreementEndDate={agreement.end_date as string | null | undefined}
         initial={editInitial}
         agreementClients={agreementClients}
+        clientCatalogPermissions={catalogPerms}
       />
 
-      <AgreementImportWizard
-        open={importOpen}
-        onOpenChange={setImportOpen}
-        agreementId={agreementId}
-      />
+
 
       <AlertDialog
         open={!!excludeTarget}
