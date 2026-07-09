@@ -510,6 +510,7 @@ export function LineEditDialog({
         return patchFn({
           data: {
             line_id: initial!.line_id!,
+            kind: initial!.kind ?? "position",
             patch: {
               sku: txt(v.sku),
               client_codes: codes,
