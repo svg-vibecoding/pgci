@@ -1313,10 +1313,16 @@ export type Database = {
           client_product_match_id: string
         }[]
       }
-      _validate_client_codes: {
-        Args: { p_agreement_id: string; p_codes: Json }
-        Returns: Json
-      }
+      _validate_client_codes:
+        | { Args: { p_agreement_id: string; p_codes: Json }; Returns: Json }
+        | {
+            Args: {
+              p_agreement_id: string
+              p_codes: Json
+              p_position_id?: string
+            }
+            Returns: Json
+          }
       can_access_agreement: {
         Args: { p_agreement_id: string }
         Returns: boolean
