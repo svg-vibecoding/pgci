@@ -2294,19 +2294,27 @@ export const listGroupAgreementMembers = createServerFn({ method: "GET" })
     );
     let profilesById = new Map<string, { full_name: string; email: string }>();
     if (userIds.length > 0) {
-      const { data: profs } = await context.supabase
-        .from("profiles")
-        .select("user_id, full_name, email")
-        .in("user_id", userIds);
-      profilesById = new Map(
-        (profs ?? []).map((p) => [
-          p.user_id as string,
-          {
-            full_name: (p.full_name as string) ?? "",
-            email: (p.email as string) ?? "",
-          },
-        ]),
+      const results = await Promise.all(
+        agreementIds.map((aid) =>
+          context.supabase.rpc("get_agreement_participants", {
+            p_agreement_id: aid,
+          }),
+        ),
       );
+      for (const r of results) {
+        for (const p of (r.data ?? []) as {
+          user_id: string;
+          full_name: string | null;
+          email: string | null;
+        }[]) {
+          if (!profilesById.has(p.user_id)) {
+            profilesById.set(p.user_id, {
+              full_name: (p.full_name ?? "") as string,
+              email: (p.email ?? "") as string,
+            });
+          }
+        }
+      }
     }
 
     return rows
