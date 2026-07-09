@@ -15,8 +15,7 @@ interface AgreementBreadcrumbProps {
 }
 
 export function AgreementBreadcrumb({ agreementId, current }: AgreementBreadcrumbProps) {
-  const currentItemClass =
-    "inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-sm font-bold text-foreground";
+  const currentItemClass = "inline-flex items-center font-bold text-foreground";
 
   return (
     <Breadcrumb>
