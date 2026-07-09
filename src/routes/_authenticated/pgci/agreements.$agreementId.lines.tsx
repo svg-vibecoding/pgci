@@ -137,6 +137,7 @@ function AgreementLinesPage() {
   const skuGroupsFn = useServerFn(listAgreementSkuGroups);
   const linkFn = useServerFn(linkSkuPrice);
   const unlinkFn = useServerFn(unlinkSkuPrice);
+  const companiesFn = useServerFn(listAgreementCompanies);
 
   const { data: agreement, isLoading: loadingAgreement } = useQuery({
     queryKey: ["agreements", "detail", agreementId],
@@ -154,6 +155,21 @@ function AgreementLinesPage() {
     queryKey: ["agreements", "sku-groups", agreementId],
     queryFn: () => skuGroupsFn({ data: { agreement_id: agreementId } }),
   });
+  const { data: companies } = useQuery({
+    queryKey: ["agreements", "companies", agreementId],
+    queryFn: () => companiesFn({ data: { agreement_id: agreementId } }),
+  });
+  const agreementClients = useMemo(
+    () =>
+      (companies ?? []).map((c) => ({
+        id: c.client_id as string,
+        name:
+          (c.client_commercial_name as string | null | undefined)?.trim() ||
+          (c.client_legal_name as string | null | undefined) ||
+          null,
+      })),
+    [companies],
+  );
 
 
   const [activeCard, setActiveCard] = useState<LineCardKey>("all");
