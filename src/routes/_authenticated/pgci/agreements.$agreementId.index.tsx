@@ -4,13 +4,13 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
-  ArrowLeft,
   Pencil,
   Power,
   UserPlus,
   Unlink,
   Boxes,
 } from "lucide-react";
+import { AgreementBreadcrumb } from "@/components/agreements/AgreementBreadcrumb";
 import {
   getAgreement,
   getAgreementContext,
