@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -58,8 +58,10 @@ import {
   deleteAgreementTransitLine,
   listAgreementSkuGroups,
   listAgreementCompanies,
+  listClientCatalogPermissions,
   linkSkuPrice,
   unlinkSkuPrice,
+  type LineCode,
 } from "@/lib/agreements.functions";
 import {
   Dialog,
@@ -69,10 +71,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { exportAgreementLines } from "@/lib/agreement-export";
 import { PENDING_REASON_LABELS, type ImportPendingReason } from "@/lib/agreement-import";
 import { LineEditDialog, type LineEditValues } from "@/components/agreements/LineEditDialog";
-import { AgreementImportWizard } from "@/components/agreements/AgreementImportWizard";
 import {
   Tooltip,
   TooltipContent,
@@ -138,6 +146,7 @@ function AgreementLinesPage() {
   const linkFn = useServerFn(linkSkuPrice);
   const unlinkFn = useServerFn(unlinkSkuPrice);
   const companiesFn = useServerFn(listAgreementCompanies);
+  const catalogPermsFn = useServerFn(listClientCatalogPermissions);
 
   const { data: agreement, isLoading: loadingAgreement } = useQuery({
     queryKey: ["agreements", "detail", agreementId],
@@ -159,6 +168,10 @@ function AgreementLinesPage() {
     queryKey: ["agreements", "companies", agreementId],
     queryFn: () => companiesFn({ data: { agreement_id: agreementId } }),
   });
+  const { data: catalogPerms } = useQuery({
+    queryKey: ["agreements", "catalog-perms", agreementId],
+    queryFn: () => catalogPermsFn({ data: { agreement_id: agreementId } }),
+  });
   const agreementClients = useMemo(
     () =>
       (companies ?? []).map((c) => ({
@@ -167,6 +180,13 @@ function AgreementLinesPage() {
       })),
     [companies],
   );
+  const visibleClients = useMemo(
+    () =>
+      [...agreementClients].sort((a, b) =>
+        (a.name ?? "").localeCompare(b.name ?? "", "es", { sensitivity: "base" }),
+      ),
+    [agreementClients],
+  );
 
 
   const [activeCard, setActiveCard] = useState<LineCardKey>("all");
@@ -174,13 +194,20 @@ function AgreementLinesPage() {
   const [linkingProductId, setLinkingProductId] = useState<string | null>(null);
   const [skuConflictOnly, setSkuConflictOnly] = useState(false);
   const [q, setQ] = useState("");
+  const [projectionClientId, setProjectionClientId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!projectionClientId && visibleClients[0]) {
+      setProjectionClientId(visibleClients[0].id);
+    }
+  }, [visibleClients, projectionClientId]);
 
-  const [importOpen, setImportOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editInitial, setEditInitial] = useState<Partial<LineEditValues> | null>(null);
-  const [excludeTarget, setExcludeTarget] = useState<{ id: string; sku: string | null } | null>(
-    null,
-  );
+  const [excludeTarget, setExcludeTarget] = useState<{
+    id: string;
+    sku: string | null;
+    codes: LineCode[];
+  } | null>(null);
   const [deleteTransitTarget, setDeleteTransitTarget] = useState<{ id: string; sku: string | null } | null>(
     null,
   );
@@ -341,19 +368,18 @@ function AgreementLinesPage() {
   const openEditForLine = (lineId: string) => {
     const r = (lines ?? []).find((x) => x.id === lineId) as Line | undefined;
     if (!r) return;
-    const first = r.codes?.[0] ?? null;
     setEditInitial({
       line_id: r.id as string,
       kind: r.kind,
       sku: r.products?.sku ?? "",
-      client_code: first?.client_code ?? "",
-      client_description: first?.description ?? "",
-      // Estado completo → declarativo: preserva todos los códigos de otros clientes.
-      client_codes: (r.codes ?? []).map((c) => ({
-        client_id: c.client_id,
-        client_code: c.client_code,
-        description: c.description ?? "",
-      })),
+      // Estado completo declarativo: preserva todos los códigos de otros clientes.
+      client_codes: (r.codes ?? [])
+        .filter((c) => !c.released)
+        .map((c) => ({
+          client_id: c.client_id,
+          client_code: c.client_code,
+          description: c.description ?? "",
+        })),
       sale_price: r.sale_price?.toString() ?? "",
       par_price: r.par_price?.toString() ?? "",
       start_date: r.start_date ?? "",
@@ -451,9 +477,20 @@ function AgreementLinesPage() {
           </Button>
           {canAdmin && (
             <>
-              <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
-                <Upload className="mr-1.5 h-4 w-4" /> Importar
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span>
+                      <Button variant="outline" size="sm" disabled>
+                        <Upload className="mr-1.5 h-4 w-4" /> Importar
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    Importación en mantenimiento — disponible en la próxima versión
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <Button
                 size="sm"
                 onClick={() => {

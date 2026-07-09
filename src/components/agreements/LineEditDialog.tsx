@@ -2,14 +2,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { AlertTriangle, Calendar, ChevronDown, Link, Link2, Loader2, Search, Unlink } from "lucide-react";
+import { AlertTriangle, Calendar, ChevronDown, Link, Link2, Loader2, Lock, Search, Unlink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatMoneyCOP } from "@/lib/format";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -58,12 +57,7 @@ export type LineEditValues = {
   // tabla equivocada y responde "Posición no encontrada".
   kind?: "position" | "transit";
   sku: string;
-  // Campos visibles del formulario transitorio (editan el primer cliente).
-  client_code: string;
-  client_description: string;
-  // Estado completo de códigos por cliente. La UI transitoria solo edita el
-  // primero, pero el patch enviado incluye la lista COMPLETA para no cerrar
-  // silenciosamente los períodos de otros clientes (RN declarativa).
+  // Lista COMPLETA declarativa de códigos por cliente. Lo ausente se cierra.
   client_codes: LineEditClientCode[];
   sale_price: string;
   par_price: string;
@@ -76,8 +70,6 @@ const empty: LineEditValues = {
   line_id: null,
   kind: "position",
   sku: "",
-  client_code: "",
-  client_description: "",
   client_codes: [],
   sale_price: "",
   par_price: "",
@@ -116,7 +108,6 @@ function fmtDateLocal(iso: string | null | undefined): string | null {
 }
 
 // Acepta `.` o `,` como separador decimal y opcionales separadores de miles.
-// Devuelve el número completo sin redondear o null si no aplica.
 function parsePriceInput(raw: string | number | null | undefined): number | null {
   if (raw == null) return null;
   if (typeof raw === "number") return Number.isFinite(raw) ? raw : null;
@@ -141,7 +132,6 @@ function parsePriceInput(raw: string | number | null | undefined): number | null
   return Number.isFinite(n) ? n : null;
 }
 
-// Muestra siempre 2 decimales con coma decimal y punto de miles (estándar CO).
 function formatPriceDisplay(n: number | null | undefined): string {
   if (n == null || !Number.isFinite(n)) return "";
   const neg = n < 0;
@@ -194,6 +184,82 @@ function SectionHeader({
   );
 }
 
+type ClientCard = {
+  id: string;
+  name: string;
+  can_manage: boolean;
+};
+
+type ClientCodeEntry = { code: string; description: string };
+
+function ClientCodeCards({
+  clients,
+  values,
+  onChange,
+}: {
+  clients: ClientCard[];
+  values: Map<string, ClientCodeEntry>;
+  onChange: (clientId: string, next: ClientCodeEntry) => void;
+}) {
+  if (clients.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        Este acuerdo no tiene clientes vinculados.
+      </p>
+    );
+  }
+  return (
+    <div className="space-y-3">
+      {clients.map((c) => {
+        const entry = values.get(c.id) ?? { code: "", description: "" };
+        const disabled = !c.can_manage;
+        return (
+          <div
+            key={c.id}
+            className={cn(
+              "rounded-lg border border-border p-4 space-y-3",
+              disabled ? "bg-muted/50" : "bg-surface-card",
+            )}
+          >
+            <div className="flex items-center gap-2">
+              {disabled && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
+              <div className="text-sm font-semibold text-foreground">{c.name}</div>
+            </div>
+            <div className="space-y-1.5">
+              <FieldLabel>Código</FieldLabel>
+              <Input
+                value={entry.code}
+                disabled={disabled}
+                className={disabled ? "bg-muted/50 cursor-not-allowed" : ""}
+                onChange={(e) =>
+                  onChange(c.id, { ...entry, code: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-1.5">
+              <FieldLabel>Descripción</FieldLabel>
+              <Input
+                value={entry.description}
+                disabled={disabled}
+                className={disabled ? "bg-muted/50 cursor-not-allowed" : ""}
+                onChange={(e) =>
+                  onChange(c.id, { ...entry, description: e.target.value })
+                }
+              />
+            </div>
+            {disabled && (
+              <p className="text-xs text-muted-foreground">
+                Sin permiso para gestionar el catálogo de este cliente. Su código,
+                si existe, se conserva sin cambios al guardar.
+              </p>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function LineEditDialog({
   open,
   onOpenChange,
@@ -204,6 +270,7 @@ export function LineEditDialog({
   agreementStartDate,
   agreementEndDate,
   agreementClients,
+  clientCatalogPermissions,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -213,9 +280,10 @@ export function LineEditDialog({
   initial?: Partial<LineEditValues> | null;
   agreementStartDate?: string | null;
   agreementEndDate?: string | null;
-  // Clientes activos del acuerdo. Requerido para decidir el modo del formulario
-  // transitorio: 1 cliente = precarga; ≥2 = inputs deshabilitados.
+  // Clientes activos del acuerdo. Una tarjeta por cliente.
   agreementClients?: Array<{ id: string; name: string | null }>;
+  // Permisos can_manage_client_catalog por cliente (RPC). Sin dato = false.
+  clientCatalogPermissions?: Array<{ client_id: string; can_manage: boolean }>;
 }) {
   const qc = useQueryClient();
   const createFn = useServerFn(createAgreementLine);
@@ -225,9 +293,7 @@ export function LineEditDialog({
   const linkFn = useServerFn(linkSkuPrice);
   const unlinkFn = useServerFn(unlinkSkuPrice);
   const searchFn = useServerFn(searchProducts);
-  const isMultiClient = (agreementClients?.length ?? 0) > 1;
-  const singleClientId =
-    (agreementClients?.length ?? 0) === 1 ? agreementClients![0].id : null;
+
   const [v, setV] = useState<LineEditValues>(empty);
   const [productMeta, setProductMeta] = useState<ProductMeta | null>(null);
   const [lookup, setLookup] = useState<{
@@ -254,6 +320,11 @@ export function LineEditDialog({
   const [linkError, setLinkError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
 
+  // Estado por cliente (tarjetas).
+  const [codeEntries, setCodeEntries] = useState<Map<string, ClientCodeEntry>>(
+    new Map(),
+  );
+
   // Buscador de productos (combobox)
   type ProductResult = {
     id: string;
@@ -272,6 +343,31 @@ export function LineEditDialog({
   const searchSeq = useRef(0);
   const PAGE_SIZE = 20;
 
+  // Mapa de permisos + tarjetas ordenadas.
+  const permMap = useMemo(() => {
+    const m = new Map<string, boolean>();
+    for (const p of clientCatalogPermissions ?? []) m.set(p.client_id, p.can_manage);
+    return m;
+  }, [clientCatalogPermissions]);
+
+  const clientCards: ClientCard[] = useMemo(() => {
+    const rows = (agreementClients ?? []).map((c) => ({
+      id: c.id,
+      name: c.name?.trim() || "Sin nombre",
+      can_manage: permMap.get(c.id) ?? false,
+    }));
+    return rows.sort((a, b) =>
+      a.name.localeCompare(b.name, "es", { sensitivity: "base" }),
+    );
+  }, [agreementClients, permMap]);
+
+  // Diccionario client_id → nombre para toasts.
+  const clientById = useMemo(() => {
+    const m = new Map<string, { name: string }>();
+    for (const c of clientCards) m.set(c.id, { name: c.name });
+    return m;
+  }, [clientCards]);
+
   const runConflict = async (sku: string, pid: string | null) => {
     const trimmed = sku.trim();
     if (!trimmed) {
@@ -287,7 +383,6 @@ export function LineEditDialog({
         data: { agreement_id: agreementId, sku: trimmed },
       });
       if (cseq !== conflictSeq.current) return;
-      // Prefer product_id returned from the search selection; fallback to server resolution.
       if (pid) setProductId(pid);
       else setProductId(res.product_id ?? null);
       const linked = !!res.isLinked;
@@ -323,7 +418,6 @@ export function LineEditDialog({
     }
   };
 
-  // Solo se usa en modo edición para prepoblar los campos RO del SKU inicial.
   const prefillFromSku = async (sku: string) => {
     const trimmed = sku.trim();
     if (!trimmed) return;
@@ -353,10 +447,18 @@ export function LineEditDialog({
     const merged = { ...empty, ...(initial ?? {}) };
     const next: LineEditValues = {
       ...merged,
+      client_codes: initial?.client_codes ?? [],
       sale_price: normalizePriceOnBlur(merged.sale_price),
       par_price: normalizePriceOnBlur(merged.par_price),
     };
     setV(next);
+    // Hidratar tarjetas: partir de initial.client_codes y añadir placeholders
+    // vacíos para los clientes del acuerdo que aún no tengan entrada.
+    const m = new Map<string, ClientCodeEntry>();
+    for (const c of next.client_codes) {
+      m.set(c.client_id, { code: c.client_code, description: c.description });
+    }
+    setCodeEntries(m);
     setProductMeta(null);
     setLookup({ kind: next.sku.trim() ? "idle" : "empty" });
     setNConflict({ kind: "idle", lines: [] });
@@ -442,10 +544,6 @@ export function LineEditDialog({
   const hasProduct = !!productId;
 
   const agreementDatesLabel = useMemo(() => {
-    if (!hasProduct) {
-      return "Las condiciones comerciales se habilitan cuando haya un producto Jaivaná seleccionado.";
-    }
-    // Solo mostrar herencia cuando ambos campos de vigencia están vacíos.
     if (v.start_date.trim() !== "" || v.end_date.trim() !== "") return null;
     const start = fmtDateLocal(agreementStartDate);
     const end = fmtDateLocal(agreementEndDate);
@@ -453,42 +551,51 @@ export function LineEditDialog({
       return `Las fechas de vigencia son opcionales. Si no se indican, se heredan del acuerdo (${start} — ${end}).`;
     }
     return null;
-  }, [hasProduct, agreementStartDate, agreementEndDate, v.start_date, v.end_date]);
+  }, [agreementStartDate, agreementEndDate, v.start_date, v.end_date]);
 
   const searchPlaceholder = hasProduct
     ? "Escribe para cambiar el producto..."
     : "Busca por código, descripción o marca...";
 
-
-
-  // Construye la lista DECLARATIVA de códigos que se envía al servidor:
-  // - preserva los códigos de todos los clientes presentes en la línea original
-  // - aplica los edits visibles del formulario transitorio al PRIMER cliente
-  //   (o al `singleClientId` si es un acuerdo mono-cliente sin códigos previos)
-  const buildClientCodes = (): LineEditClientCode[] | undefined => {
-    if (isMultiClient) {
-      // En multi-cliente, el formulario transitorio no captura códigos: se
-      // reenvían tal cual los existentes (no cerrar períodos silenciosamente).
-      return v.client_codes.length > 0 ? v.client_codes : undefined;
+  // Construye la lista DECLARATIVA de códigos que se envía al servidor.
+  // Regla H-3: los clientes SIN can_manage cuyo código exista en `initial`
+  // se reenvían tal cual — excluirlos cerraría su período por la RN declarativa
+  // (pérdida silenciosa). Consecuencia aceptada: si el usuario no tiene permiso
+  // sobre alguno, la RPC responde 42501 y se muestra el mensaje tal cual.
+  const buildClientCodes = (): LineEditClientCode[] => {
+    const originalMap = new Map<string, LineEditClientCode>();
+    for (const c of v.client_codes) originalMap.set(c.client_id, c);
+    const codes: LineEditClientCode[] = [];
+    for (const c of clientCards) {
+      if (!c.can_manage) {
+        const orig = originalMap.get(c.id);
+        if (orig && orig.client_code.trim()) codes.push(orig);
+        continue;
+      }
+      const entry = codeEntries.get(c.id);
+      const code = (entry?.code ?? "").trim();
+      if (!code) continue;
+      codes.push({
+        client_id: c.id,
+        client_code: code,
+        description: (entry?.description ?? "").trim(),
+      });
     }
-    const editedCode = v.client_code.trim();
-    const editedDesc = v.client_description.trim();
-    const targetClientId =
-      v.client_codes[0]?.client_id ?? singleClientId ?? initial?.client_codes?.[0]?.client_id ?? null;
-    // Sin cliente objetivo válido, no podemos enviar client_codes.
-    if (!targetClientId) return editedCode ? undefined : v.client_codes;
-    const rest = v.client_codes.slice(1);
-    if (!editedCode) {
-      // Vaciar el primer cliente equivale a cerrarlo declarativamente.
-      return rest;
-    }
-    return [
-      { client_id: targetClientId, client_code: editedCode, description: editedDesc },
-      ...rest,
-    ];
+    return codes;
   };
 
   const isEdit = !!initial?.line_id;
+
+  const computePendingLabels = (): string[] => {
+    const missing: string[] = [];
+    if (!productId || v.sku.trim() === "") missing.push("SKU");
+    const sale = parsePriceInput(v.sale_price);
+    if (sale == null || sale <= 0) missing.push("precio");
+    const hasStart = v.start_date.trim() !== "" || !!agreementStartDate;
+    const hasEnd = v.end_date.trim() !== "" || !!agreementEndDate;
+    if (!hasStart || !hasEnd) missing.push("vigencia");
+    return missing;
+  };
 
   const save = useMutation({
     mutationFn: async () => {
@@ -528,7 +635,7 @@ export function LineEditDialog({
         data: {
           agreement_id: agreementId,
           sku: txt(v.sku) ?? undefined,
-          client_codes: codes ?? [],
+          client_codes: codes,
           sale_price: num(v.sale_price),
           par_price: num(v.par_price) || undefined,
           start_date: txt(v.start_date) ?? undefined,
@@ -538,28 +645,63 @@ export function LineEditDialog({
       });
     },
     onSuccess: (res) => {
-      // update_agreement_line puede devolver { blocked: true, block_reason: {...} }
-      // por RN-MATCH-01. No cerrar el diálogo; formatear un mensaje accionable.
-      if (res && typeof res === "object" && "blocked" in res && (res as { blocked?: boolean }).blocked) {
-        const br = (res as { block_reason?: {
+      // (1) UPDATE bloqueado (RN-MATCH-01 o identity_no_codes)
+      const r = res as {
+        blocked?: boolean;
+        block_reason?: {
           code?: string;
           conflicting_sku?: string;
           conflicting_position_id?: string;
           client_id?: string;
-        } | null }).block_reason ?? null;
-        const detail = br?.conflicting_sku
-          ? `Ya existe otra posición con ese SKU (${br.conflicting_sku}) para este cliente.`
-          : "La combinación de códigos entra en conflicto con otra posición del acuerdo.";
-        toast.error(detail);
+        } | null;
+        promoted?: boolean;
+        position_id?: string;
+        transit_id?: string;
+        line_id?: string;
+        kind?: "position" | "transit";
+      } | null;
+      if (r && r.blocked) {
+        const br = r.block_reason ?? {};
+        const who = br.client_id
+          ? clientById.get(br.client_id)?.name ?? "otro cliente"
+          : "otro cliente";
+        const sku = br.conflicting_sku ?? "<sin SKU>";
+        toast.error(
+          br.code === "identity_no_codes"
+            ? "No se puede promover: ya existe otra posición vigente de este SKU sin códigos de cliente."
+            : `No se puede guardar: el código de ${who} ya está fijado al SKU ${sku} en otra posición del acuerdo.`,
+        );
         return;
       }
-      toast.success(isEdit ? "Posición actualizada" : "Posición creada");
+      // (2) Éxito — distinguir por forma de retorno
+      const isCreate = !isEdit;
+      const isPromotion = r?.promoted === true;
+      const isPending = isCreate
+        ? r?.kind === "transit"
+        : !!r?.transit_id && !isPromotion;
+      if (isPending) {
+        const missing = computePendingLabels();
+        toast.info(
+          missing.length
+            ? `Guardado como pendiente — falta ${missing.join(", ")}`
+            : "Guardado como pendiente",
+        );
+      } else if (isPromotion || isCreate) {
+        toast.success("Posición creada");
+      } else {
+        toast.success("Posición actualizada");
+      }
       qc.invalidateQueries({ queryKey: ["agreements", "lines", agreementId] });
       qc.invalidateQueries({ queryKey: ["agreements", "detail", agreementId] });
       qc.invalidateQueries({ queryKey: ["agreements", "sku-groups", agreementId] });
       onOpenChange(false);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      // Sustituye UUIDs de cliente por nombre legible cuando haya match.
+      const uuidRe = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
+      const msg = e.message.replace(uuidRe, (m) => clientById.get(m)?.name ?? m);
+      toast.error(msg);
+    },
   });
 
   const invalidateLines = () => {
@@ -613,21 +755,21 @@ export function LineEditDialog({
   const readonlyClass = "bg-muted/50 cursor-not-allowed";
   const inputClass = "";
   const catalogDateLabel = fmtCatalogDate(lookup.catalogUpdatedAt ?? null);
-
+  const titleKind = isEdit
+    ? initial?.kind === "transit"
+      ? "Editar línea en tránsito"
+      : "Editar posición"
+    : "Nueva posición";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-2xl max-h-[85vh] flex flex-col overflow-hidden p-0 gap-0"
+        className="max-w-6xl h-[92vh] flex flex-col overflow-hidden p-0 gap-0"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <DialogHeader className="px-6 py-4 border-b border-border shrink-0">
           <DialogTitle className="text-2xl font-bold tracking-tight">
-            {isEdit
-              ? initial?.kind === "transit"
-                ? "Editar línea en tránsito"
-                : "Editar posición"
-              : "Nueva posición"}
+            {titleKind}
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
             {agreementName && clientName
@@ -636,340 +778,293 @@ export function LineEditDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 min-h-0 overflow-y-auto bg-white">
-          <div className="p-6 space-y-8">
-
-            {/* Información del cliente */}
-            <section className="space-y-4">
-              <SectionHeader title="Información del cliente" number="01" />
-              {isMultiClient && !isEdit && (
-                <Alert variant="info">
-                  <AlertDescription>
-                    Este acuerdo tiene varios clientes. La captura de códigos por
-                    cliente estará disponible tras el rediseño del formulario.
-                  </AlertDescription>
-                </Alert>
-              )}
-              {isMultiClient && isEdit && v.client_codes.length > 1 && (
-                <Alert variant="info">
-                  <AlertDescription>
-                    Esta posición tiene códigos de {v.client_codes.length} clientes.
-                    Se conservan al guardar; la edición completa por cliente estará
-                    disponible tras el rediseño del formulario.
-                  </AlertDescription>
-                </Alert>
-              )}
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="space-y-1.5">
-                  <FieldLabel>Código del cliente</FieldLabel>
-                  <Input
-                    className={cn(inputClass, isMultiClient && !isEdit && readonlyClass)}
-                    value={v.client_code}
-                    disabled={isMultiClient && !isEdit}
-                    onChange={(e) => setV({ ...v, client_code: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-1.5 md:col-span-2">
-                  <FieldLabel>Descripción del cliente</FieldLabel>
-                  <Input
-                    className={cn(inputClass, isMultiClient && !isEdit && readonlyClass)}
-                    value={v.client_description}
-                    disabled={isMultiClient && !isEdit}
-                    onChange={(e) =>
-                      setV({ ...v, client_description: e.target.value })
-                    }
-                  />
-                </div>
-              </div>
-            </section>
-
-            {/* Información Jaivaná */}
-            <section className="space-y-4">
-              <SectionHeader title="Información Jaivaná" number="02" />
-              <div className="rounded-lg border border-input bg-muted/40 p-4">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                {/* Buscador — ancho completo */}
-                <div className="space-y-1.5 md:col-span-2">
-                  <FieldLabel>Producto Jaivaná</FieldLabel>
-                  <Popover open={searchOpen} onOpenChange={setSearchOpen}>
-                    <PopoverTrigger asChild>
-                      <div className="relative">
-                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                          className={cn(inputClass, "pl-9 bg-white")}
-                          value={searchQuery}
-                          placeholder={searchPlaceholder}
-                          onFocus={() => setSearchOpen(true)}
-                          onChange={(e) => {
-                            setSearchQuery(e.target.value);
-                            setSearchOpen(true);
-                            setSaveError(null);
-                          }}
-                        />
-                        {searchLoading && (
-                          <Loader2 className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
-                        )}
-                      </div>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      align="start"
-                      sideOffset={4}
-                      onOpenAutoFocus={(e) => e.preventDefault()}
-                      className="w-[var(--radix-popover-trigger-width)] p-0"
-                    >
-                      {searchQuery.trim().length < 2 ? (
-                        <p className="px-3 py-4 text-center text-sm text-muted-foreground">
-                          Escribe al menos 2 caracteres para buscar.
-                        </p>
-                      ) : searchLoading && searchResults.length === 0 ? (
-                        <p className="px-3 py-4 text-center text-sm text-muted-foreground">
-                          Buscando…
-                        </p>
-                      ) : searchResults.length === 0 ? (
-                        <p className="px-3 py-4 text-center text-sm text-muted-foreground">
-                          Sin resultados en el catálogo.
-                        </p>
-                      ) : (
-                        <div className="max-h-72 overflow-y-auto py-1">
-                          {searchResults.map((p) => (
-                            <button
-                              key={p.id}
-                              type="button"
-                              onClick={() => onSelectProduct(p)}
-                              className="flex w-full flex-col gap-0.5 px-3 py-2 text-left hover:bg-muted focus:bg-muted focus:outline-none"
-                            >
-                              <span className="font-mono text-sm font-medium text-foreground">
-                                {p.sku}
-                              </span>
-                              <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-                                <span className="truncate">
-                                  {p.erp_description ?? "—"}
-                                </span>
-                                <span aria-hidden>·</span>
-                                <span>{p.commercial_brand ?? "—"}</span>
-                                <span aria-hidden>·</span>
-                                <StatusBadge
-                                  size="sm"
-                                  status={p.status === "active" ? "active" : "neutral"}
-                                  label={p.status === "active" ? "Activo" : "Inactivo"}
-                                />
-                              </span>
-                            </button>
-                          ))}
-                          {searchHasMore && (
-                            <div className="border-t border-border p-2">
-                              <button
-                                type="button"
-                                onClick={() => void loadMoreResults()}
-                                disabled={searchLoadingMore}
-                                className="flex w-full items-center justify-center gap-2 rounded-sm py-2 text-sm font-medium text-primary hover:bg-accent disabled:opacity-50"
-                              >
-                                {searchLoadingMore && (
-                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                )}
-                                Cargar más
-                              </button>
-                            </div>
+        <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[minmax(0,55fr)_minmax(0,45fr)]">
+          {/* Columna izquierda — la posición */}
+          <div className="min-h-0 overflow-y-auto bg-white border-r border-border">
+            <div className="p-6 space-y-8">
+              {/* Producto Jaivaná */}
+              <section className="space-y-4">
+                <SectionHeader title="Producto Jaivaná" number="01" />
+                <div className="rounded-lg border border-input bg-muted/40 p-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="space-y-1.5 md:col-span-2">
+                    <FieldLabel>Producto Jaivaná</FieldLabel>
+                    <Popover open={searchOpen} onOpenChange={setSearchOpen}>
+                      <PopoverTrigger asChild>
+                        <div className="relative">
+                          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            className={cn(inputClass, "pl-9 bg-white")}
+                            value={searchQuery}
+                            placeholder={searchPlaceholder}
+                            onFocus={() => setSearchOpen(true)}
+                            onChange={(e) => {
+                              setSearchQuery(e.target.value);
+                              setSearchOpen(true);
+                              setSaveError(null);
+                            }}
+                          />
+                          {searchLoading && (
+                            <Loader2 className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
                           )}
                         </div>
-                      )}
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                {/* Campos solo lectura — visibles solo cuando hay producto seleccionado */}
-                {hasProduct && (
-                  <>
-                    <div className="space-y-1.5">
-                      <FieldLabel>Código Jaivaná</FieldLabel>
-                      <Input
-                        value={v.sku}
-                        readOnly
-                        tabIndex={-1}
-                        placeholder="—"
-                        className={readonlyClass}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <FieldLabel>Marca</FieldLabel>
-                      <Input
-                        value={productMeta?.commercial_brand ?? ""}
-                        readOnly
-                        tabIndex={-1}
-                        placeholder="—"
-                        className={readonlyClass}
-                      />
-                    </div>
-                    <div className="space-y-1.5 md:col-span-2">
-                      <FieldLabel>Descripción Jaivaná</FieldLabel>
-                      <Input
-                        value={productMeta?.erp_description ?? ""}
-                        readOnly
-                        tabIndex={-1}
-                        placeholder="—"
-                        className={readonlyClass}
-                      />
-                    </div>
-                  </>
-                )}
-
-
-                {lookup.kind === "inactive" && (
-                  <div className="md:col-span-2">
-                    <Alert variant="warning">
-                      <AlertDescription>
-                        Producto inactivo en el catálogo. Esta posición quedará
-                        en "Revisar".
-                      </AlertDescription>
-                    </Alert>
-                  </div>
-                )}
-                {lookup.kind === "not_found" && (
-                  <div className="md:col-span-2">
-                    <Alert variant="error">
-                      <AlertDescription>
-                        Código no encontrado en el catálogo Jaivaná
-                        {catalogDateLabel
-                          ? ` (última actualización: ${catalogDateLabel}).`
-                          : "."}
-                      </AlertDescription>
-                    </Alert>
-                  </div>
-                )}
-                {nConflict.kind === "found" && (
-                  <div className="md:col-span-2">
-                    <Alert variant="warning" className="p-0 overflow-hidden">
-                      <Collapsible open={nExpanded} onOpenChange={setNExpanded}>
-                        <CollapsibleTrigger asChild>
-                          <button
-                            type="button"
-                            className="flex w-full items-center gap-2 px-4 py-3 text-left bg-warning/10 hover:bg-warning/15 transition-colors"
-                          >
-                            {isLinked ? (
-                              <Link2 className="h-4 w-4 shrink-0" />
-                            ) : (
-                              <AlertTriangle className="h-4 w-4 shrink-0" />
+                      </PopoverTrigger>
+                      <PopoverContent
+                        align="start"
+                        sideOffset={4}
+                        onOpenAutoFocus={(e) => e.preventDefault()}
+                        className="w-[var(--radix-popover-trigger-width)] p-0"
+                      >
+                        {searchQuery.trim().length < 2 ? (
+                          <p className="px-3 py-4 text-center text-sm text-muted-foreground">
+                            Escribe al menos 2 caracteres para buscar.
+                          </p>
+                        ) : searchLoading && searchResults.length === 0 ? (
+                          <p className="px-3 py-4 text-center text-sm text-muted-foreground">
+                            Buscando…
+                          </p>
+                        ) : searchResults.length === 0 ? (
+                          <p className="px-3 py-4 text-center text-sm text-muted-foreground">
+                            Sin resultados en el catálogo.
+                          </p>
+                        ) : (
+                          <div className="max-h-72 overflow-y-auto py-1">
+                            {searchResults.map((p) => (
+                              <button
+                                key={p.id}
+                                type="button"
+                                onClick={() => onSelectProduct(p)}
+                                className="flex w-full flex-col gap-0.5 px-3 py-2 text-left hover:bg-muted focus:bg-muted focus:outline-none"
+                              >
+                                <span className="font-mono text-sm font-medium text-foreground">
+                                  {p.sku}
+                                </span>
+                                <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                                  <span className="truncate">
+                                    {p.erp_description ?? "—"}
+                                  </span>
+                                  <span aria-hidden>·</span>
+                                  <span>{p.commercial_brand ?? "—"}</span>
+                                  <span aria-hidden>·</span>
+                                  <StatusBadge
+                                    size="sm"
+                                    status={p.status === "active" ? "active" : "neutral"}
+                                    label={p.status === "active" ? "Activo" : "Inactivo"}
+                                  />
+                                </span>
+                              </button>
+                            ))}
+                            {searchHasMore && (
+                              <div className="border-t border-border p-2">
+                                <button
+                                  type="button"
+                                  onClick={() => void loadMoreResults()}
+                                  disabled={searchLoadingMore}
+                                  className="flex w-full items-center justify-center gap-2 rounded-sm py-2 text-sm font-medium text-primary hover:bg-accent disabled:opacity-50"
+                                >
+                                  {searchLoadingMore && (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  )}
+                                  Cargar más
+                                </button>
+                              </div>
                             )}
-                            <span className="flex-1 text-sm font-medium">
-                              {isLinked
-                                ? `Este SKU está vinculado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} del acuerdo.`
-                                : `Este SKU está asignado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} más del acuerdo.`}
-                            </span>
-                            <ChevronDown
-                              className={cn(
-                                "h-4 w-4 shrink-0 text-[var(--status-warning-strong)] transition-transform",
-                                nExpanded && "rotate-180",
-                              )}
-                            />
-                          </button>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent>
-                            <div className="border-t border-border px-4 py-4 space-y-3">
-                              <div className="rounded-md border border-border bg-surface-card overflow-hidden">
-                                <Table>
-                                  <TableHeader>
-                                    <TableRow>
-                                      <TableHead>Código cliente</TableHead>
-                                      <TableHead>Descripción cliente</TableHead>
-                                      <TableHead className="text-right">Precio actual</TableHead>
-                                    </TableRow>
-                                  </TableHeader>
-                                  <TableBody>
-                                    {nConflict.lines.map((l) => {
-                                      const first = l.codes[0] ?? null;
-                                      return (
-                                        <TableRow key={l.line_id}>
-                                          <TableCell className="text-sm text-foreground">
-                                            {first?.client_code ?? "—"}
-                                          </TableCell>
-                                          <TableCell className="text-sm text-foreground">
-                                            {first?.description ?? "—"}
-                                          </TableCell>
-                                          <TableCell className="text-right text-sm tabular-nums text-foreground">
-                                            {formatMoneyCOP(l.current_price)}
-                                          </TableCell>
-                                        </TableRow>
-                                      );
-                                    })}
-                                  </TableBody>
-                                </Table>
-                              </div>
-
-                              <div className="rounded-md border border-border bg-surface-card p-4 space-y-3">
-                                {isLinked ? (
-                                  <>
-                                    <h4 className="text-sm font-semibold text-foreground">
-                                      Posiciones vinculadas
-                                    </h4>
-                                    <p className="text-sm text-foreground">
-                                      {`Este SKU está vinculado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} del acuerdo. Cualquier cambio de precio se aplicará automáticamente a todas.`}
-                                    </p>
-                                    <Button
-                                      type="button"
-                                      size="sm"
-                                      variant="outline"
-                                      className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-                                      disabled={unlinkMut.isPending || !productId}
-                                      onClick={() => unlinkMut.mutate()}
-                                    >
-                                      {unlinkMut.isPending ? (
-                                        <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                                      ) : (
-                                        <Unlink className="mr-2 h-3.5 w-3.5" />
-                                      )}
-                                      Desvincular
-                                    </Button>
-                                  </>
-                                ) : (
-                                  <>
-                                    <h4 className="text-sm font-semibold text-foreground">
-                                      Posiciones no vinculadas
-                                    </h4>
-                                    <p className="text-sm text-foreground">
-                                      {`Este SKU está asignado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} más del acuerdo. Si las vinculas, compartirán el mismo precio y se actualizarán juntas automáticamente en cada cambio de precio.`}
-                                    </p>
-                                    <Button
-                                      type="button"
-                                      size="sm"
-                                      variant="outline"
-                                      className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-                                      disabled={linkMut.isPending || !productId}
-                                      onClick={() => linkMut.mutate()}
-                                    >
-                                      {linkMut.isPending ? (
-                                        <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                                      ) : (
-                                        <Link className="mr-2 h-3.5 w-3.5" />
-                                      )}
-                                      Vincular
-                                    </Button>
-                                    {linkError && (
-                                      <p className="text-xs font-medium text-destructive">
-                                        {linkError}
-                                      </p>
-                                    )}
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          </CollapsibleContent>
-                        </Collapsible>
-                      </Alert>
+                          </div>
+                        )}
+                      </PopoverContent>
+                    </Popover>
                   </div>
-                )}
-                </div>
-              </div>
-            </section>
 
-            {/* Condiciones comerciales */}
-            <section className="space-y-4">
-              <SectionHeader title="Condiciones comerciales" number="03" />
-              {agreementDatesLabel && (
-                <Alert variant="info">
-                  <AlertDescription>{agreementDatesLabel}</AlertDescription>
-                </Alert>
-              )}
-              {hasProduct && (
+                  {hasProduct && (
+                    <>
+                      <div className="space-y-1.5">
+                        <FieldLabel>Código Jaivaná</FieldLabel>
+                        <Input
+                          value={v.sku}
+                          readOnly
+                          tabIndex={-1}
+                          placeholder="—"
+                          className={readonlyClass}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <FieldLabel>Marca</FieldLabel>
+                        <Input
+                          value={productMeta?.commercial_brand ?? ""}
+                          readOnly
+                          tabIndex={-1}
+                          placeholder="—"
+                          className={readonlyClass}
+                        />
+                      </div>
+                      <div className="space-y-1.5 md:col-span-2">
+                        <FieldLabel>Descripción Jaivaná</FieldLabel>
+                        <Input
+                          value={productMeta?.erp_description ?? ""}
+                          readOnly
+                          tabIndex={-1}
+                          placeholder="—"
+                          className={readonlyClass}
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {lookup.kind === "inactive" && (
+                    <div className="md:col-span-2">
+                      <Alert variant="warning">
+                        <AlertDescription>
+                          Producto inactivo en el catálogo. Esta posición quedará
+                          en "Revisar".
+                        </AlertDescription>
+                      </Alert>
+                    </div>
+                  )}
+                  {lookup.kind === "not_found" && (
+                    <div className="md:col-span-2">
+                      <Alert variant="error">
+                        <AlertDescription>
+                          Código no encontrado en el catálogo Jaivaná
+                          {catalogDateLabel
+                            ? ` (última actualización: ${catalogDateLabel}).`
+                            : "."}
+                        </AlertDescription>
+                      </Alert>
+                    </div>
+                  )}
+                  {nConflict.kind === "found" && (
+                    <div className="md:col-span-2">
+                      <Alert variant="warning" className="p-0 overflow-hidden">
+                        <Collapsible open={nExpanded} onOpenChange={setNExpanded}>
+                          <CollapsibleTrigger asChild>
+                            <button
+                              type="button"
+                              className="flex w-full items-center gap-2 px-4 py-3 text-left bg-warning/10 hover:bg-warning/15 transition-colors"
+                            >
+                              {isLinked ? (
+                                <Link2 className="h-4 w-4 shrink-0" />
+                              ) : (
+                                <AlertTriangle className="h-4 w-4 shrink-0" />
+                              )}
+                              <span className="flex-1 text-sm font-medium">
+                                {isLinked
+                                  ? `Este SKU está vinculado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} del acuerdo.`
+                                  : `Este SKU está asignado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} más del acuerdo.`}
+                              </span>
+                              <ChevronDown
+                                className={cn(
+                                  "h-4 w-4 shrink-0 text-[var(--status-warning-strong)] transition-transform",
+                                  nExpanded && "rotate-180",
+                                )}
+                              />
+                            </button>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent>
+                              <div className="border-t border-border px-4 py-4 space-y-3">
+                                <div className="rounded-md border border-border bg-surface-card overflow-hidden">
+                                  <Table>
+                                    <TableHeader>
+                                      <TableRow>
+                                        <TableHead>Código cliente</TableHead>
+                                        <TableHead>Descripción cliente</TableHead>
+                                        <TableHead className="text-right">Precio actual</TableHead>
+                                      </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                      {nConflict.lines.map((l) => {
+                                        const first = l.codes[0] ?? null;
+                                        return (
+                                          <TableRow key={l.line_id}>
+                                            <TableCell className="text-sm text-foreground">
+                                              {first?.client_code ?? "—"}
+                                            </TableCell>
+                                            <TableCell className="text-sm text-foreground">
+                                              {first?.description ?? "—"}
+                                            </TableCell>
+                                            <TableCell className="text-right text-sm tabular-nums text-foreground">
+                                              {formatMoneyCOP(l.current_price)}
+                                            </TableCell>
+                                          </TableRow>
+                                        );
+                                      })}
+                                    </TableBody>
+                                  </Table>
+                                </div>
+
+                                <div className="rounded-md border border-border bg-surface-card p-4 space-y-3">
+                                  {isLinked ? (
+                                    <>
+                                      <h4 className="text-sm font-semibold text-foreground">
+                                        Posiciones vinculadas
+                                      </h4>
+                                      <p className="text-sm text-foreground">
+                                        {`Este SKU está vinculado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} del acuerdo. Cualquier cambio de precio se aplicará automáticamente a todas.`}
+                                      </p>
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="outline"
+                                        className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                                        disabled={unlinkMut.isPending || !productId}
+                                        onClick={() => unlinkMut.mutate()}
+                                      >
+                                        {unlinkMut.isPending ? (
+                                          <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                                        ) : (
+                                          <Unlink className="mr-2 h-3.5 w-3.5" />
+                                        )}
+                                        Desvincular
+                                      </Button>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <h4 className="text-sm font-semibold text-foreground">
+                                        Posiciones no vinculadas
+                                      </h4>
+                                      <p className="text-sm text-foreground">
+                                        {`Este SKU está asignado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} más del acuerdo. Si las vinculas, compartirán el mismo precio y se actualizarán juntas automáticamente en cada cambio de precio.`}
+                                      </p>
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="outline"
+                                        className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                                        disabled={linkMut.isPending || !productId}
+                                        onClick={() => linkMut.mutate()}
+                                      >
+                                        {linkMut.isPending ? (
+                                          <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                                        ) : (
+                                          <Link className="mr-2 h-3.5 w-3.5" />
+                                        )}
+                                        Vincular
+                                      </Button>
+                                      {linkError && (
+                                        <p className="text-xs font-medium text-destructive">
+                                          {linkError}
+                                        </p>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </CollapsibleContent>
+                          </Collapsible>
+                        </Alert>
+                    </div>
+                  )}
+                  </div>
+                </div>
+              </section>
+
+              {/* Condiciones comerciales — SIN gating por hasProduct */}
+              <section className="space-y-4">
+                <SectionHeader title="Condiciones comerciales" number="02" />
+                {agreementDatesLabel && (
+                  <Alert variant="info">
+                    <AlertDescription>{agreementDatesLabel}</AlertDescription>
+                  </Alert>
+                )}
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="space-y-1.5">
@@ -1059,39 +1154,56 @@ export function LineEditDialog({
                     />
                   </div>
                 </div>
-              )}
-            </section>
+              </section>
+            </div>
+          </div>
+
+          {/* Columna derecha — códigos por cliente */}
+          <div className="min-h-0 overflow-y-auto bg-muted/20">
+            <div className="p-6 space-y-4">
+              <SectionHeader title="Códigos por cliente" number="03" />
+              <ClientCodeCards
+                clients={clientCards}
+                values={codeEntries}
+                onChange={(clientId, next) => {
+                  setCodeEntries((prev) => {
+                    const m = new Map(prev);
+                    m.set(clientId, next);
+                    return m;
+                  });
+                }}
+              />
+            </div>
           </div>
         </div>
 
-        <DialogFooter className="px-6 py-4 border-t border-border bg-muted/30 shrink-0 flex-col sm:flex-row sm:items-center gap-2">
+        <div className="px-6 py-4 border-t border-border bg-muted/30 shrink-0 flex flex-col sm:flex-row sm:items-center gap-2">
           {saveError && (
             <p className="text-xs text-destructive sm:mr-auto">{saveError}</p>
           )}
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={save.isPending}
-          >
-            Cancelar
-          </Button>
-          <Button
-            onClick={() => {
-              // Bloquear solo cuando el usuario escribió en el buscador pero no
-              // seleccionó ningún resultado. Sin producto y buscador vacío es válido
-              // (posición queda en pending / Sin SKU).
-              if (searchQuery.trim() !== "" && !productId) {
-                setSaveError("Selecciona un producto o deja el buscador vacío.");
-                return;
-              }
-              setSaveError(null);
-              save.mutate();
-            }}
-            disabled={save.isPending}
-          >
-            {save.isPending ? "Guardando…" : "Guardar"}
-          </Button>
-        </DialogFooter>
+          <div className="sm:ml-auto flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={save.isPending}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                if (searchQuery.trim() !== "" && !productId) {
+                  setSaveError("Selecciona un producto o deja el buscador vacío.");
+                  return;
+                }
+                setSaveError(null);
+                save.mutate();
+              }}
+              disabled={save.isPending}
+            >
+              {save.isPending ? "Guardando…" : "Guardar"}
+            </Button>
+          </div>
+        </div>
 
       </DialogContent>
     </Dialog>
