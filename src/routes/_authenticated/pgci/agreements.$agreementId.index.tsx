@@ -4,13 +4,13 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
-  ArrowLeft,
   Pencil,
   Power,
   UserPlus,
   Unlink,
   Boxes,
 } from "lucide-react";
+import { AgreementBreadcrumb } from "@/components/agreements/AgreementBreadcrumb";
 import {
   getAgreement,
   getAgreementContext,
@@ -186,11 +186,7 @@ function AgreementDetail() {
 
   return (
     <div className="space-y-6">
-      <Button asChild variant="ghost" size="sm" className="-ml-2 h-8 px-2 text-muted-foreground">
-        <Link to="/pgci/agreements">
-          <ArrowLeft className="mr-1.5 h-4 w-4" /> Volver a acuerdos
-        </Link>
-      </Button>
+      <AgreementBreadcrumb agreementId={agreementId} current="detail" />
 
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
