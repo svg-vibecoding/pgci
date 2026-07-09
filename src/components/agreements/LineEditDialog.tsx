@@ -197,6 +197,7 @@ export function LineEditDialog({
   initial,
   agreementStartDate,
   agreementEndDate,
+  agreementClients,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -206,6 +207,9 @@ export function LineEditDialog({
   initial?: Partial<LineEditValues> | null;
   agreementStartDate?: string | null;
   agreementEndDate?: string | null;
+  // Clientes activos del acuerdo. Requerido para decidir el modo del formulario
+  // transitorio: 1 cliente = precarga; ≥2 = inputs deshabilitados.
+  agreementClients?: Array<{ id: string; name: string | null }>;
 }) {
   const qc = useQueryClient();
   const createFn = useServerFn(createAgreementLine);
@@ -215,6 +219,9 @@ export function LineEditDialog({
   const linkFn = useServerFn(linkSkuPrice);
   const unlinkFn = useServerFn(unlinkSkuPrice);
   const searchFn = useServerFn(searchProducts);
+  const isMultiClient = (agreementClients?.length ?? 0) > 1;
+  const singleClientId =
+    (agreementClients?.length ?? 0) === 1 ? agreementClients![0].id : null;
   const [v, setV] = useState<LineEditValues>(empty);
   const [productMeta, setProductMeta] = useState<ProductMeta | null>(null);
   const [lookup, setLookup] = useState<{
