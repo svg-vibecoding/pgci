@@ -15,24 +15,34 @@ interface AgreementBreadcrumbProps {
 }
 
 export function AgreementBreadcrumb({ agreementId, current }: AgreementBreadcrumbProps) {
+  const currentItemClass =
+    "inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-sm font-bold text-foreground";
+
   return (
     <Breadcrumb>
       <BreadcrumbList>
         <BreadcrumbItem>
-          <BreadcrumbLink asChild className="text-muted-foreground">
+          <BreadcrumbLink
+            asChild
+            className="inline-flex items-center gap-1.5 text-muted-foreground"
+          >
             <Link to="/pgci/agreements">
-              <ArrowLeft className="mr-1.5 h-4 w-4" /> Volver a acuerdos
+              <ArrowLeft className="h-4 w-4" />
+              <span>Volver a acuerdos</span>
             </Link>
           </BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
           {current === "detail" ? (
-            <BreadcrumbPage className="font-medium text-foreground">
+            <BreadcrumbPage className={currentItemClass}>
               Información General
             </BreadcrumbPage>
           ) : (
-            <BreadcrumbLink asChild className="text-muted-foreground">
+            <BreadcrumbLink
+              asChild
+              className="inline-flex items-center gap-1.5 text-muted-foreground"
+            >
               <Link to="/pgci/agreements/$agreementId" params={{ agreementId }}>
                 Información General
               </Link>
@@ -43,7 +53,7 @@ export function AgreementBreadcrumb({ agreementId, current }: AgreementBreadcrum
           <>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbPage className="font-medium text-foreground">
+              <BreadcrumbPage className={currentItemClass}>
                 Posiciones
               </BreadcrumbPage>
             </BreadcrumbItem>
