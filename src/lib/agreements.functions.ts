@@ -429,11 +429,8 @@ export type LineCode = {
   client_name: string | null;
   client_code: string;
   description: string | null;
-  // true = período CERRADO (ended_reason='posición excluida'). Solo llega para
-  // posiciones status='excluded' que perdieron sus códigos abiertos por la
-  // exclusión. La UI puede mostrarlo atenuado como "liberado".
-  released?: boolean;
 };
+
 
 export type AgreementLineRow = {
   kind: "position" | "transit";
