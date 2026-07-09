@@ -225,6 +225,7 @@ function ClientCodeCards({
   onChange,
   agreementId,
   initialLineId,
+  open,
   onReactivated,
   onNavigateAway,
 }: {
@@ -233,6 +234,7 @@ function ClientCodeCards({
   onChange: (clientId: string, next: ClientCodeEntry) => void;
   agreementId: string;
   initialLineId: string | null;
+  open: boolean;
   onReactivated: () => void;
   onNavigateAway: (positionId: string) => void;
 }) {
@@ -254,6 +256,7 @@ function ClientCodeCards({
             entry={entry}
             agreementId={agreementId}
             initialLineId={initialLineId}
+            open={open}
             onChange={(next) => onChange(c.id, next)}
             onReactivated={onReactivated}
             onNavigateAway={onNavigateAway}
@@ -269,6 +272,7 @@ function ClientCodeCard({
   entry,
   agreementId,
   initialLineId,
+  open,
   onChange,
   onReactivated,
   onNavigateAway,
@@ -277,6 +281,7 @@ function ClientCodeCard({
   entry: ClientCodeEntry;
   agreementId: string;
   initialLineId: string | null;
+  open: boolean;
   onChange: (next: ClientCodeEntry) => void;
   onReactivated: () => void;
   onNavigateAway: (positionId: string) => void;
@@ -293,7 +298,7 @@ function ClientCodeCard({
     initialHasCode ? "edit" : "search",
   );
   const [query, setQuery] = useState("");
-  const [open, setOpen] = useState(false);
+  const [popoverOpen, setPopoverOpen] = useState(false);
   const [results, setResults] = useState<ClientCodeSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -308,7 +313,7 @@ function ClientCodeCard({
   const [reactivatePending, setReactivatePending] = useState(false);
   const seq = useRef(0);
 
-  // Resincronizar cuando el diálogo cambia de posición (nuevo initial).
+  // Resincronizar cuando el diálogo se abre (incluyendo reabrir la misma posición).
   useEffect(() => {
     const has = entry.code.trim() !== "";
     setMode(has ? "edit" : "search");
@@ -317,9 +322,9 @@ function ClientCodeCard({
     setQuery("");
     setResults([]);
     setExpandedId(null);
-    setOpen(false);
+    setPopoverOpen(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialLineId]);
+  }, [open]);
 
   useEffect(() => {
     if (!open || disabled) return;
@@ -347,14 +352,14 @@ function ClientCodeCard({
       }
     }, 250);
     return () => clearTimeout(t);
-  }, [query, open, disabled, agreementId, card.id, searchFn]);
+  }, [query, popoverOpen, disabled, agreementId, card.id, searchFn]);
 
   const handleSelectFree = (r: ClientCodeSearchResult) => {
     onChange({ code: r.client_code, description: r.description ?? "" });
     setOriginalDescription(r.description ?? "");
     setIsNew(false);
     setMode("edit");
-    setOpen(false);
+    setPopoverOpen(false);
     setQuery("");
     setResults([]);
     setExpandedId(null);
@@ -367,7 +372,7 @@ function ClientCodeCard({
     setOriginalDescription("");
     setIsNew(true);
     setMode("edit");
-    setOpen(false);
+    setPopoverOpen(false);
     setQuery("");
     setResults([]);
     setExpandedId(null);
@@ -379,7 +384,7 @@ function ClientCodeCard({
     setIsNew(false);
     setMode("search");
     setExpandedId(null);
-    setOpen(true);
+    setPopoverOpen(true);
   };
 
   const doReactivate = async () => {
@@ -426,7 +431,7 @@ function ClientCodeCard({
       {mode === "search" ? (
         <div className="space-y-1.5">
           <FieldLabel>Código</FieldLabel>
-          <Popover open={open && !disabled} onOpenChange={(o) => !disabled && setOpen(o)}>
+          <Popover open={popoverOpen && !disabled} onOpenChange={(o) => !disabled && setPopoverOpen(o)}>
             <PopoverTrigger asChild>
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -435,10 +440,10 @@ function ClientCodeCard({
                   value={query}
                   disabled={disabled}
                   placeholder="Busca por código o descripción…"
-                  onFocus={() => !disabled && setOpen(true)}
+                  onFocus={() => !disabled && setPopoverOpen(true)}
                   onChange={(e) => {
                     setQuery(e.target.value);
-                    setOpen(true);
+                    setPopoverOpen(true);
                   }}
                 />
                 {loading && (
@@ -467,11 +472,11 @@ function ClientCodeCard({
                     position_id: r.status.position_id,
                     sku: r.status.sku,
                   });
-                  setOpen(false);
+                  setPopoverOpen(false);
                 }}
                 onRequestView={(positionId) => {
                   setViewTarget(positionId);
-                  setOpen(false);
+                  setPopoverOpen(false);
                 }}
                 clientName={card.name}
                 canManage={card.can_manage}
@@ -1690,6 +1695,7 @@ export function LineEditDialog({
                 values={codeEntries}
                 agreementId={agreementId}
                 initialLineId={initial?.line_id ?? null}
+                open={open}
                 onChange={(clientId, next) => {
                   setCodeEntries((prev) => {
                     const m = new Map(prev);
