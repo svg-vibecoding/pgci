@@ -53,7 +53,7 @@ export const listAgreements = createServerFn({ method: "GET" })
     const rows = data ?? [];
     const ids = rows.map((r) => r.id as string).filter(Boolean);
     if (ids.length === 0)
-      return rows.map((r) => ({ ...r, companies: [] as string[], lines_transit: 0 }));
+      return rows.map((r) => ({ ...r, companies: [] as string[], lines_transit: 0, can_admin: false }));
     const { data: comps, error: cErr } = await context.supabase
       .from("agreement_companies")
       .select("agreement_id, clients:client_id(commercial_name, legal_name)")
@@ -79,12 +79,34 @@ export const listAgreements = createServerFn({ method: "GET" })
       const aid = (t as { agreement_id: string }).agreement_id;
       transitByAgreement.set(aid, (transitByAgreement.get(aid) ?? 0) + 1);
     }
+
+    // can_admin por fila: super_admin → todos; sino, membresía como agreement_admin vigente
+    const { data: superRes } = await context.supabase.rpc("is_super_admin");
+    const isSuper = !!superRes;
+    const adminIds = new Set<string>();
+    if (isSuper) {
+      for (const id of ids) adminIds.add(id);
+    } else {
+      const { data: adminRows, error: aErr } = await context.supabase
+        .from("agreement_members")
+        .select("agreement_id")
+        .eq("user_id", context.userId)
+        .eq("role", "agreement_admin")
+        .is("valid_until", null)
+        .in("agreement_id", ids);
+      if (aErr) throw new Error(`No se pudieron cargar membresías: ${aErr.message}`);
+      for (const m of adminRows ?? []) {
+        adminIds.add((m as { agreement_id: string }).agreement_id);
+      }
+    }
+
     return rows.map((r) => ({
       ...r,
       companies: (byAgreement.get(r.id as string) ?? []).sort((a, b) =>
         a.localeCompare(b, "es", { sensitivity: "base" }),
       ),
       lines_transit: transitByAgreement.get(r.id as string) ?? 0,
+      can_admin: adminIds.has(r.id as string),
     }));
   });
 
