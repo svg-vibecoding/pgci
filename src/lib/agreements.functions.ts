@@ -1864,12 +1864,14 @@ export const getAgreementGroup = createServerFn({ method: "GET" })
     } | null;
     let created_by_name: string | null = null;
     if (row.created_by) {
-      const { data: prof } = await context.supabase
-        .from("profiles")
-        .select("full_name")
-        .eq("user_id", row.created_by as string)
-        .maybeSingle();
-      created_by_name = (prof?.full_name as string | null) ?? null;
+      const { data: participants } = await context.supabase.rpc(
+        "get_agreement_group_participants",
+        { p_group_id: data.group_id },
+      );
+      const match = (participants ?? []).find(
+        (p: { user_id: string }) => p.user_id === row.created_by,
+      );
+      created_by_name = (match?.full_name as string | null) ?? null;
     }
     return {
       id: row.id as string,
