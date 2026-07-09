@@ -20,6 +20,7 @@ import {
   updateAgreementMember,
   removeAgreementMember,
   setAgreementStatus,
+  listAssignableUsersForAgreement,
 } from "@/lib/agreements.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -576,20 +577,25 @@ function AddMemberDialog({
     "agreement_member",
   );
 
+  const listAssignableFn = useServerFn(listAssignableUsersForAgreement);
   const { data: users } = useQuery({
-    queryKey: ["profiles", "active-search", search],
+    queryKey: ["assignable-users", agreementId, search],
     enabled: open,
     queryFn: async () => {
-      let q = supabase
-        .from("profiles")
-        .select("user_id, full_name, email, status")
-        .eq("status", "active")
-        .order("full_name")
-        .limit(20);
-      if (search.trim()) q = q.or(`full_name.ilike.%${search}%,email.ilike.%${search}%`);
-      const { data, error } = await q;
-      if (error) throw error;
-      return (data ?? []).filter((u) => !existingUserIds.includes(u.user_id as string));
+      const rows = await listAssignableFn({
+        data: { agreement_id: agreementId },
+      });
+      const term = search.trim().toLowerCase();
+      return rows
+        .filter((u) => !existingUserIds.includes(u.user_id))
+        .filter((u) => {
+          if (!term) return true;
+          return (
+            (u.full_name ?? "").toLowerCase().includes(term) ||
+            (u.email ?? "").toLowerCase().includes(term)
+          );
+        })
+        .slice(0, 20);
     },
   });
 

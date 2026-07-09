@@ -8,8 +8,9 @@ import {
   addAgreementGroupMember,
   updateAgreementGroupMember,
   removeAgreementGroupMember,
+  listAssignableUsersForAgreementGroup,
 } from "@/lib/agreements.functions";
-import { supabase } from "@/integrations/supabase/client";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -74,17 +75,10 @@ export function AgreementGroupMembersSection({
   const [role, setRole] = useState<Role>("agreement_group_member");
   const [search, setSearch] = useState("");
 
+  const listAssignableFn = useServerFn(listAssignableUsersForAgreementGroup);
   const usersQ = useQuery({
-    queryKey: ["profiles", "picker-active"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("user_id, full_name, email, status")
-        .eq("status", "active")
-        .order("full_name");
-      if (error) throw error;
-      return data ?? [];
-    },
+    queryKey: ["assignable-users-group", groupId],
+    queryFn: () => listAssignableFn({ data: { group_id: groupId } }),
     enabled: addOpen,
   });
 

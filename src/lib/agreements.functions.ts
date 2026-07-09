@@ -125,12 +125,14 @@ export const getAgreement = createServerFn({ method: "GET" })
     if (!row) throw new Error("Acuerdo no encontrado");
     let created_by_name: string | null = null;
     if (row.created_by) {
-      const { data: prof } = await context.supabase
-        .from("profiles")
-        .select("full_name")
-        .eq("user_id", row.created_by)
-        .maybeSingle();
-      created_by_name = (prof?.full_name as string | null) ?? null;
+      const { data: participants } = await context.supabase.rpc(
+        "get_agreement_participants",
+        { p_agreement_id: data.agreement_id },
+      );
+      const match = (participants ?? []).find(
+        (p: { user_id: string }) => p.user_id === row.created_by,
+      );
+      created_by_name = (match?.full_name as string | null) ?? null;
     }
     return { ...row, created_by_name };
   });
@@ -1478,18 +1480,18 @@ export const listAgreementMembers = createServerFn({ method: "GET" })
     }
     let profilesById = new Map<string, { full_name: string; email: string; status: string; erp_user_code: string | null }>();
     if (userIds.size > 0) {
-      const { data: profs } = await context.supabase
-        .from("profiles")
-        .select("user_id, full_name, email, status, erp_user_code")
-        .in("user_id", Array.from(userIds));
+      const { data: profs } = await context.supabase.rpc(
+        "get_agreement_participants",
+        { p_agreement_id: data.agreement_id },
+      );
       profilesById = new Map(
-        (profs ?? []).map((p) => [
-          p.user_id as string,
+        (profs ?? []).map((p: { user_id: string; full_name: string | null; email: string | null; status: string; erp_user_code: string | null }) => [
+          p.user_id,
           {
-            full_name: p.full_name as string,
-            email: p.email as string,
-            status: p.status as string,
-            erp_user_code: (p.erp_user_code as string | null) ?? null,
+            full_name: (p.full_name ?? "") as string,
+            email: (p.email ?? "") as string,
+            status: p.status,
+            erp_user_code: p.erp_user_code ?? null,
           },
         ]),
       );
@@ -1715,14 +1717,14 @@ export const listAgreementCompanies = createServerFn({ method: "GET" })
     }
     const userNames = new Map<string, string>();
     if (userIds.size > 0) {
-      const { data: profRows, error: profErr } = await context.supabase
-        .from("profiles")
-        .select("user_id, full_name")
-        .in("user_id", Array.from(userIds));
+      const { data: profRows, error: profErr } = await context.supabase.rpc(
+        "get_agreement_participants",
+        { p_agreement_id: data.agreement_id },
+      );
       if (profErr) throw new Error(profErr.message);
-      for (const p of profRows ?? []) {
-        const name = (p.full_name as string | null)?.trim();
-        if (name) userNames.set(p.user_id as string, name);
+      for (const p of (profRows ?? []) as { user_id: string; full_name: string | null }[]) {
+        const name = p.full_name?.trim();
+        if (name) userNames.set(p.user_id, name);
       }
     }
 
@@ -1862,12 +1864,14 @@ export const getAgreementGroup = createServerFn({ method: "GET" })
     } | null;
     let created_by_name: string | null = null;
     if (row.created_by) {
-      const { data: prof } = await context.supabase
-        .from("profiles")
-        .select("full_name")
-        .eq("user_id", row.created_by as string)
-        .maybeSingle();
-      created_by_name = (prof?.full_name as string | null) ?? null;
+      const { data: participants } = await context.supabase.rpc(
+        "get_agreement_group_participants",
+        { p_group_id: data.group_id },
+      );
+      const match = (participants ?? []).find(
+        (p: { user_id: string }) => p.user_id === row.created_by,
+      );
+      created_by_name = (match?.full_name as string | null) ?? null;
     }
     return {
       id: row.id as string,
@@ -1919,17 +1923,17 @@ export const listAgreementGroupMembers = createServerFn({ method: "GET" })
       { full_name: string; email: string; status: string }
     >();
     if (userIds.size > 0) {
-      const { data: profs } = await context.supabase
-        .from("profiles")
-        .select("user_id, full_name, email, status")
-        .in("user_id", Array.from(userIds));
+      const { data: profs } = await context.supabase.rpc(
+        "get_agreement_group_participants",
+        { p_group_id: data.group_id },
+      );
       profilesById = new Map(
-        (profs ?? []).map((p) => [
-          p.user_id as string,
+        (profs ?? []).map((p: { user_id: string; full_name: string | null; email: string | null; status: string }) => [
+          p.user_id,
           {
-            full_name: p.full_name as string,
-            email: p.email as string,
-            status: p.status as string,
+            full_name: (p.full_name ?? "") as string,
+            email: (p.email ?? "") as string,
+            status: p.status,
           },
         ]),
       );
@@ -2290,19 +2294,27 @@ export const listGroupAgreementMembers = createServerFn({ method: "GET" })
     );
     let profilesById = new Map<string, { full_name: string; email: string }>();
     if (userIds.length > 0) {
-      const { data: profs } = await context.supabase
-        .from("profiles")
-        .select("user_id, full_name, email")
-        .in("user_id", userIds);
-      profilesById = new Map(
-        (profs ?? []).map((p) => [
-          p.user_id as string,
-          {
-            full_name: (p.full_name as string) ?? "",
-            email: (p.email as string) ?? "",
-          },
-        ]),
+      const results = await Promise.all(
+        agreementIds.map((aid) =>
+          context.supabase.rpc("get_agreement_participants", {
+            p_agreement_id: aid,
+          }),
+        ),
       );
+      for (const r of results) {
+        for (const p of (r.data ?? []) as {
+          user_id: string;
+          full_name: string | null;
+          email: string | null;
+        }[]) {
+          if (!profilesById.has(p.user_id)) {
+            profilesById.set(p.user_id, {
+              full_name: (p.full_name ?? "") as string,
+              email: (p.email ?? "") as string,
+            });
+          }
+        }
+      }
     }
 
     return rows
@@ -2566,3 +2578,42 @@ export const listClientCatalogPermissions = createServerFn({ method: "GET" })
       return results;
     },
   );
+
+export const listAssignableUsersForAgreement = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    importPreviewSchema.pick({ agreement_id: true }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase.rpc(
+      "list_assignable_users_for_agreement",
+      { p_agreement_id: data.agreement_id },
+    );
+    if (error) throw new Error(error.message);
+    return (rows ?? []) as {
+      user_id: string;
+      full_name: string | null;
+      email: string | null;
+      status: string;
+    }[];
+  });
+
+export const listAssignableUsersForAgreementGroup = createServerFn({
+  method: "GET",
+})
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => groupIdSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase.rpc(
+      "list_assignable_users_for_agreement_group",
+      { p_group_id: data.group_id },
+    );
+    if (error) throw new Error(error.message);
+    return (rows ?? []) as {
+      user_id: string;
+      full_name: string | null;
+      email: string | null;
+      status: string;
+    }[];
+  });
+
