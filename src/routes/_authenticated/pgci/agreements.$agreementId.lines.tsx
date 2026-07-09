@@ -555,6 +555,23 @@ function AgreementLinesPage() {
             </button>
           )}
         </div>
+        {visibleClients.length > 1 && (
+          <Select
+            value={projectionClientId ?? undefined}
+            onValueChange={(v) => setProjectionClientId(v)}
+          >
+            <SelectTrigger className="w-[240px] shrink-0">
+              <SelectValue placeholder="Cliente…" />
+            </SelectTrigger>
+            <SelectContent>
+              {visibleClients.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.name?.trim() || "Sin nombre"}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
