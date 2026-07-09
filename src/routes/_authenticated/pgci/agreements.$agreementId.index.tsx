@@ -20,6 +20,7 @@ import {
   updateAgreementMember,
   removeAgreementMember,
   setAgreementStatus,
+  listAssignableUsersForAgreement,
 } from "@/lib/agreements.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
