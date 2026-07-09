@@ -745,17 +745,11 @@ function AgreementLinesPage() {
                     {(() => {
                       const codes = r.codes ?? [];
                       // Proyección por cliente seleccionado. Nunca oculta filas.
-                      const open = codes.filter((c) => !c.released);
+                      const open = codes;
                       const projected =
                         projectionClientId
                           ? open.find((c) => c.client_id === projectionClientId)
                           : open[0];
-                      const releasedProjected =
-                        !projected && projectionClientId
-                          ? codes.find(
-                              (c) => c.released && c.client_id === projectionClientId,
-                            )
-                          : undefined;
                       if (projected) {
                         return (
                           <div>
@@ -766,23 +760,9 @@ function AgreementLinesPage() {
                           </div>
                         );
                       }
-                      if (releasedProjected) {
-                        return (
-                          <div className="text-muted-foreground opacity-60">
-                            <div className="font-mono text-sm">
-                              {releasedProjected.client_code}
-                            </div>
-                            <div className="text-xs line-clamp-2">
-                              {releasedProjected.description ?? "—"}
-                            </div>
-                            <div className="mt-1">
-                              <Badge color="neutral" variant="soft">liberado</Badge>
-                            </div>
-                          </div>
-                        );
-                      }
                       return <div className="font-mono text-sm">—</div>;
                     })()}
+
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1.5">
