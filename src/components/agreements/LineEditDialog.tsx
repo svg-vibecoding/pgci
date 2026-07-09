@@ -272,6 +272,7 @@ function ClientCodeCard({
   entry,
   agreementId,
   initialLineId,
+  open,
   onChange,
   onReactivated,
   onNavigateAway,
@@ -280,6 +281,7 @@ function ClientCodeCard({
   entry: ClientCodeEntry;
   agreementId: string;
   initialLineId: string | null;
+  open: boolean;
   onChange: (next: ClientCodeEntry) => void;
   onReactivated: () => void;
   onNavigateAway: (positionId: string) => void;
