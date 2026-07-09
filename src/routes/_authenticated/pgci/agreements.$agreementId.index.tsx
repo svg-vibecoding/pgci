@@ -315,16 +315,18 @@ function AgreementDetail() {
                       </div>
                     </TableCell>
                     <TableCell className="text-sm">{roleLabel}</TableCell>
-                    <TableCell>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span tabIndex={0} className="inline-flex">
-                            <Switch checked={!!m.can_view_costs} disabled />
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent>Próximamente.</TooltipContent>
-                      </Tooltip>
-                    </TableCell>
+                    {canAdmin && (
+                      <TableCell>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span tabIndex={0} className="inline-flex">
+                              <Switch checked={!!m.can_view_costs} disabled />
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>Próximamente.</TooltipContent>
+                        </Tooltip>
+                      </TableCell>
+                    )}
                     <TableCell className="text-sm text-muted-foreground">
                       <div>{formatDate(m.created_at as string | null)}</div>
                       {assignedByName && (
