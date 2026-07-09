@@ -797,19 +797,22 @@ export function LineEditDialog({
                                     </TableRow>
                                   </TableHeader>
                                   <TableBody>
-                                    {nConflict.lines.map((l) => (
-                                      <TableRow key={l.line_id}>
-                                        <TableCell className="text-sm text-foreground">
-                                          {l.client_code ?? "—"}
-                                        </TableCell>
-                                        <TableCell className="text-sm text-foreground">
-                                          {l.client_description ?? "—"}
-                                        </TableCell>
-                                        <TableCell className="text-right text-sm tabular-nums text-foreground">
-                                          {formatMoneyCOP(l.current_price)}
-                                        </TableCell>
-                                      </TableRow>
-                                    ))}
+                                    {nConflict.lines.map((l) => {
+                                      const first = l.codes[0] ?? null;
+                                      return (
+                                        <TableRow key={l.line_id}>
+                                          <TableCell className="text-sm text-foreground">
+                                            {first?.client_code ?? "—"}
+                                          </TableCell>
+                                          <TableCell className="text-sm text-foreground">
+                                            {first?.description ?? "—"}
+                                          </TableCell>
+                                          <TableCell className="text-right text-sm tabular-nums text-foreground">
+                                            {formatMoneyCOP(l.current_price)}
+                                          </TableCell>
+                                        </TableRow>
+                                      );
+                                    })}
                                   </TableBody>
                                 </Table>
                               </div>
