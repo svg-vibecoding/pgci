@@ -22,6 +22,7 @@ import {
   Layers,
 } from "lucide-react";
 import { AgreementBreadcrumb } from "@/components/agreements/AgreementBreadcrumb";
+import { AgreementHeader } from "@/components/agreements/AgreementHeader";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
