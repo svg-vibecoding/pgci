@@ -256,6 +256,7 @@ function ClientCodeCards({
             entry={entry}
             agreementId={agreementId}
             initialLineId={initialLineId}
+            open={open}
             onChange={(next) => onChange(c.id, next)}
             onReactivated={onReactivated}
             onNavigateAway={onNavigateAway}
