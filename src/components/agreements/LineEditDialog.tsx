@@ -228,6 +228,7 @@ function ClientCodeCards({
   open,
   onReactivated,
   onNavigateAway,
+  onCreatingIncompleteChange,
 }: {
   clients: ClientCard[];
   values: Map<string, ClientCodeEntry>;
@@ -237,6 +238,7 @@ function ClientCodeCards({
   open: boolean;
   onReactivated: () => void;
   onNavigateAway: (positionId: string) => void;
+  onCreatingIncompleteChange: (clientId: string, incomplete: boolean) => void;
 }) {
   if (clients.length === 0) {
     return (
@@ -260,12 +262,16 @@ function ClientCodeCards({
             onChange={(next) => onChange(c.id, next)}
             onReactivated={onReactivated}
             onNavigateAway={onNavigateAway}
+            onCreatingIncompleteChange={(incomplete) =>
+              onCreatingIncompleteChange(c.id, incomplete)
+            }
           />
         );
       })}
     </div>
   );
 }
+
 
 function ClientCodeCard({
   card,
