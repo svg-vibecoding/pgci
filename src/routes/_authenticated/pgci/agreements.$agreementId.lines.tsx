@@ -327,11 +327,18 @@ function AgreementLinesPage() {
   const openEditForLine = (lineId: string) => {
     const r = (lines ?? []).find((x) => x.id === lineId) as Line | undefined;
     if (!r) return;
+    const first = r.codes?.[0] ?? null;
     setEditInitial({
       line_id: r.id as string,
       sku: r.products?.sku ?? "",
-      client_code: r.client_code ?? "",
-      client_description: r.client_description ?? "",
+      client_code: first?.client_code ?? "",
+      client_description: first?.description ?? "",
+      // Estado completo → declarativo: preserva todos los códigos de otros clientes.
+      client_codes: (r.codes ?? []).map((c) => ({
+        client_id: c.client_id,
+        client_code: c.client_code,
+        description: c.description ?? "",
+      })),
       sale_price: r.sale_price?.toString() ?? "",
       par_price: r.par_price?.toString() ?? "",
       start_date: r.start_date ?? "",
