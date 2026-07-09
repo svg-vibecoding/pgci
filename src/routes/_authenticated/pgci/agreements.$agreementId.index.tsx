@@ -24,7 +24,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { StatusBadge, Badge } from "@/components/sumatec";
+import { Badge } from "@/components/sumatec";
 import { IndicatorCard } from "@/components/setup/IndicatorCard";
 import { InfoField, InfoSection } from "@/components/setup/InfoSection";
 import { AgreementCompaniesSection } from "@/components/agreements/AgreementCompaniesSection";
