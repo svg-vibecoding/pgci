@@ -1923,17 +1923,17 @@ export const listAgreementGroupMembers = createServerFn({ method: "GET" })
       { full_name: string; email: string; status: string }
     >();
     if (userIds.size > 0) {
-      const { data: profs } = await context.supabase
-        .from("profiles")
-        .select("user_id, full_name, email, status")
-        .in("user_id", Array.from(userIds));
+      const { data: profs } = await context.supabase.rpc(
+        "get_agreement_group_participants",
+        { p_group_id: data.group_id },
+      );
       profilesById = new Map(
-        (profs ?? []).map((p) => [
-          p.user_id as string,
+        (profs ?? []).map((p: { user_id: string; full_name: string | null; email: string | null; status: string }) => [
+          p.user_id,
           {
-            full_name: p.full_name as string,
-            email: p.email as string,
-            status: p.status as string,
+            full_name: (p.full_name ?? "") as string,
+            email: (p.email ?? "") as string,
+            status: p.status,
           },
         ]),
       );
