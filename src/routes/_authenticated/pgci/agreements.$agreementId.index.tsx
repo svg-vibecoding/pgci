@@ -275,7 +275,7 @@ function AgreementDetail() {
                 <TableRow>
                   <TableHead>Usuario</TableHead>
                   <TableHead>Rol</TableHead>
-                  <TableHead>Ve costos</TableHead>
+                  {canAdmin && <TableHead>Ve costos</TableHead>}
                   <TableHead>Vinculado</TableHead>
                   {canAdmin && <TableHead className="w-24 text-right"><span className="sr-only">Acciones</span></TableHead>}
                 </TableRow>
@@ -284,7 +284,7 @@ function AgreementDetail() {
                 {(members ?? []).length === 0 && (
                   <TableRow>
                     <TableCell
-                      colSpan={canAdmin ? 5 : 4}
+                      colSpan={canAdmin ? 5 : 3}
                       className="py-6 text-center text-sm text-muted-foreground"
                     >
                       Aún no hay miembros adicionales.
