@@ -59,9 +59,40 @@ function NewUser() {
   const copyCredentials = async () => {
     if (!credentials) return;
     const text = `Plataforma PGCI\nEmail: ${credentials.email}\nContraseña temporal: ${credentials.temp_password}`;
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    let ok = false;
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        ok = true;
+      }
+    } catch {
+      ok = false;
+    }
+    if (!ok) {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.top = "0";
+        ta.style.left = "0";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+      } catch {
+        ok = false;
+      }
+    }
+    if (ok) {
+      setCopied(true);
+      toast.success("Credenciales copiadas en tu portapapeles");
+      setTimeout(() => setCopied(false), 2000);
+    } else {
+      toast.error("No se pudieron copiar las credenciales");
+    }
   };
 
   return (
