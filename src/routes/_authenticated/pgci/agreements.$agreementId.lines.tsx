@@ -944,6 +944,7 @@ function AgreementLinesPage() {
                                   setExcludeTarget({
                                     id: r.id as string,
                                     sku: r.products?.sku ?? null,
+                                    codes: (r.codes ?? []).filter((c) => !c.released),
                                   })
                                 }
                                 aria-label="Excluir"
