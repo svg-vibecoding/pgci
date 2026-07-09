@@ -1349,6 +1349,26 @@ export type Database = {
         Args: { p_position_id: string; p_reason: string }
         Returns: undefined
       }
+      get_agreement_group_participants: {
+        Args: { p_group_id: string }
+        Returns: {
+          email: string
+          erp_user_code: string
+          full_name: string
+          status: string
+          user_id: string
+        }[]
+      }
+      get_agreement_participants: {
+        Args: { p_agreement_id: string }
+        Returns: {
+          email: string
+          erp_user_code: string
+          full_name: string
+          status: string
+          user_id: string
+        }[]
+      }
       get_agreement_role: { Args: { p_agreement_id: string }; Returns: string }
       has_client_access: { Args: { p_client_id: string }; Returns: boolean }
       is_active_user: { Args: { p_user_id: string }; Returns: boolean }
@@ -1361,6 +1381,24 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: never; Returns: boolean }
+      list_assignable_users_for_agreement: {
+        Args: { p_agreement_id: string }
+        Returns: {
+          email: string
+          full_name: string
+          status: string
+          user_id: string
+        }[]
+      }
+      list_assignable_users_for_agreement_group: {
+        Args: { p_group_id: string }
+        Returns: {
+          email: string
+          full_name: string
+          status: string
+          user_id: string
+        }[]
+      }
       reactivate_agreement_position: {
         Args: { p_position_id: string; p_reason?: string }
         Returns: undefined
