@@ -163,10 +163,7 @@ function AgreementLinesPage() {
     () =>
       (companies ?? []).map((c) => ({
         id: c.client_id as string,
-        name:
-          (c.client_commercial_name as string | null | undefined)?.trim() ||
-          (c.client_legal_name as string | null | undefined) ||
-          null,
+        name: (c.client_display_name as string | null) ?? null,
       })),
     [companies],
   );
