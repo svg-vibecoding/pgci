@@ -764,11 +764,6 @@ function AgreementLinesPage() {
                             <div className="text-xs text-muted-foreground line-clamp-2">
                               {projected.description ?? "—"}
                             </div>
-                            {projected.client_name && open.length > 1 && (
-                              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                                {projected.client_name}
-                              </div>
-                            )}
                           </div>
                         );
                       }
