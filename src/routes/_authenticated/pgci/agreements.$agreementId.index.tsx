@@ -107,18 +107,6 @@ function AgreementDetail() {
     queryKey: ["agreements", "members", agreementId],
     queryFn: () => membersFn({ data: { agreement_id: agreementId } }),
   });
-  const { data: companiesCount } = useQuery({
-    queryKey: ["agreements", "companies-count", agreementId],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from("agreement_companies")
-        .select("id", { count: "exact", head: true })
-        .eq("agreement_id", agreementId)
-        .is("valid_until", null);
-      if (error) throw error;
-      return count ?? 0;
-    },
-  });
   const { data: transitCount } = useQuery({
     queryKey: ["agreements", "transit-count", agreementId],
     queryFn: async () => {
