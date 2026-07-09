@@ -225,8 +225,12 @@ export function LineEditDialog({
     kind: "idle" | "loading" | "none" | "found";
     lines: Array<{
       line_id: string;
-      client_code: string | null;
-      client_description: string | null;
+      codes: Array<{
+        client_id: string;
+        client_name: string | null;
+        client_code: string;
+        description: string | null;
+      }>;
       current_price: number | null;
       updated_at: string | null;
     }>;
