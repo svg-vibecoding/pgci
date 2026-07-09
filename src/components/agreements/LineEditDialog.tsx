@@ -44,11 +44,22 @@ import {
   searchProducts,
 } from "@/lib/agreements.functions";
 
+export type LineEditClientCode = {
+  client_id: string;
+  client_code: string;
+  description: string;
+};
+
 export type LineEditValues = {
   line_id?: string | null;
   sku: string;
+  // Campos visibles del formulario transitorio (editan el primer cliente).
   client_code: string;
   client_description: string;
+  // Estado completo de códigos por cliente. La UI transitoria solo edita el
+  // primero, pero el patch enviado incluye la lista COMPLETA para no cerrar
+  // silenciosamente los períodos de otros clientes (RN declarativa).
+  client_codes: LineEditClientCode[];
   sale_price: string;
   par_price: string;
   start_date: string;
@@ -61,6 +72,7 @@ const empty: LineEditValues = {
   sku: "",
   client_code: "",
   client_description: "",
+  client_codes: [],
   sale_price: "",
   par_price: "",
   start_date: "",
