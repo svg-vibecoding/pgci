@@ -179,30 +179,32 @@ function AgreementDetail() {
 
       <header className="flex flex-wrap items-start justify-between gap-4">
         <AgreementHeader agreementId={agreementId} />
-        {canAdmin && (
-          <div className="flex flex-wrap gap-2">
-            <Button asChild size="sm" variant="outline">
-              <Link
-                to="/pgci/agreements/$agreementId/lines"
-                params={{ agreementId }}
-              >
-                <Boxes className="mr-1.5 h-4 w-4" /> Posiciones
-              </Link>
-            </Button>
-            <Button variant="outline" asChild size="sm">
-              <Link
-                to="/pgci/agreements/$agreementId/edit"
-                params={{ agreementId }}
-              >
-                <Pencil className="mr-1.5 h-4 w-4" /> Editar
-              </Link>
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setStatusOpen(true)}>
-              <Power className="mr-1.5 h-4 w-4" />
-              {isActive ? "Inactivar" : "Activar"}
-            </Button>
-          </div>
-        )}
+        <div className="flex flex-wrap gap-2">
+          <Button asChild size="sm" variant="outline">
+            <Link
+              to="/pgci/agreements/$agreementId/lines"
+              params={{ agreementId }}
+            >
+              <Boxes className="mr-1.5 h-4 w-4" /> Posiciones
+            </Link>
+          </Button>
+          {canAdmin && (
+            <>
+              <Button variant="outline" asChild size="sm">
+                <Link
+                  to="/pgci/agreements/$agreementId/edit"
+                  params={{ agreementId }}
+                >
+                  <Pencil className="mr-1.5 h-4 w-4" /> Editar
+                </Link>
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setStatusOpen(true)}>
+                <Power className="mr-1.5 h-4 w-4" />
+                {isActive ? "Inactivar" : "Activar"}
+              </Button>
+            </>
+          )}
+        </div>
       </header>
 
       <Card>
