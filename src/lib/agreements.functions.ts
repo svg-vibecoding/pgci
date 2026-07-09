@@ -580,70 +580,8 @@ export const listAgreementLines = createServerFn({ method: "GET" })
       codesByPos.set(c.agreement_position_id, arr);
     }
 
-    // Códigos LIBERADOS (período cerrado por exclusión) para posiciones excluidas.
-    // Deduplicación en memoria: por (position_id, client_id) el registro con
-    // valid_until más reciente; se omite si ya hay un código abierto para ese
-    // (position_id, client_id) — para no duplicar entre abiertos/cerrados.
-    if (excludedIds.length > 0) {
-      const { data: releasedRows, error: relErr } = await context.supabase
-        .from("agreement_position_client_codes")
-        .select(
-          "agreement_position_id, client_id, client_product_id, valid_until, clients!agreement_position_client_codes_client_id_fkey(commercial_name, legal_name), client_products!agreement_position_client_codes_client_product_id_fkey(client_code)",
-        )
-        .in("agreement_position_id", excludedIds)
-        .eq("ended_reason", "posición excluida");
-      if (relErr) throw new Error(relErr.message);
-      type ReleasedRow = ApccRow & { valid_until: string | null };
-      const released = ((releasedRows ?? []) as unknown as ReleasedRow[]);
-      // dedupe (pos, client) → más reciente por valid_until
-      const bestByKey = new Map<string, ReleasedRow>();
-      for (const r of released) {
-        const key = `${r.agreement_position_id}::${r.client_id}`;
-        const cur = bestByKey.get(key);
-        const t = r.valid_until ? Date.parse(r.valid_until) : 0;
-        const tCur = cur?.valid_until ? Date.parse(cur.valid_until) : -1;
-        if (!cur || t > tCur) bestByKey.set(key, r);
-      }
-      const openKeys = new Set<string>();
-      for (const [posId, arr] of codesByPos) {
-        for (const c of arr) openKeys.add(`${posId}::${c.client_id}`);
-      }
-      // Hidratar el historial de descripciones para los client_product_id nuevos
-      const newCpIds = new Set<string>();
-      for (const [key, r] of bestByKey) {
-        if (openKeys.has(key)) continue;
-        if (r.client_product_id && !descByCp.has(r.client_product_id)) newCpIds.add(r.client_product_id);
-      }
-      if (newCpIds.size > 0) {
-        const { data: hist } = await context.supabase
-          .from("client_product_history")
-          .select("client_product_id, description, valid_from")
-          .in("client_product_id", Array.from(newCpIds))
-          .is("valid_until", null)
-          .order("valid_from", { ascending: false })
-          .order("created_at", { ascending: false });
-        for (const h of hist ?? []) {
-          const cpId = h.client_product_id as string;
-          if (!descByCp.has(cpId)) {
-            descByCp.set(cpId, (h.description as string | null) ?? null);
-          }
-        }
-      }
-      for (const [key, r] of bestByKey) {
-        if (openKeys.has(key)) continue;
-        const code = r.client_products?.client_code ?? null;
-        if (!code) continue;
-        const arr = codesByPos.get(r.agreement_position_id) ?? [];
-        arr.push({
-          client_id: r.client_id,
-          client_name: clientDisplay(r.clients),
-          client_code: code,
-          description: descByCp.get(r.client_product_id) ?? null,
-          released: true,
-        });
-        codesByPos.set(r.agreement_position_id, arr);
-      }
-    }
+
+
 
     const codesByTransit = new Map<string, LineCode[]>();
     for (const c of atcc) {
