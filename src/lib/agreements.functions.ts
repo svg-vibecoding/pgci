@@ -2578,3 +2578,42 @@ export const listClientCatalogPermissions = createServerFn({ method: "GET" })
       return results;
     },
   );
+
+export const listAssignableUsersForAgreement = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    importPreviewSchema.pick({ agreement_id: true }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase.rpc(
+      "list_assignable_users_for_agreement",
+      { p_agreement_id: data.agreement_id },
+    );
+    if (error) throw new Error(error.message);
+    return (rows ?? []) as {
+      user_id: string;
+      full_name: string | null;
+      email: string | null;
+      status: string;
+    }[];
+  });
+
+export const listAssignableUsersForAgreementGroup = createServerFn({
+  method: "GET",
+})
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => groupIdSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase.rpc(
+      "list_assignable_users_for_agreement_group",
+      { p_group_id: data.group_id },
+    );
+    if (error) throw new Error(error.message);
+    return (rows ?? []) as {
+      user_id: string;
+      full_name: string | null;
+      email: string | null;
+      status: string;
+    }[];
+  });
+
