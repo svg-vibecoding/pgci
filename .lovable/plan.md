@@ -1,58 +1,39 @@
-## Diagnóstico
+## Corregir trigger `apcc_check_rn_match_01`
 
-`profiles_select` es `is_super_admin() OR user_id = auth.uid()`. Cualquier consulta que un no-admin hace a `profiles` con la sesión propia (client anon o server publishable con JWT del usuario) solo devuelve su propia fila. Todo lugar del código que hoy hace `context.supabase.from("profiles").select(...).in("user_id", ids)` o `.eq("user_id", otroUsuario)` está roto para platform_user.
+Tu plan está correcto y completo. Los tres defectos son reales (verificados contra el schema: la columna es `agreement_position_id`, `client_code` vive en `client_products`, y el trigger quedó como `INSERT OR UPDATE`). Lo implemento tal cual, con un par de detalles menores de robustez:
 
-## Alcance real del bug (mismo patrón, no solo la sección "Miembros")
+### Migración única
 
-Todos leen `profiles` con la sesión del usuario:
+1. `DROP TRIGGER IF EXISTS apcc_check_rn_match_01 ON public.agreement_position_client_codes;`
+2. `DROP FUNCTION IF EXISTS public.check_rn_match_01();`
+3. Recrear `public.check_rn_match_01()`:
+   - `SELECT apcc.id INTO v_conflict_id FROM public.agreement_position_client_codes apcc WHERE apcc.agreement_id = NEW.agreement_id AND apcc.client_product_id = NEW.client_product_id AND apcc.id <> NEW.id LIMIT 1;`
+   - `IF v_conflict_id IS NOT NULL THEN` resolver en subqueries:
+     - `client_code` desde `client_products` por `NEW.client_product_id`
+     - `sku` desde `agreement_positions ap LEFT JOIN products p ON p.id = ap.product_id` donde `ap.id = (select agreement_position_id from agreement_position_client_codes where id = v_conflict_id)`
+   - `RAISE EXCEPTION 'El código de cliente % ya está asignado a la posición SKU % de este acuerdo (RN-MATCH-01).', ..., ... USING ERRCODE = '23505';`
+   - `RETURN NEW;`
+   - Mantener `SECURITY DEFINER` + `SET search_path = public` (consistente con las demás funciones del proyecto y evita depender del search_path del caller).
+4. Recrear trigger **solo** `BEFORE INSERT`:
+   ```sql
+   CREATE TRIGGER apcc_check_rn_match_01
+   BEFORE INSERT ON public.agreement_position_client_codes
+   FOR EACH ROW EXECUTE FUNCTION public.check_rn_match_01();
+   ```
 
-1. **`listAgreementMembers`** (`src/lib/agreements.functions.ts`) — bug reportado: nombres de compañeros "—".
-2. **`listAgreementGroupMembers`** — idéntico dentro de un agrupador.
-3. **`listAgreementCompanies`** — no rompe el nombre de la empresa (viene de `clients`), pero sí las columnas de auditoría (`linked_by_name`, `started_by_name`, `ended_by_name`) → aparecerán "—" para no-admins.
-4. **`getAgreement`** → `created_by_name` null para el no-admin.
-5. **`getAgreementGroup`** → `created_by_name` null para el no-admin.
-6. **Picker "Agregar miembro" en `agreements.$agreementId.index.tsx`** (query `profiles active-search`) y **picker equivalente en `AgreementGroupMembersSection`** — hoy solo el admin puede abrirlos, así que no es un bug visible, pero también viola el anexo 03.00.02 (deberían listar únicamente usuarios asignables al cliente del acuerdo, no todo `profiles`).
+### Mejoras menores que sugiero sumar
 
-Rutas `setup/users.*`, `auth.tsx`, `users.functions.ts` y `setup/index.tsx` también leen `profiles`, pero son áreas admin-only ya cubiertas por `is_super_admin()` — quedan fuera de este cambio.
+- **`LIMIT 1`** en el SELECT de conflicto: barato y explícito, evita cualquier warning de "more than one row" si en el futuro cambia algo.
+- **Mantener `SECURITY DEFINER` + `SET search_path = public`** en vez de dejar la función como `SECURITY INVOKER` (que es el default del snippet de referencia). Razón: consistente con el resto de funciones del módulo y hace el trigger inmune a un search_path manipulado.
+- **`coalesce(..., '(sin código)')` / `coalesce(..., '(sin SKU)')`** en el mensaje, por si la posición conflictiva es una posición sin producto vinculado (SKU nulo es válido en `agreement_positions`).
 
-## Enfoque propuesto
+### Verificación post-migración
 
-Mantener `profiles_select` cerrada (no relajarla). Exponer los perfiles vecinos únicamente a través de RPCs `SECURITY DEFINER` que validan la autorización del solicitante antes de devolver datos, tal como pide el anexo 03.00.02.
+- `SELECT tgtype FROM pg_trigger WHERE tgname = 'apcc_check_rn_match_01';` → debe devolver `5` (BEFORE + ROW + INSERT), no `7`.
+- `SELECT count(*) FROM pg_indexes WHERE indexname = 'apcc_agreement_client_product_open_uq';` → sigue en `0`.
+- `SELECT count(*) FROM pg_indexes WHERE indexname = 'apcc_position_client_open_uq';` → sigue en `1` (intacto).
 
-### RPCs nuevas (una migración)
+### Qué NO se toca
 
-1. `get_agreement_participants(p_agreement_id uuid)` returns table de `(user_id, full_name, email, status, erp_user_code)`.
-   - Guard: `if not public.can_access_agreement(p_agreement_id) then raise 42501`.
-   - Devuelve profiles de todos los `user_id` que aparecen en `agreement_members` de ese acuerdo (miembros vigentes o históricos, sin filtrar por `valid_until`) más los `assigned_by/started_by/ended_by`. Un solo query sirve para poblar `profile`, `assigned_by_name`, `started_by_name`, `ended_by_name` y también los nombres de auditoría de `listAgreementCompanies` (linked_by / started_by / ended_by) y el `created_by_name` de `getAgreement` — mismo acuerdo, misma frontera de acceso.
-
-2. `get_agreement_group_participants(p_group_id uuid)` returns table equivalente.
-   - Guard: `is_super_admin() OR is_agreement_group_member(p_group_id, auth.uid())`.
-   - Devuelve profiles de miembros del agrupador + auditoría del propio agrupador. Cubre `listAgreementGroupMembers` y `created_by_name` de `getAgreementGroup`.
-
-3. `list_assignable_users_for_agreement(p_agreement_id uuid)` returns table de profiles activos.
-   - Guard: `can_admin_agreement(p_agreement_id)`.
-   - Devuelve solo `platform_user` activos que tienen `user_client_access` vigente a alguno de los `client_id` en `agreement_companies` del acuerdo (los "asignables al cliente del acuerdo" que exige el anexo).
-   - Reemplaza el picker actual en `agreements.$agreementId.index.tsx`.
-
-4. `list_assignable_users_for_agreement_group(p_group_id uuid)` análogo, guard `is_agreement_group_admin(...) OR is_super_admin()`, asignables al `client_id` del agrupador. Reemplaza el picker de `AgreementGroupMembersSection`.
-
-Todas `SECURITY DEFINER`, `SET search_path = public`, `GRANT EXECUTE ... TO authenticated`, `REVOKE ... FROM anon, public`.
-
-### Cambios en código (mismo PR, después de aplicar la migración)
-
-- `src/lib/agreements.functions.ts`
-  - `listAgreementMembers`: reemplazar el `from("profiles").in("user_id", ...)` por `rpc("get_agreement_participants", { p_agreement_id })` y armar el `Map` desde el resultado.
-  - `listAgreementGroupMembers`: idem con `get_agreement_group_participants`.
-  - `listAgreementCompanies`: usar el mismo `get_agreement_participants` para resolver los nombres de auditoría (ya está bajo `assertCanAccess`, no requiere segundo guard).
-  - `getAgreement` y `getAgreementGroup`: mismo RPC para resolver `created_by_name` (una sola llamada extra, sin `.from("profiles")`).
-- `src/routes/_authenticated/pgci/agreements.$agreementId.index.tsx`: sustituir el `useQuery` de `profiles active-search` por `useServerFn(listAssignableUsersForAgreement)` con filtrado por término en cliente (o pasando `search` como parámetro al RPC si preferimos), y quitar la dependencia directa de `supabase.from("profiles")`.
-- `src/components/agreements/AgreementGroupMembersSection.tsx`: análogo con `listAssignableUsersForAgreementGroup`.
-
-Ningún cambio en `profiles_select`. Ningún cambio en tablas. Solo RPCs nuevas y las funciones/servidor que las consumen.
-
-## Verificación
-
-- Con un `platform_user` miembro no-admin del acuerdo `5bdeea37-…`: la sección "Miembros del acuerdo" muestra los nombres de sus compañeros, la sección "Empresas" muestra auditoría con nombres, y el detalle general muestra "Creado por" con nombre.
-- El mismo usuario **no** puede llamar el RPC de un acuerdo del que no es miembro (respuesta `42501` desde `psql`/`supabase.rpc` directo).
-- Los pickers de "Agregar miembro" solo aparecen para admins (comportamiento actual) y solo listan usuarios con `user_client_access` vigente al cliente del acuerdo/agrupador — verificado sembrando un `platform_user` sin acceso al cliente y confirmando que no aparece.
-- `bunx tsgo --noEmit` en 0.
+- `exclude_agreement_position`, `reactivate_agreement_position`, `create_agreement_line`, `update_agreement_line`: sin cambios (siguiente paso según tu instrucción anterior).
+- RLS, GRANT, índice `apcc_position_client_open_uq`: intactos.
