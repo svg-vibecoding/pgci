@@ -8,6 +8,7 @@ import {
   addAgreementGroupMember,
   updateAgreementGroupMember,
   removeAgreementGroupMember,
+  listAssignableUsersForAgreementGroup,
 } from "@/lib/agreements.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
