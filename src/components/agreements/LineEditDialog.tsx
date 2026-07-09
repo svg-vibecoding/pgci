@@ -352,14 +352,14 @@ function ClientCodeCard({
       }
     }, 250);
     return () => clearTimeout(t);
-  }, [query, open, disabled, agreementId, card.id, searchFn]);
+  }, [query, popoverOpen, disabled, agreementId, card.id, searchFn]);
 
   const handleSelectFree = (r: ClientCodeSearchResult) => {
     onChange({ code: r.client_code, description: r.description ?? "" });
     setOriginalDescription(r.description ?? "");
     setIsNew(false);
     setMode("edit");
-    setOpen(false);
+    setPopoverOpen(false);
     setQuery("");
     setResults([]);
     setExpandedId(null);
@@ -372,7 +372,7 @@ function ClientCodeCard({
     setOriginalDescription("");
     setIsNew(true);
     setMode("edit");
-    setOpen(false);
+    setPopoverOpen(false);
     setQuery("");
     setResults([]);
     setExpandedId(null);
@@ -384,7 +384,7 @@ function ClientCodeCard({
     setIsNew(false);
     setMode("search");
     setExpandedId(null);
-    setOpen(true);
+    setPopoverOpen(true);
   };
 
   const doReactivate = async () => {
@@ -431,7 +431,7 @@ function ClientCodeCard({
       {mode === "search" ? (
         <div className="space-y-1.5">
           <FieldLabel>Código</FieldLabel>
-          <Popover open={open && !disabled} onOpenChange={(o) => !disabled && setOpen(o)}>
+          <Popover open={popoverOpen && !disabled} onOpenChange={(o) => !disabled && setPopoverOpen(o)}>
             <PopoverTrigger asChild>
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -440,10 +440,10 @@ function ClientCodeCard({
                   value={query}
                   disabled={disabled}
                   placeholder="Busca por código o descripción…"
-                  onFocus={() => !disabled && setOpen(true)}
+                  onFocus={() => !disabled && setPopoverOpen(true)}
                   onChange={(e) => {
                     setQuery(e.target.value);
-                    setOpen(true);
+                    setPopoverOpen(true);
                   }}
                 />
                 {loading && (
@@ -472,11 +472,11 @@ function ClientCodeCard({
                     position_id: r.status.position_id,
                     sku: r.status.sku,
                   });
-                  setOpen(false);
+                  setPopoverOpen(false);
                 }}
                 onRequestView={(positionId) => {
                   setViewTarget(positionId);
-                  setOpen(false);
+                  setPopoverOpen(false);
                 }}
                 clientName={card.name}
                 canManage={card.can_manage}
