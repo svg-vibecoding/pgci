@@ -1833,9 +1833,10 @@ export function LineEditDialog({
                 setSaveError(null);
                 save.mutate();
               }}
-              disabled={save.isPending}
+              disabled={save.isPending || hasCreatingIncomplete}
             >
               {save.isPending ? "Guardando…" : "Guardar"}
+
             </Button>
           </div>
         </div>
