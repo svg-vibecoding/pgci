@@ -367,28 +367,32 @@ function AgreementLinesPage() {
       const sku = r.products?.sku ?? "";
       const erp = r.products?.erp_description ?? "";
       const brand = r.products?.commercial_brand ?? "";
-      const code = r.client_code ?? "";
-      const desc = r.client_description ?? "";
-      return [sku, erp, brand, code, desc].some((s) => s.toLowerCase().includes(term));
+      const codesFlat = (r.codes ?? [])
+        .flatMap((c) => [c.client_code, c.description ?? ""])
+        .join(" ");
+      return [sku, erp, brand, codesFlat].some((s) => s.toLowerCase().includes(term));
     });
   }, [lines, activeCard, q, skuConflictOnly, repeatedPositionIds]);
 
 
   const handleExport = () => {
     if (!lines) return;
-    const data = filtered.map((r) => ({
-      client_code: r.client_code ?? null,
-      client_description: r.client_description ?? null,
-      sku: r.products?.sku ?? null,
-      erp_description: r.products?.erp_description ?? null,
-      commercial_brand: r.products?.commercial_brand ?? null,
-      sale_price: r.sale_price ?? null,
-      par_price: r.par_price ?? null,
-      start_date: r.start_date ?? null,
-      end_date: r.end_date ?? null,
-      status: r.status ?? null,
-      observations: r.observations ?? null,
-    }));
+    const data = filtered.map((r) => {
+      const first = r.codes?.[0] ?? null;
+      return {
+        client_code: first?.client_code ?? null,
+        client_description: first?.description ?? null,
+        sku: r.products?.sku ?? null,
+        erp_description: r.products?.erp_description ?? null,
+        commercial_brand: r.products?.commercial_brand ?? null,
+        sale_price: r.sale_price ?? null,
+        par_price: r.par_price ?? null,
+        start_date: r.start_date ?? null,
+        end_date: r.end_date ?? null,
+        status: r.status ?? null,
+        observations: r.observations ?? null,
+      };
+    });
     const preset =
       activeCard === "all" && !q.trim()
         ? "all"
