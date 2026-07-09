@@ -927,6 +927,11 @@ export function LineEditDialog({
   const [codeEntries, setCodeEntries] = useState<Map<string, ClientCodeEntry>>(
     new Map(),
   );
+  const [creatingIncomplete, setCreatingIncomplete] = useState<Map<string, boolean>>(
+    new Map(),
+  );
+  const hasCreatingIncomplete = Array.from(creatingIncomplete.values()).some(Boolean);
+
 
   // Buscador de productos (combobox)
   type ProductResult = {
