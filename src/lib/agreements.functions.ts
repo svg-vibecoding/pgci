@@ -858,6 +858,158 @@ export const searchProducts = createServerFn({ method: "POST" })
   });
 
 // ---------------------------------------------------------------------------
+// Buscador de código de cliente (para LineEditDialog / tarjeta por cliente)
+// ---------------------------------------------------------------------------
+
+export type ClientCodeSearchResult = {
+  client_product_id: string;
+  client_code: string;
+  description: string | null;
+  status:
+    | { kind: "free" }
+    | {
+        kind: "taken";
+        position_id: string;
+        position_status: "active" | "excluded" | "pending" | "requires_review";
+        sku: string | null;
+        product_description: string | null;
+        sale_price: number | null;
+      };
+};
+
+export const searchClientCodes = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => {
+    const obj = (d ?? {}) as {
+      agreement_id?: unknown;
+      client_id?: unknown;
+      query?: unknown;
+    };
+    const agreement_id = z.string().uuid().parse(obj.agreement_id);
+    const client_id = z.string().uuid().parse(obj.client_id);
+    const query = typeof obj.query === "string" ? obj.query.trim() : "";
+    if (query.length < 2) throw new Error("Query mínimo 2 caracteres");
+    return { agreement_id, client_id, query };
+  })
+  .handler(async ({ data, context }): Promise<ClientCodeSearchResult[]> => {
+    await assertCanAccess(context.supabase, data.agreement_id);
+    const safe = data.query.replace(/[,()%_]/g, (c) => `\\${c}`);
+    const pattern = `%${safe}%`;
+    const HARD_LIMIT = 50;
+
+    // Match por código (client_products) y por descripción vigente
+    // (client_product_history con join inner a client_products para forzar
+    // el filtro por client_id — la RLS de history solo exige has_client_access).
+    const [codeRes, descRes] = await Promise.all([
+      context.supabase
+        .from("client_products")
+        .select("id, client_code")
+        .eq("client_id", data.client_id)
+        .ilike("client_code", pattern)
+        .order("client_code", { ascending: true })
+        .limit(HARD_LIMIT),
+      context.supabase
+        .from("client_product_history")
+        .select(
+          "client_product_id, description, client_products!inner(id, client_id, client_code)",
+        )
+        .eq("client_products.client_id", data.client_id)
+        .is("valid_until", null)
+        .ilike("description", pattern)
+        .limit(HARD_LIMIT),
+    ]);
+    if (codeRes.error) throw new Error(codeRes.error.message);
+    if (descRes.error) throw new Error(descRes.error.message);
+
+    // Unificar por client_product_id. codeRes trae code sin descripción;
+    // descRes trae ambos. Cap 50 sobre el conjunto unido.
+    const merged = new Map<string, { client_code: string; description: string | null }>();
+    for (const row of codeRes.data ?? []) {
+      const id = row.id as string;
+      if (!merged.has(id)) merged.set(id, { client_code: row.client_code as string, description: null });
+    }
+    for (const row of descRes.data ?? []) {
+      const cp = row.client_products as { id: string; client_code: string } | null;
+      if (!cp) continue;
+      const id = cp.id;
+      const desc = (row.description as string | null) ?? null;
+      const existing = merged.get(id);
+      if (existing) {
+        if (existing.description == null) existing.description = desc;
+      } else if (merged.size < HARD_LIMIT) {
+        merged.set(id, { client_code: cp.client_code, description: desc });
+      }
+    }
+    if (merged.size === 0) return [];
+
+    // Cap definitivo tras el merge.
+    const allIds = Array.from(merged.keys()).slice(0, HARD_LIMIT);
+
+    // Descripción vigente para ids que aún no la tengan (match solo por código).
+    const missingDescIds = allIds.filter((id) => merged.get(id)?.description == null);
+    if (missingDescIds.length > 0) {
+      const { data: hist, error: histErr } = await context.supabase
+        .from("client_product_history")
+        .select("client_product_id, description")
+        .in("client_product_id", missingDescIds)
+        .is("valid_until", null);
+      if (histErr) throw new Error(histErr.message);
+      for (const h of hist ?? []) {
+        const id = h.client_product_id as string;
+        const entry = merged.get(id);
+        if (entry && entry.description == null) {
+          entry.description = (h.description as string | null) ?? null;
+        }
+      }
+    }
+
+    // Estado en el acuerdo: activa/excluida/pendiente sin filtrar por estado
+    // — el nuevo modelo mantiene el código en la posición para siempre.
+    const { data: apcc, error: apccErr } = await context.supabase
+      .from("agreement_position_client_codes")
+      .select(
+        "client_product_id, agreement_position_id, agreement_positions!inner(id, status, sale_price, product_id, products(sku, erp_description))",
+      )
+      .eq("agreement_id", data.agreement_id)
+      .in("client_product_id", allIds);
+    if (apccErr) throw new Error(apccErr.message);
+
+    const statusByCp = new Map<string, ClientCodeSearchResult["status"]>();
+    for (const row of apcc ?? []) {
+      const pos = row.agreement_positions as {
+        id: string;
+        status: string;
+        sale_price: number | null;
+        product_id: string | null;
+        products: { sku: string | null; erp_description: string | null } | null;
+      } | null;
+      if (!pos) continue;
+      const posStatus =
+        pos.status === "active" || pos.status === "excluded" || pos.status === "pending" || pos.status === "requires_review"
+          ? (pos.status as "active" | "excluded" | "pending" | "requires_review")
+          : "active";
+      statusByCp.set(row.client_product_id as string, {
+        kind: "taken",
+        position_id: pos.id,
+        position_status: posStatus,
+        sku: pos.products?.sku ?? null,
+        product_description: pos.products?.erp_description ?? null,
+        sale_price: pos.sale_price,
+      });
+    }
+
+    return allIds.map((id) => {
+      const m = merged.get(id)!;
+      return {
+        client_product_id: id,
+        client_code: m.client_code,
+        description: m.description,
+        status: statusByCp.get(id) ?? { kind: "free" as const },
+      };
+    });
+  });
+
+// ---------------------------------------------------------------------------
 // Conflicto N:1
 // ---------------------------------------------------------------------------
 

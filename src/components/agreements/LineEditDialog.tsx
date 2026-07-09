@@ -1,8 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { AlertTriangle, Calendar, ChevronDown, Link, Link2, Loader2, Lock, Search, Unlink } from "lucide-react";
+import {
+  AlertTriangle,
+  Calendar,
+  ChevronDown,
+  Info,
+  Link,
+  Link2,
+  Loader2,
+  Lock,
+  Pencil,
+  Plus,
+  Search,
+  Unlink,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatMoneyCOP } from "@/lib/format";
 import {
@@ -12,6 +26,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,6 +65,9 @@ import {
   linkSkuPrice,
   unlinkSkuPrice,
   searchProducts,
+  searchClientCodes,
+  reactivateAgreementLine,
+  type ClientCodeSearchResult,
 } from "@/lib/agreements.functions";
 
 export type LineEditClientCode = {
@@ -196,10 +223,18 @@ function ClientCodeCards({
   clients,
   values,
   onChange,
+  agreementId,
+  initialLineId,
+  onReactivated,
+  onNavigateAway,
 }: {
   clients: ClientCard[];
   values: Map<string, ClientCodeEntry>;
   onChange: (clientId: string, next: ClientCodeEntry) => void;
+  agreementId: string;
+  initialLineId: string | null;
+  onReactivated: () => void;
+  onNavigateAway: (positionId: string) => void;
 }) {
   if (clients.length === 0) {
     return (
@@ -212,50 +247,537 @@ function ClientCodeCards({
     <div className="space-y-3">
       {clients.map((c) => {
         const entry = values.get(c.id) ?? { code: "", description: "" };
-        const disabled = !c.can_manage;
         return (
-          <div
+          <ClientCodeCard
             key={c.id}
-            className={cn(
-              "rounded-lg border border-border p-4 space-y-3",
-              disabled ? "bg-muted/50" : "bg-surface-card",
-            )}
-          >
-            <div className="flex items-center gap-2">
-              {disabled && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
-              <div className="text-sm font-semibold text-foreground">{c.name}</div>
-            </div>
-            <div className="space-y-1.5">
+            card={c}
+            entry={entry}
+            agreementId={agreementId}
+            initialLineId={initialLineId}
+            onChange={(next) => onChange(c.id, next)}
+            onReactivated={onReactivated}
+            onNavigateAway={onNavigateAway}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function ClientCodeCard({
+  card,
+  entry,
+  agreementId,
+  initialLineId,
+  onChange,
+  onReactivated,
+  onNavigateAway,
+}: {
+  card: ClientCard;
+  entry: ClientCodeEntry;
+  agreementId: string;
+  initialLineId: string | null;
+  onChange: (next: ClientCodeEntry) => void;
+  onReactivated: () => void;
+  onNavigateAway: (positionId: string) => void;
+}) {
+  const disabled = !card.can_manage;
+  const readonlyClass = "bg-muted/50 cursor-not-allowed";
+
+  const searchFn = useServerFn(searchClientCodes);
+  const reactivateFn = useServerFn(reactivateAgreementLine);
+
+  // Modo del card: search cuando no hay código; edit cuando sí.
+  const initialHasCode = entry.code.trim() !== "";
+  const [mode, setMode] = useState<"search" | "edit">(
+    initialHasCode ? "edit" : "search",
+  );
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const [results, setResults] = useState<ClientCodeSearchResult[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [isNew, setIsNew] = useState(false);
+  const [originalDescription, setOriginalDescription] = useState<string | null>(
+    initialHasCode ? entry.description : null,
+  );
+  const [reactivateTarget, setReactivateTarget] = useState<
+    { position_id: string; sku: string | null } | null
+  >(null);
+  const [viewTarget, setViewTarget] = useState<string | null>(null);
+  const [reactivatePending, setReactivatePending] = useState(false);
+  const seq = useRef(0);
+
+  // Resincronizar cuando el diálogo cambia de posición (nuevo initial).
+  useEffect(() => {
+    const has = entry.code.trim() !== "";
+    setMode(has ? "edit" : "search");
+    setOriginalDescription(has ? entry.description : null);
+    setIsNew(false);
+    setQuery("");
+    setResults([]);
+    setExpandedId(null);
+    setOpen(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialLineId]);
+
+  useEffect(() => {
+    if (!open || disabled) return;
+    const q = query.trim();
+    if (q.length < 2) {
+      setResults([]);
+      setLoading(false);
+      return;
+    }
+    const s = ++seq.current;
+    setLoading(true);
+    const t = setTimeout(async () => {
+      try {
+        const res = await searchFn({
+          data: { agreement_id: agreementId, client_id: card.id, query: q },
+        });
+        if (s !== seq.current) return;
+        setResults(res);
+      } catch (e) {
+        if (s !== seq.current) return;
+        console.error("searchClientCodes failed", e);
+        setResults([]);
+      } finally {
+        if (s === seq.current) setLoading(false);
+      }
+    }, 250);
+    return () => clearTimeout(t);
+  }, [query, open, disabled, agreementId, card.id, searchFn]);
+
+  const handleSelectFree = (r: ClientCodeSearchResult) => {
+    onChange({ code: r.client_code, description: r.description ?? "" });
+    setOriginalDescription(r.description ?? "");
+    setIsNew(false);
+    setMode("edit");
+    setOpen(false);
+    setQuery("");
+    setResults([]);
+    setExpandedId(null);
+  };
+
+  const handleCreateNew = () => {
+    const q = query.trim();
+    if (!q) return;
+    onChange({ code: q, description: "" });
+    setOriginalDescription("");
+    setIsNew(true);
+    setMode("edit");
+    setOpen(false);
+    setQuery("");
+    setResults([]);
+    setExpandedId(null);
+  };
+
+  const handleChangeCode = () => {
+    onChange({ code: "", description: "" });
+    setOriginalDescription(null);
+    setIsNew(false);
+    setMode("search");
+    setExpandedId(null);
+    setOpen(true);
+  };
+
+  const doReactivate = async () => {
+    if (!reactivateTarget) return;
+    setReactivatePending(true);
+    try {
+      await reactivateFn({ data: { line_id: reactivateTarget.position_id } });
+      toast.success("Posición reactivada");
+      onReactivated();
+      // Refrescar resultados con la nueva realidad.
+      const q = query.trim();
+      if (q.length >= 2) {
+        const res = await searchFn({
+          data: { agreement_id: agreementId, client_id: card.id, query: q },
+        });
+        setResults(res);
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "No se pudo reactivar la posición");
+    } finally {
+      setReactivatePending(false);
+      setReactivateTarget(null);
+    }
+  };
+
+  const descriptionChanged =
+    mode === "edit" &&
+    !isNew &&
+    originalDescription !== null &&
+    entry.description.trim() !== (originalDescription ?? "").trim();
+
+  return (
+    <div
+      className={cn(
+        "rounded-lg border border-border p-4 space-y-3",
+        disabled ? "bg-muted/50" : "bg-surface-card",
+      )}
+    >
+      <div className="flex items-center gap-2">
+        {disabled && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
+        <div className="text-sm font-semibold text-foreground">{card.name}</div>
+      </div>
+
+      {mode === "search" ? (
+        <div className="space-y-1.5">
+          <FieldLabel>Código</FieldLabel>
+          <Popover open={open && !disabled} onOpenChange={(o) => !disabled && setOpen(o)}>
+            <PopoverTrigger asChild>
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  className={cn("pl-9", disabled ? readonlyClass : "bg-white")}
+                  value={query}
+                  disabled={disabled}
+                  placeholder="Busca por código o descripción…"
+                  onFocus={() => !disabled && setOpen(true)}
+                  onChange={(e) => {
+                    setQuery(e.target.value);
+                    setOpen(true);
+                  }}
+                />
+                {loading && (
+                  <Loader2 className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+                )}
+              </div>
+            </PopoverTrigger>
+            <PopoverContent
+              align="start"
+              sideOffset={4}
+              onOpenAutoFocus={(e) => e.preventDefault()}
+              className="w-[var(--radix-popover-trigger-width)] p-0"
+            >
+              <ClientCodeSearchList
+                query={query}
+                loading={loading}
+                results={results}
+                initialLineId={initialLineId}
+                expandedId={expandedId}
+                onExpand={(id) => setExpandedId((prev) => (prev === id ? null : id))}
+                onSelectFree={handleSelectFree}
+                onCreateNew={handleCreateNew}
+                onRequestReactivate={(r) => {
+                  if (r.status.kind !== "taken") return;
+                  setReactivateTarget({
+                    position_id: r.status.position_id,
+                    sku: r.status.sku,
+                  });
+                  setOpen(false);
+                }}
+                onRequestView={(positionId) => {
+                  setViewTarget(positionId);
+                  setOpen(false);
+                }}
+                clientName={card.name}
+                canManage={card.can_manage}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+      ) : (
+        <>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between gap-2">
               <FieldLabel>Código</FieldLabel>
-              <Input
-                value={entry.code}
-                disabled={disabled}
-                className={disabled ? "bg-muted/50 cursor-not-allowed" : ""}
-                onChange={(e) =>
-                  onChange(c.id, { ...entry, code: e.target.value })
-                }
-              />
+              {!disabled && (
+                <button
+                  type="button"
+                  onClick={handleChangeCode}
+                  className="flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+                >
+                  <Pencil className="h-3 w-3" />
+                  Cambiar código
+                </button>
+              )}
             </div>
-            <div className="space-y-1.5">
-              <FieldLabel>Descripción</FieldLabel>
-              <Input
-                value={entry.description}
-                disabled={disabled}
-                className={disabled ? "bg-muted/50 cursor-not-allowed" : ""}
-                onChange={(e) =>
-                  onChange(c.id, { ...entry, description: e.target.value })
-                }
-              />
-            </div>
-            {disabled && (
-              <p className="text-xs text-muted-foreground">
-                Sin permiso para gestionar el catálogo de este cliente. Su código,
-                si existe, se conserva sin cambios al guardar.
+            <Input
+              value={entry.code}
+              disabled={disabled}
+              readOnly
+              tabIndex={-1}
+              className={cn("font-mono", readonlyClass)}
+            />
+            {isNew && !disabled && (
+              <p className="text-[11px] text-muted-foreground">
+                Se creará en el catálogo de {card.name}.
               </p>
+            )}
+          </div>
+          <div className="space-y-1.5">
+            <FieldLabel>Descripción</FieldLabel>
+            <Input
+              value={entry.description}
+              disabled={disabled}
+              className={disabled ? readonlyClass : ""}
+              onChange={(e) => onChange({ ...entry, description: e.target.value })}
+            />
+            {descriptionChanged && !disabled && (
+              <p className="text-[11px] text-muted-foreground">
+                Se actualiza en el catálogo del cliente y afecta a otros acuerdos
+                que usen este código.
+              </p>
+            )}
+          </div>
+        </>
+      )}
+
+      {disabled && (
+        <p className="text-xs text-muted-foreground">
+          Sin permiso para gestionar el catálogo de este cliente. Su código,
+          si existe, se conserva sin cambios al guardar.
+        </p>
+      )}
+
+      {/* AlertDialog: reactivar posición excluida */}
+      <AlertDialog
+        open={!!reactivateTarget}
+        onOpenChange={(o) => !o && !reactivatePending && setReactivateTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reactivar posición</AlertDialogTitle>
+            <AlertDialogDescription>
+              La posición {reactivateTarget?.sku ? `del SKU ${reactivateTarget.sku} ` : ""}
+              volverá al acuerdo tal como estaba antes de excluirse. Después
+              podrás editarla normalmente. El código seguirá asignado a esa
+              posición.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={reactivatePending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={reactivatePending}
+              onClick={(e) => {
+                e.preventDefault();
+                void doReactivate();
+              }}
+            >
+              {reactivatePending ? "Reactivando…" : "Reactivar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* AlertDialog: ver posición (perderás cambios sin guardar) */}
+      <AlertDialog
+        open={!!viewTarget}
+        onOpenChange={(o) => !o && setViewTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Ir a la otra posición</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se cerrará este diálogo y perderás los cambios sin guardar. ¿Continuar?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                if (viewTarget) onNavigateAway(viewTarget);
+                setViewTarget(null);
+              }}
+            >
+              Ver posición
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
+function ClientCodeSearchList({
+  query,
+  loading,
+  results,
+  initialLineId,
+  expandedId,
+  onExpand,
+  onSelectFree,
+  onCreateNew,
+  onRequestReactivate,
+  onRequestView,
+  clientName,
+  canManage,
+}: {
+  query: string;
+  loading: boolean;
+  results: ClientCodeSearchResult[];
+  initialLineId: string | null;
+  expandedId: string | null;
+  onExpand: (id: string) => void;
+  onSelectFree: (r: ClientCodeSearchResult) => void;
+  onCreateNew: () => void;
+  onRequestReactivate: (r: ClientCodeSearchResult) => void;
+  onRequestView: (positionId: string) => void;
+  clientName: string;
+  canManage: boolean;
+}) {
+  const q = query.trim();
+  const showCreate = canManage && q.length >= 2;
+
+  if (q.length < 2) {
+    return (
+      <p className="px-3 py-4 text-center text-sm text-muted-foreground">
+        Escribe al menos 2 caracteres para buscar.
+      </p>
+    );
+  }
+
+  return (
+    <div className="max-h-80 overflow-y-auto py-1">
+      {loading && results.length === 0 && (
+        <p className="px-3 py-3 text-center text-sm text-muted-foreground">
+          Buscando…
+        </p>
+      )}
+      {!loading && results.length === 0 && (
+        <p className="px-3 py-3 text-center text-sm text-muted-foreground">
+          Sin coincidencias en el catálogo de {clientName}.
+        </p>
+      )}
+      {results.map((r) => {
+        const isTaken = r.status.kind === "taken";
+        const isSelf =
+          isTaken && r.status.kind === "taken" && r.status.position_id === initialLineId;
+        const posStatus = r.status.kind === "taken" ? r.status.position_status : null;
+        const expanded = expandedId === r.client_product_id;
+
+        // Caso "esta misma posición": tratar como libre (permite volver a
+        // seleccionarlo sin marcarlo como conflicto).
+        if (isSelf) {
+          return (
+            <button
+              key={r.client_product_id}
+              type="button"
+              onClick={() => onSelectFree(r)}
+              className="flex w-full flex-col gap-0.5 px-3 py-2 text-left hover:bg-muted focus:bg-muted focus:outline-none"
+            >
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-sm font-medium text-foreground">
+                  {r.client_code}
+                </span>
+                <StatusBadge size="sm" status="neutral" label="Asignado a esta posición" />
+              </div>
+              {r.description && (
+                <span className="text-xs text-muted-foreground">{r.description}</span>
+              )}
+            </button>
+          );
+        }
+
+        if (!isTaken || r.status.kind !== "taken") {
+          return (
+            <button
+              key={r.client_product_id}
+              type="button"
+              onClick={() => onSelectFree(r)}
+              className="flex w-full flex-col gap-0.5 px-3 py-2 text-left hover:bg-muted focus:bg-muted focus:outline-none"
+            >
+              <span className="font-mono text-sm font-medium text-foreground">
+                {r.client_code}
+              </span>
+              {r.description && (
+                <span className="text-xs text-muted-foreground">{r.description}</span>
+              )}
+            </button>
+          );
+        }
+
+        const takenStatus = r.status;
+        const isExcluded = posStatus === "excluded";
+        return (
+          <div key={r.client_product_id} className="border-b border-border last:border-b-0">
+            <button
+              type="button"
+              onClick={() => onExpand(r.client_product_id)}
+              className="flex w-full flex-col gap-0.5 px-3 py-2 text-left hover:bg-muted focus:bg-muted focus:outline-none"
+            >
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-sm font-medium text-muted-foreground">
+                  {r.client_code}
+                </span>
+                <StatusBadge
+                  size="sm"
+                  status={isExcluded ? "neutral" : "warning"}
+                  label={isExcluded ? "En posición excluida" : "En posición activa"}
+                />
+                <ChevronDown
+                  className={cn(
+                    "ml-auto h-3.5 w-3.5 text-muted-foreground transition-transform",
+                    expanded && "rotate-180",
+                  )}
+                />
+              </div>
+              {r.description && (
+                <span className="text-xs text-muted-foreground">{r.description}</span>
+              )}
+            </button>
+            {expanded && (
+              <div className="mx-2 mb-2 rounded-md border border-border bg-muted/40 p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-sm font-medium text-foreground">
+                    {takenStatus.sku ?? "—"}
+                  </span>
+                  {takenStatus.sale_price != null && (
+                    <span className="text-xs tabular-nums text-muted-foreground">
+                      {formatMoneyCOP(takenStatus.sale_price)}
+                    </span>
+                  )}
+                </div>
+                {takenStatus.product_description && (
+                  <p className="text-xs text-muted-foreground">
+                    {takenStatus.product_description}
+                  </p>
+                )}
+                <p className="text-xs text-foreground">
+                  {isExcluded
+                    ? "Este código está asignado a una posición excluida del acuerdo."
+                    : "Este código ya está asignado a otra posición activa del acuerdo."}
+                </p>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onRequestView(takenStatus.position_id)}
+                  >
+                    Ver posición
+                  </Button>
+                  {isExcluded && canManage && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => onRequestReactivate(r)}
+                    >
+                      Reactivar posición
+                    </Button>
+                  )}
+                </div>
+              </div>
             )}
           </div>
         );
       })}
+      {showCreate && (
+        <div className="border-t border-border">
+          <button
+            type="button"
+            onClick={onCreateNew}
+            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-primary hover:bg-muted focus:bg-muted focus:outline-none"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Crear <span className="font-mono">"{q}"</span> en el catálogo de {clientName}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -286,6 +808,7 @@ export function LineEditDialog({
   clientCatalogPermissions?: Array<{ client_id: string; can_manage: boolean }>;
 }) {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const createFn = useServerFn(createAgreementLine);
   const patchFn = useServerFn(updateAgreementLine);
   const lookupFn = useServerFn(lookupProductBySku);
@@ -1165,6 +1688,8 @@ export function LineEditDialog({
               <ClientCodeCards
                 clients={clientCards}
                 values={codeEntries}
+                agreementId={agreementId}
+                initialLineId={initial?.line_id ?? null}
                 onChange={(clientId, next) => {
                   setCodeEntries((prev) => {
                     const m = new Map(prev);
@@ -1172,7 +1697,21 @@ export function LineEditDialog({
                     return m;
                   });
                 }}
+                onReactivated={() => {
+                  qc.invalidateQueries({ queryKey: ["agreements", "lines", agreementId] });
+                  qc.invalidateQueries({ queryKey: ["agreements", "detail", agreementId] });
+                  qc.invalidateQueries({ queryKey: ["agreements", "sku-groups", agreementId] });
+                }}
+                onNavigateAway={(positionId) => {
+                  onOpenChange(false);
+                  void navigate({
+                    to: "/pgci/agreements/$agreementId/lines",
+                    params: { agreementId },
+                    search: { highlight: positionId } as never,
+                  });
+                }}
               />
+
             </div>
           </div>
         </div>
