@@ -178,20 +178,7 @@ function AgreementDetail() {
       <AgreementBreadcrumb agreementId={agreementId} current="detail" />
 
       <header className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-bold tracking-tight">{agreement.name}</h1>
-          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
-            <StatusBadge
-              status={isActive ? "active" : "neutral"}
-              label={isActive ? "Activo" : "Inactivo"}
-            />
-            <span>
-              {`${companiesCount ?? 0} ${(companiesCount ?? 0) === 1 ? "cliente cubierto" : "clientes cubiertos"}`}
-              {` · ${members?.length ?? 0} ${(members?.length ?? 0) === 1 ? "miembro" : "miembros"}`}
-              {` · ${total} ${total === 1 ? "posición" : "posiciones"}`}
-            </span>
-          </div>
-        </div>
+        <AgreementHeader agreementId={agreementId} />
         {canAdmin && (
           <div className="flex flex-wrap gap-2">
             <Button asChild size="sm" variant="outline">
