@@ -631,20 +631,39 @@ export function LineEditDialog({
             {/* Información del cliente */}
             <section className="space-y-4">
               <SectionHeader title="Información del cliente" number="01" />
+              {isMultiClient && !isEdit && (
+                <Alert variant="info">
+                  <AlertDescription>
+                    Este acuerdo tiene varios clientes. La captura de códigos por
+                    cliente estará disponible tras el rediseño del formulario.
+                  </AlertDescription>
+                </Alert>
+              )}
+              {isMultiClient && isEdit && v.client_codes.length > 1 && (
+                <Alert variant="info">
+                  <AlertDescription>
+                    Esta posición tiene códigos de {v.client_codes.length} clientes.
+                    Se conservan al guardar; la edición completa por cliente estará
+                    disponible tras el rediseño del formulario.
+                  </AlertDescription>
+                </Alert>
+              )}
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="space-y-1.5">
                   <FieldLabel>Código del cliente</FieldLabel>
                   <Input
-                    className={inputClass}
+                    className={cn(inputClass, isMultiClient && !isEdit && readonlyClass)}
                     value={v.client_code}
+                    disabled={isMultiClient && !isEdit}
                     onChange={(e) => setV({ ...v, client_code: e.target.value })}
                   />
                 </div>
                 <div className="space-y-1.5 md:col-span-2">
                   <FieldLabel>Descripción del cliente</FieldLabel>
                   <Input
-                    className={inputClass}
+                    className={cn(inputClass, isMultiClient && !isEdit && readonlyClass)}
                     value={v.client_description}
+                    disabled={isMultiClient && !isEdit}
                     onChange={(e) =>
                       setV({ ...v, client_description: e.target.value })
                     }
