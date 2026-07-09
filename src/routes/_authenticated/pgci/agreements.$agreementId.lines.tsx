@@ -419,17 +419,7 @@ function AgreementLinesPage() {
       <AgreementBreadcrumb agreementId={agreementId} current="lines" />
 
       <header className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight">{agreement.name}</h1>
-            <StatusBadge
-              status={isActive ? "active" : "neutral"}
-              label={isActive ? "Activo" : "Inactivo"}
-            />
-            {agreement.scope === "unit" && <Badge color="info">Con alcance</Badge>}
-          </div>
-          <p className="mt-1 text-sm text-foreground">Posiciones en el acuerdo</p>
-        </div>
+        <AgreementHeader agreementId={agreementId} />
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" size="sm" onClick={handleExport} disabled={!lines?.length}>
             <Download className="mr-1.5 h-4 w-4" /> Exportar
