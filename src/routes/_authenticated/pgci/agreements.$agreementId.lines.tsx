@@ -862,18 +862,7 @@ function AgreementLinesPage() {
                               size="icon"
                               variant="ghost"
                               onClick={() => {
-                                setEditInitial({
-                                  line_id: r.id as string,
-                                  sku: r.products?.sku ?? "",
-                                  client_code: r.client_code ?? "",
-                                  client_description: r.client_description ?? "",
-                                  sale_price: r.sale_price?.toString() ?? "",
-                                  par_price: r.par_price?.toString() ?? "",
-                                  start_date: r.start_date ?? "",
-                                  end_date: r.end_date ?? "",
-                                  observations: r.observations ?? "",
-                                });
-                                setEditOpen(true);
+                                openEditForLine(r.id as string);
                               }}
                               aria-label="Editar"
                               title="Editar"
