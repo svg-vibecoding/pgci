@@ -674,10 +674,25 @@ function AgreementLinesPage() {
               return (
                 <TableRow key={r.id as string}>
                   <TableCell>
-                    <div className="font-mono text-sm">{r.client_code ?? "—"}</div>
-                    <div className="text-xs text-muted-foreground line-clamp-2">
-                      {r.client_description ?? "—"}
-                    </div>
+                    {(r.codes ?? []).length === 0 ? (
+                      <div className="font-mono text-sm">—</div>
+                    ) : (
+                      <div className="space-y-1">
+                        {(r.codes ?? []).map((c) => (
+                          <div key={`${c.client_id}-${c.client_code}`}>
+                            <div className="font-mono text-sm">{c.client_code}</div>
+                            <div className="text-xs text-muted-foreground line-clamp-2">
+                              {c.description ?? "—"}
+                            </div>
+                            {(r.codes ?? []).length > 1 && c.client_name && (
+                              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                                {c.client_name}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1.5">
