@@ -626,7 +626,9 @@ function ClientCodeSearchList({
   canManage: boolean;
 }) {
   const q = query.trim();
-  const showCreate = canManage && q.length >= 2;
+  const showCreate = canManage && q.length >= 2 && !loading;
+
+
 
   if (q.length < 2) {
     return (
