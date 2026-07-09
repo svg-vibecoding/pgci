@@ -1796,7 +1796,17 @@ export function LineEditDialog({
                     search: { highlight: positionId } as never,
                   });
                 }}
+                onCreatingIncompleteChange={(clientId, incomplete) => {
+                  setCreatingIncomplete((prev) => {
+                    const cur = prev.get(clientId) ?? false;
+                    if (cur === incomplete) return prev;
+                    const m = new Map(prev);
+                    m.set(clientId, incomplete);
+                    return m;
+                  });
+                }}
               />
+
 
             </div>
           </div>
