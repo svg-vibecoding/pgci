@@ -455,6 +455,33 @@ export function LineEditDialog({
 
 
 
+  // Construye la lista DECLARATIVA de códigos que se envía al servidor:
+  // - preserva los códigos de todos los clientes presentes en la línea original
+  // - aplica los edits visibles del formulario transitorio al PRIMER cliente
+  //   (o al `singleClientId` si es un acuerdo mono-cliente sin códigos previos)
+  const buildClientCodes = (): LineEditClientCode[] | undefined => {
+    if (isMultiClient) {
+      // En multi-cliente, el formulario transitorio no captura códigos: se
+      // reenvían tal cual los existentes (no cerrar períodos silenciosamente).
+      return v.client_codes.length > 0 ? v.client_codes : undefined;
+    }
+    const editedCode = v.client_code.trim();
+    const editedDesc = v.client_description.trim();
+    const targetClientId =
+      v.client_codes[0]?.client_id ?? singleClientId ?? initial?.client_codes?.[0]?.client_id ?? null;
+    // Sin cliente objetivo válido, no podemos enviar client_codes.
+    if (!targetClientId) return editedCode ? undefined : v.client_codes;
+    const rest = v.client_codes.slice(1);
+    if (!editedCode) {
+      // Vaciar el primer cliente equivale a cerrarlo declarativamente.
+      return rest;
+    }
+    return [
+      { client_id: targetClientId, client_code: editedCode, description: editedDesc },
+      ...rest,
+    ];
+  };
+
   const isEdit = !!initial?.line_id;
 
   const save = useMutation({
@@ -472,14 +499,14 @@ export function LineEditDialog({
       if (par !== undefined && par <= 0) {
         throw new Error("El precio par debe ser mayor a 0");
       }
+      const codes = buildClientCodes();
       if (isEdit) {
         return patchFn({
           data: {
             line_id: initial!.line_id!,
             patch: {
               sku: txt(v.sku),
-              client_code: txt(v.client_code),
-              client_description: txt(v.client_description),
+              client_codes: codes,
               sale_price: num(v.sale_price),
               par_price: num(v.par_price) || undefined,
               start_date: txt(v.start_date) ?? undefined,
@@ -494,8 +521,7 @@ export function LineEditDialog({
         data: {
           agreement_id: agreementId,
           sku: txt(v.sku) ?? undefined,
-          client_code: txt(v.client_code) ?? undefined,
-          client_description: txt(v.client_description) ?? undefined,
+          client_codes: codes ?? [],
           sale_price: num(v.sale_price),
           par_price: num(v.par_price) || undefined,
           start_date: txt(v.start_date) ?? undefined,
@@ -504,7 +530,22 @@ export function LineEditDialog({
         },
       });
     },
-    onSuccess: () => {
+    onSuccess: (res) => {
+      // update_agreement_line puede devolver { blocked: true, block_reason: {...} }
+      // por RN-MATCH-01. No cerrar el diálogo; formatear un mensaje accionable.
+      if (res && typeof res === "object" && "blocked" in res && (res as { blocked?: boolean }).blocked) {
+        const br = (res as { block_reason?: {
+          code?: string;
+          conflicting_sku?: string;
+          conflicting_position_id?: string;
+          client_id?: string;
+        } | null }).block_reason ?? null;
+        const detail = br?.conflicting_sku
+          ? `Ya existe otra posición con ese SKU (${br.conflicting_sku}) para este cliente.`
+          : "La combinación de códigos entra en conflicto con otra posición del acuerdo.";
+        toast.error(detail);
+        return;
+      }
       toast.success(isEdit ? "Posición actualizada" : "Posición creada");
       qc.invalidateQueries({ queryKey: ["agreements", "lines", agreementId] });
       qc.invalidateQueries({ queryKey: ["agreements", "detail", agreementId] });
