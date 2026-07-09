@@ -743,25 +743,52 @@ function AgreementLinesPage() {
               return (
                 <TableRow key={r.id as string}>
                   <TableCell>
-                    {(r.codes ?? []).length === 0 ? (
-                      <div className="font-mono text-sm">—</div>
-                    ) : (
-                      <div className="space-y-1">
-                        {(r.codes ?? []).map((c) => (
-                          <div key={`${c.client_id}-${c.client_code}`}>
-                            <div className="font-mono text-sm">{c.client_code}</div>
+                    {(() => {
+                      const codes = r.codes ?? [];
+                      // Proyección por cliente seleccionado. Nunca oculta filas.
+                      const open = codes.filter((c) => !c.released);
+                      const projected =
+                        projectionClientId
+                          ? open.find((c) => c.client_id === projectionClientId)
+                          : open[0];
+                      const releasedProjected =
+                        !projected && projectionClientId
+                          ? codes.find(
+                              (c) => c.released && c.client_id === projectionClientId,
+                            )
+                          : undefined;
+                      if (projected) {
+                        return (
+                          <div>
+                            <div className="font-mono text-sm">{projected.client_code}</div>
                             <div className="text-xs text-muted-foreground line-clamp-2">
-                              {c.description ?? "—"}
+                              {projected.description ?? "—"}
                             </div>
-                            {(r.codes ?? []).length > 1 && c.client_name && (
+                            {projected.client_name && open.length > 1 && (
                               <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                                {c.client_name}
+                                {projected.client_name}
                               </div>
                             )}
                           </div>
-                        ))}
-                      </div>
-                    )}
+                        );
+                      }
+                      if (releasedProjected) {
+                        return (
+                          <div className="text-muted-foreground opacity-60">
+                            <div className="font-mono text-sm">
+                              {releasedProjected.client_code}
+                            </div>
+                            <div className="text-xs line-clamp-2">
+                              {releasedProjected.description ?? "—"}
+                            </div>
+                            <div className="mt-1">
+                              <Badge color="neutral" variant="soft">liberado</Badge>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return <div className="font-mono text-sm">—</div>;
+                    })()}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1.5">
