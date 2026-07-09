@@ -373,13 +373,12 @@ function AgreementLinesPage() {
       kind: r.kind,
       sku: r.products?.sku ?? "",
       // Estado completo declarativo: preserva todos los códigos de otros clientes.
-      client_codes: (r.codes ?? [])
-        .filter((c) => !c.released)
-        .map((c) => ({
-          client_id: c.client_id,
-          client_code: c.client_code,
-          description: c.description ?? "",
-        })),
+      client_codes: (r.codes ?? []).map((c) => ({
+        client_id: c.client_id,
+        client_code: c.client_code,
+        description: c.description ?? "",
+      })),
+
       sale_price: r.sale_price?.toString() ?? "",
       par_price: r.par_price?.toString() ?? "",
       start_date: r.start_date ?? "",
