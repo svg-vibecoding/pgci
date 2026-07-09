@@ -52,6 +52,11 @@ export type LineEditClientCode = {
 
 export type LineEditValues = {
   line_id?: string | null;
+  // Discriminador de la fila: 'position' para posiciones normales,
+  // 'transit' para líneas en tránsito. Se debe propagar tal cual a
+  // update_agreement_line — de lo contrario la RPC busca la fila en la
+  // tabla equivocada y responde "Posición no encontrada".
+  kind?: "position" | "transit";
   sku: string;
   // Campos visibles del formulario transitorio (editan el primer cliente).
   client_code: string;
@@ -69,6 +74,7 @@ export type LineEditValues = {
 
 const empty: LineEditValues = {
   line_id: null,
+  kind: "position",
   sku: "",
   client_code: "",
   client_description: "",
