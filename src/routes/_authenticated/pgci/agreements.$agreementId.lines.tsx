@@ -1026,7 +1026,7 @@ function AgreementLinesPage() {
                         `${c.client_code} de ${c.client_name?.trim() || "cliente sin nombre"}`,
                     )
                     .join(", ")}
-                  . Al excluirla, {excludeTarget.codes.length === 1 ? "ese código quedará liberado y podrá" : "esos códigos quedarán liberados y podrán"} fijarse a otra posición del acuerdo.
+                  . Al excluirla, la posición sale del acuerdo pero conserva {excludeTarget.codes.length === 1 ? "ese código asignado" : "esos códigos asignados"}. Para liberar un código y poder fijarlo a otra posición, reactiva la posición y edítala.
                 </>
               ) : (
                 <>La posición queda fuera del acuerdo pero conserva su historial. Puedes reactivarla después si fue un error.</>
