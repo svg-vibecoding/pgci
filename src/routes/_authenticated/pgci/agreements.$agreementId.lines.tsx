@@ -996,8 +996,23 @@ function AgreementLinesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir posición</AlertDialogTitle>
             <AlertDialogDescription>
-              La posición queda fuera del acuerdo pero conserva su historial. Puedes
-              reactivarla después si fue un error.
+              {excludeTarget && excludeTarget.codes.length > 0 ? (
+                <>
+                  Esta posición atiende{" "}
+                  {excludeTarget.codes.length === 1
+                    ? "el código"
+                    : "los códigos"}{" "}
+                  {excludeTarget.codes
+                    .map(
+                      (c) =>
+                        `${c.client_code} de ${c.client_name?.trim() || "cliente sin nombre"}`,
+                    )
+                    .join(", ")}
+                  . Al excluirla, {excludeTarget.codes.length === 1 ? "ese código quedará liberado y podrá" : "esos códigos quedarán liberados y podrán"} fijarse a otra posición del acuerdo.
+                </>
+              ) : (
+                <>La posición queda fuera del acuerdo pero conserva su historial. Puedes reactivarla después si fue un error.</>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-1.5">
