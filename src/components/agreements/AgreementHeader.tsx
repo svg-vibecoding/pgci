@@ -1,4 +1,5 @@
-import { useQuery, useServerFn } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { getAgreement, listAgreementMembers } from "@/lib/agreements.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { StatusBadge } from "@/components/sumatec";
