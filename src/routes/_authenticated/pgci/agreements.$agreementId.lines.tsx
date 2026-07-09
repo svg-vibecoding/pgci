@@ -344,6 +344,7 @@ function AgreementLinesPage() {
     const first = r.codes?.[0] ?? null;
     setEditInitial({
       line_id: r.id as string,
+      kind: r.kind,
       sku: r.products?.sku ?? "",
       client_code: first?.client_code ?? "",
       client_description: first?.description ?? "",
