@@ -1717,14 +1717,14 @@ export const listAgreementCompanies = createServerFn({ method: "GET" })
     }
     const userNames = new Map<string, string>();
     if (userIds.size > 0) {
-      const { data: profRows, error: profErr } = await context.supabase
-        .from("profiles")
-        .select("user_id, full_name")
-        .in("user_id", Array.from(userIds));
+      const { data: profRows, error: profErr } = await context.supabase.rpc(
+        "get_agreement_participants",
+        { p_agreement_id: data.agreement_id },
+      );
       if (profErr) throw new Error(profErr.message);
-      for (const p of profRows ?? []) {
-        const name = (p.full_name as string | null)?.trim();
-        if (name) userNames.set(p.user_id as string, name);
+      for (const p of (profRows ?? []) as { user_id: string; full_name: string | null }[]) {
+        const name = p.full_name?.trim();
+        if (name) userNames.set(p.user_id, name);
       }
     }
 
