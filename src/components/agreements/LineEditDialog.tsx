@@ -1688,6 +1688,8 @@ export function LineEditDialog({
               <ClientCodeCards
                 clients={clientCards}
                 values={codeEntries}
+                agreementId={agreementId}
+                initialLineId={initial?.line_id ?? null}
                 onChange={(clientId, next) => {
                   setCodeEntries((prev) => {
                     const m = new Map(prev);
@@ -1695,7 +1697,21 @@ export function LineEditDialog({
                     return m;
                   });
                 }}
+                onReactivated={() => {
+                  qc.invalidateQueries({ queryKey: ["agreements", "lines", agreementId] });
+                  qc.invalidateQueries({ queryKey: ["agreements", "detail", agreementId] });
+                  qc.invalidateQueries({ queryKey: ["agreements", "sku-groups", agreementId] });
+                }}
+                onNavigateAway={(positionId) => {
+                  onOpenChange(false);
+                  void navigate({
+                    to: "/pgci/agreements/$agreementId/lines",
+                    params: { agreementId },
+                    search: { highlight: positionId } as never,
+                  });
+                }}
               />
+
             </div>
           </div>
         </div>
