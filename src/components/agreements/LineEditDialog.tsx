@@ -623,7 +623,11 @@ export function LineEditDialog({
       >
         <DialogHeader className="px-6 py-4 border-b border-border shrink-0">
           <DialogTitle className="text-2xl font-bold tracking-tight">
-            {isEdit ? "Editar posición" : "Nueva posición"}
+            {isEdit
+              ? initial?.kind === "transit"
+                ? "Editar línea en tránsito"
+                : "Editar posición"
+              : "Nueva posición"}
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
             {agreementName && clientName
