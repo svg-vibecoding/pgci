@@ -808,6 +808,7 @@ export function LineEditDialog({
   clientCatalogPermissions?: Array<{ client_id: string; can_manage: boolean }>;
 }) {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const createFn = useServerFn(createAgreementLine);
   const patchFn = useServerFn(updateAgreementLine);
   const lookupFn = useServerFn(lookupProductBySku);
