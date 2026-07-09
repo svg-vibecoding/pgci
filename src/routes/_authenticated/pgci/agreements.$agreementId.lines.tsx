@@ -415,16 +415,7 @@ function AgreementLinesPage() {
 
   return (
     <div className="space-y-6">
-      <Button
-        asChild
-        variant="ghost"
-        size="sm"
-        className="-ml-2 h-8 px-2 text-muted-foreground"
-      >
-        <Link to="/pgci/agreements/$agreementId" params={{ agreementId }}>
-          <ArrowLeft className="mr-1.5 h-4 w-4" /> Volver al acuerdo
-        </Link>
-      </Button>
+      <AgreementBreadcrumb agreementId={agreementId} current="lines" />
 
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
