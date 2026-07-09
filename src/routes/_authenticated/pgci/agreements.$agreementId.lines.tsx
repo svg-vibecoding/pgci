@@ -373,13 +373,12 @@ function AgreementLinesPage() {
       kind: r.kind,
       sku: r.products?.sku ?? "",
       // Estado completo declarativo: preserva todos los códigos de otros clientes.
-      client_codes: (r.codes ?? [])
-        .filter((c) => !c.released)
-        .map((c) => ({
-          client_id: c.client_id,
-          client_code: c.client_code,
-          description: c.description ?? "",
-        })),
+      client_codes: (r.codes ?? []).map((c) => ({
+        client_id: c.client_id,
+        client_code: c.client_code,
+        description: c.description ?? "",
+      })),
+
       sale_price: r.sale_price?.toString() ?? "",
       par_price: r.par_price?.toString() ?? "",
       start_date: r.start_date ?? "",
@@ -746,17 +745,11 @@ function AgreementLinesPage() {
                     {(() => {
                       const codes = r.codes ?? [];
                       // Proyección por cliente seleccionado. Nunca oculta filas.
-                      const open = codes.filter((c) => !c.released);
+                      const open = codes;
                       const projected =
                         projectionClientId
                           ? open.find((c) => c.client_id === projectionClientId)
                           : open[0];
-                      const releasedProjected =
-                        !projected && projectionClientId
-                          ? codes.find(
-                              (c) => c.released && c.client_id === projectionClientId,
-                            )
-                          : undefined;
                       if (projected) {
                         return (
                           <div>
@@ -767,23 +760,9 @@ function AgreementLinesPage() {
                           </div>
                         );
                       }
-                      if (releasedProjected) {
-                        return (
-                          <div className="text-muted-foreground opacity-60">
-                            <div className="font-mono text-sm">
-                              {releasedProjected.client_code}
-                            </div>
-                            <div className="text-xs line-clamp-2">
-                              {releasedProjected.description ?? "—"}
-                            </div>
-                            <div className="mt-1">
-                              <Badge color="neutral" variant="soft">liberado</Badge>
-                            </div>
-                          </div>
-                        );
-                      }
                       return <div className="font-mono text-sm">—</div>;
                     })()}
+
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1.5">
@@ -983,7 +962,7 @@ function AgreementLinesPage() {
                                   setExcludeTarget({
                                     id: r.id as string,
                                     sku: r.products?.sku ?? null,
-                                    codes: (r.codes ?? []).filter((c) => !c.released),
+                                    codes: r.codes ?? [],
                                   })
                                 }
                                 aria-label="Excluir"
@@ -1047,7 +1026,7 @@ function AgreementLinesPage() {
                         `${c.client_code} de ${c.client_name?.trim() || "cliente sin nombre"}`,
                     )
                     .join(", ")}
-                  . Al excluirla, {excludeTarget.codes.length === 1 ? "ese código quedará liberado y podrá" : "esos códigos quedarán liberados y podrán"} fijarse a otra posición del acuerdo.
+                  . Al excluirla, la posición sale del acuerdo pero conserva {excludeTarget.codes.length === 1 ? "ese código asignado" : "esos códigos asignados"}. Para liberar un código y poder fijarlo a otra posición, reactiva la posición y edítala.
                 </>
               ) : (
                 <>La posición queda fuera del acuerdo pero conserva su historial. Puedes reactivarla después si fue un error.</>
