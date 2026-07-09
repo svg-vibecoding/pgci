@@ -11,6 +11,7 @@ import {
   Boxes,
 } from "lucide-react";
 import { AgreementBreadcrumb } from "@/components/agreements/AgreementBreadcrumb";
+import { AgreementHeader } from "@/components/agreements/AgreementHeader";
 import {
   getAgreement,
   getAgreementContext,
@@ -23,7 +24,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { StatusBadge, Badge } from "@/components/sumatec";
+import { Badge } from "@/components/sumatec";
 import { IndicatorCard } from "@/components/setup/IndicatorCard";
 import { InfoField, InfoSection } from "@/components/setup/InfoSection";
 import { AgreementCompaniesSection } from "@/components/agreements/AgreementCompaniesSection";
@@ -106,18 +107,6 @@ function AgreementDetail() {
     queryKey: ["agreements", "members", agreementId],
     queryFn: () => membersFn({ data: { agreement_id: agreementId } }),
   });
-  const { data: companiesCount } = useQuery({
-    queryKey: ["agreements", "companies-count", agreementId],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from("agreement_companies")
-        .select("id", { count: "exact", head: true })
-        .eq("agreement_id", agreementId)
-        .is("valid_until", null);
-      if (error) throw error;
-      return count ?? 0;
-    },
-  });
   const { data: transitCount } = useQuery({
     queryKey: ["agreements", "transit-count", agreementId],
     queryFn: async () => {
@@ -189,20 +178,7 @@ function AgreementDetail() {
       <AgreementBreadcrumb agreementId={agreementId} current="detail" />
 
       <header className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-bold tracking-tight">{agreement.name}</h1>
-          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
-            <StatusBadge
-              status={isActive ? "active" : "neutral"}
-              label={isActive ? "Activo" : "Inactivo"}
-            />
-            <span>
-              {`${companiesCount ?? 0} ${(companiesCount ?? 0) === 1 ? "cliente cubierto" : "clientes cubiertos"}`}
-              {` · ${members?.length ?? 0} ${(members?.length ?? 0) === 1 ? "miembro" : "miembros"}`}
-              {` · ${total} ${total === 1 ? "posición" : "posiciones"}`}
-            </span>
-          </div>
-        </div>
+        <AgreementHeader agreementId={agreementId} />
         {canAdmin && (
           <div className="flex flex-wrap gap-2">
             <Button asChild size="sm" variant="outline">
