@@ -125,12 +125,14 @@ export const getAgreement = createServerFn({ method: "GET" })
     if (!row) throw new Error("Acuerdo no encontrado");
     let created_by_name: string | null = null;
     if (row.created_by) {
-      const { data: prof } = await context.supabase
-        .from("profiles")
-        .select("full_name")
-        .eq("user_id", row.created_by)
-        .maybeSingle();
-      created_by_name = (prof?.full_name as string | null) ?? null;
+      const { data: participants } = await context.supabase.rpc(
+        "get_agreement_participants",
+        { p_agreement_id: data.agreement_id },
+      );
+      const match = (participants ?? []).find(
+        (p: { user_id: string }) => p.user_id === row.created_by,
+      );
+      created_by_name = (match?.full_name as string | null) ?? null;
     }
     return { ...row, created_by_name };
   });
