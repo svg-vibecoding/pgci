@@ -558,7 +558,9 @@ export const listAgreementLines = createServerFn({ method: "GET" })
         .from("client_product_history")
         .select("client_product_id, description, valid_from")
         .in("client_product_id", Array.from(cpIdsSet))
-        .order("valid_from", { ascending: false });
+        .is("valid_until", null)
+        .order("valid_from", { ascending: false })
+        .order("created_at", { ascending: false });
       for (const h of hist ?? []) {
         const cpId = h.client_product_id as string;
         if (!descByCp.has(cpId)) {
@@ -620,7 +622,9 @@ export const listAgreementLines = createServerFn({ method: "GET" })
           .from("client_product_history")
           .select("client_product_id, description, valid_from")
           .in("client_product_id", Array.from(newCpIds))
-          .order("valid_from", { ascending: false });
+          .is("valid_until", null)
+          .order("valid_from", { ascending: false })
+          .order("created_at", { ascending: false });
         for (const h of hist ?? []) {
           const cpId = h.client_product_id as string;
           if (!descByCp.has(cpId)) {
@@ -1102,7 +1106,9 @@ export const listAgreementSkuGroups = createServerFn({ method: "POST" })
         .from("client_product_history")
         .select("client_product_id, description, valid_from")
         .in("client_product_id", cpIds)
-        .order("valid_from", { ascending: false });
+        .is("valid_until", null)
+        .order("valid_from", { ascending: false })
+        .order("created_at", { ascending: false });
       for (const h of hist ?? []) {
         const cpId = h.client_product_id as string;
         if (!descByCp.has(cpId)) descByCp.set(cpId, (h.description as string | null) ?? null);
