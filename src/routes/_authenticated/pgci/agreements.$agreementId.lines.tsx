@@ -399,7 +399,6 @@ function AgreementLinesPage() {
   }
 
   const canAdmin = !!ctx?.can_admin;
-  const isActive = agreement.status === "active";
   const clientName =
     agreement.group_client_commercial_name?.trim() ||
     agreement.group_client_legal_name ||
