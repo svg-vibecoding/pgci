@@ -57,6 +57,7 @@ import {
   reactivateAgreementLine,
   deleteAgreementTransitLine,
   listAgreementSkuGroups,
+  listAgreementCompanies,
   linkSkuPrice,
   unlinkSkuPrice,
 } from "@/lib/agreements.functions";
@@ -136,6 +137,7 @@ function AgreementLinesPage() {
   const skuGroupsFn = useServerFn(listAgreementSkuGroups);
   const linkFn = useServerFn(linkSkuPrice);
   const unlinkFn = useServerFn(unlinkSkuPrice);
+  const companiesFn = useServerFn(listAgreementCompanies);
 
   const { data: agreement, isLoading: loadingAgreement } = useQuery({
     queryKey: ["agreements", "detail", agreementId],
@@ -153,6 +155,18 @@ function AgreementLinesPage() {
     queryKey: ["agreements", "sku-groups", agreementId],
     queryFn: () => skuGroupsFn({ data: { agreement_id: agreementId } }),
   });
+  const { data: companies } = useQuery({
+    queryKey: ["agreements", "companies", agreementId],
+    queryFn: () => companiesFn({ data: { agreement_id: agreementId } }),
+  });
+  const agreementClients = useMemo(
+    () =>
+      (companies ?? []).map((c) => ({
+        id: c.client_id as string,
+        name: (c.client_display_name as string | null) ?? null,
+      })),
+    [companies],
+  );
 
 
   const [activeCard, setActiveCard] = useState<LineCardKey>("all");
@@ -327,11 +341,18 @@ function AgreementLinesPage() {
   const openEditForLine = (lineId: string) => {
     const r = (lines ?? []).find((x) => x.id === lineId) as Line | undefined;
     if (!r) return;
+    const first = r.codes?.[0] ?? null;
     setEditInitial({
       line_id: r.id as string,
       sku: r.products?.sku ?? "",
-      client_code: r.client_code ?? "",
-      client_description: r.client_description ?? "",
+      client_code: first?.client_code ?? "",
+      client_description: first?.description ?? "",
+      // Estado completo → declarativo: preserva todos los códigos de otros clientes.
+      client_codes: (r.codes ?? []).map((c) => ({
+        client_id: c.client_id,
+        client_code: c.client_code,
+        description: c.description ?? "",
+      })),
       sale_price: r.sale_price?.toString() ?? "",
       par_price: r.par_price?.toString() ?? "",
       start_date: r.start_date ?? "",
@@ -360,28 +381,32 @@ function AgreementLinesPage() {
       const sku = r.products?.sku ?? "";
       const erp = r.products?.erp_description ?? "";
       const brand = r.products?.commercial_brand ?? "";
-      const code = r.client_code ?? "";
-      const desc = r.client_description ?? "";
-      return [sku, erp, brand, code, desc].some((s) => s.toLowerCase().includes(term));
+      const codesFlat = (r.codes ?? [])
+        .flatMap((c) => [c.client_code, c.description ?? ""])
+        .join(" ");
+      return [sku, erp, brand, codesFlat].some((s) => s.toLowerCase().includes(term));
     });
   }, [lines, activeCard, q, skuConflictOnly, repeatedPositionIds]);
 
 
   const handleExport = () => {
     if (!lines) return;
-    const data = filtered.map((r) => ({
-      client_code: r.client_code ?? null,
-      client_description: r.client_description ?? null,
-      sku: r.products?.sku ?? null,
-      erp_description: r.products?.erp_description ?? null,
-      commercial_brand: r.products?.commercial_brand ?? null,
-      sale_price: r.sale_price ?? null,
-      par_price: r.par_price ?? null,
-      start_date: r.start_date ?? null,
-      end_date: r.end_date ?? null,
-      status: r.status ?? null,
-      observations: r.observations ?? null,
-    }));
+    const data = filtered.map((r) => {
+      const first = r.codes?.[0] ?? null;
+      return {
+        client_code: first?.client_code ?? null,
+        client_description: first?.description ?? null,
+        sku: r.products?.sku ?? null,
+        erp_description: r.products?.erp_description ?? null,
+        commercial_brand: r.products?.commercial_brand ?? null,
+        sale_price: r.sale_price ?? null,
+        par_price: r.par_price ?? null,
+        start_date: r.start_date ?? null,
+        end_date: r.end_date ?? null,
+        status: r.status ?? null,
+        observations: r.observations ?? null,
+      };
+    });
     const preset =
       activeCard === "all" && !q.trim()
         ? "all"
@@ -663,10 +688,25 @@ function AgreementLinesPage() {
               return (
                 <TableRow key={r.id as string}>
                   <TableCell>
-                    <div className="font-mono text-sm">{r.client_code ?? "—"}</div>
-                    <div className="text-xs text-muted-foreground line-clamp-2">
-                      {r.client_description ?? "—"}
-                    </div>
+                    {(r.codes ?? []).length === 0 ? (
+                      <div className="font-mono text-sm">—</div>
+                    ) : (
+                      <div className="space-y-1">
+                        {(r.codes ?? []).map((c) => (
+                          <div key={`${c.client_id}-${c.client_code}`}>
+                            <div className="font-mono text-sm">{c.client_code}</div>
+                            <div className="text-xs text-muted-foreground line-clamp-2">
+                              {c.description ?? "—"}
+                            </div>
+                            {(r.codes ?? []).length > 1 && c.client_name && (
+                              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                                {c.client_name}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1.5">
@@ -836,18 +876,7 @@ function AgreementLinesPage() {
                               size="icon"
                               variant="ghost"
                               onClick={() => {
-                                setEditInitial({
-                                  line_id: r.id as string,
-                                  sku: r.products?.sku ?? "",
-                                  client_code: r.client_code ?? "",
-                                  client_description: r.client_description ?? "",
-                                  sale_price: r.sale_price?.toString() ?? "",
-                                  par_price: r.par_price?.toString() ?? "",
-                                  start_date: r.start_date ?? "",
-                                  end_date: r.end_date ?? "",
-                                  observations: r.observations ?? "",
-                                });
-                                setEditOpen(true);
+                                openEditForLine(r.id as string);
                               }}
                               aria-label="Editar"
                               title="Editar"
@@ -909,6 +938,7 @@ function AgreementLinesPage() {
         agreementStartDate={agreement.start_date as string | null | undefined}
         agreementEndDate={agreement.end_date as string | null | undefined}
         initial={editInitial}
+        agreementClients={agreementClients}
       />
 
       <AgreementImportWizard

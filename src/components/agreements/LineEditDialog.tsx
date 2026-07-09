@@ -44,11 +44,22 @@ import {
   searchProducts,
 } from "@/lib/agreements.functions";
 
+export type LineEditClientCode = {
+  client_id: string;
+  client_code: string;
+  description: string;
+};
+
 export type LineEditValues = {
   line_id?: string | null;
   sku: string;
+  // Campos visibles del formulario transitorio (editan el primer cliente).
   client_code: string;
   client_description: string;
+  // Estado completo de códigos por cliente. La UI transitoria solo edita el
+  // primero, pero el patch enviado incluye la lista COMPLETA para no cerrar
+  // silenciosamente los períodos de otros clientes (RN declarativa).
+  client_codes: LineEditClientCode[];
   sale_price: string;
   par_price: string;
   start_date: string;
@@ -61,6 +72,7 @@ const empty: LineEditValues = {
   sku: "",
   client_code: "",
   client_description: "",
+  client_codes: [],
   sale_price: "",
   par_price: "",
   start_date: "",
@@ -185,6 +197,7 @@ export function LineEditDialog({
   initial,
   agreementStartDate,
   agreementEndDate,
+  agreementClients,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -194,6 +207,9 @@ export function LineEditDialog({
   initial?: Partial<LineEditValues> | null;
   agreementStartDate?: string | null;
   agreementEndDate?: string | null;
+  // Clientes activos del acuerdo. Requerido para decidir el modo del formulario
+  // transitorio: 1 cliente = precarga; ≥2 = inputs deshabilitados.
+  agreementClients?: Array<{ id: string; name: string | null }>;
 }) {
   const qc = useQueryClient();
   const createFn = useServerFn(createAgreementLine);
@@ -203,6 +219,9 @@ export function LineEditDialog({
   const linkFn = useServerFn(linkSkuPrice);
   const unlinkFn = useServerFn(unlinkSkuPrice);
   const searchFn = useServerFn(searchProducts);
+  const isMultiClient = (agreementClients?.length ?? 0) > 1;
+  const singleClientId =
+    (agreementClients?.length ?? 0) === 1 ? agreementClients![0].id : null;
   const [v, setV] = useState<LineEditValues>(empty);
   const [productMeta, setProductMeta] = useState<ProductMeta | null>(null);
   const [lookup, setLookup] = useState<{
@@ -213,8 +232,12 @@ export function LineEditDialog({
     kind: "idle" | "loading" | "none" | "found";
     lines: Array<{
       line_id: string;
-      client_code: string | null;
-      client_description: string | null;
+      codes: Array<{
+        client_id: string;
+        client_name: string | null;
+        client_code: string;
+        description: string | null;
+      }>;
       current_price: number | null;
       updated_at: string | null;
     }>;
@@ -432,6 +455,33 @@ export function LineEditDialog({
 
 
 
+  // Construye la lista DECLARATIVA de códigos que se envía al servidor:
+  // - preserva los códigos de todos los clientes presentes en la línea original
+  // - aplica los edits visibles del formulario transitorio al PRIMER cliente
+  //   (o al `singleClientId` si es un acuerdo mono-cliente sin códigos previos)
+  const buildClientCodes = (): LineEditClientCode[] | undefined => {
+    if (isMultiClient) {
+      // En multi-cliente, el formulario transitorio no captura códigos: se
+      // reenvían tal cual los existentes (no cerrar períodos silenciosamente).
+      return v.client_codes.length > 0 ? v.client_codes : undefined;
+    }
+    const editedCode = v.client_code.trim();
+    const editedDesc = v.client_description.trim();
+    const targetClientId =
+      v.client_codes[0]?.client_id ?? singleClientId ?? initial?.client_codes?.[0]?.client_id ?? null;
+    // Sin cliente objetivo válido, no podemos enviar client_codes.
+    if (!targetClientId) return editedCode ? undefined : v.client_codes;
+    const rest = v.client_codes.slice(1);
+    if (!editedCode) {
+      // Vaciar el primer cliente equivale a cerrarlo declarativamente.
+      return rest;
+    }
+    return [
+      { client_id: targetClientId, client_code: editedCode, description: editedDesc },
+      ...rest,
+    ];
+  };
+
   const isEdit = !!initial?.line_id;
 
   const save = useMutation({
@@ -449,14 +499,14 @@ export function LineEditDialog({
       if (par !== undefined && par <= 0) {
         throw new Error("El precio par debe ser mayor a 0");
       }
+      const codes = buildClientCodes();
       if (isEdit) {
         return patchFn({
           data: {
             line_id: initial!.line_id!,
             patch: {
               sku: txt(v.sku),
-              client_code: txt(v.client_code),
-              client_description: txt(v.client_description),
+              client_codes: codes,
               sale_price: num(v.sale_price),
               par_price: num(v.par_price) || undefined,
               start_date: txt(v.start_date) ?? undefined,
@@ -471,8 +521,7 @@ export function LineEditDialog({
         data: {
           agreement_id: agreementId,
           sku: txt(v.sku) ?? undefined,
-          client_code: txt(v.client_code) ?? undefined,
-          client_description: txt(v.client_description) ?? undefined,
+          client_codes: codes ?? [],
           sale_price: num(v.sale_price),
           par_price: num(v.par_price) || undefined,
           start_date: txt(v.start_date) ?? undefined,
@@ -481,7 +530,22 @@ export function LineEditDialog({
         },
       });
     },
-    onSuccess: () => {
+    onSuccess: (res) => {
+      // update_agreement_line puede devolver { blocked: true, block_reason: {...} }
+      // por RN-MATCH-01. No cerrar el diálogo; formatear un mensaje accionable.
+      if (res && typeof res === "object" && "blocked" in res && (res as { blocked?: boolean }).blocked) {
+        const br = (res as { block_reason?: {
+          code?: string;
+          conflicting_sku?: string;
+          conflicting_position_id?: string;
+          client_id?: string;
+        } | null }).block_reason ?? null;
+        const detail = br?.conflicting_sku
+          ? `Ya existe otra posición con ese SKU (${br.conflicting_sku}) para este cliente.`
+          : "La combinación de códigos entra en conflicto con otra posición del acuerdo.";
+        toast.error(detail);
+        return;
+      }
       toast.success(isEdit ? "Posición actualizada" : "Posición creada");
       qc.invalidateQueries({ queryKey: ["agreements", "lines", agreementId] });
       qc.invalidateQueries({ queryKey: ["agreements", "detail", agreementId] });
@@ -567,20 +631,39 @@ export function LineEditDialog({
             {/* Información del cliente */}
             <section className="space-y-4">
               <SectionHeader title="Información del cliente" number="01" />
+              {isMultiClient && !isEdit && (
+                <Alert variant="info">
+                  <AlertDescription>
+                    Este acuerdo tiene varios clientes. La captura de códigos por
+                    cliente estará disponible tras el rediseño del formulario.
+                  </AlertDescription>
+                </Alert>
+              )}
+              {isMultiClient && isEdit && v.client_codes.length > 1 && (
+                <Alert variant="info">
+                  <AlertDescription>
+                    Esta posición tiene códigos de {v.client_codes.length} clientes.
+                    Se conservan al guardar; la edición completa por cliente estará
+                    disponible tras el rediseño del formulario.
+                  </AlertDescription>
+                </Alert>
+              )}
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="space-y-1.5">
                   <FieldLabel>Código del cliente</FieldLabel>
                   <Input
-                    className={inputClass}
+                    className={cn(inputClass, isMultiClient && !isEdit && readonlyClass)}
                     value={v.client_code}
+                    disabled={isMultiClient && !isEdit}
                     onChange={(e) => setV({ ...v, client_code: e.target.value })}
                   />
                 </div>
                 <div className="space-y-1.5 md:col-span-2">
                   <FieldLabel>Descripción del cliente</FieldLabel>
                   <Input
-                    className={inputClass}
+                    className={cn(inputClass, isMultiClient && !isEdit && readonlyClass)}
                     value={v.client_description}
+                    disabled={isMultiClient && !isEdit}
                     onChange={(e) =>
                       setV({ ...v, client_description: e.target.value })
                     }
@@ -781,19 +864,22 @@ export function LineEditDialog({
                                     </TableRow>
                                   </TableHeader>
                                   <TableBody>
-                                    {nConflict.lines.map((l) => (
-                                      <TableRow key={l.line_id}>
-                                        <TableCell className="text-sm text-foreground">
-                                          {l.client_code ?? "—"}
-                                        </TableCell>
-                                        <TableCell className="text-sm text-foreground">
-                                          {l.client_description ?? "—"}
-                                        </TableCell>
-                                        <TableCell className="text-right text-sm tabular-nums text-foreground">
-                                          {formatMoneyCOP(l.current_price)}
-                                        </TableCell>
-                                      </TableRow>
-                                    ))}
+                                    {nConflict.lines.map((l) => {
+                                      const first = l.codes[0] ?? null;
+                                      return (
+                                        <TableRow key={l.line_id}>
+                                          <TableCell className="text-sm text-foreground">
+                                            {first?.client_code ?? "—"}
+                                          </TableCell>
+                                          <TableCell className="text-sm text-foreground">
+                                            {first?.description ?? "—"}
+                                          </TableCell>
+                                          <TableCell className="text-right text-sm tabular-nums text-foreground">
+                                            {formatMoneyCOP(l.current_price)}
+                                          </TableCell>
+                                        </TableRow>
+                                      );
+                                    })}
                                   </TableBody>
                                 </Table>
                               </div>

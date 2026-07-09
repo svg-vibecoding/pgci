@@ -32,12 +32,11 @@ import {
   assertCanAdmin,
   assertCanCreateForClient,
   detectSkuConflicts,
-  ensureClientProduct,
-  ensureMatch,
-  getAgreementClientId,
   resolveProductBySku,
   type SkuConflict,
+  type SkuConflictCode,
 } from "./agreements.server";
+import type { Json } from "@/integrations/supabase/types";
 
 // ---------------------------------------------------------------------------
 // Listado / lectura
@@ -400,30 +399,58 @@ export const setAgreementStatus = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-// ---------------------------------------------------------------------------
-// Líneas
-// ---------------------------------------------------------------------------
+
+export type LineCode = {
+  client_id: string;
+  client_name: string | null;
+  client_code: string;
+  description: string | null;
+};
+
+export type AgreementLineRow = {
+  kind: "position" | "transit";
+  id: string;
+  agreement_id: string;
+  product_id: string | null;
+  sale_price: number | null;
+  par_price: number | null;
+  start_date: string | null;
+  end_date: string | null;
+  observations: string | null;
+  status: "active" | "requires_review" | "excluded" | "pending";
+  pending_reason: string | null;
+  exclusion_reason: string | null;
+  created_at: string;
+  updated_at: string;
+  products: {
+    sku: string | null;
+    erp_description: string | null;
+    commercial_brand: string | null;
+    status: string | null;
+  } | null;
+  codes: LineCode[];
+};
 
 export const listAgreementLines = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     importPreviewSchema.pick({ agreement_id: true }).parse(d),
   )
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data, context }): Promise<AgreementLineRow[]> => {
     await assertCanAccess(context.supabase, data.agreement_id);
 
     const [positionsRes, transitRes] = await Promise.all([
       context.supabase
         .from("agreement_positions")
         .select(
-          "id, agreement_id, product_id, client_product_match_id, client_product_id, sale_price, par_price, start_date, end_date, observations, status, created_at, updated_at, products:product_id(sku, erp_description, commercial_brand, status)",
+          "id, agreement_id, product_id, sale_price, par_price, start_date, end_date, observations, status, created_at, updated_at, products:product_id(sku, erp_description, commercial_brand, status)",
         )
         .eq("agreement_id", data.agreement_id)
         .order("created_at", { ascending: false }),
       context.supabase
         .from("agreement_transit_lines")
         .select(
-          "id, agreement_id, product_id, client_product_id, sku_raw, description, sale_price, par_price, start_date, end_date, observations, pending_reason, created_at, updated_at, products:product_id(sku, erp_description, commercial_brand, status)",
+          "id, agreement_id, product_id, sku_raw, description, sale_price, par_price, start_date, end_date, observations, pending_reason, created_at, updated_at, products:product_id(sku, erp_description, commercial_brand, status)",
         )
         .eq("agreement_id", data.agreement_id)
         .order("created_at", { ascending: false }),
@@ -449,122 +476,143 @@ export const listAgreementLines = createServerFn({ method: "GET" })
       }
     }
 
-    // Resolver código y descripción del cliente (para posiciones y tránsito).
-    const matchIds = positions
-      .map((r) => r.client_product_match_id as string | null)
-      .filter((v): v is string => !!v);
-    const cpByMatch = new Map<string, string>();
-    if (matchIds.length > 0) {
-      const { data: matches } = await context.supabase
-        .from("client_product_match")
-        .select("id, client_product_id")
-        .in("id", matchIds);
-      for (const m of matches ?? []) {
-        if (m.client_product_id)
-          cpByMatch.set(m.id as string, m.client_product_id as string);
-      }
-    }
+    // Códigos por posición / tránsito (período abierto), con nombre de cliente y código.
+    const posIds = positions.map((p) => p.id as string);
+    const trIds = transit.map((t) => t.id as string);
+    const [apccRes, atccRes] = await Promise.all([
+      posIds.length > 0
+        ? context.supabase
+            .from("agreement_position_client_codes")
+            .select(
+              "agreement_position_id, client_id, client_product_id, clients!agreement_position_client_codes_client_id_fkey(commercial_name, legal_name), client_products!agreement_position_client_codes_client_product_id_fkey(client_code)",
+            )
+            .in("agreement_position_id", posIds)
+            .is("valid_until", null)
+        : Promise.resolve({ data: [] as unknown[], error: null }),
+      trIds.length > 0
+        ? context.supabase
+            .from("agreement_transit_client_codes")
+            .select(
+              "agreement_transit_id, client_id, client_product_id, clients!agreement_transit_client_codes_client_id_fkey(commercial_name, legal_name), client_products!agreement_transit_client_codes_client_product_id_fkey(client_code)",
+            )
+            .in("agreement_transit_id", trIds)
+            .is("valid_until", null)
+        : Promise.resolve({ data: [] as unknown[], error: null }),
+    ]);
 
+    type ClientEmbed = { commercial_name: string | null; legal_name: string | null } | null;
+    type ApccRow = {
+      agreement_position_id: string;
+      client_id: string;
+      client_product_id: string;
+      clients: ClientEmbed;
+      client_products: { client_code: string | null } | null;
+    };
+    type AtccRow = {
+      agreement_transit_id: string;
+      client_id: string;
+      client_product_id: string;
+      clients: ClientEmbed;
+      client_products: { client_code: string | null } | null;
+    };
+    const apcc = ((apccRes.data ?? []) as unknown as ApccRow[]);
+    const atcc = ((atccRes.data ?? []) as unknown as AtccRow[]);
+    const clientDisplay = (c: ClientEmbed): string | null =>
+      c?.commercial_name ?? c?.legal_name ?? null;
+
+    // Historial de descripciones más recientes por client_product_id.
     const cpIdsSet = new Set<string>();
-    for (const p of positions) {
-      const direct = p.client_product_id as string | null;
-      const fromMatch = p.client_product_match_id
-        ? cpByMatch.get(p.client_product_match_id as string) ?? null
-        : null;
-      const cpId = direct ?? fromMatch;
-      if (cpId) cpIdsSet.add(cpId);
-    }
-    for (const t of transit) {
-      const cpId = t.client_product_id as string | null;
-      if (cpId) cpIdsSet.add(cpId);
-    }
-    const cpIds = Array.from(cpIdsSet);
-    const codeByCp = new Map<string, string>();
+    for (const c of apcc) if (c.client_product_id) cpIdsSet.add(c.client_product_id);
+    for (const c of atcc) if (c.client_product_id) cpIdsSet.add(c.client_product_id);
     const descByCp = new Map<string, string | null>();
-    if (cpIds.length > 0) {
-      const { data: cps } = await context.supabase
-        .from("client_products")
-        .select("id, client_code")
-        .in("id", cpIds);
-      for (const c of cps ?? []) codeByCp.set(c.id as string, c.client_code as string);
+    if (cpIdsSet.size > 0) {
       const { data: hist } = await context.supabase
         .from("client_product_history")
         .select("client_product_id, description, valid_from")
-        .in("client_product_id", cpIds)
+        .in("client_product_id", Array.from(cpIdsSet))
         .order("valid_from", { ascending: false });
       for (const h of hist ?? []) {
-        if (!descByCp.has(h.client_product_id as string)) {
-          descByCp.set(h.client_product_id as string, (h.description as string) ?? null);
+        const cpId = h.client_product_id as string;
+        if (!descByCp.has(cpId)) {
+          descByCp.set(cpId, (h.description as string | null) ?? null);
         }
       }
     }
 
-    const positionRows = positions.map((r) => {
-      const direct = r.client_product_id as string | null;
-      const fromMatch = r.client_product_match_id
-        ? cpByMatch.get(r.client_product_match_id as string) ?? null
-        : null;
-      const cpId = direct ?? fromMatch;
-      return {
-        kind: "position" as const,
-        id: r.id as string,
-        agreement_id: r.agreement_id as string,
-        product_id: r.product_id as string | null,
-        client_product_match_id: r.client_product_match_id as string | null,
-        client_product_id: r.client_product_id as string | null,
-        sale_price: (r.sale_price as number | null) ?? null,
-        par_price: (r.par_price as number | null) ?? null,
-        start_date: (r.start_date as string | null) ?? null,
-        end_date: (r.end_date as string | null) ?? null,
-        observations: (r.observations as string | null) ?? null,
-        status: r.status as "active" | "requires_review" | "excluded",
-        pending_reason: null as string | null,
-        exclusion_reason: exclusionByPos.get(r.id as string) ?? null,
-        created_at: r.created_at as string,
-        updated_at: r.updated_at as string,
-        products: r.products as {
-          sku: string | null;
-          erp_description: string | null;
-          commercial_brand: string | null;
-          status: string | null;
-        } | null,
-        client_code: cpId ? codeByCp.get(cpId) ?? null : null,
-        client_description: cpId ? descByCp.get(cpId) ?? null : null,
-      };
-    });
+    const codesByPos = new Map<string, LineCode[]>();
+    for (const c of apcc) {
+      const code = c.client_products?.client_code ?? null;
+      if (!code) continue;
+      const arr = codesByPos.get(c.agreement_position_id) ?? [];
+      arr.push({
+        client_id: c.client_id,
+        client_name: clientDisplay(c.clients),
+        client_code: code,
+        description: descByCp.get(c.client_product_id) ?? null,
+      });
+      codesByPos.set(c.agreement_position_id, arr);
+    }
+    const codesByTransit = new Map<string, LineCode[]>();
+    for (const c of atcc) {
+      const code = c.client_products?.client_code ?? null;
+      if (!code) continue;
+      const arr = codesByTransit.get(c.agreement_transit_id) ?? [];
+      arr.push({
+        client_id: c.client_id,
+        client_name: clientDisplay(c.clients),
+        client_code: code,
+        description: descByCp.get(c.client_product_id) ?? null,
+      });
+      codesByTransit.set(c.agreement_transit_id, arr);
+    }
 
-    const transitRows = transit.map((r) => {
-      const cpId = r.client_product_id as string | null;
-      const products = r.products as {
-        sku: string | null;
-        erp_description: string | null;
-        commercial_brand: string | null;
-        status: string | null;
-      } | null;
+    const positionRows: AgreementLineRow[] = positions.map((r) => ({
+      kind: "position",
+      id: r.id as string,
+      agreement_id: r.agreement_id as string,
+      product_id: (r.product_id as string | null) ?? null,
+      sale_price: (r.sale_price as number | null) ?? null,
+      par_price: (r.par_price as number | null) ?? null,
+      start_date: (r.start_date as string | null) ?? null,
+      end_date: (r.end_date as string | null) ?? null,
+      observations: (r.observations as string | null) ?? null,
+      status: r.status as "active" | "requires_review" | "excluded",
+      pending_reason: null,
+      exclusion_reason: exclusionByPos.get(r.id as string) ?? null,
+      created_at: r.created_at as string,
+      updated_at: r.updated_at as string,
+      products: r.products as AgreementLineRow["products"],
+      codes: codesByPos.get(r.id as string) ?? [],
+    }));
+
+    const transitRows: AgreementLineRow[] = transit.map((r) => {
+      const products = r.products as AgreementLineRow["products"];
       return {
-        kind: "transit" as const,
+        kind: "transit",
         id: r.id as string,
         agreement_id: r.agreement_id as string,
-        product_id: r.product_id as string | null,
-        client_product_match_id: null as string | null,
-        client_product_id: cpId,
+        product_id: (r.product_id as string | null) ?? null,
         sale_price: (r.sale_price as number | null) ?? null,
         par_price: (r.par_price as number | null) ?? null,
         start_date: (r.start_date as string | null) ?? null,
         end_date: (r.end_date as string | null) ?? null,
         observations: (r.observations as string | null) ?? null,
-        status: "pending" as const,
+        status: "pending",
         pending_reason: (r.pending_reason as string | null) ?? null,
-        exclusion_reason: null as string | null,
+        exclusion_reason: null,
         created_at: r.created_at as string,
         updated_at: r.updated_at as string,
-        products: products ?? (r.sku_raw
-          ? { sku: r.sku_raw as string, erp_description: (r.description as string | null) ?? null, commercial_brand: null, status: null }
-          : null),
-        client_code: cpId ? codeByCp.get(cpId) ?? null : null,
-        client_description: cpId
-          ? descByCp.get(cpId) ?? ((r.description as string | null) ?? null)
-          : ((r.description as string | null) ?? null),
+        products:
+          products ??
+          (r.sku_raw
+            ? {
+                sku: r.sku_raw as string,
+                erp_description: (r.description as string | null) ?? null,
+                commercial_brand: null,
+                status: null,
+              }
+            : null),
+        codes: codesByTransit.get(r.id as string) ?? [],
       };
     });
 
@@ -573,88 +621,71 @@ export const listAgreementLines = createServerFn({ method: "GET" })
     );
   });
 
+export type BlockReason = {
+  code: string;
+  client_id?: string;
+  client_product_id?: string;
+  conflicting_position_id?: string;
+  conflicting_sku?: string;
+};
+
+export type CreateAgreementLineResult = {
+  line_id: string;
+  kind: "position" | "transit";
+};
+
+export type UpdateAgreementLineResult = {
+  promoted: boolean;
+  position_id?: string;
+  transit_id?: string;
+  blocked?: boolean;
+  block_reason?: BlockReason | null;
+};
+
 export const createAgreementLine = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => lineCreateSchema.parse(d))
-  .handler(async ({ data, context }) => {
-    await assertCanAdmin(context.supabase, data.agreement_id);
-    const clientId = await getAgreementClientId(context.supabase, data.agreement_id);
-
-    // Resolver producto y client_product (dentro del server fn autenticado; el
-    // resto de la resolución/promoción vive en update_agreement_line SECURITY DEFINER).
-    const product = await resolveProductBySku(context.supabase, data.sku);
-    let clientProductId: string | null = null;
-    if (data.client_code) {
-      clientProductId = await ensureClientProduct(context.supabase, clientId, data.client_code);
-      if (data.client_description) {
-        await context.supabase.from("client_product_history").insert({
-          client_product_id: clientProductId,
-          description: data.client_description,
-          valid_from: new Date().toISOString().slice(0, 10),
-        });
+  .handler(async ({ data, context }): Promise<CreateAgreementLineResult> => {
+    const payload = {
+      sku: data.sku,
+      sale_price: data.sale_price,
+      par_price: data.par_price,
+      start_date: data.start_date,
+      end_date: data.end_date,
+      observations: data.observations,
+      client_codes: data.client_codes,
+    } as unknown as Json;
+    const { data: res, error } = await context.supabase.rpc("create_agreement_line", {
+      p_agreement_id: data.agreement_id,
+      p_payload: payload,
+    });
+    if (error) {
+      if (error.code === "42501") throw new Error("No tienes permisos sobre este acuerdo");
+      if (error.code === "23514") {
+        throw new Error(
+          "La línea requiere al menos SKU, descripción o un código del cliente",
+        );
       }
+      throw new Error(`No se pudo crear la línea: ${error.message}`);
     }
-
-    // Insertar tránsito con los datos capturados.
-    const { data: transit, error: tErr } = await context.supabase
-      .from("agreement_transit_lines")
-      .insert({
-        agreement_id: data.agreement_id,
-        product_id: product?.id ?? null,
-        client_product_id: clientProductId,
-        sku_raw: data.sku ?? null,
-        description: data.client_description ?? null,
-        sale_price: data.sale_price ?? null,
-        par_price: data.par_price ?? null,
-        start_date: data.start_date ?? null,
-        end_date: data.end_date ?? null,
-        observations: data.observations ?? null,
-        pending_reason: "",
-        created_by: context.userId,
-        updated_by: context.userId,
-      })
-      .select("id")
-      .single();
-    if (tErr) throw new Error(`No se pudo crear la línea: ${tErr.message}`);
-    const transitId = transit.id as string;
-
-    // Promover si califica.
-    const { data: rpcRes, error: rpcErr } = await context.supabase.rpc(
-      "update_agreement_line",
-      {
-        p_line_id: transitId,
-        p_kind: "transit",
-        p_patch: {} as unknown as import("@/integrations/supabase/types").Json,
-        p_confirm_n_conflict: true,
-      },
-    );
-    if (rpcErr) throw new Error(rpcErr.message);
-    const res = rpcRes as { promoted: boolean; position_id?: string; transit_id?: string };
-    return {
-      line_id: res.promoted ? (res.position_id as string) : transitId,
-      promoted: !!res.promoted,
-    };
+    return res as unknown as CreateAgreementLineResult;
   });
 
 export const updateAgreementLine = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => linePatchSchema.parse(d))
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data, context }): Promise<UpdateAgreementLineResult> => {
     const { data: rpcRes, error } = await context.supabase.rpc("update_agreement_line", {
       p_line_id: data.line_id,
       p_kind: data.kind,
-      p_patch: data.patch as unknown as import("@/integrations/supabase/types").Json,
+      p_patch: data.patch as unknown as Json,
       p_confirm_n_conflict: data.confirm_n_conflict ?? false,
     });
     if (error) {
       if (error.code === "42501") throw new Error("No tienes permisos sobre este acuerdo");
       throw new Error(`No se pudo actualizar la línea: ${error.message}`);
     }
-    return rpcRes as {
-      promoted: boolean;
-      position_id?: string;
-      transit_id?: string;
-    };
+    return rpcRes as unknown as UpdateAgreementLineResult;
   });
 
 class NConflictError extends Error {
@@ -691,6 +722,8 @@ export const reactivateAgreementLine = createServerFn({ method: "POST" })
     });
     if (error) {
       if (error.code === "42501") throw new Error("No tienes permisos sobre este acuerdo");
+      // 23505 y otros mensajes específicos del RPC (identidad duplicada, códigos,
+      // SKU) se propagan tal cual: son legibles y accionables.
       throw new Error(error.message);
     }
     return { ok: true };
@@ -908,12 +941,16 @@ export type AgreementSkuGroupPosition = {
 
 export type AgreementSkuGroup = {
   product_id: string;
+  client_id: string;
+  client_name: string | null;
   sku: string | null;
   product_description: string | null;
   position_ids: string[];
   positions: AgreementSkuGroupPosition[];
   prices: number[];
   linked: boolean;
+  // Contrato §7: agrupación por SKU + cliente.
+  // "unified" = precio vinculado; "conflict" = precios distintos; "repeated" = repetido con mismo precio.
   state: "conflict" | "unified" | "repeated";
 };
 
@@ -928,105 +965,126 @@ export const listAgreementSkuGroups = createServerFn({ method: "POST" })
     const { data: positions, error } = await context.supabase
       .from("agreement_positions")
       .select(
-        "id, product_id, sale_price, client_product_id, client_product_match_id, products:product_id(sku, erp_description)",
+        "id, product_id, sale_price, products:product_id(sku, erp_description)",
       )
       .eq("agreement_id", data.agreement_id)
       .neq("status", "excluded")
       .not("product_id", "is", null);
     if (error) throw new Error(`No se pudieron cargar posiciones: ${error.message}`);
 
-    type Row = {
+    type PositionRow = {
       id: string;
       product_id: string;
       sale_price: number | null;
-      client_product_id: string | null;
-      client_product_match_id: string | null;
       products: { sku: string | null; erp_description: string | null } | null;
     };
-    const rows = (positions ?? []) as Row[];
+    const rows = ((positions ?? []) as unknown as PositionRow[]);
+    if (rows.length === 0) return [];
 
-    // Resolver client_code / client_description igual que listAgreementLines.
-    const matchIds = rows
-      .map((r) => r.client_product_match_id)
-      .filter((v): v is string => !!v);
-    const cpByMatch = new Map<string, string>();
-    if (matchIds.length > 0) {
-      const { data: matches } = await context.supabase
-        .from("client_product_match")
-        .select("id, client_product_id")
-        .in("id", matchIds);
-      for (const m of matches ?? []) {
-        if (m.client_product_id)
-          cpByMatch.set(m.id as string, m.client_product_id as string);
-      }
-    }
-    const cpIdsSet = new Set<string>();
-    for (const r of rows) {
-      const cpId =
-        r.client_product_id ??
-        (r.client_product_match_id ? cpByMatch.get(r.client_product_match_id) ?? null : null);
-      if (cpId) cpIdsSet.add(cpId);
-    }
-    const codeByCp = new Map<string, string>();
+    const posIds = rows.map((r) => r.id);
+    const { data: apcc, error: apccErr } = await context.supabase
+      .from("agreement_position_client_codes")
+      .select(
+        "agreement_position_id, client_id, client_product_id, clients!agreement_position_client_codes_client_id_fkey(commercial_name, legal_name), client_products!agreement_position_client_codes_client_product_id_fkey(client_code)",
+      )
+      .in("agreement_position_id", posIds)
+      .is("valid_until", null);
+    if (apccErr) throw new Error(`No se pudieron cargar códigos: ${apccErr.message}`);
+
+    type ApccRow = {
+      agreement_position_id: string;
+      client_id: string;
+      client_product_id: string;
+      clients: { commercial_name: string | null; legal_name: string | null } | null;
+      client_products: { client_code: string | null } | null;
+    };
+    const apccRows = ((apcc ?? []) as unknown as ApccRow[]);
+
+    // Descripciones vigentes por client_product_id.
+    const cpIds = Array.from(
+      new Set(apccRows.map((c) => c.client_product_id).filter((v): v is string => !!v)),
+    );
     const descByCp = new Map<string, string | null>();
-    if (cpIdsSet.size > 0) {
-      const cpIds = Array.from(cpIdsSet);
-      const { data: cps } = await context.supabase
-        .from("client_products")
-        .select("id, client_code")
-        .in("id", cpIds);
-      for (const c of cps ?? []) codeByCp.set(c.id as string, c.client_code as string);
+    if (cpIds.length > 0) {
       const { data: hist } = await context.supabase
         .from("client_product_history")
         .select("client_product_id, description, valid_from")
         .in("client_product_id", cpIds)
         .order("valid_from", { ascending: false });
       for (const h of hist ?? []) {
-        if (!descByCp.has(h.client_product_id as string)) {
-          descByCp.set(h.client_product_id as string, (h.description as string) ?? null);
-        }
+        const cpId = h.client_product_id as string;
+        if (!descByCp.has(cpId)) descByCp.set(cpId, (h.description as string | null) ?? null);
       }
     }
 
-    const byProduct = new Map<
-      string,
-      {
-        sku: string | null;
-        description: string | null;
-        ids: string[];
-        positions: AgreementSkuGroupPosition[];
-        prices: Set<number>;
-      }
-    >();
-    for (const r of rows) {
-      if (!r.product_id) continue;
-      const cpId =
-        r.client_product_id ??
-        (r.client_product_match_id ? cpByMatch.get(r.client_product_match_id) ?? null : null);
-      const entry = byProduct.get(r.product_id) ?? {
-        sku: r.products?.sku ?? null,
-        description: r.products?.erp_description ?? null,
-        ids: [],
-        positions: [],
-        prices: new Set<number>(),
-      };
-      entry.ids.push(r.id);
-      entry.positions.push({
-        id: r.id,
-        client_code: cpId ? codeByCp.get(cpId) ?? null : null,
-        client_description: cpId ? descByCp.get(cpId) ?? null : null,
-        sale_price: r.sale_price,
+    // Agrupar códigos por posición.
+    type CodeEntry = {
+      client_id: string;
+      client_name: string | null;
+      client_code: string;
+      description: string | null;
+    };
+    const codesByPos = new Map<string, CodeEntry[]>();
+    for (const c of apccRows) {
+      const code = c.client_products?.client_code ?? null;
+      if (!code) continue;
+      const arr = codesByPos.get(c.agreement_position_id) ?? [];
+      arr.push({
+        client_id: c.client_id,
+        client_name: c.clients?.commercial_name ?? c.clients?.legal_name ?? null,
+        client_code: code,
+        description: descByCp.get(c.client_product_id) ?? null,
       });
-      if (typeof r.sale_price === "number") entry.prices.add(r.sale_price);
-      byProduct.set(r.product_id, entry);
+      codesByPos.set(c.agreement_position_id, arr);
     }
 
-    const repeated = Array.from(byProduct.entries()).filter(
-      ([, v]) => v.ids.length >= 2,
-    );
+    // Contrato §7: agrupar por product_id + client_id. Una posición se cuenta
+    // una vez por cada cliente al que pertenece.
+    type GroupEntry = {
+      product_id: string;
+      client_id: string;
+      client_name: string | null;
+      sku: string | null;
+      description: string | null;
+      ids: Set<string>;
+      positions: AgreementSkuGroupPosition[];
+      prices: Set<number>;
+    };
+    const groups = new Map<string, GroupEntry>();
+    const keyFor = (pid: string, cid: string) => `${pid}::${cid}`;
+    for (const r of rows) {
+      const codes = codesByPos.get(r.id) ?? [];
+      if (codes.length === 0) continue; // sin códigos → no participa en agrupación por cliente
+      for (const c of codes) {
+        const k = keyFor(r.product_id, c.client_id);
+        const entry = groups.get(k) ?? {
+          product_id: r.product_id,
+          client_id: c.client_id,
+          client_name: c.client_name,
+          sku: r.products?.sku ?? null,
+          description: r.products?.erp_description ?? null,
+          ids: new Set<string>(),
+          positions: [],
+          prices: new Set<number>(),
+        };
+        if (!entry.ids.has(r.id)) {
+          entry.ids.add(r.id);
+          entry.positions.push({
+            id: r.id,
+            client_code: c.client_code,
+            client_description: c.description,
+            sale_price: r.sale_price,
+          });
+          if (typeof r.sale_price === "number") entry.prices.add(r.sale_price);
+        }
+        groups.set(k, entry);
+      }
+    }
+
+    const repeated = Array.from(groups.values()).filter((g) => g.ids.size >= 2);
     if (repeated.length === 0) return [];
 
-    const productIds = repeated.map(([pid]) => pid);
+    const productIds = Array.from(new Set(repeated.map((g) => g.product_id)));
     const { data: links, error: linkErr } = await context.supabase
       .from("agreement_sku_links")
       .select("product_id")
@@ -1035,20 +1093,22 @@ export const listAgreementSkuGroups = createServerFn({ method: "POST" })
     if (linkErr) throw new Error(`No se pudieron cargar vínculos: ${linkErr.message}`);
     const linkedSet = new Set((links ?? []).map((l) => l.product_id as string));
 
-    return repeated.map(([product_id, v]) => {
-      const prices = Array.from(v.prices);
-      const linked = linkedSet.has(product_id);
+    return repeated.map((g) => {
+      const prices = Array.from(g.prices);
+      const linked = linkedSet.has(g.product_id);
       const state: AgreementSkuGroup["state"] = linked
         ? "unified"
         : prices.length > 1
           ? "conflict"
           : "repeated";
       return {
-        product_id,
-        sku: v.sku,
-        product_description: v.description,
-        position_ids: v.ids,
-        positions: v.positions,
+        product_id: g.product_id,
+        client_id: g.client_id,
+        client_name: g.client_name,
+        sku: g.sku,
+        product_description: g.description,
+        position_ids: Array.from(g.ids),
+        positions: g.positions,
         prices,
         linked,
         state,

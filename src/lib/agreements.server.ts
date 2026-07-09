@@ -31,20 +31,6 @@ export async function assertCanCreateForClient(supabase: SB, clientId: string) {
   if (!data) throw new Error("No tienes permiso para crear acuerdos en este cliente");
 }
 
-export async function getAgreementClientId(supabase: SB, agreementId: string) {
-  const { data, error } = await supabase
-    .from("agreement_companies")
-    .select("client_id")
-    .eq("agreement_id", agreementId)
-    .is("valid_until", null)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-  if (error) throw new Error("No se pudo resolver el cliente del acuerdo");
-  if (!data?.client_id) throw new Error("Acuerdo sin clientes vinculados");
-  return data.client_id as string;
-}
-
 export async function resolveProductBySku(
   supabase: SB,
   sku: string | null,
@@ -59,67 +45,23 @@ export async function resolveProductBySku(
   return data ?? null;
 }
 
-export async function ensureClientProduct(
-  supabase: SB,
-  clientId: string,
-  clientCode: string,
-): Promise<string> {
-  const { data: existing } = await supabase
-    .from("client_products")
-    .select("id")
-    .eq("client_id", clientId)
-    .eq("client_code", clientCode)
-    .maybeSingle();
-  if (existing?.id) return existing.id;
-  const { data, error } = await supabase
-    .from("client_products")
-    .insert({ client_id: clientId, client_code: clientCode })
-    .select("id")
-    .single();
-  if (error) throw new Error(`No se pudo crear el código del cliente: ${error.message}`);
-  return data.id;
-}
-
-export async function ensureMatch(
-  supabase: SB,
-  clientProductId: string,
-  productId: string,
-): Promise<string> {
-  // TODO 03.22: cerrar match anterior antes de crear uno nuevo.
-  // Decisión V1 (acordada): ensureMatch NO cierra matches anteriores del mismo
-  // client_product_id. Si el código del cliente cambia de producto, pueden
-  // coexistir dos matches abiertos. El cierre (valid_to del match previo) se
-  // implementa en el módulo 03.22 (Códigos del cliente / mapeo).
-  const { data: existing } = await supabase
-    .from("client_product_match")
-    .select("id")
-    .eq("client_product_id", clientProductId)
-    .eq("product_id", productId)
-    .maybeSingle();
-  if (existing?.id) return existing.id;
-  const today = new Date().toISOString().slice(0, 10);
-  const { data, error } = await supabase
-    .from("client_product_match")
-    .insert({
-      client_product_id: clientProductId,
-      product_id: productId,
-      valid_from: today,
-      source: "manual",
-    })
-    .select("id")
-    .single();
-  if (error) throw new Error(`No se pudo crear el match: ${error.message}`);
-  return data.id;
-}
+export type SkuConflictCode = {
+  client_id: string;
+  client_name: string | null;
+  client_code: string;
+  description: string | null;
+};
 
 export type SkuConflict = {
   line_id: string;
-  client_code: string | null;
-  client_description: string | null;
+  codes: SkuConflictCode[];
   current_price: number | null;
   updated_at: string | null;
 };
 
+// Devuelve las posiciones (no excluidas) del acuerdo que comparten SKU,
+// con la lista de códigos abiertos por cliente en cada una.
+// RLS filtra visibilidad; NO duplicar checks aquí.
 export async function detectSkuConflicts(
   supabase: SB,
   agreementId: string,
@@ -130,7 +72,7 @@ export async function detectSkuConflicts(
   if (!product) return [];
   const { data: lines, error } = await supabase
     .from("agreement_positions")
-    .select("id, sale_price, client_product_match_id, updated_at")
+    .select("id, sale_price, updated_at")
     .eq("agreement_id", agreementId)
     .eq("product_id", product.id)
     .neq("status", "excluded");
@@ -138,58 +80,61 @@ export async function detectSkuConflicts(
   const filtered = (lines ?? []).filter((r) => r.id !== excludeLineId);
   if (filtered.length === 0) return [];
 
-  const matchIds = filtered
-    .map((r) => r.client_product_match_id)
-    .filter((v): v is string => !!v);
-  const codeByMatch = new Map<string, string>();
-  const descByMatch = new Map<string, string>();
-  if (matchIds.length > 0) {
-    const { data: matches } = await supabase
-      .from("client_product_match")
-      .select("id, client_product_id")
-      .in("id", matchIds);
-    const cpIds = (matches ?? [])
-      .map((m) => m.client_product_id)
-      .filter((v): v is string => !!v);
-    const descByCp = new Map<string, string>();
-    if (cpIds.length > 0) {
-      const { data: cps } = await supabase
-        .from("client_products")
-        .select("id, client_code")
-        .in("id", cpIds);
-      const codeByCp = new Map<string, string>(
-        (cps ?? []).map((c) => [c.id as string, c.client_code as string]),
-      );
-      const { data: hist } = await supabase
-        .from("client_product_history")
-        .select("client_product_id, description, valid_from")
-        .in("client_product_id", cpIds)
-        .order("valid_from", { ascending: false });
-      for (const h of hist ?? []) {
-        const cpId = h.client_product_id as string;
-        if (!descByCp.has(cpId) && h.description) {
-          descByCp.set(cpId, h.description as string);
-        }
-      }
-      for (const m of matches ?? []) {
-        const cpId = m.client_product_id as string | null;
-        if (!cpId) continue;
-        const code = codeByCp.get(cpId);
-        if (code) codeByMatch.set(m.id as string, code);
-        const desc = descByCp.get(cpId);
-        if (desc) descByMatch.set(m.id as string, desc);
+  const posIds = filtered.map((r) => r.id as string);
+
+  // Códigos abiertos por posición.
+  const { data: apcc, error: apccErr } = await supabase
+    .from("agreement_position_client_codes")
+    .select(
+      "agreement_position_id, client_id, client_product_id, clients!agreement_position_client_codes_client_id_fkey(commercial_name, legal_name), client_products!agreement_position_client_codes_client_product_id_fkey(client_code)",
+    )
+    .in("agreement_position_id", posIds)
+    .is("valid_until", null);
+  if (apccErr) throw new Error("No se pudieron consultar códigos del cliente");
+
+  // Descripción más reciente por client_product_id (historial).
+  const cpIds = Array.from(
+    new Set(
+      (apcc ?? [])
+        .map((c) => c.client_product_id as string | null)
+        .filter((v): v is string => !!v),
+    ),
+  );
+  const descByCp = new Map<string, string | null>();
+  if (cpIds.length > 0) {
+    const { data: hist } = await supabase
+      .from("client_product_history")
+      .select("client_product_id, description, valid_from")
+      .in("client_product_id", cpIds)
+      .order("valid_from", { ascending: false });
+    for (const h of hist ?? []) {
+      const cpId = h.client_product_id as string;
+      if (!descByCp.has(cpId)) {
+        descByCp.set(cpId, (h.description as string | null) ?? null);
       }
     }
   }
 
+  const codesByPos = new Map<string, SkuConflictCode[]>();
+  for (const c of apcc ?? []) {
+    const client = c.clients as { commercial_name: string | null; legal_name: string | null } | null;
+    const cp = c.client_products as { client_code: string | null } | null;
+    const code = cp?.client_code ?? null;
+    if (!code) continue;
+    const entry: SkuConflictCode = {
+      client_id: c.client_id as string,
+      client_name: client?.commercial_name ?? client?.legal_name ?? null,
+      client_code: code,
+      description: descByCp.get(c.client_product_id as string) ?? null,
+    };
+    const arr = codesByPos.get(c.agreement_position_id as string) ?? [];
+    arr.push(entry);
+    codesByPos.set(c.agreement_position_id as string, arr);
+  }
+
   return filtered.map((r) => ({
     line_id: r.id as string,
-    client_code: r.client_product_match_id
-      ? codeByMatch.get(r.client_product_match_id) ?? null
-      : null,
-    client_description: r.client_product_match_id
-      ? descByMatch.get(r.client_product_match_id) ?? null
-      : null,
+    codes: codesByPos.get(r.id as string) ?? [],
     current_price: (r.sale_price as number | null) ?? null,
     updated_at: (r.updated_at as string | null) ?? null,
   }));

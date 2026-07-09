@@ -129,6 +129,22 @@ export const agreementStatusSchema = z.object({
   status: agreementStatusEnum,
 });
 
+// Multi-cliente: cada código pertenece a un cliente del acuerdo.
+// La lista es DECLARATIVA en el patch: lo que llega es el estado final;
+// lo ausente se cierra (valid_until = today) por la RPC update_agreement_line.
+export const clientCodeSchema = z.object({
+  client_id: z.string().uuid(),
+  client_code: z.string().trim().min(1, "Código requerido").max(120),
+  description: z
+    .string()
+    .trim()
+    .max(2000)
+    .optional()
+    .transform((v) => (v && v.length ? v : null)),
+});
+export type ClientCodeInput = z.input<typeof clientCodeSchema>;
+export type ClientCode = z.output<typeof clientCodeSchema>;
+
 export const lineCreateSchema = z.object({
   agreement_id: z.string().uuid(),
   sku: z
@@ -136,13 +152,7 @@ export const lineCreateSchema = z.object({
     .trim()
     .optional()
     .transform((v) => (v && v.length ? v : null)),
-  client_code: z
-    .string()
-    .trim()
-    .max(120)
-    .optional()
-    .transform((v) => (v && v.length ? v : null)),
-  client_description: trimmedOptional,
+  client_codes: z.array(clientCodeSchema).optional().default([]),
   sale_price: priceOptional,
   par_price: priceOptional,
   start_date: dateOptional,
@@ -156,8 +166,7 @@ export const linePatchSchema = z.object({
   patch: z
     .object({
       sku: z.string().trim().nullable().optional(),
-      client_code: z.string().trim().max(120).nullable().optional(),
-      client_description: z.string().trim().max(2000).nullable().optional(),
+      client_codes: z.array(clientCodeSchema).optional(),
       sale_price: priceOptional,
       par_price: priceOptional,
       start_date: dateOptional,
@@ -165,6 +174,7 @@ export const linePatchSchema = z.object({
       observations: trimmedOptional,
     })
     .strict(),
+  // Se conserva por compatibilidad; la RPC nueva no lo usa.
   confirm_n_conflict: z.boolean().optional(),
 });
 
