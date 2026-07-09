@@ -298,7 +298,7 @@ function ClientCodeCard({
     initialHasCode ? "edit" : "search",
   );
   const [query, setQuery] = useState("");
-  const [open, setOpen] = useState(false);
+  const [popoverOpen, setPopoverOpen] = useState(false);
   const [results, setResults] = useState<ClientCodeSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -313,7 +313,7 @@ function ClientCodeCard({
   const [reactivatePending, setReactivatePending] = useState(false);
   const seq = useRef(0);
 
-  // Resincronizar cuando el diálogo cambia de posición (nuevo initial).
+  // Resincronizar cuando el diálogo se abre (incluyendo reabrir la misma posición).
   useEffect(() => {
     const has = entry.code.trim() !== "";
     setMode(has ? "edit" : "search");
@@ -322,9 +322,9 @@ function ClientCodeCard({
     setQuery("");
     setResults([]);
     setExpandedId(null);
-    setOpen(false);
+    setPopoverOpen(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialLineId]);
+  }, [open]);
 
   useEffect(() => {
     if (!open || disabled) return;
