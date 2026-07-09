@@ -19,7 +19,7 @@ export function AgreementBreadcrumb({ agreementId, current }: AgreementBreadcrum
     <Breadcrumb>
       <BreadcrumbList>
         <BreadcrumbItem>
-          <BreadcrumbLink asChild>
+          <BreadcrumbLink asChild className="text-muted-foreground">
             <Link to="/pgci/agreements">
               <ArrowLeft className="mr-1.5 h-4 w-4" /> Volver a acuerdos
             </Link>
@@ -28,9 +28,11 @@ export function AgreementBreadcrumb({ agreementId, current }: AgreementBreadcrum
         <BreadcrumbSeparator />
         <BreadcrumbItem>
           {current === "detail" ? (
-            <BreadcrumbPage>Información General</BreadcrumbPage>
+            <BreadcrumbPage className="font-medium text-foreground">
+              Información General
+            </BreadcrumbPage>
           ) : (
-            <BreadcrumbLink asChild>
+            <BreadcrumbLink asChild className="text-muted-foreground">
               <Link to="/pgci/agreements/$agreementId" params={{ agreementId }}>
                 Información General
               </Link>
@@ -41,7 +43,9 @@ export function AgreementBreadcrumb({ agreementId, current }: AgreementBreadcrum
           <>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbPage>Posiciones</BreadcrumbPage>
+              <BreadcrumbPage className="font-medium text-foreground">
+                Posiciones
+              </BreadcrumbPage>
             </BreadcrumbItem>
           </>
         )}
