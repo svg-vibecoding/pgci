@@ -594,7 +594,8 @@ function ClientCodeCard({
       {mode === "search" && (
         <>
           {searchBlock(searchPlaceholder)}
-          {takenAlert}
+          {tainedAlert}
+          {takenActions}
         </>
       )}
 
@@ -656,6 +657,7 @@ function ClientCodeCard({
         <>
           {searchBlock(searchPlaceholder)}
           {takenAlert}
+          {takenActions}
           <div className="space-y-1.5">
             <FieldLabel>CÓDIGO</FieldLabel>
             <Input
