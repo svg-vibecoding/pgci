@@ -534,13 +534,21 @@ function ClientCodeCard({
               onChange={(e) => onChange({ ...entry, description: e.target.value })}
             />
           </div>
-          <p className="text-[11px] text-muted-foreground">
-            {entry.code.trim() === ""
-              ? `Elegiste crear un producto para ${card.name}. Registra el código o descarta la creación.`
-              : entry.description.trim() === ""
-                ? `Elegiste crear un producto para ${card.name}. Registra la descripción o descarta la creación.`
-                : `El producto se creará en el catálogo de ${card.name} al guardar la posición.`}
-          </p>
+          {entry.code.trim() === "" || entry.description.trim() === "" ? (
+            <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-foreground">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--status-warning-strong)]" />
+              <span>
+                {entry.code.trim() === ""
+                  ? `Elegiste crear un producto para ${card.name}. Registra el código o descarta la creación.`
+                  : `Elegiste crear un producto para ${card.name}. Registra la descripción o descarta la creación.`}
+              </span>
+            </div>
+          ) : (
+            <p className="text-[11px] text-foreground">
+              {`El producto se creará en el catálogo de ${card.name} al guardar la posición.`}
+            </p>
+          )}
+
           {!disabled && (
             <div className="flex justify-end">
               <Button
