@@ -527,7 +527,7 @@ function ClientCodeCard({
   const takenAlert = takenBlock && (() => {
     const excluded = takenBlock.is_excluded;
     const containerCls = excluded
-      ? "rounded-md border border-border bg-[var(--surface-1)] p-4 text-foreground"
+      ? "rounded-md border border-border bg-muted p-4 text-muted-foreground"
       : "rounded-md border border-warning/40 bg-warning/10 p-4 text-[var(--status-warning-strong)]";
     const dividerCls = excluded ? "border-border" : "border-warning/20";
     const Icon = excluded ? Info : AlertTriangle;
@@ -582,14 +582,12 @@ function ClientCodeCard({
 
           {excluded && (
             <div className="space-y-1.5 pt-1">
-              <FieldLabel>{exclusionDateLabel}</FieldLabel>
-              <Input
-                value={takenBlock.exclusion_reason ?? "—"}
-                readOnly
-                disabled
-                tabIndex={-1}
-                className={readonlyClass}
-              />
+              <span className="text-[11px] font-medium text-text-tertiary">
+                {exclusionDateLabel}
+              </span>
+              <div className="rounded-md border border-border bg-background p-2 text-sm text-muted-foreground">
+                {takenBlock.exclusion_reason ?? "—"}
+              </div>
             </div>
           )}
         </div>
