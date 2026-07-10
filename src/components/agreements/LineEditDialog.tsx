@@ -528,7 +528,7 @@ function ClientCodeCard({
             />
           </div>
           <div className="space-y-1.5">
-            <FieldLabel>Descripción</FieldLabel>
+            <FieldLabel>DESCRIPCIÓN DEL PRODUCTO</FieldLabel>
             <Input
               value={entry.description}
               disabled={disabled}
