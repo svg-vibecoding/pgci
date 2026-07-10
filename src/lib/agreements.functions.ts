@@ -484,29 +484,18 @@ export const listAgreementLines = createServerFn({ method: "GET" })
       }
     }
 
-    // Códigos por posición / tránsito (período abierto), con nombre de cliente y código.
+    // Códigos por posición (período abierto), con nombre de cliente y código.
     const posIds = positions.map((p) => p.id as string);
-    const trIds = transit.map((t) => t.id as string);
-    const [apccRes, atccRes] = await Promise.all([
+    const apccRes =
       posIds.length > 0
-        ? context.supabase
+        ? await context.supabase
             .from("agreement_position_client_codes")
             .select(
               "agreement_position_id, client_id, client_product_id, clients!agreement_position_client_codes_client_id_fkey(commercial_name, legal_name), client_products!agreement_position_client_codes_client_product_id_fkey(client_code)",
             )
             .in("agreement_position_id", posIds)
             .is("valid_until", null)
-        : Promise.resolve({ data: [] as unknown[], error: null }),
-      trIds.length > 0
-        ? context.supabase
-            .from("agreement_transit_client_codes")
-            .select(
-              "agreement_transit_id, client_id, client_product_id, clients!agreement_transit_client_codes_client_id_fkey(commercial_name, legal_name), client_products!agreement_transit_client_codes_client_product_id_fkey(client_code)",
-            )
-            .in("agreement_transit_id", trIds)
-            .is("valid_until", null)
-        : Promise.resolve({ data: [] as unknown[], error: null }),
-    ]);
+        : { data: [] as unknown[], error: null };
 
     type ClientEmbed = { commercial_name: string | null; legal_name: string | null } | null;
     type ApccRow = {
