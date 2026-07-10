@@ -1361,6 +1361,8 @@ export type Database = {
     Functions: {
       _resolve_client_code: {
         Args: {
+          p_agreement_id?: string
+          p_brand?: string
           p_client_code: string
           p_client_id: string
           p_description: string
