@@ -1489,7 +1489,6 @@ export type Database = {
       update_agreement_line: {
         Args: {
           p_confirm_n_conflict?: boolean
-          p_kind: string
           p_line_id: string
           p_patch: Json
         }
