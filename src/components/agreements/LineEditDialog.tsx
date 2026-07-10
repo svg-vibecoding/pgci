@@ -445,7 +445,7 @@ function ClientCodeCard({
 
   const searchBlock = (
     <div className="space-y-1.5">
-      <FieldLabel>Código</FieldLabel>
+      <FieldLabel>CÓDIGO DEL CLIENTE</FieldLabel>
       <Popover open={popoverOpen && !disabled} onOpenChange={(o) => !disabled && setPopoverOpen(o)}>
         <PopoverTrigger asChild>
           <div className="relative">
