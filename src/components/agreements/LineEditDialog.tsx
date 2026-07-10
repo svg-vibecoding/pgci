@@ -539,8 +539,8 @@ function ClientCodeCard({
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--status-warning-strong)]" />
               <span>
                 {entry.code.trim() === ""
-                  ? `Elegiste crear un producto para ${card.name}. Registra el código o descarta la creación.`
-                  : `Elegiste crear un producto para ${card.name}. Registra la descripción o descarta la creación.`}
+                  ? `Para crear un producto en ${card.name}. Registra el código o descarta la creación.`
+                  : `Para crear un producto en ${card.name}. Registra la descripción o descarta la creación.`}
               </span>
             </div>
           ) : (
