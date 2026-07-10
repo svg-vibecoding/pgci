@@ -246,27 +246,23 @@ export function LineViewDialog({
                   <StatusBadge status={statusMeta.status} label={statusMeta.label} size="sm" />
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    SUMATEC
-                  </div>
-                  {line.product_status && line.product_status !== "active" && (
-                    <Badge color="error" variant="soft">
-                      Inactivo
-                    </Badge>
-                  )}
-                </div>
+                <SectionHeader title="Sumatec" number="01" />
 
                 {line.sku ? (
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     <div className="flex items-baseline gap-3 flex-wrap">
-                      <span className="font-mono text-base font-semibold text-foreground">
+                      <span className="font-mono text-lg font-semibold text-foreground">
                         {line.sku}
                       </span>
                       {line.commercial_brand && (
                         <span className="text-xs text-muted-foreground uppercase tracking-wide">
                           {line.commercial_brand}
                         </span>
+                      )}
+                      {line.product_status && line.product_status !== "active" && (
+                        <Badge color="error" variant="soft">
+                          Inactivo
+                        </Badge>
                       )}
                     </div>
                     <div className="text-sm text-foreground">
@@ -296,10 +292,11 @@ export function LineViewDialog({
               </section>
 
               {/* Vigencia */}
-              <section className="rounded-lg border border-input p-4">
+              <section className="rounded-lg border border-input p-4 space-y-3">
+                <SectionHeader title="Vigencia" number="02" />
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div className="flex items-center gap-2 text-sm">
-                    <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span className="text-foreground">{fmtDateLocal(line.start_date)}</span>
                     <span className="text-muted-foreground">→</span>
                     <span className="text-foreground">
@@ -324,8 +321,8 @@ export function LineViewDialog({
 
               {/* Observaciones */}
               {line.observations?.trim() && (
-                <section>
-                  <FieldLabel className="mb-1.5 block">Observaciones</FieldLabel>
+                <section className="space-y-3">
+                  <SectionHeader title="Observaciones" number="03" />
                   <div className="rounded-lg border border-input p-3 text-sm whitespace-pre-wrap text-foreground">
                     {line.observations.trim()}
                   </div>
@@ -338,10 +335,8 @@ export function LineViewDialog({
           <div className="min-h-0 overflow-y-auto bg-muted/20">
             <div className="p-5 space-y-4">
               <div className="flex items-center justify-between">
-                <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Códigos de cliente
-                </div>
-                <span className="text-[11px] text-muted-foreground">
+                <SectionHeader title="Códigos de cliente" number="04" />
+                <span className="text-xs text-muted-foreground">
                   {line.codes.length}
                 </span>
               </div>
@@ -378,16 +373,19 @@ export function LineViewDialog({
               )}
 
               {(line.created_at || line.updated_at) && (
-                <div className="pt-2 text-[11px] text-muted-foreground space-y-0.5">
-                  <div className="flex justify-between">
-                    <span>Creada</span>
-                    <span>{fmtDateTime(line.created_at)}</span>
+                <section className="space-y-3 pt-2">
+                  <SectionHeader title="Auditoría" number="05" />
+                  <div className="text-sm text-muted-foreground space-y-1">
+                    <div className="flex justify-between">
+                      <span>Creada</span>
+                      <span className="text-foreground">{fmtDateTime(line.created_at)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Modificada</span>
+                      <span className="text-foreground">{fmtDateTime(line.updated_at)}</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Modificada</span>
-                    <span>{fmtDateTime(line.updated_at)}</span>
-                  </div>
-                </div>
+                </section>
               )}
             </div>
           </div>
@@ -402,12 +400,11 @@ export function LineViewDialog({
             {isExcluded && " Reactívala para volver a editarla."}
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cerrar
             </Button>
             {showEditCta && onEdit && (
               <Button
-                size="sm"
                 onClick={() => {
                   onOpenChange(false);
                   onEdit(line.id);
