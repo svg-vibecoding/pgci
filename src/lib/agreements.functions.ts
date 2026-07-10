@@ -874,8 +874,11 @@ export type ClientCodeSearchResult = {
         sku: string | null;
         product_description: string | null;
         sale_price: number | null;
+        exclusion_reason: string | null;
+        exclusion_date: string | null;
       };
 };
+
 
 export const searchClientCodes = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
