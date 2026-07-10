@@ -1008,45 +1008,56 @@ function AgreementLinesPage() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir posición</AlertDialogTitle>
+            <AlertDialogTitle>Excluir posición del acuerdo</AlertDialogTitle>
+            <AlertDialogDescription>
+              Sale del acuerdo y conserva su información comercial y sus códigos de cliente. Puedes reactivarla si vuelve a ser necesaria.
+            </AlertDialogDescription>
           </AlertDialogHeader>
           {excludeTarget ? (
-            <div className="space-y-4">
+            <div className="space-y-3 rounded-md border bg-muted/40 p-3">
               <div className="space-y-1">
                 <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  SKU
+                  SUMATEC
                 </Label>
-                <div className="font-mono text-sm">{excludeTarget.sku ?? "—"}</div>
-                <div className="text-sm text-muted-foreground">
-                  {excludeTarget.description ?? "—"}
+                <div className="text-sm">
+                  <span className="font-mono">{excludeTarget.sku ?? "—"}</span>
+                  {excludeTarget.description ? (
+                    <>
+                      <span className="text-muted-foreground"> · </span>
+                      <span>{excludeTarget.description}</span>
+                    </>
+                  ) : null}
                 </div>
               </div>
 
               {excludeTarget.codes.length > 0 && (
-                <div className="space-y-2">
-                  <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Sale del acuerdo y conserva sus códigos:
-                  </Label>
-                  <div className="space-y-1">
+                <>
+                  <hr className="border-border" />
+                  <div className="space-y-3">
                     {excludeTarget.codes.map((c) => (
-                      <div
-                        key={c.client_id}
-                        className="flex items-center gap-2 text-sm"
-                      >
-                        <span className="font-mono">{c.client_code}</span>
-                        <span className="text-muted-foreground">
+                      <div key={c.client_id} className="space-y-1">
+                        <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                           {c.client_name?.trim() || "Cliente sin nombre"}
-                        </span>
+                        </Label>
+                        <div className="text-sm">
+                          <span className="font-mono">{c.client_code}</span>
+                          {c.description ? (
+                            <>
+                              <span className="text-muted-foreground"> · </span>
+                              <span>{c.description}</span>
+                            </>
+                          ) : null}
+                        </div>
                       </div>
                     ))}
                   </div>
-                </div>
+                </>
               )}
             </div>
           ) : null}
           <div className="space-y-1.5">
             <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Motivo
+              MOTIVO DE EXCLUSIÓN
             </Label>
             <Textarea
               rows={2}
