@@ -522,29 +522,31 @@ function ClientCodeCard({
     <div className="rounded-md border border-warning/40 bg-warning/10 p-4 text-[var(--status-warning-strong)]">
       <div className="flex items-start gap-2">
         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-        <p className="text-sm font-semibold">
+        <p className="text-sm font-medium">
           Este código ya está vinculado a una posición del acuerdo
         </p>
       </div>
 
-      <div className="mt-3 space-y-3 pl-6">
+      <div className="mt-2 space-y-2 pl-6">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide">
+          <p className="text-xs font-semibold uppercase tracking-wide">
             {card.name}
           </p>
-          <p className="mt-0.5 text-xs font-mono">
-            {takenBlock.client_code} · {takenBlock.client_description ?? "—"}
+          <p className="mt-0 text-sm">
+            <span className="font-mono">{takenBlock.client_code}</span>
+            {" "}· {takenBlock.client_description ?? "—"}
           </p>
         </div>
 
         <hr className="border-warning/20" />
 
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide">
+          <p className="text-xs font-semibold uppercase tracking-wide">
             SUMATEC
           </p>
-          <p className="mt-0.5 text-xs font-mono">
-            {takenBlock.sku ?? "—"} · {takenBlock.product_description ?? "—"}
+          <p className="mt-0 text-sm">
+            <span className="font-mono">{takenBlock.sku ?? "—"}</span>
+            {" "}· {takenBlock.product_description ?? "—"}
             {takenBlock.sale_price != null && (
               <span className="font-sans font-medium">
                 {" "}· {formatMoneyCOP(takenBlock.sale_price)}
