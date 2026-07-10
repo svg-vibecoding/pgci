@@ -279,7 +279,11 @@ type TakenBlock = {
   sku: string | null;
   product_description: string | null;
   sale_price: number | null;
+  is_excluded: boolean;
+  exclusion_reason: string | null;
+  exclusion_date: string | null;
 };
+
 
 function ClientCodeCard({
   card,
