@@ -1392,11 +1392,11 @@ export function LineEditDialog({
             <div className="p-6 space-y-8">
               {/* Producto Jaivaná */}
               <section className="space-y-4">
-                <SectionHeader title="Producto Jaivaná" number="01" />
+                <SectionHeader title="INFORMACIÓN DE SUMATEC" number="01" />
                 <div className="rounded-lg border border-input bg-muted/40 p-4">
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-1.5 md:col-span-2">
-                    <FieldLabel>Producto Jaivaná</FieldLabel>
+                    <FieldLabel>INFORMACIÓN DE SUMATEC</FieldLabel>
                     <Popover open={searchOpen} onOpenChange={setSearchOpen}>
                       <PopoverTrigger asChild>
                         <div className="relative">
