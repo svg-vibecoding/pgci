@@ -206,6 +206,7 @@ function AgreementLinesPage() {
   const [excludeTarget, setExcludeTarget] = useState<{
     id: string;
     sku: string | null;
+    description: string | null;
     codes: LineCode[];
   } | null>(null);
   const [deleteTransitTarget, setDeleteTransitTarget] = useState<{ id: string; sku: string | null } | null>(
@@ -956,6 +957,7 @@ function AgreementLinesPage() {
                                   setExcludeTarget({
                                     id: r.id as string,
                                     sku: r.products?.sku ?? null,
+                                    description: r.products?.erp_description ?? null,
                                     codes: r.codes ?? [],
                                   })
                                 }
@@ -1007,34 +1009,54 @@ function AgreementLinesPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir posición</AlertDialogTitle>
-            <AlertDialogDescription>
-              {excludeTarget && excludeTarget.codes.length > 0 ? (
-                <>
-                  Esta posición atiende{" "}
-                  {excludeTarget.codes.length === 1
-                    ? "el código"
-                    : "los códigos"}{" "}
-                  {excludeTarget.codes
-                    .map(
-                      (c) =>
-                        `${c.client_code} de ${c.client_name?.trim() || "cliente sin nombre"}`,
-                    )
-                    .join(", ")}
-                  . Al excluirla, la posición sale del acuerdo pero conserva {excludeTarget.codes.length === 1 ? "ese código asignado" : "esos códigos asignados"}. Para liberar un código y poder fijarlo a otra posición, reactiva la posición y edítala.
-                </>
-              ) : (
-                <>La posición queda fuera del acuerdo pero conserva su historial. Puedes reactivarla después si fue un error.</>
-              )}
-            </AlertDialogDescription>
           </AlertDialogHeader>
+          {excludeTarget ? (
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  SKU
+                </Label>
+                <div className="font-mono text-sm">{excludeTarget.sku ?? "—"}</div>
+                <div className="text-sm text-muted-foreground">
+                  {excludeTarget.description ?? "—"}
+                </div>
+              </div>
+
+              {excludeTarget.codes.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Sale del acuerdo y conserva sus códigos:
+                  </Label>
+                  <div className="space-y-1">
+                    {excludeTarget.codes.map((c) => (
+                      <div
+                        key={c.client_id}
+                        className="flex items-center gap-2 text-sm"
+                      >
+                        <span className="font-mono">{c.client_code}</span>
+                        <span className="text-muted-foreground">
+                          {c.client_name?.trim() || "Cliente sin nombre"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : null}
           <div className="space-y-1.5">
-            <Label>Motivo (opcional)</Label>
+            <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Motivo
+            </Label>
             <Textarea
               rows={2}
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="Ej. Producto descontinuado por el cliente"
             />
+            <p className="text-xs text-muted-foreground">
+              Quedará registrado en la posición excluida.
+            </p>
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={exclude.isPending}>Cancelar</AlertDialogCancel>
@@ -1044,12 +1066,12 @@ function AgreementLinesPage() {
                 if (excludeTarget)
                   exclude.mutate({
                     line_id: excludeTarget.id,
-                    reason: reason.trim() ? reason.trim() : null,
+                    reason: reason.trim(),
                   });
               }}
-              disabled={exclude.isPending}
+              disabled={exclude.isPending || !reason.trim()}
             >
-              Excluir
+              Excluir posición
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
