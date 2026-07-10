@@ -626,7 +626,6 @@ export const updateAgreementLine = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<UpdateAgreementLineResult> => {
     const { data: rpcRes, error } = await context.supabase.rpc("update_agreement_line", {
       p_line_id: data.line_id,
-      p_kind: data.kind,
       p_patch: data.patch as unknown as Json,
       p_confirm_n_conflict: data.confirm_n_conflict ?? false,
     });
