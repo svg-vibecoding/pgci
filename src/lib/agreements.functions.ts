@@ -2341,7 +2341,7 @@ export const getAgreementGroupRollup = createServerFn({ method: "GET" })
     const { data: ags, error: aErr } = await context.supabase
       .from("agreements_with_counts")
       .select(
-        "id, lines_total, lines_active, lines_pending, lines_review, lines_excluded, start_date, end_date",
+        "id, lines_total, lines_active, lines_review, lines_excluded, lines_draft, lines_archived, lines_expired, start_date, end_date",
       )
       .eq("group_id", data.group_id);
     if (aErr) throw new Error(aErr.message);
