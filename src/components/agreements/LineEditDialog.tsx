@@ -1402,98 +1402,95 @@ export function LineEditDialog({
               {/* Producto Jaivaná */}
               <section className="space-y-4">
                 <SectionHeader title="INFORMACIÓN DE SUMATEC" number="01" />
-                <div className="rounded-lg border border-input bg-muted/40 p-4">
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="space-y-3 md:col-span-2">
-                    <div className="flex items-center gap-2">
-                      <div className="text-sm font-semibold text-foreground uppercase">SUMATEC</div>
-                    </div>
+                <div className="rounded-lg border border-input bg-muted/40 p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="text-sm font-semibold text-foreground">SUMATEC</div>
+                  </div>
 
-                    <Popover open={searchOpen} onOpenChange={setSearchOpen}>
-                      <PopoverTrigger asChild>
-                        <div className="relative">
-                          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                          <Input
-                            className={cn(inputClass, "pl-9 bg-white")}
-                            value={searchQuery}
-                            placeholder={searchPlaceholder}
-                            onFocus={() => setSearchOpen(true)}
-                            onChange={(e) => {
-                              setSearchQuery(e.target.value);
-                              setSearchOpen(true);
-                              setSaveError(null);
-                            }}
-                          />
-                          {searchLoading && (
-                            <Loader2 className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+                  <Popover open={searchOpen} onOpenChange={setSearchOpen}>
+                    <PopoverTrigger asChild>
+                      <div className="relative">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          className={cn(inputClass, "pl-9 bg-white")}
+                          value={searchQuery}
+                          placeholder={searchPlaceholder}
+                          onFocus={() => setSearchOpen(true)}
+                          onChange={(e) => {
+                            setSearchQuery(e.target.value);
+                            setSearchOpen(true);
+                            setSaveError(null);
+                          }}
+                        />
+                        {searchLoading && (
+                          <Loader2 className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+                        )}
+                      </div>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      align="start"
+                      sideOffset={4}
+                      onOpenAutoFocus={(e) => e.preventDefault()}
+                      className="w-[var(--radix-popover-trigger-width)] p-0"
+                    >
+                      {searchQuery.trim().length < 2 ? (
+                        <p className="px-3 py-4 text-center text-sm text-muted-foreground">
+                          Escribe al menos 2 caracteres para buscar.
+                        </p>
+                      ) : searchLoading && searchResults.length === 0 ? (
+                        <p className="px-3 py-4 text-center text-sm text-muted-foreground">
+                          Buscando…
+                        </p>
+                      ) : searchResults.length === 0 ? (
+                        <p className="px-3 py-4 text-center text-sm text-muted-foreground">
+                          Sin resultados en el catálogo.
+                        </p>
+                      ) : (
+                        <div className="max-h-72 overflow-y-auto py-1">
+                          {searchResults.map((p) => (
+                            <button
+                              key={p.id}
+                              type="button"
+                              onClick={() => onSelectProduct(p)}
+                              className="flex w-full flex-col gap-0.5 px-3 py-2 text-left hover:bg-muted focus:bg-muted focus:outline-none"
+                            >
+                              <span className="font-mono text-sm font-medium text-foreground">
+                                {p.sku}
+                              </span>
+                              <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                                <span className="truncate">
+                                  {p.erp_description ?? "—"}
+                                </span>
+                                <span aria-hidden>·</span>
+                                <span>{p.commercial_brand ?? "—"}</span>
+                                <span aria-hidden>·</span>
+                                <StatusBadge
+                                  size="sm"
+                                  status={p.status === "active" ? "active" : "neutral"}
+                                  label={p.status === "active" ? "Activo" : "Inactivo"}
+                                />
+                              </span>
+                            </button>
+                          ))}
+                          {searchHasMore && (
+                            <div className="border-t border-border p-2">
+                              <button
+                                type="button"
+                                onClick={() => void loadMoreResults()}
+                                disabled={searchLoadingMore}
+                                className="flex w-full items-center justify-center gap-2 rounded-sm py-2 text-sm font-medium text-primary hover:bg-accent disabled:opacity-50"
+                              >
+                                {searchLoadingMore && (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                )}
+                                Cargar más
+                              </button>
+                            </div>
                           )}
                         </div>
-                      </PopoverTrigger>
-                      <PopoverContent
-                        align="start"
-                        sideOffset={4}
-                        onOpenAutoFocus={(e) => e.preventDefault()}
-                        className="w-[var(--radix-popover-trigger-width)] p-0"
-                      >
-                        {searchQuery.trim().length < 2 ? (
-                          <p className="px-3 py-4 text-center text-sm text-muted-foreground">
-                            Escribe al menos 2 caracteres para buscar.
-                          </p>
-                        ) : searchLoading && searchResults.length === 0 ? (
-                          <p className="px-3 py-4 text-center text-sm text-muted-foreground">
-                            Buscando…
-                          </p>
-                        ) : searchResults.length === 0 ? (
-                          <p className="px-3 py-4 text-center text-sm text-muted-foreground">
-                            Sin resultados en el catálogo.
-                          </p>
-                        ) : (
-                          <div className="max-h-72 overflow-y-auto py-1">
-                            {searchResults.map((p) => (
-                              <button
-                                key={p.id}
-                                type="button"
-                                onClick={() => onSelectProduct(p)}
-                                className="flex w-full flex-col gap-0.5 px-3 py-2 text-left hover:bg-muted focus:bg-muted focus:outline-none"
-                              >
-                                <span className="font-mono text-sm font-medium text-foreground">
-                                  {p.sku}
-                                </span>
-                                <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-                                  <span className="truncate">
-                                    {p.erp_description ?? "—"}
-                                  </span>
-                                  <span aria-hidden>·</span>
-                                  <span>{p.commercial_brand ?? "—"}</span>
-                                  <span aria-hidden>·</span>
-                                  <StatusBadge
-                                    size="sm"
-                                    status={p.status === "active" ? "active" : "neutral"}
-                                    label={p.status === "active" ? "Activo" : "Inactivo"}
-                                  />
-                                </span>
-                              </button>
-                            ))}
-                            {searchHasMore && (
-                              <div className="border-t border-border p-2">
-                                <button
-                                  type="button"
-                                  onClick={() => void loadMoreResults()}
-                                  disabled={searchLoadingMore}
-                                  className="flex w-full items-center justify-center gap-2 rounded-sm py-2 text-sm font-medium text-primary hover:bg-accent disabled:opacity-50"
-                                >
-                                  {searchLoadingMore && (
-                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                  )}
-                                  Cargar más
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </PopoverContent>
-                    </Popover>
-                  </div>
+                      )}
+                    </PopoverContent>
+                  </Popover>
 
                   {hasProduct && (
                     <>
