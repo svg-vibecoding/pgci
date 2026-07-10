@@ -442,7 +442,12 @@ function ClientCodeCard({
     originalDescription !== null &&
     entry.description.trim() !== (originalDescription ?? "").trim();
 
-  const searchBlock = (
+  const searchPlaceholder =
+    mode === "edit"
+      ? "Escribe para cambiar el producto…"
+      : "Busca por código o descripción…";
+
+  const searchBlock = (placeholder: string) => (
     <Popover open={popoverOpen && !disabled} onOpenChange={(o) => !disabled && setPopoverOpen(o)}>
       <PopoverTrigger asChild>
         <div className="relative">
@@ -451,7 +456,7 @@ function ClientCodeCard({
             className={cn("pl-9", disabled ? readonlyClass : "bg-white")}
             value={query}
             disabled={disabled}
-            placeholder="Busca por código o descripción…"
+            placeholder={placeholder}
             onFocus={() => !disabled && setPopoverOpen(true)}
             onChange={(e) => {
               setQuery(e.target.value);
