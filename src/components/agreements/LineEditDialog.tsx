@@ -1402,101 +1402,98 @@ export function LineEditDialog({
               {/* Producto Jaivaná */}
               <section className="space-y-4">
                 <SectionHeader title="INFORMACIÓN DE SUMATEC" number="01" />
-                <div className="rounded-lg border border-input bg-muted/40 p-4">
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="space-y-3 md:col-span-2">
-                    <div className="flex items-center gap-2">
-                      <div className="text-sm font-semibold text-foreground uppercase">SUMATEC</div>
-                    </div>
-
-                    <Popover open={searchOpen} onOpenChange={setSearchOpen}>
-                      <PopoverTrigger asChild>
-                        <div className="relative">
-                          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                          <Input
-                            className={cn(inputClass, "pl-9 bg-white")}
-                            value={searchQuery}
-                            placeholder={searchPlaceholder}
-                            onFocus={() => setSearchOpen(true)}
-                            onChange={(e) => {
-                              setSearchQuery(e.target.value);
-                              setSearchOpen(true);
-                              setSaveError(null);
-                            }}
-                          />
-                          {searchLoading && (
-                            <Loader2 className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
-                          )}
-                        </div>
-                      </PopoverTrigger>
-                      <PopoverContent
-                        align="start"
-                        sideOffset={4}
-                        onOpenAutoFocus={(e) => e.preventDefault()}
-                        className="w-[var(--radix-popover-trigger-width)] p-0"
-                      >
-                        {searchQuery.trim().length < 2 ? (
-                          <p className="px-3 py-4 text-center text-sm text-muted-foreground">
-                            Escribe al menos 2 caracteres para buscar.
-                          </p>
-                        ) : searchLoading && searchResults.length === 0 ? (
-                          <p className="px-3 py-4 text-center text-sm text-muted-foreground">
-                            Buscando…
-                          </p>
-                        ) : searchResults.length === 0 ? (
-                          <p className="px-3 py-4 text-center text-sm text-muted-foreground">
-                            Sin resultados en el catálogo.
-                          </p>
-                        ) : (
-                          <div className="max-h-72 overflow-y-auto py-1">
-                            {searchResults.map((p) => (
-                              <button
-                                key={p.id}
-                                type="button"
-                                onClick={() => onSelectProduct(p)}
-                                className="flex w-full flex-col gap-0.5 px-3 py-2 text-left hover:bg-muted focus:bg-muted focus:outline-none"
-                              >
-                                <span className="font-mono text-sm font-medium text-foreground">
-                                  {p.sku}
-                                </span>
-                                <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-                                  <span className="truncate">
-                                    {p.erp_description ?? "—"}
-                                  </span>
-                                  <span aria-hidden>·</span>
-                                  <span>{p.commercial_brand ?? "—"}</span>
-                                  <span aria-hidden>·</span>
-                                  <StatusBadge
-                                    size="sm"
-                                    status={p.status === "active" ? "active" : "neutral"}
-                                    label={p.status === "active" ? "Activo" : "Inactivo"}
-                                  />
-                                </span>
-                              </button>
-                            ))}
-                            {searchHasMore && (
-                              <div className="border-t border-border p-2">
-                                <button
-                                  type="button"
-                                  onClick={() => void loadMoreResults()}
-                                  disabled={searchLoadingMore}
-                                  className="flex w-full items-center justify-center gap-2 rounded-sm py-2 text-sm font-medium text-primary hover:bg-accent disabled:opacity-50"
-                                >
-                                  {searchLoadingMore && (
-                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                  )}
-                                  Cargar más
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </PopoverContent>
-                    </Popover>
+                <div className="rounded-lg border border-input bg-muted/40 p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="text-sm font-semibold text-foreground">SUMATEC</div>
                   </div>
 
+                  <Popover open={searchOpen} onOpenChange={setSearchOpen}>
+                    <PopoverTrigger asChild>
+                      <div className="relative">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          className={cn(inputClass, "pl-9 bg-white")}
+                          value={searchQuery}
+                          placeholder={searchPlaceholder}
+                          onFocus={() => setSearchOpen(true)}
+                          onChange={(e) => {
+                            setSearchQuery(e.target.value);
+                            setSearchOpen(true);
+                            setSaveError(null);
+                          }}
+                        />
+                        {searchLoading && (
+                          <Loader2 className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+                        )}
+                      </div>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      align="start"
+                      sideOffset={4}
+                      onOpenAutoFocus={(e) => e.preventDefault()}
+                      className="w-[var(--radix-popover-trigger-width)] p-0"
+                    >
+                      {searchQuery.trim().length < 2 ? (
+                        <p className="px-3 py-4 text-center text-sm text-muted-foreground">
+                          Escribe al menos 2 caracteres para buscar.
+                        </p>
+                      ) : searchLoading && searchResults.length === 0 ? (
+                        <p className="px-3 py-4 text-center text-sm text-muted-foreground">
+                          Buscando…
+                        </p>
+                      ) : searchResults.length === 0 ? (
+                        <p className="px-3 py-4 text-center text-sm text-muted-foreground">
+                          Sin resultados en el catálogo.
+                        </p>
+                      ) : (
+                        <div className="max-h-72 overflow-y-auto py-1">
+                          {searchResults.map((p) => (
+                            <button
+                              key={p.id}
+                              type="button"
+                              onClick={() => onSelectProduct(p)}
+                              className="flex w-full flex-col gap-0.5 px-3 py-2 text-left hover:bg-muted focus:bg-muted focus:outline-none"
+                            >
+                              <span className="font-mono text-sm font-medium text-foreground">
+                                {p.sku}
+                              </span>
+                              <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                                <span className="truncate">
+                                  {p.erp_description ?? "—"}
+                                </span>
+                                <span aria-hidden>·</span>
+                                <span>{p.commercial_brand ?? "—"}</span>
+                                <span aria-hidden>·</span>
+                                <StatusBadge
+                                  size="sm"
+                                  status={p.status === "active" ? "active" : "neutral"}
+                                  label={p.status === "active" ? "Activo" : "Inactivo"}
+                                />
+                              </span>
+                            </button>
+                          ))}
+                          {searchHasMore && (
+                            <div className="border-t border-border p-2">
+                              <button
+                                type="button"
+                                onClick={() => void loadMoreResults()}
+                                disabled={searchLoadingMore}
+                                className="flex w-full items-center justify-center gap-2 rounded-sm py-2 text-sm font-medium text-primary hover:bg-accent disabled:opacity-50"
+                              >
+                                {searchLoadingMore && (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                )}
+                                Cargar más
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </PopoverContent>
+                  </Popover>
+
                   {hasProduct && (
-                    <>
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                       <div className="space-y-1.5">
                         <FieldLabel>Código Jaivaná</FieldLabel>
                         <Input
@@ -1527,153 +1524,146 @@ export function LineEditDialog({
                           className={readonlyClass}
                         />
                       </div>
-                    </>
+                    </div>
                   )}
 
                   {lookup.kind === "inactive" && (
-                    <div className="md:col-span-2">
-                      <Alert variant="warning">
-                        <AlertDescription>
-                          Producto inactivo en el catálogo. Esta posición quedará
-                          en "Revisar".
-                        </AlertDescription>
-                      </Alert>
-                    </div>
+                    <Alert variant="warning">
+                      <AlertDescription>
+                        Producto inactivo en el catálogo. Esta posición quedará
+                        en "Revisar".
+                      </AlertDescription>
+                    </Alert>
                   )}
                   {lookup.kind === "not_found" && (
-                    <div className="md:col-span-2">
-                      <Alert variant="error">
-                        <AlertDescription>
-                          Código no encontrado en el catálogo Jaivaná
-                          {catalogDateLabel
-                            ? ` (última actualización: ${catalogDateLabel}).`
-                            : "."}
-                        </AlertDescription>
-                      </Alert>
-                    </div>
+                    <Alert variant="error">
+                      <AlertDescription>
+                        Código no encontrado en el catálogo Jaivaná
+                        {catalogDateLabel
+                          ? ` (última actualización: ${catalogDateLabel}).`
+                          : "."}
+                      </AlertDescription>
+                    </Alert>
                   )}
                   {nConflict.kind === "found" && (
-                    <div className="md:col-span-2">
-                      <Alert variant="warning" className="p-0 overflow-hidden">
-                        <Collapsible open={nExpanded} onOpenChange={setNExpanded}>
-                          <CollapsibleTrigger asChild>
-                            <button
-                              type="button"
-                              className="flex w-full items-center gap-2 px-4 py-3 text-left bg-warning/10 hover:bg-warning/15 transition-colors"
-                            >
-                              {isLinked ? (
-                                <Link2 className="h-4 w-4 shrink-0" />
-                              ) : (
-                                <AlertTriangle className="h-4 w-4 shrink-0" />
+                    <Alert variant="warning" className="p-0 overflow-hidden">
+                      <Collapsible open={nExpanded} onOpenChange={setNExpanded}>
+                        <CollapsibleTrigger asChild>
+                          <button
+                            type="button"
+                            className="flex w-full items-center gap-2 px-4 py-3 text-left bg-warning/10 hover:bg-warning/15 transition-colors"
+                          >
+                            {isLinked ? (
+                              <Link2 className="h-4 w-4 shrink-0" />
+                            ) : (
+                              <AlertTriangle className="h-4 w-4 shrink-0" />
+                            )}
+                            <span className="flex-1 text-sm font-medium">
+                              {isLinked
+                                ? `Este SKU está vinculado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} del acuerdo.`
+                                : `Este SKU está asignado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} más del acuerdo.`}
+                            </span>
+                            <ChevronDown
+                              className={cn(
+                                "h-4 w-4 shrink-0 text-[var(--status-warning-strong)] transition-transform",
+                                nExpanded && "rotate-180",
                               )}
-                              <span className="flex-1 text-sm font-medium">
-                                {isLinked
-                                  ? `Este SKU está vinculado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} del acuerdo.`
-                                  : `Este SKU está asignado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} más del acuerdo.`}
-                              </span>
-                              <ChevronDown
-                                className={cn(
-                                  "h-4 w-4 shrink-0 text-[var(--status-warning-strong)] transition-transform",
-                                  nExpanded && "rotate-180",
-                                )}
-                              />
-                            </button>
-                          </CollapsibleTrigger>
-                          <CollapsibleContent>
-                              <div className="border-t border-border px-4 py-4 space-y-3">
-                                <div className="rounded-md border border-border bg-surface-card overflow-hidden">
-                                  <Table>
-                                    <TableHeader>
-                                      <TableRow>
-                                        <TableHead>Código cliente</TableHead>
-                                        <TableHead>Descripción cliente</TableHead>
-                                        <TableHead className="text-right">Precio actual</TableHead>
+                            />
+                          </button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="border-t border-border px-4 py-4 space-y-3">
+                            <div className="rounded-md border border-border bg-surface-card overflow-hidden">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead>Código cliente</TableHead>
+                                    <TableHead>Descripción cliente</TableHead>
+                                    <TableHead className="text-right">Precio actual</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {nConflict.lines.map((l) => {
+                                    const first = l.codes[0] ?? null;
+                                    return (
+                                      <TableRow key={l.line_id}>
+                                        <TableCell className="text-sm text-foreground">
+                                          {first?.client_code ?? "—"}
+                                        </TableCell>
+                                        <TableCell className="text-sm text-foreground">
+                                          {first?.description ?? "—"}
+                                        </TableCell>
+                                        <TableCell className="text-right text-sm tabular-nums text-foreground">
+                                          {formatMoneyCOP(l.current_price)}
+                                        </TableCell>
                                       </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                      {nConflict.lines.map((l) => {
-                                        const first = l.codes[0] ?? null;
-                                        return (
-                                          <TableRow key={l.line_id}>
-                                            <TableCell className="text-sm text-foreground">
-                                              {first?.client_code ?? "—"}
-                                            </TableCell>
-                                            <TableCell className="text-sm text-foreground">
-                                              {first?.description ?? "—"}
-                                            </TableCell>
-                                            <TableCell className="text-right text-sm tabular-nums text-foreground">
-                                              {formatMoneyCOP(l.current_price)}
-                                            </TableCell>
-                                          </TableRow>
-                                        );
-                                      })}
-                                    </TableBody>
-                                  </Table>
-                                </div>
+                                    );
+                                  })}
+                                </TableBody>
+                              </Table>
+                            </div>
 
-                                <div className="rounded-md border border-border bg-surface-card p-4 space-y-3">
-                                  {isLinked ? (
-                                    <>
-                                      <h4 className="text-sm font-semibold text-foreground">
-                                        Posiciones vinculadas
-                                      </h4>
-                                      <p className="text-sm text-foreground">
-                                        {`Este SKU está vinculado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} del acuerdo. Cualquier cambio de precio se aplicará automáticamente a todas.`}
-                                      </p>
-                                      <Button
-                                        type="button"
-                                        size="sm"
-                                        variant="outline"
-                                        className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-                                        disabled={unlinkMut.isPending || !productId}
-                                        onClick={() => unlinkMut.mutate()}
-                                      >
-                                        {unlinkMut.isPending ? (
-                                          <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                                        ) : (
-                                          <Unlink className="mr-2 h-3.5 w-3.5" />
-                                        )}
-                                        Desvincular
-                                      </Button>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <h4 className="text-sm font-semibold text-foreground">
-                                        Posiciones no vinculadas
-                                      </h4>
-                                      <p className="text-sm text-foreground">
-                                        {`Este SKU está asignado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} más del acuerdo. Si las vinculas, compartirán el mismo precio y se actualizarán juntas automáticamente en cada cambio de precio.`}
-                                      </p>
-                                      <Button
-                                        type="button"
-                                        size="sm"
-                                        variant="outline"
-                                        className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-                                        disabled={linkMut.isPending || !productId}
-                                        onClick={() => linkMut.mutate()}
-                                      >
-                                        {linkMut.isPending ? (
-                                          <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                                        ) : (
-                                          <Link className="mr-2 h-3.5 w-3.5" />
-                                        )}
-                                        Vincular
-                                      </Button>
-                                      {linkError && (
-                                        <p className="text-xs font-medium text-destructive">
-                                          {linkError}
-                                        </p>
-                                      )}
-                                    </>
+                            <div className="rounded-md border border-border bg-surface-card p-4 space-y-3">
+                              {isLinked ? (
+                                <>
+                                  <h4 className="text-sm font-semibold text-foreground">
+                                    Posiciones vinculadas
+                                  </h4>
+                                  <p className="text-sm text-foreground">
+                                    {`Este SKU está vinculado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} del acuerdo. Cualquier cambio de precio se aplicará automáticamente a todas.`}
+                                  </p>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                                    disabled={unlinkMut.isPending || !productId}
+                                    onClick={() => unlinkMut.mutate()}
+                                  >
+                                    {unlinkMut.isPending ? (
+                                      <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                                    ) : (
+                                      <Unlink className="mr-2 h-3.5 w-3.5" />
+                                    )}
+                                    Desvincular
+                                  </Button>
+                                </>
+                              ) : (
+                                <>
+                                  <h4 className="text-sm font-semibold text-foreground">
+                                    Posiciones no vinculadas
+                                  </h4>
+                                  <p className="text-sm text-foreground">
+                                    {`Este SKU está asignado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} más del acuerdo. Si las vinculas, compartirán el mismo precio y se actualizarán juntas automáticamente en cada cambio de precio.`}
+                                  </p>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                                    disabled={linkMut.isPending || !productId}
+                                    onClick={() => linkMut.mutate()}
+                                  >
+                                    {linkMut.isPending ? (
+                                      <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                                    ) : (
+                                      <Link className="mr-2 h-3.5 w-3.5" />
+                                    )}
+                                    Vincular
+                                  </Button>
+                                  {linkError && (
+                                    <p className="text-xs font-medium text-destructive">
+                                      {linkError}
+                                    </p>
                                   )}
-                                </div>
-                              </div>
-                            </CollapsibleContent>
-                          </Collapsible>
-                        </Alert>
-                    </div>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    </Alert>
                   )}
-                  </div>
                 </div>
               </section>
 
@@ -1686,7 +1676,7 @@ export function LineEditDialog({
                   </Alert>
                 )}
                 <div className="space-y-4">
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                     <div className="space-y-1.5">
                       <FieldLabel>Precio de venta</FieldLabel>
                       <Input
