@@ -226,7 +226,7 @@ function ClientCodeCards({
   initialLineId,
   open,
   onReactivated,
-  onNavigateAway,
+  onRequestSwitchToPosition,
   onCreatingIncompleteChange,
 }: {
   clients: ClientCard[];
@@ -236,7 +236,7 @@ function ClientCodeCards({
   initialLineId: string | null;
   open: boolean;
   onReactivated: () => void;
-  onNavigateAway: (positionId: string) => void;
+  onRequestSwitchToPosition: (positionId: string) => void;
   onCreatingIncompleteChange: (clientId: string, incomplete: boolean) => void;
 }) {
   if (clients.length === 0) {
@@ -260,7 +260,7 @@ function ClientCodeCards({
             open={open}
             onChange={(next) => onChange(c.id, next)}
             onReactivated={onReactivated}
-            onNavigateAway={onNavigateAway}
+            onRequestSwitchToPosition={onRequestSwitchToPosition}
             onCreatingIncompleteChange={(incomplete) =>
               onCreatingIncompleteChange(c.id, incomplete)
             }
@@ -272,6 +272,15 @@ function ClientCodeCards({
 }
 
 
+type TakenBlock = {
+  position_id: string;
+  client_code: string;
+  client_description: string | null;
+  sku: string | null;
+  product_description: string | null;
+  sale_price: number | null;
+};
+
 function ClientCodeCard({
   card,
   entry,
@@ -280,7 +289,7 @@ function ClientCodeCard({
   open,
   onChange,
   onReactivated,
-  onNavigateAway,
+  onRequestSwitchToPosition,
   onCreatingIncompleteChange,
 }: {
   card: ClientCard;
@@ -290,7 +299,7 @@ function ClientCodeCard({
   open: boolean;
   onChange: (next: ClientCodeEntry) => void;
   onReactivated: () => void;
-  onNavigateAway: (positionId: string) => void;
+  onRequestSwitchToPosition: (positionId: string) => void;
   onCreatingIncompleteChange: (incomplete: boolean) => void;
 }) {
   const disabled = !card.can_manage;
@@ -316,8 +325,8 @@ function ClientCodeCard({
   const [reactivateTarget, setReactivateTarget] = useState<
     { position_id: string; sku: string | null } | null
   >(null);
-  const [viewTarget, setViewTarget] = useState<string | null>(null);
   const [reactivatePending, setReactivatePending] = useState(false);
+  const [takenBlock, setTakenBlock] = useState<TakenBlock | null>(null);
   const seq = useRef(0);
 
   // Resincronizar cuando el diálogo se abre (incluyendo reabrir la misma posición).
@@ -330,6 +339,7 @@ function ClientCodeCard({
     setResults([]);
     setExpandedId(null);
     setPopoverOpen(false);
+    setTakenBlock(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
@@ -380,6 +390,23 @@ function ClientCodeCard({
     setQuery("");
     setResults([]);
     setExpandedId(null);
+    setTakenBlock(null);
+  };
+
+  const handleSelectTakenActive = (r: ClientCodeSearchResult) => {
+    if (r.status.kind !== "taken") return;
+    setTakenBlock({
+      position_id: r.status.position_id,
+      client_code: r.client_code,
+      client_description: r.description,
+      sku: r.status.sku,
+      product_description: r.status.product_description,
+      sale_price: r.status.sale_price,
+    });
+    setPopoverOpen(false);
+    setQuery("");
+    setResults([]);
+    setExpandedId(null);
   };
 
   const handleCreateNew = () => {
@@ -392,6 +419,7 @@ function ClientCodeCard({
     setQuery("");
     setResults([]);
     setExpandedId(null);
+    setTakenBlock(null);
   };
 
   const handleDiscardCreate = () => {
@@ -473,6 +501,7 @@ function ClientCodeCard({
           expandedId={expandedId}
           onExpand={(id) => setExpandedId((prev) => (prev === id ? null : id))}
           onSelectFree={handleSelectFree}
+          onSelectTakenActive={handleSelectTakenActive}
           onCreateNew={handleCreateNew}
           onRequestReactivate={(r) => {
             if (r.status.kind !== "taken") return;
@@ -482,15 +511,79 @@ function ClientCodeCard({
             });
             setPopoverOpen(false);
           }}
-          onRequestView={(positionId) => {
-            setViewTarget(positionId);
-            setPopoverOpen(false);
-          }}
           clientName={card.name}
           canManage={card.can_manage}
         />
       </PopoverContent>
     </Popover>
+  );
+
+  const takenAlert = takenBlock && (
+    <div className="rounded-md border border-warning/40 bg-warning/10 p-3 space-y-3 text-[var(--status-warning-strong)]">
+      <div className="flex items-start gap-2">
+        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+        <p className="text-sm font-semibold">
+          Este código ya está asignado en el acuerdo
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="space-y-0.5">
+          <p className="text-[10px] font-semibold uppercase tracking-wide opacity-70">
+            Del cliente {card.name}
+          </p>
+          <p className="font-mono text-sm text-foreground">
+            {takenBlock.client_code}
+          </p>
+          {takenBlock.client_description && (
+            <p className="text-xs text-foreground/80">
+              {takenBlock.client_description}
+            </p>
+          )}
+        </div>
+        <div className="space-y-0.5 sm:border-l sm:border-warning/30 sm:pl-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wide opacity-70">
+            De Sumatec
+          </p>
+          <p className="font-mono text-sm text-foreground">
+            {takenBlock.sku ?? "—"}
+          </p>
+          {takenBlock.product_description && (
+            <p className="text-xs text-foreground/80">
+              {takenBlock.product_description}
+            </p>
+          )}
+          {takenBlock.sale_price != null && (
+            <p className="text-xs tabular-nums text-foreground/80">
+              {formatMoneyCOP(takenBlock.sale_price)}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <p className="text-xs">
+        Un código de cliente solo puede asignarse a una posición del acuerdo.
+      </p>
+
+      <div className="flex flex-wrap items-center gap-3 pt-1">
+        {!initialLineId && (
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => onRequestSwitchToPosition(takenBlock.position_id)}
+          >
+            Editar esta posición
+          </Button>
+        )}
+        <button
+          type="button"
+          onClick={() => setTakenBlock(null)}
+          className="text-xs font-medium text-foreground/70 underline-offset-2 hover:underline"
+        >
+          Elegir otro código
+        </button>
+      </div>
+    </div>
   );
 
 
@@ -506,7 +599,12 @@ function ClientCodeCard({
         <div className="text-sm font-semibold text-foreground">{card.name}</div>
       </div>
 
-      {mode === "search" && searchBlock(searchPlaceholder)}
+      {mode === "search" && (
+        <>
+          {searchBlock(searchPlaceholder)}
+          {takenAlert}
+        </>
+      )}
 
       {mode === "creating" && (
         <>
@@ -565,6 +663,7 @@ function ClientCodeCard({
       {mode === "edit" && (
         <>
           {searchBlock(searchPlaceholder)}
+          {takenAlert}
           <div className="space-y-1.5">
             <FieldLabel>CÓDIGO</FieldLabel>
             <Input
@@ -633,33 +732,6 @@ function ClientCodeCard({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* AlertDialog: ver posición (perderás cambios sin guardar) */}
-      <AlertDialog
-        open={!!viewTarget}
-        onOpenChange={(o) => !o && setViewTarget(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Ir a la otra posición</AlertDialogTitle>
-            <AlertDialogDescription>
-              Se cerrará este diálogo y perderás los cambios sin guardar. ¿Continuar?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => {
-                e.preventDefault();
-                if (viewTarget) onNavigateAway(viewTarget);
-                setViewTarget(null);
-              }}
-            >
-              Ver posición
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
@@ -674,9 +746,9 @@ function ClientCodeSearchList({
   expandedId,
   onExpand,
   onSelectFree,
+  onSelectTakenActive,
   onCreateNew,
   onRequestReactivate,
-  onRequestView,
   clientName,
   canManage,
 }: {
@@ -687,16 +759,14 @@ function ClientCodeSearchList({
   expandedId: string | null;
   onExpand: (id: string) => void;
   onSelectFree: (r: ClientCodeSearchResult) => void;
+  onSelectTakenActive: (r: ClientCodeSearchResult) => void;
   onCreateNew: () => void;
   onRequestReactivate: (r: ClientCodeSearchResult) => void;
-  onRequestView: (positionId: string) => void;
   clientName: string;
   canManage: boolean;
 }) {
   const q = query.trim();
   const showCreate = canManage && q.length >= 2 && !loading;
-
-
 
   if (q.length < 2) {
     return (
@@ -723,10 +793,8 @@ function ClientCodeSearchList({
         const isSelf =
           isTaken && r.status.kind === "taken" && r.status.position_id === initialLineId;
         const posStatus = r.status.kind === "taken" ? r.status.position_status : null;
-        const expanded = expandedId === r.client_product_id;
 
-        // Caso "esta misma posición": tratar como libre (permite volver a
-        // seleccionarlo sin marcarlo como conflicto).
+        // Caso "esta misma posición": tratar como libre.
         if (isSelf) {
           return (
             <button
@@ -768,6 +836,31 @@ function ClientCodeSearchList({
 
         const takenStatus = r.status;
         const isExcluded = posStatus === "excluded";
+
+        // Activa: un solo click selecciona → dispara la alerta amarilla en la tarjeta.
+        if (!isExcluded) {
+          return (
+            <button
+              key={r.client_product_id}
+              type="button"
+              onClick={() => onSelectTakenActive(r)}
+              className="flex w-full flex-col gap-0.5 px-3 py-2 text-left hover:bg-muted focus:bg-muted focus:outline-none"
+            >
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-sm font-medium text-muted-foreground">
+                  {r.client_code}
+                </span>
+                <StatusBadge size="sm" status="warning" label="En posición activa" />
+              </div>
+              {r.description && (
+                <span className="text-xs text-muted-foreground">{r.description}</span>
+              )}
+            </button>
+          );
+        }
+
+        // Excluida: se conserva la tarjeta expandible con "Reactivar posición".
+        const expanded = expandedId === r.client_product_id;
         return (
           <div key={r.client_product_id} className="border-b border-border last:border-b-0">
             <button
@@ -779,11 +872,7 @@ function ClientCodeSearchList({
                 <span className="font-mono text-sm font-medium text-muted-foreground">
                   {r.client_code}
                 </span>
-                <StatusBadge
-                  size="sm"
-                  status={isExcluded ? "neutral" : "warning"}
-                  label={isExcluded ? "En posición excluida" : "En posición activa"}
-                />
+                <StatusBadge size="sm" status="neutral" label="En posición excluida" />
                 <ChevronDown
                   className={cn(
                     "ml-auto h-3.5 w-3.5 text-muted-foreground transition-transform",
@@ -813,20 +902,10 @@ function ClientCodeSearchList({
                   </p>
                 )}
                 <p className="text-xs text-foreground">
-                  {isExcluded
-                    ? "Este código está asignado a una posición excluida del acuerdo."
-                    : "Este código ya está asignado a otra posición activa del acuerdo."}
+                  Este código está asignado a una posición excluida del acuerdo.
                 </p>
-                <div className="flex flex-wrap gap-2 pt-1">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => onRequestView(takenStatus.position_id)}
-                  >
-                    Ver posición
-                  </Button>
-                  {isExcluded && canManage && (
+                {canManage && (
+                  <div className="flex flex-wrap gap-2 pt-1">
                     <Button
                       type="button"
                       size="sm"
@@ -834,8 +913,8 @@ function ClientCodeSearchList({
                     >
                       Reactivar posición
                     </Button>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -857,6 +936,7 @@ function ClientCodeSearchList({
     </div>
   );
 }
+
 
 export function LineEditDialog({
   open,
