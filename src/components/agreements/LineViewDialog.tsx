@@ -248,12 +248,6 @@ export function LineViewDialog({
 
                 <SectionHeader title="Sumatec" number="01" />
 
-                {line.product_status && line.product_status !== "active" && (
-                  <Badge color="error" variant="soft">
-                    Inactivo
-                  </Badge>
-                )}
-
                 {line.sku ? (
                   <div className="space-y-1.5">
                     <div className="flex items-baseline gap-3 flex-wrap">
@@ -264,6 +258,11 @@ export function LineViewDialog({
                         <span className="text-xs text-muted-foreground uppercase tracking-wide">
                           {line.commercial_brand}
                         </span>
+                      )}
+                      {line.product_status && line.product_status !== "active" && (
+                        <Badge color="error" variant="soft">
+                          Inactivo
+                        </Badge>
                       )}
                     </div>
                     <div className="text-sm text-foreground">
