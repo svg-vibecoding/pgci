@@ -550,12 +550,17 @@ export type Database = {
           agreement_id: string
           created_at: string
           created_by: string | null
+          description: string | null
           end_date: string | null
           id: string
           observations: string | null
           par_price: number | null
-          product_id: string
-          sale_price: number
+          pending_reason: string | null
+          product_id: string | null
+          published_at: string | null
+          published_by: string | null
+          sale_price: number | null
+          sku_raw: string | null
           start_date: string | null
           status: string
           updated_at: string
@@ -565,12 +570,17 @@ export type Database = {
           agreement_id: string
           created_at?: string
           created_by?: string | null
+          description?: string | null
           end_date?: string | null
           id?: string
           observations?: string | null
           par_price?: number | null
-          product_id: string
-          sale_price: number
+          pending_reason?: string | null
+          product_id?: string | null
+          published_at?: string | null
+          published_by?: string | null
+          sale_price?: number | null
+          sku_raw?: string | null
           start_date?: string | null
           status?: string
           updated_at?: string
@@ -580,12 +590,17 @@ export type Database = {
           agreement_id?: string
           created_at?: string
           created_by?: string | null
+          description?: string | null
           end_date?: string | null
           id?: string
           observations?: string | null
           par_price?: number | null
-          product_id?: string
-          sale_price?: number
+          pending_reason?: string | null
+          product_id?: string | null
+          published_at?: string | null
+          published_by?: string | null
+          sale_price?: number | null
+          sku_raw?: string | null
           start_date?: string | null
           status?: string
           updated_at?: string
