@@ -444,62 +444,60 @@ function ClientCodeCard({
     entry.description.trim() !== (originalDescription ?? "").trim();
 
   const searchBlock = (
-    <div className="space-y-1.5">
-      <FieldLabel>CÓDIGO</FieldLabel>
-      <Popover open={popoverOpen && !disabled} onOpenChange={(o) => !disabled && setPopoverOpen(o)}>
-        <PopoverTrigger asChild>
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              className={cn("pl-9", disabled ? readonlyClass : "bg-white")}
-              value={query}
-              disabled={disabled}
-              placeholder="Busca por código o descripción…"
-              onFocus={() => !disabled && setPopoverOpen(true)}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setPopoverOpen(true);
-              }}
-            />
-            {loading && (
-              <Loader2 className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
-            )}
-          </div>
-        </PopoverTrigger>
-        <PopoverContent
-          align="start"
-          sideOffset={4}
-          onOpenAutoFocus={(e) => e.preventDefault()}
-          className="w-[var(--radix-popover-trigger-width)] p-0"
-        >
-          <ClientCodeSearchList
-            query={query}
-            loading={loading}
-            results={results}
-            initialLineId={initialLineId}
-            expandedId={expandedId}
-            onExpand={(id) => setExpandedId((prev) => (prev === id ? null : id))}
-            onSelectFree={handleSelectFree}
-            onCreateNew={handleCreateNew}
-            onRequestReactivate={(r) => {
-              if (r.status.kind !== "taken") return;
-              setReactivateTarget({
-                position_id: r.status.position_id,
-                sku: r.status.sku,
-              });
-              setPopoverOpen(false);
+    <Popover open={popoverOpen && !disabled} onOpenChange={(o) => !disabled && setPopoverOpen(o)}>
+      <PopoverTrigger asChild>
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            className={cn("pl-9", disabled ? readonlyClass : "bg-white")}
+            value={query}
+            disabled={disabled}
+            placeholder="Busca por código o descripción…"
+            onFocus={() => !disabled && setPopoverOpen(true)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setPopoverOpen(true);
             }}
-            onRequestView={(positionId) => {
-              setViewTarget(positionId);
-              setPopoverOpen(false);
-            }}
-            clientName={card.name}
-            canManage={card.can_manage}
           />
-        </PopoverContent>
-      </Popover>
-    </div>
+          {loading && (
+            <Loader2 className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+          )}
+        </div>
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        sideOffset={4}
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        className="w-[var(--radix-popover-trigger-width)] p-0"
+      >
+        <ClientCodeSearchList
+          query={query}
+          loading={loading}
+          results={results}
+          initialLineId={initialLineId}
+          expandedId={expandedId}
+          onExpand={(id) => setExpandedId((prev) => (prev === id ? null : id))}
+          onSelectFree={handleSelectFree}
+          onCreateNew={handleCreateNew}
+          onRequestReactivate={(r) => {
+            if (r.status.kind !== "taken") return;
+            setReactivateTarget({
+              position_id: r.status.position_id,
+              sku: r.status.sku,
+            });
+            setPopoverOpen(false);
+          }}
+          onRequestView={(positionId) => {
+            setViewTarget(positionId);
+            setPopoverOpen(false);
+          }}
+          clientName={card.name}
+          canManage={card.can_manage}
+        />
+      </PopoverContent>
+    </Popover>
   );
+
 
   return (
     <div
