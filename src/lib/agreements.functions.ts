@@ -978,6 +978,15 @@ export const searchClientCodes = createServerFn({ method: "POST" })
     if (apccErr) throw new Error(apccErr.message);
 
     const statusByCp = new Map<string, ClientCodeSearchResult["status"]>();
+    const excludedPosIds: string[] = [];
+    const takenRows: Array<{
+      cp_id: string;
+      pos_id: string;
+      pos_status: "active" | "excluded" | "pending" | "requires_review";
+      sku: string | null;
+      product_description: string | null;
+      sale_price: number | null;
+    }> = [];
     for (const row of apcc ?? []) {
       const pos = row.agreement_positions as {
         id: string;
@@ -991,15 +1000,52 @@ export const searchClientCodes = createServerFn({ method: "POST" })
         pos.status === "active" || pos.status === "excluded" || pos.status === "pending" || pos.status === "requires_review"
           ? (pos.status as "active" | "excluded" | "pending" | "requires_review")
           : "active";
-      statusByCp.set(row.client_product_id as string, {
-        kind: "taken",
-        position_id: pos.id,
-        position_status: posStatus,
+      takenRows.push({
+        cp_id: row.client_product_id as string,
+        pos_id: pos.id,
+        pos_status: posStatus,
         sku: pos.products?.sku ?? null,
         product_description: pos.products?.erp_description ?? null,
         sale_price: pos.sale_price,
       });
+      if (posStatus === "excluded") excludedPosIds.push(pos.id);
     }
+
+    const exclusionByPos = new Map<
+      string,
+      { reason: string | null; date: string | null }
+    >();
+    if (excludedPosIds.length > 0) {
+      const { data: excls, error: exclErr } = await context.supabase
+        .from("agreement_position_exclusions")
+        .select("position_id, exclusion_reason, valid_from")
+        .in("position_id", excludedPosIds)
+        .is("valid_until", null);
+      if (exclErr) throw new Error(exclErr.message);
+      for (const e of excls ?? []) {
+        const reasonRaw = (e.exclusion_reason as string | null) ?? null;
+        exclusionByPos.set(e.position_id as string, {
+          reason: reasonRaw && reasonRaw.trim() !== "" ? reasonRaw : null,
+          date: (e.valid_from as string | null) ?? null,
+        });
+      }
+    }
+
+    for (const t of takenRows) {
+      const excl = t.pos_status === "excluded" ? exclusionByPos.get(t.pos_id) ?? null : null;
+      statusByCp.set(t.cp_id, {
+        kind: "taken",
+        position_id: t.pos_id,
+        position_status: t.pos_status,
+        sku: t.sku,
+        product_description: t.product_description,
+        sale_price: t.sale_price,
+        exclusion_reason: excl?.reason ?? null,
+        exclusion_date: excl?.date ?? null,
+      });
+    }
+
+
 
     return allIds.map((id) => {
       const m = merged.get(id)!;
