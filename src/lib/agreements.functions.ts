@@ -69,16 +69,8 @@ export const listAgreements = createServerFn({ method: "GET" })
       arr.push(name);
       byAgreement.set(aid, arr);
     }
-    const { data: transitRows, error: tErr } = await context.supabase
-      .from("agreement_transit_lines")
-      .select("agreement_id")
-      .in("agreement_id", ids);
-    if (tErr) throw new Error(`No se pudieron cargar líneas en tránsito: ${tErr.message}`);
+    // Modelo de tránsito eliminado: el conteo queda en 0 hasta que se retire el KPI.
     const transitByAgreement = new Map<string, number>();
-    for (const t of transitRows ?? []) {
-      const aid = (t as { agreement_id: string }).agreement_id;
-      transitByAgreement.set(aid, (transitByAgreement.get(aid) ?? 0) + 1);
-    }
 
     // can_admin por fila: super_admin → todos; sino, membresía como agreement_admin vigente
     const { data: superRes } = await context.supabase.rpc("is_super_admin");
@@ -464,26 +456,17 @@ export const listAgreementLines = createServerFn({ method: "GET" })
   .handler(async ({ data, context }): Promise<AgreementLineRow[]> => {
     await assertCanAccess(context.supabase, data.agreement_id);
 
-    const [positionsRes, transitRes] = await Promise.all([
-      context.supabase
-        .from("agreement_positions")
-        .select(
-          "id, agreement_id, product_id, sale_price, par_price, start_date, end_date, observations, status, created_at, updated_at, products:product_id(sku, erp_description, commercial_brand, status)",
-        )
-        .eq("agreement_id", data.agreement_id)
-        .order("created_at", { ascending: false }),
-      context.supabase
-        .from("agreement_transit_lines")
-        .select(
-          "id, agreement_id, product_id, sku_raw, description, sale_price, par_price, start_date, end_date, observations, pending_reason, created_at, updated_at, products:product_id(sku, erp_description, commercial_brand, status)",
-        )
-        .eq("agreement_id", data.agreement_id)
-        .order("created_at", { ascending: false }),
-    ]);
+    // Modelo de tránsito eliminado: solo se listan posiciones.
+    const positionsRes = await context.supabase
+      .from("agreement_positions")
+      .select(
+        "id, agreement_id, product_id, sale_price, par_price, start_date, end_date, observations, status, created_at, updated_at, products:product_id(sku, erp_description, commercial_brand, status)",
+      )
+      .eq("agreement_id", data.agreement_id)
+      .order("created_at", { ascending: false });
     if (positionsRes.error) throw new Error(positionsRes.error.message);
-    if (transitRes.error) throw new Error(transitRes.error.message);
     const positions = positionsRes.data ?? [];
-    const transit = transitRes.data ?? [];
+    const transit: never[] = [];
 
     // Razones de exclusión (período abierto) para posiciones excluidas.
     const excludedIds = positions
@@ -501,29 +484,18 @@ export const listAgreementLines = createServerFn({ method: "GET" })
       }
     }
 
-    // Códigos por posición / tránsito (período abierto), con nombre de cliente y código.
+    // Códigos por posición (período abierto), con nombre de cliente y código.
     const posIds = positions.map((p) => p.id as string);
-    const trIds = transit.map((t) => t.id as string);
-    const [apccRes, atccRes] = await Promise.all([
+    const apccRes =
       posIds.length > 0
-        ? context.supabase
+        ? await context.supabase
             .from("agreement_position_client_codes")
             .select(
               "agreement_position_id, client_id, client_product_id, clients!agreement_position_client_codes_client_id_fkey(commercial_name, legal_name), client_products!agreement_position_client_codes_client_product_id_fkey(client_code)",
             )
             .in("agreement_position_id", posIds)
             .is("valid_until", null)
-        : Promise.resolve({ data: [] as unknown[], error: null }),
-      trIds.length > 0
-        ? context.supabase
-            .from("agreement_transit_client_codes")
-            .select(
-              "agreement_transit_id, client_id, client_product_id, clients!agreement_transit_client_codes_client_id_fkey(commercial_name, legal_name), client_products!agreement_transit_client_codes_client_product_id_fkey(client_code)",
-            )
-            .in("agreement_transit_id", trIds)
-            .is("valid_until", null)
-        : Promise.resolve({ data: [] as unknown[], error: null }),
-    ]);
+        : { data: [] as unknown[], error: null };
 
     type ClientEmbed = { commercial_name: string | null; legal_name: string | null } | null;
     type ApccRow = {
@@ -533,22 +505,13 @@ export const listAgreementLines = createServerFn({ method: "GET" })
       clients: ClientEmbed;
       client_products: { client_code: string | null } | null;
     };
-    type AtccRow = {
-      agreement_transit_id: string;
-      client_id: string;
-      client_product_id: string;
-      clients: ClientEmbed;
-      client_products: { client_code: string | null } | null;
-    };
     const apcc = ((apccRes.data ?? []) as unknown as ApccRow[]);
-    const atcc = ((atccRes.data ?? []) as unknown as AtccRow[]);
     const clientDisplay = (c: ClientEmbed): string | null =>
       c?.commercial_name ?? c?.legal_name ?? null;
 
     // Historial de descripciones más recientes por client_product_id.
     const cpIdsSet = new Set<string>();
     for (const c of apcc) if (c.client_product_id) cpIdsSet.add(c.client_product_id);
-    for (const c of atcc) if (c.client_product_id) cpIdsSet.add(c.client_product_id);
     const descByCp = new Map<string, string | null>();
     if (cpIdsSet.size > 0) {
       const { data: hist } = await context.supabase
@@ -580,23 +543,6 @@ export const listAgreementLines = createServerFn({ method: "GET" })
       codesByPos.set(c.agreement_position_id, arr);
     }
 
-
-
-
-    const codesByTransit = new Map<string, LineCode[]>();
-    for (const c of atcc) {
-      const code = c.client_products?.client_code ?? null;
-      if (!code) continue;
-      const arr = codesByTransit.get(c.agreement_transit_id) ?? [];
-      arr.push({
-        client_id: c.client_id,
-        client_name: clientDisplay(c.clients),
-        client_code: code,
-        description: descByCp.get(c.client_product_id) ?? null,
-      });
-      codesByTransit.set(c.agreement_transit_id, arr);
-    }
-
     const positionRows: AgreementLineRow[] = positions.map((r) => ({
       kind: "position",
       id: r.id as string,
@@ -616,38 +562,10 @@ export const listAgreementLines = createServerFn({ method: "GET" })
       codes: codesByPos.get(r.id as string) ?? [],
     }));
 
-    const transitRows: AgreementLineRow[] = transit.map((r) => {
-      const products = r.products as AgreementLineRow["products"];
-      return {
-        kind: "transit",
-        id: r.id as string,
-        agreement_id: r.agreement_id as string,
-        product_id: (r.product_id as string | null) ?? null,
-        sale_price: (r.sale_price as number | null) ?? null,
-        par_price: (r.par_price as number | null) ?? null,
-        start_date: (r.start_date as string | null) ?? null,
-        end_date: (r.end_date as string | null) ?? null,
-        observations: (r.observations as string | null) ?? null,
-        status: "pending",
-        pending_reason: (r.pending_reason as string | null) ?? null,
-        exclusion_reason: null,
-        created_at: r.created_at as string,
-        updated_at: r.updated_at as string,
-        products:
-          products ??
-          (r.sku_raw
-            ? {
-                sku: r.sku_raw as string,
-                erp_description: (r.description as string | null) ?? null,
-                commercial_brand: null,
-                status: null,
-              }
-            : null),
-        codes: codesByTransit.get(r.id as string) ?? [],
-      };
-    });
+    // Silencia variable no usada: `transit` es un placeholder tras la eliminación del modelo.
+    void transit;
 
-    return [...positionRows, ...transitRows].sort((a, b) =>
+    return positionRows.sort((a, b) =>
       (b.created_at ?? "").localeCompare(a.created_at ?? ""),
     );
   });
@@ -708,7 +626,6 @@ export const updateAgreementLine = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<UpdateAgreementLineResult> => {
     const { data: rpcRes, error } = await context.supabase.rpc("update_agreement_line", {
       p_line_id: data.line_id,
-      p_kind: data.kind,
       p_patch: data.patch as unknown as Json,
       p_confirm_n_conflict: data.confirm_n_conflict ?? false,
     });
@@ -760,23 +677,13 @@ export const reactivateAgreementLine = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// Modelo de tránsito eliminado: se conserva la firma como no-op para no romper
+// llamadas antiguas del frontend hasta su próxima limpieza.
 export const deleteAgreementTransitLine = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => transitDeleteSchema.parse(d))
-  .handler(async ({ data, context }) => {
-    const { data: t, error: tErr } = await context.supabase
-      .from("agreement_transit_lines")
-      .select("agreement_id")
-      .eq("id", data.transit_id)
-      .maybeSingle();
-    if (tErr) throw new Error(tErr.message);
-    if (!t) return { ok: true };
-    await assertCanAdmin(context.supabase, t.agreement_id as string);
-    const { error } = await context.supabase
-      .from("agreement_transit_lines")
-      .delete()
-      .eq("id", data.transit_id);
-    if (error) throw new Error(error.message);
+  .handler(async ({ data }) => {
+    void data;
     return { ok: true };
   });
 

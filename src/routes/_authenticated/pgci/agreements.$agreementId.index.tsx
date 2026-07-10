@@ -108,16 +108,10 @@ function AgreementDetail() {
     queryKey: ["agreements", "members", agreementId],
     queryFn: () => membersFn({ data: { agreement_id: agreementId } }),
   });
+  // Modelo de tránsito eliminado: el conteo queda fijo en 0 hasta retirar el KPI.
   const { data: transitCount } = useQuery({
     queryKey: ["agreements", "transit-count", agreementId],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from("agreement_transit_lines")
-        .select("id", { count: "exact", head: true })
-        .eq("agreement_id", agreementId);
-      if (error) throw error;
-      return count ?? 0;
-    },
+    queryFn: async () => 0,
   });
 
   const canAdmin = !!ctx?.can_admin;
