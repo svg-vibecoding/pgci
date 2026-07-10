@@ -1403,7 +1403,7 @@ export function LineEditDialog({
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-3 md:col-span-2">
                     <div className="flex items-center gap-2">
-                      <div className="text-sm font-semibold text-foreground">Sumatec</div>
+                      <div className="text-sm font-semibold text-foreground uppercase">SUMATEC</div>
                     </div>
 
                     <Popover open={searchOpen} onOpenChange={setSearchOpen}>
