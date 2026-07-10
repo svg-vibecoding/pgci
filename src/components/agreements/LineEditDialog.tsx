@@ -1493,7 +1493,7 @@ export function LineEditDialog({
                   </Popover>
 
                   {hasProduct && (
-                    <>
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                       <div className="space-y-1.5">
                         <FieldLabel>Código Jaivaná</FieldLabel>
                         <Input
@@ -1524,7 +1524,7 @@ export function LineEditDialog({
                           className={readonlyClass}
                         />
                       </div>
-                    </>
+                    </div>
                   )}
 
                   {lookup.kind === "inactive" && (
