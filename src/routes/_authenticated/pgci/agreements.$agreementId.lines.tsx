@@ -81,6 +81,7 @@ import {
 import { exportAgreementLines } from "@/lib/agreement-export";
 import { PENDING_REASON_LABELS, type ImportPendingReason } from "@/lib/agreement-import";
 import { LineEditDialog, type LineEditValues } from "@/components/agreements/LineEditDialog";
+import { LineViewDialog, type LineViewData } from "@/components/agreements/LineViewDialog";
 import {
   Tooltip,
   TooltipContent,
@@ -203,6 +204,8 @@ function AgreementLinesPage() {
 
   const [editOpen, setEditOpen] = useState(false);
   const [editInitial, setEditInitial] = useState<Partial<LineEditValues> | null>(null);
+  const [viewOpen, setViewOpen] = useState(false);
+  const [viewTarget, setViewTarget] = useState<LineViewData | null>(null);
   const [excludeTarget, setExcludeTarget] = useState<{
     id: string;
     sku: string | null;
@@ -388,6 +391,35 @@ function AgreementLinesPage() {
     });
     setSkuModalOpen(false);
     setEditOpen(true);
+  };
+
+  const openViewForLine = (lineId: string) => {
+    const r = (lines ?? []).find((x) => x.id === lineId) as Line | undefined;
+    if (!r) return;
+    setViewTarget({
+      id: r.id as string,
+      kind: r.kind,
+      status: r.status as LineViewData["status"],
+      sku: r.products?.sku ?? null,
+      erp_description: r.products?.erp_description ?? null,
+      commercial_brand: r.products?.commercial_brand ?? null,
+      product_status: r.products?.status ?? null,
+      sale_price: (r.sale_price as number | null) ?? null,
+      par_price: (r.par_price as number | null) ?? null,
+      start_date: (r.start_date as string | null) ?? null,
+      end_date: (r.end_date as string | null) ?? null,
+      observations: (r.observations as string | null) ?? null,
+      exclusion_reason: (r.exclusion_reason as string | null) ?? null,
+      codes: (r.codes ?? []).map((c) => ({
+        client_id: c.client_id,
+        client_name: c.client_name ?? null,
+        client_code: c.client_code,
+        description: c.description ?? null,
+      })),
+      created_at: (r.created_at as string | null) ?? null,
+      updated_at: (r.updated_at as string | null) ?? null,
+    });
+    setViewOpen(true);
   };
 
   const filtered = useMemo<Line[]>(() => {
@@ -700,14 +732,14 @@ function AgreementLinesPage() {
               <TableHead className="w-32 whitespace-nowrap text-right">Precio</TableHead>
               <TableHead className="w-32 whitespace-nowrap">Vigencia</TableHead>
               <TableHead className="w-40 whitespace-nowrap">Estado</TableHead>
-              {canAdmin && <TableHead className="w-24 whitespace-nowrap text-right">Acciones</TableHead>}
+              <TableHead className="w-28 whitespace-nowrap text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loadingLines && (
               <TableRow>
                 <TableCell
-                  colSpan={canAdmin ? 7 : 6}
+                  colSpan={7}
                   className="py-6 text-center text-sm text-muted-foreground"
                 >
                   Cargando…
@@ -717,7 +749,7 @@ function AgreementLinesPage() {
             {!loadingLines && filtered.length === 0 && (
               <TableRow>
                 <TableCell
-                  colSpan={canAdmin ? 7 : 6}
+                  colSpan={7}
                   className="py-8 text-center text-sm text-muted-foreground"
                 >
                   No hay posiciones con esos filtros.
@@ -908,10 +940,19 @@ function AgreementLinesPage() {
                       )}
                     </div>
                   </TableCell>
-                  {canAdmin && (
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        {isExcluded ? (
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-1">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => openViewForLine(r.id as string)}
+                        aria-label="Ver"
+                        title="Ver posición"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      {canAdmin && (
+                        isExcluded ? (
                           <Button
                             size="icon"
                             variant="ghost"
@@ -968,10 +1009,10 @@ function AgreementLinesPage() {
                               </Button>
                             )}
                           </>
-                        )}
-                      </div>
-                    </TableCell>
-                  )}
+                        )
+                      )}
+                    </div>
+                  </TableCell>
                 </TableRow>
               );
             })}
@@ -993,6 +1034,16 @@ function AgreementLinesPage() {
         agreementClients={agreementClients}
         clientCatalogPermissions={catalogPerms}
         onSwitchToPosition={(positionId) => openEditForLine(positionId)}
+      />
+
+      <LineViewDialog
+        open={viewOpen}
+        onOpenChange={setViewOpen}
+        line={viewTarget}
+        agreementName={agreement?.name as string | undefined}
+        agreementEndDate={agreement.end_date as string | null | undefined}
+        canEdit={canAdmin}
+        onEdit={(lineId) => openEditForLine(lineId)}
       />
 
 
