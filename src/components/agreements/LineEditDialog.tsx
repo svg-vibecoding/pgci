@@ -341,7 +341,7 @@ function ClientCodeCard({
     setPopoverOpen(false);
     setTakenBlock(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open, initialLineId]);
 
   useEffect(() => {
     if (!open || disabled) return;
