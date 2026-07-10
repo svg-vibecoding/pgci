@@ -1546,125 +1546,36 @@ export function LineEditDialog({
                     </Alert>
                   )}
                   {nConflict.kind === "found" && (
-                    <div className="md:col-span-2">
-                      <Alert variant="warning" className="p-0 overflow-hidden">
-                        <Collapsible open={nExpanded} onOpenChange={setNExpanded}>
-                          <CollapsibleTrigger asChild>
-                            <button
-                              type="button"
-                              className="flex w-full items-center gap-2 px-4 py-3 text-left bg-warning/10 hover:bg-warning/15 transition-colors"
-                            >
-                              {isLinked ? (
-                                <Link2 className="h-4 w-4 shrink-0" />
-                              ) : (
-                                <AlertTriangle className="h-4 w-4 shrink-0" />
+                    <Alert variant="warning" className="p-0 overflow-hidden">
+                      <Collapsible open={nExpanded} onOpenChange={setNExpanded}>
+                        <CollapsibleTrigger asChild>
+                          <button
+                            type="button"
+                            className="flex w-full items-center gap-2 px-4 py-3 text-left bg-warning/10 hover:bg-warning/15 transition-colors"
+                          >
+                            {isLinked ? (
+                              <Link2 className="h-4 w-4 shrink-0" />
+                            ) : (
+                              <AlertTriangle className="h-4 w-4 shrink-0" />
+                            )}
+                            <span className="flex-1 text-sm font-medium">
+                              {isLinked
+                                ? `Este SKU está vinculado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} del acuerdo.`
+                                : `Este SKU está asignado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} más del acuerdo.`}
+                            </span>
+                            <ChevronDown
+                              className={cn(
+                                "h-4 w-4 shrink-0 text-[var(--status-warning-strong)] transition-transform",
+                                nExpanded && "rotate-180",
                               )}
-                              <span className="flex-1 text-sm font-medium">
-                                {isLinked
-                                  ? `Este SKU está vinculado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} del acuerdo.`
-                                  : `Este SKU está asignado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} más del acuerdo.`}
-                              </span>
-                              <ChevronDown
-                                className={cn(
-                                  "h-4 w-4 shrink-0 text-[var(--status-warning-strong)] transition-transform",
-                                  nExpanded && "rotate-180",
-                                )}
-                              />
-                            </button>
-                          </CollapsibleTrigger>
-                          <CollapsibleContent>
-                              <div className="border-t border-border px-4 py-4 space-y-3">
-                                <div className="rounded-md border border-border bg-surface-card overflow-hidden">
-                                  <Table>
-                                    <TableHeader>
-                                      <TableRow>
-                                        <TableHead>Código cliente</TableHead>
-                                        <TableHead>Descripción cliente</TableHead>
-                                        <TableHead className="text-right">Precio actual</TableHead>
-                                      </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                      {nConflict.lines.map((l) => {
-                                        const first = l.codes[0] ?? null;
-                                        return (
-                                          <TableRow key={l.line_id}>
-                                            <TableCell className="text-sm text-foreground">
-                                              {first?.client_code ?? "—"}
-                                            </TableCell>
-                                            <TableCell className="text-sm text-foreground">
-                                              {first?.description ?? "—"}
-                                            </TableCell>
-                                            <TableCell className="text-right text-sm tabular-nums text-foreground">
-                                              {formatMoneyCOP(l.current_price)}
-                                            </TableCell>
-                                          </TableRow>
-                                        );
-                                      })}
-                                    </TableBody>
-                                  </Table>
-                                </div>
-
-                                <div className="rounded-md border border-border bg-surface-card p-4 space-y-3">
-                                  {isLinked ? (
-                                    <>
-                                      <h4 className="text-sm font-semibold text-foreground">
-                                        Posiciones vinculadas
-                                      </h4>
-                                      <p className="text-sm text-foreground">
-                                        {`Este SKU está vinculado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} del acuerdo. Cualquier cambio de precio se aplicará automáticamente a todas.`}
-                                      </p>
-                                      <Button
-                                        type="button"
-                                        size="sm"
-                                        variant="outline"
-                                        className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-                                        disabled={unlinkMut.isPending || !productId}
-                                        onClick={() => unlinkMut.mutate()}
-                                      >
-                                        {unlinkMut.isPending ? (
-                                          <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                                        ) : (
-                                          <Unlink className="mr-2 h-3.5 w-3.5" />
-                                        )}
-                                        Desvincular
-                                      </Button>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <h4 className="text-sm font-semibold text-foreground">
-                                        Posiciones no vinculadas
-                                      </h4>
-                                      <p className="text-sm text-foreground">
-                                        {`Este SKU está asignado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} más del acuerdo. Si las vinculas, compartirán el mismo precio y se actualizarán juntas automáticamente en cada cambio de precio.`}
-                                      </p>
-                                      <Button
-                                        type="button"
-                                        size="sm"
-                                        variant="outline"
-                                        className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-                                        disabled={linkMut.isPending || !productId}
-                                        onClick={() => linkMut.mutate()}
-                                      >
-                                        {linkMut.isPending ? (
-                                          <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                                        ) : (
-                                          <Link className="mr-2 h-3.5 w-3.5" />
-                                        )}
-                                        Vincular
-                                      </Button>
-                                      {linkError && (
-                                        <p className="text-xs font-medium text-destructive">
-                                          {linkError}
-                                        </p>
-                                      )}
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-                            </CollapsibleContent>
-                          </Collapsible>
-                        </Alert>
-                    </div>
+                            />
+                          </button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+...
+                        </CollapsibleContent>
+                      </Collapsible>
+                    </Alert>
                   )}
                 </div>
               </section>
