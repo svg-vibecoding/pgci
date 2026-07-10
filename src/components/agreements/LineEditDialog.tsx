@@ -594,7 +594,7 @@ function ClientCodeCard({
       {mode === "search" && (
         <>
           {searchBlock(searchPlaceholder)}
-          {tainedAlert}
+          {takenAlert}
           {takenActions}
         </>
       )}
