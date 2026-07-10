@@ -455,13 +455,7 @@ function ClientCodeCard({
       await reactivateFn({ data: { line_id: reactivateTarget.position_id } });
       toast.success("Posición reactivada");
       onReactivated();
-      const q = query.trim();
-      if (q.length >= 2) {
-        const res = await searchFn({
-          data: { agreement_id: agreementId, client_id: card.id, query: q },
-        });
-        setResults(res);
-      }
+      onRequestSwitchToPosition(reactivateTarget.position_id);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "No se pudo reactivar la posición");
     } finally {
@@ -771,9 +765,7 @@ function ClientCodeCard({
             <AlertDialogTitle>Reactivar posición</AlertDialogTitle>
             <AlertDialogDescription>
               La posición {reactivateTarget?.sku ? `del SKU ${reactivateTarget.sku} ` : ""}
-              volverá al acuerdo tal como estaba antes de excluirse. Después
-              podrás editarla normalmente. El código seguirá asignado a esa
-              posición.
+              volverá al acuerdo tal como estaba antes de excluirse, y se abrirá para que la edites.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
