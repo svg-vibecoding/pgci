@@ -405,15 +405,6 @@ function ClientCodeCard({
     setPopoverOpen(false);
   };
 
-  const handleChangeCode = () => {
-    onChange({ code: "", description: "" });
-    setOriginalDescription(null);
-    setIsNew(false);
-    setMode("search");
-    setExpandedId(null);
-    setPopoverOpen(true);
-  };
-
   const doReactivate = async () => {
     if (!reactivateTarget) return;
     setReactivatePending(true);
