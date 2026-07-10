@@ -940,10 +940,19 @@ function AgreementLinesPage() {
                       )}
                     </div>
                   </TableCell>
-                  {canAdmin && (
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        {isExcluded ? (
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-1">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => openViewForLine(r.id as string)}
+                        aria-label="Ver"
+                        title="Ver posición"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      {canAdmin && (
+                        isExcluded ? (
                           <Button
                             size="icon"
                             variant="ghost"
@@ -1000,10 +1009,10 @@ function AgreementLinesPage() {
                               </Button>
                             )}
                           </>
-                        )}
-                      </div>
-                    </TableCell>
-                  )}
+                        )
+                      )}
+                    </div>
+                  </TableCell>
                 </TableRow>
               );
             })}
