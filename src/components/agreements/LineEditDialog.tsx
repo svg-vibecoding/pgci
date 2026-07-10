@@ -546,7 +546,7 @@ function ClientCodeCard({
           <p className="mt-0.5 text-xs font-mono">
             {takenBlock.sku ?? "—"} · {takenBlock.product_description ?? "—"}
             {takenBlock.sale_price != null && (
-              <span className="font-medium">
+              <span className="font-sans font-medium">
                 {" "}· {formatMoneyCOP(takenBlock.sale_price)}
               </span>
             )}
