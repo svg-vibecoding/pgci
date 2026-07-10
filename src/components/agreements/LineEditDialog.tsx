@@ -573,21 +573,9 @@ function ClientCodeCard({
 
       {mode === "edit" && (
         <>
-          {searchBlock}
+          {searchBlock(searchPlaceholder)}
           <div className="space-y-1.5">
-            <div className="flex items-center justify-between gap-2">
-              <FieldLabel>CÓDIGO</FieldLabel>
-              {!disabled && (
-                <button
-                  type="button"
-                  onClick={handleChangeCode}
-                  className="flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
-                >
-                  <Pencil className="h-3 w-3" />
-                  Cambiar código
-                </button>
-              )}
-            </div>
+            <FieldLabel>CÓDIGO</FieldLabel>
             <Input
               value={entry.code}
               disabled={disabled}
