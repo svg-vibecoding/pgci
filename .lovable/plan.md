@@ -1,39 +1,46 @@
-## Corregir trigger `apcc_check_rn_match_01`
+## Diagnóstico confirmado
 
-Tu plan está correcto y completo. Los tres defectos son reales (verificados contra el schema: la columna es `agreement_position_id`, `client_code` vive en `client_products`, y el trigger quedó como `INSERT OR UPDATE`). Lo implemento tal cual, con un par de detalles menores de robustez:
+El bug no es del orden de efectos entre padre e hijo, sino de **cuándo** se puebla `codeEntries` en el padre:
 
-### Migración única
+- `LineEditDialog` mantiene `codeEntries` como `useState` y lo hidrata dentro de un `useEffect` con deps `[open, initial?.line_id, ...]` (línea 1129).
+- Al cambiar de posición vía "Editar esta posición", `initialLineId` cambia. React renderiza el árbol con el **nuevo** `initialLineId` pero `codeEntries` todavía vacío (el efecto del padre aún no corrió). `ClientCodeCard` recibe un `entry` vacío.
+- En la fase de commit, los efectos pasivos corren **bottom-up**: primero el de `ClientCodeCard` (que ya se disparó porque `initialLineId` cambió) → lee `entry` vacío → `mode="search"`. Luego corre el efecto del padre → `setCodeEntries` con los códigos reales → re-render, pero el efecto del hijo no vuelve a correr (sus deps no cambiaron) y queda en `search`.
 
-1. `DROP TRIGGER IF EXISTS apcc_check_rn_match_01 ON public.agreement_position_client_codes;`
-2. `DROP FUNCTION IF EXISTS public.check_rn_match_01();`
-3. Recrear `public.check_rn_match_01()`:
-   - `SELECT apcc.id INTO v_conflict_id FROM public.agreement_position_client_codes apcc WHERE apcc.agreement_id = NEW.agreement_id AND apcc.client_product_id = NEW.client_product_id AND apcc.id <> NEW.id LIMIT 1;`
-   - `IF v_conflict_id IS NOT NULL THEN` resolver en subqueries:
-     - `client_code` desde `client_products` por `NEW.client_product_id`
-     - `sku` desde `agreement_positions ap LEFT JOIN products p ON p.id = ap.product_id` donde `ap.id = (select agreement_position_id from agreement_position_client_codes where id = v_conflict_id)`
-   - `RAISE EXCEPTION 'El código de cliente % ya está asignado a la posición SKU % de este acuerdo (RN-MATCH-01).', ..., ... USING ERRCODE = '23505';`
-   - `RETURN NEW;`
-   - Mantener `SECURITY DEFINER` + `SET search_path = public` (consistente con las demás funciones del proyecto y evita depender del search_path del caller).
-4. Recrear trigger **solo** `BEFORE INSERT`:
-   ```sql
-   CREATE TRIGGER apcc_check_rn_match_01
-   BEFORE INSERT ON public.agreement_position_client_codes
-   FOR EACH ROW EXECUTE FUNCTION public.check_rn_match_01();
-   ```
+Cambiar deps del hijo no arregla nada: aunque agregáramos `entry.code`, dispararía resets en cada edición del usuario dentro del propio card. El problema es que el padre entrega datos tarde.
 
-### Mejoras menores que sugiero sumar
+## Solución
 
-- **`LIMIT 1`** en el SELECT de conflicto: barato y explícito, evita cualquier warning de "more than one row" si en el futuro cambia algo.
-- **Mantener `SECURITY DEFINER` + `SET search_path = public`** en vez de dejar la función como `SECURITY INVOKER` (que es el default del snippet de referencia). Razón: consistente con el resto de funciones del módulo y hace el trigger inmune a un search_path manipulado.
-- **`coalesce(..., '(sin código)')` / `coalesce(..., '(sin SKU)')`** en el mensaje, por si la posición conflictiva es una posición sin producto vinculado (SKU nulo es válido en `agreement_positions`).
+Hidratar `codeEntries` **durante el render** en el padre, no en un efecto. Cuando el hijo se monta/renderiza con el nuevo `initialLineId`, ya recibe el `entry` correcto. Con eso, el `useState` de `mode` en `ClientCodeCard` puede inicializarse directamente desde `entry` y la sincronización por cambio de posición se hace con el mismo patrón "reset en render por cambio de key" (React docs: [Storing information from previous renders](https://react.dev/reference/react/useState#storing-information-from-previous-renders)).
 
-### Verificación post-migración
+### Cambios en `LineEditDialog.tsx`
 
-- `SELECT tgtype FROM pg_trigger WHERE tgname = 'apcc_check_rn_match_01';` → debe devolver `5` (BEFORE + ROW + INSERT), no `7`.
-- `SELECT count(*) FROM pg_indexes WHERE indexname = 'apcc_agreement_client_product_open_uq';` → sigue en `0`.
-- `SELECT count(*) FROM pg_indexes WHERE indexname = 'apcc_position_client_open_uq';` → sigue en `1` (intacto).
+1. **Padre — hidratación síncrona de `codeEntries`** (reemplaza la parte del `useEffect` de la línea 1129 que hace `setCodeEntries`):
+   - Agregar un ref `hydratedForRef = useRef<string | null | undefined>(undefined)` que guarda para qué `initial?.line_id` (o `null` en modo crear) ya se hidrató.
+   - Durante render, si `open && hydratedForRef.current !== (initial?.line_id ?? null)`:
+     - Construir el `Map` desde `initial?.client_codes ?? []`.
+     - Llamar `setCodeEntries(m)` y actualizar el ref. React reinicia el render antes de commitear; los hijos ven el map poblado en su primer render con el nuevo `initialLineId`.
+   - Cuando `open` pasa a `false`, resetear el ref para que la próxima apertura vuelva a hidratar.
+   - El resto del `useEffect` actual (setV, setProductMeta, lookup, conflict, searchOpen, etc.) se queda como está — esos estados no alimentan a `ClientCodeCard`.
 
-### Qué NO se toca
+2. **Hijo — `ClientCodeCard`**: eliminar la dependencia del efecto de datos que llegan tarde.
+   - `useState` de `mode`, `originalDescription`, `isNew` se inicializan desde `entry` (ya lo hacen). Con el fix del padre, el primer render ya trae `entry` correcto.
+   - Reemplazar el `useEffect` de resync `[open, initialLineId]` (líneas 333-344) por el mismo patrón "reset en render por cambio de key":
+     - `prevKeyRef = useRef<string | null>(null)` con la clave `open ? (initialLineId ?? "__new__") : null`.
+     - Durante render, si la clave cambió: `setMode(has ? "edit" : "search")`, `setOriginalDescription(...)`, `setIsNew(false)`, `setQuery("")`, `setResults([])`, `setExpandedId(null)`, `setPopoverOpen(false)`, `setTakenBlock(null)` y actualizar el ref.
+   - Con esto, los tres modos se preservan:
+     - **search**: `entry.code` vacío al abrir → arranca en search. Elecciones del usuario (`setMode("creating")`, `setMode("edit")` desde selección) siguen intactas porque no dependen del efecto.
+     - **creating**: sigue siendo decisión del usuario (línea 417). El reset solo corre cuando cambia la posición, no en re-renders normales.
+     - **edit**: `entry.code` no vacío en el primer render (gracias al fix del padre) → arranca en edit. Selección desde buscador (línea 388) sigue igual.
+   - `takenBlock` sigue siendo decisión de la tarjeta (colisión detectada tras seleccionar/crear); se limpia al cambiar de posición, que es lo correcto.
 
-- `exclude_agreement_position`, `reactivate_agreement_position`, `create_agreement_line`, `update_agreement_line`: sin cambios (siguiente paso según tu instrucción anterior).
-- RLS, GRANT, índice `apcc_position_client_open_uq`: intactos.
+### Notas técnicas
+
+- El patrón `setState` durante render solo dispara re-render si el valor cambia; combinado con el ref, se ejecuta una única vez por transición de key. No causa loops.
+- No se toca `LineEditValues`, `buildClientCodes`, RPC, ni la estructura visual.
+- No se toca el flujo de "En posición excluida".
+
+### Verificación
+
+- Playwright: abrir modal con posición A que tiene códigos, verificar tarjetas pobladas en modo `edit`; disparar "Editar esta posición" desde alerta de código ya asignado; confirmar que las tarjetas de la nueva posición muestran sus códigos en `edit`, no vacías en `search`.
+- Regresión: crear nueva línea (arranca en `search`), elegir "Crear producto" en una tarjeta (pasa a `creating`), seleccionar código del buscador (pasa a `edit`), abrir alerta de taken y elegir "Elegir otro código" (vuelve a `search` limpio).
+- `bunx tsgo --noEmit`.
