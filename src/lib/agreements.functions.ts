@@ -456,26 +456,17 @@ export const listAgreementLines = createServerFn({ method: "GET" })
   .handler(async ({ data, context }): Promise<AgreementLineRow[]> => {
     await assertCanAccess(context.supabase, data.agreement_id);
 
-    const [positionsRes, transitRes] = await Promise.all([
-      context.supabase
-        .from("agreement_positions")
-        .select(
-          "id, agreement_id, product_id, sale_price, par_price, start_date, end_date, observations, status, created_at, updated_at, products:product_id(sku, erp_description, commercial_brand, status)",
-        )
-        .eq("agreement_id", data.agreement_id)
-        .order("created_at", { ascending: false }),
-      context.supabase
-        .from("agreement_transit_lines")
-        .select(
-          "id, agreement_id, product_id, sku_raw, description, sale_price, par_price, start_date, end_date, observations, pending_reason, created_at, updated_at, products:product_id(sku, erp_description, commercial_brand, status)",
-        )
-        .eq("agreement_id", data.agreement_id)
-        .order("created_at", { ascending: false }),
-    ]);
+    // Modelo de tránsito eliminado: solo se listan posiciones.
+    const positionsRes = await context.supabase
+      .from("agreement_positions")
+      .select(
+        "id, agreement_id, product_id, sale_price, par_price, start_date, end_date, observations, status, created_at, updated_at, products:product_id(sku, erp_description, commercial_brand, status)",
+      )
+      .eq("agreement_id", data.agreement_id)
+      .order("created_at", { ascending: false });
     if (positionsRes.error) throw new Error(positionsRes.error.message);
-    if (transitRes.error) throw new Error(transitRes.error.message);
     const positions = positionsRes.data ?? [];
-    const transit = transitRes.data ?? [];
+    const transit: never[] = [];
 
     // Razones de exclusión (período abierto) para posiciones excluidas.
     const excludedIds = positions
