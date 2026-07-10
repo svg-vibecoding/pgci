@@ -540,10 +540,10 @@ function ClientCodeCard({
       if (Number.isNaN(d.getTime())) return "EXCLUIDA";
       const s = d.toLocaleDateString("es-CO", {
         day: "2-digit",
-        month: "long",
+        month: "2-digit",
         year: "numeric",
       });
-      return `EXCLUIDA EL ${s.toUpperCase()}`;
+      return `EXCLUIDA EL ${s}`;
     })();
     return (
       <div className={containerCls}>
@@ -581,14 +581,21 @@ function ClientCodeCard({
           </div>
 
           {excluded && (
-            <div className="space-y-1.5 pt-1">
-              <p className="text-sm text-muted-foreground">
-                {takenBlock.exclusion_reason ?? "—"}
-              </p>
-              <span className="text-[11px] font-medium text-text-tertiary">
-                {exclusionDateLabel}
-              </span>
-            </div>
+            <>
+              <hr className={dividerCls} />
+
+              <div className="space-y-1.5">
+                <p className="text-xs font-semibold uppercase tracking-wide">
+                  MOTIVO DE EXCLUSIÓN
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {takenBlock.exclusion_reason ?? "—"}
+                </p>
+                <span className="text-[11px] font-medium text-text-tertiary">
+                  {exclusionDateLabel}
+                </span>
+              </div>
+            </>
           )}
         </div>
       </div>
