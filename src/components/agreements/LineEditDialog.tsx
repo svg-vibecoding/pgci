@@ -12,7 +12,6 @@ import {
   Link2,
   Loader2,
   Lock,
-  Pencil,
   Plus,
   Search,
   Unlink,
@@ -406,15 +405,6 @@ function ClientCodeCard({
     setPopoverOpen(false);
   };
 
-  const handleChangeCode = () => {
-    onChange({ code: "", description: "" });
-    setOriginalDescription(null);
-    setIsNew(false);
-    setMode("search");
-    setExpandedId(null);
-    setPopoverOpen(true);
-  };
-
   const doReactivate = async () => {
     if (!reactivateTarget) return;
     setReactivatePending(true);
@@ -443,7 +433,12 @@ function ClientCodeCard({
     originalDescription !== null &&
     entry.description.trim() !== (originalDescription ?? "").trim();
 
-  const searchBlock = (
+  const searchPlaceholder =
+    mode === "edit"
+      ? "Escribe para cambiar el producto…"
+      : "Busca por código o descripción…";
+
+  const searchBlock = (placeholder: string) => (
     <Popover open={popoverOpen && !disabled} onOpenChange={(o) => !disabled && setPopoverOpen(o)}>
       <PopoverTrigger asChild>
         <div className="relative">
@@ -452,7 +447,7 @@ function ClientCodeCard({
             className={cn("pl-9", disabled ? readonlyClass : "bg-white")}
             value={query}
             disabled={disabled}
-            placeholder="Busca por código o descripción…"
+            placeholder={placeholder}
             onFocus={() => !disabled && setPopoverOpen(true)}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -511,11 +506,11 @@ function ClientCodeCard({
         <div className="text-sm font-semibold text-foreground">{card.name}</div>
       </div>
 
-      {mode === "search" && searchBlock}
+      {mode === "search" && searchBlock(searchPlaceholder)}
 
       {mode === "creating" && (
         <>
-          {searchBlock}
+          {searchBlock(searchPlaceholder)}
           <div className="space-y-1.5">
             <FieldLabel>CÓDIGO</FieldLabel>
             <Input
@@ -569,21 +564,9 @@ function ClientCodeCard({
 
       {mode === "edit" && (
         <>
-          {searchBlock}
+          {searchBlock(searchPlaceholder)}
           <div className="space-y-1.5">
-            <div className="flex items-center justify-between gap-2">
-              <FieldLabel>CÓDIGO</FieldLabel>
-              {!disabled && (
-                <button
-                  type="button"
-                  onClick={handleChangeCode}
-                  className="flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
-                >
-                  <Pencil className="h-3 w-3" />
-                  Cambiar código
-                </button>
-              )}
-            </div>
+            <FieldLabel>CÓDIGO</FieldLabel>
             <Input
               value={entry.code}
               disabled={disabled}
