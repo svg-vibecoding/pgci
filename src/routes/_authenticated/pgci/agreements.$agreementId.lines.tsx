@@ -44,7 +44,6 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
@@ -206,6 +205,7 @@ function AgreementLinesPage() {
   const [excludeTarget, setExcludeTarget] = useState<{
     id: string;
     sku: string | null;
+    description: string | null;
     codes: LineCode[];
   } | null>(null);
   const [deleteTransitTarget, setDeleteTransitTarget] = useState<{ id: string; sku: string | null } | null>(
@@ -956,6 +956,7 @@ function AgreementLinesPage() {
                                   setExcludeTarget({
                                     id: r.id as string,
                                     sku: r.products?.sku ?? null,
+                                    description: r.products?.erp_description ?? null,
                                     codes: r.codes ?? [],
                                   })
                                 }
