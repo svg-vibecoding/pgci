@@ -535,7 +535,7 @@ function ClientCodeCard({
             />
           </div>
           {entry.code.trim() === "" || entry.description.trim() === "" ? (
-            <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-foreground">
+            <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-[var(--status-warning-strong)]">
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--status-warning-strong)]" />
               <span>
                 {entry.code.trim() === ""
@@ -544,9 +544,12 @@ function ClientCodeCard({
               </span>
             </div>
           ) : (
-            <p className="text-[11px] text-foreground">
-              {`El producto se creará en el catálogo de ${card.name} al guardar la posición.`}
-            </p>
+            <div className="flex items-start gap-2 rounded-md border border-[var(--status-info-base)]/40 bg-[var(--status-info-soft)] px-3 py-2 text-xs text-[var(--status-info-strong)]">
+              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--status-info-strong)]" />
+              <span>
+                {`El producto se creará en el catálogo de ${card.name} al guardar la posición.`}
+              </span>
+            </div>
           )}
 
           {!disabled && (
