@@ -553,27 +553,28 @@ function ClientCodeCard({
           </p>
         </div>
       </div>
+    </div>
+  );
 
-      <div className="mt-4 flex flex-wrap items-center justify-end gap-2 pl-6">
-        {!initialLineId && (
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => onRequestSwitchToPosition(takenBlock.position_id)}
-          >
-            Editar esta posición
-          </Button>
-        )}
+  const takenActions = takenBlock && !disabled && (
+    <div className="flex justify-end gap-2">
+      {!initialLineId && (
         <Button
           type="button"
           size="sm"
-          variant="outline"
-          className="border-warning/50 bg-warning/10 text-[var(--status-warning-strong)] hover:bg-warning/20 hover:text-[var(--status-warning-strong)]"
-          onClick={() => setTakenBlock(null)}
+          onClick={() => onRequestSwitchToPosition(takenBlock.position_id)}
         >
-          Elegir otro código
+          Editar esta posición
         </Button>
-      </div>
+      )}
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        onClick={() => setTakenBlock(null)}
+      >
+        Elegir otro código
+      </Button>
     </div>
   );
 
@@ -594,6 +595,7 @@ function ClientCodeCard({
         <>
           {searchBlock(searchPlaceholder)}
           {takenAlert}
+          {takenActions}
         </>
       )}
 
@@ -655,6 +657,7 @@ function ClientCodeCard({
         <>
           {searchBlock(searchPlaceholder)}
           {takenAlert}
+          {takenActions}
           <div className="space-y-1.5">
             <FieldLabel>CÓDIGO</FieldLabel>
             <Input
