@@ -322,8 +322,8 @@ export function LineViewDialog({
 
               {/* Observaciones */}
               {line.observations?.trim() && (
-                <section>
-                  <FieldLabel className="mb-1.5 block">Observaciones</FieldLabel>
+                <section className="space-y-3">
+                  <SectionHeader title="Observaciones" number="03" />
                   <div className="rounded-lg border border-input p-3 text-sm whitespace-pre-wrap text-foreground">
                     {line.observations.trim()}
                   </div>
