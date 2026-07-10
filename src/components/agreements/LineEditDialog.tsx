@@ -1929,7 +1929,7 @@ export function LineEditDialog({
               }}
               disabled={save.isPending || hasCreatingIncomplete}
             >
-              {save.isPending ? "Guardando…" : "Guardar"}
+              {save.isPending ? "Guardando…" : "Guardar cambios"}
 
             </Button>
           </div>
