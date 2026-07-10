@@ -1859,13 +1859,22 @@ export function LineEditDialog({
                   qc.invalidateQueries({ queryKey: ["agreements", "detail", agreementId] });
                   qc.invalidateQueries({ queryKey: ["agreements", "sku-groups", agreementId] });
                 }}
-                onNavigateAway={(positionId) => {
-                  onOpenChange(false);
-                  void navigate({
-                    to: "/pgci/agreements/$agreementId/lines",
-                    params: { agreementId },
-                    search: { highlight: positionId } as never,
-                  });
+                onRequestSwitchToPosition={(positionId: string) => {
+                  if (!onSwitchToPosition) return;
+                  // Sin cambios en curso → saltar directo.
+                  const dirty =
+                    v.sku.trim() !== "" ||
+                    v.sale_price.trim() !== "" ||
+                    v.par_price.trim() !== "" ||
+                    v.observations.trim() !== "" ||
+                    Array.from(codeEntries.values()).some(
+                      (e) => e.code.trim() !== "" || e.description.trim() !== "",
+                    );
+                  if (!dirty) {
+                    onSwitchToPosition(positionId);
+                    return;
+                  }
+                  setPendingSwitchTarget(positionId);
                 }}
                 onCreatingIncompleteChange={(clientId, incomplete) => {
                   setCreatingIncomplete((prev) => {
