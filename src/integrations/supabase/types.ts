@@ -1099,6 +1099,53 @@ export type Database = {
           },
         ]
       }
+      product_history: {
+        Row: {
+          brand_reference: string | null
+          commercial_brand: string | null
+          commercial_description: string | null
+          created_at: string
+          erp_brand: string | null
+          erp_description: string | null
+          id: string
+          product_id: string
+          valid_from: string
+          valid_until: string | null
+        }
+        Insert: {
+          brand_reference?: string | null
+          commercial_brand?: string | null
+          commercial_description?: string | null
+          created_at?: string
+          erp_brand?: string | null
+          erp_description?: string | null
+          id?: string
+          product_id: string
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Update: {
+          brand_reference?: string | null
+          commercial_brand?: string | null
+          commercial_description?: string | null
+          created_at?: string
+          erp_brand?: string | null
+          erp_description?: string | null
+          id?: string
+          product_id?: string
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           brand_reference: string | null
