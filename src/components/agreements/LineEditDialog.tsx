@@ -569,6 +569,7 @@ function ClientCodeCard({
 
       {mode === "edit" && (
         <>
+          {searchBlock}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between gap-2">
               <FieldLabel>CÓDIGO</FieldLabel>
@@ -599,14 +600,17 @@ function ClientCodeCard({
               className={disabled ? readonlyClass : ""}
               onChange={(e) => onChange({ ...entry, description: e.target.value })}
             />
-            {descriptionChanged && !disabled && (
-              <p className="text-[11px] text-muted-foreground">
+          </div>
+          {descriptionChanged && !disabled && (
+            <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-[var(--status-warning-strong)]">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--status-warning-strong)]" />
+              <span>
                 La descripción se actualizará en el catálogo de {card.name} al
                 guardar la posición, y afectará a otros acuerdos que usen este
                 código.
-              </p>
-            )}
-          </div>
+              </span>
+            </div>
+          )}
         </>
       )}
 
