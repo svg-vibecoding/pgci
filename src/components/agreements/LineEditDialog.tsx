@@ -1922,6 +1922,36 @@ export function LineEditDialog({
         </div>
 
       </DialogContent>
+
+      {/* AlertDialog: perderás cambios sin guardar al editar otra posición */}
+      <AlertDialog
+        open={!!pendingSwitchTarget}
+        onOpenChange={(o) => !o && setPendingSwitchTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Editar la otra posición</AlertDialogTitle>
+            <AlertDialogDescription>
+              Perderás los cambios sin guardar de esta posición nueva.
+              ¿Continuar?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                const t = pendingSwitchTarget;
+                setPendingSwitchTarget(null);
+                if (t && onSwitchToPosition) onSwitchToPosition(t);
+              }}
+            >
+              Editar posición
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
+
