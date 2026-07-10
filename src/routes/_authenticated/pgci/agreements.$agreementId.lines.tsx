@@ -204,6 +204,8 @@ function AgreementLinesPage() {
 
   const [editOpen, setEditOpen] = useState(false);
   const [editInitial, setEditInitial] = useState<Partial<LineEditValues> | null>(null);
+  const [viewOpen, setViewOpen] = useState(false);
+  const [viewTarget, setViewTarget] = useState<LineViewData | null>(null);
   const [excludeTarget, setExcludeTarget] = useState<{
     id: string;
     sku: string | null;
