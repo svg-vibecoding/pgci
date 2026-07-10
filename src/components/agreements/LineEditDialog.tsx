@@ -519,53 +519,49 @@ function ClientCodeCard({
   );
 
   const takenAlert = takenBlock && (
-    <div className="rounded-md border border-warning/40 bg-warning/10 p-3 space-y-3 text-[var(--status-warning-strong)]">
+    <div className="rounded-md border border-warning/40 bg-warning/10 p-4 space-y-4 text-[var(--status-warning-strong)]">
       <div className="flex items-start gap-2">
         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
         <p className="text-sm font-semibold">
-          Este código ya está asignado en el acuerdo
+          Este código ya está vinculado a una posición del acuerdo
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div className="space-y-0.5">
-          <p className="text-[10px] font-semibold uppercase tracking-wide opacity-70">
-            Del cliente {card.name}
+      <div className="space-y-3">
+        <div className="space-y-1">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {card.name}
           </p>
           <p className="font-mono text-sm text-foreground">
             {takenBlock.client_code}
           </p>
           {takenBlock.client_description && (
-            <p className="text-xs text-foreground/80">
+            <p className="text-sm text-foreground">
               {takenBlock.client_description}
             </p>
           )}
         </div>
-        <div className="space-y-0.5 sm:border-l sm:border-warning/30 sm:pl-3">
-          <p className="text-[10px] font-semibold uppercase tracking-wide opacity-70">
-            De Sumatec
+        <div className="space-y-1">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            SUMATEC
           </p>
           <p className="font-mono text-sm text-foreground">
             {takenBlock.sku ?? "—"}
           </p>
           {takenBlock.product_description && (
-            <p className="text-xs text-foreground/80">
+            <p className="text-sm text-foreground">
               {takenBlock.product_description}
             </p>
           )}
           {takenBlock.sale_price != null && (
-            <p className="text-xs tabular-nums text-foreground/80">
+            <p className="text-sm font-medium tabular-nums text-foreground">
               {formatMoneyCOP(takenBlock.sale_price)}
             </p>
           )}
         </div>
       </div>
 
-      <p className="text-xs">
-        Un código de cliente solo puede asignarse a una posición del acuerdo.
-      </p>
-
-      <div className="flex flex-wrap items-center gap-3 pt-1">
+      <div className="flex flex-wrap items-center justify-end gap-3 pt-1">
         {!initialLineId && (
           <Button
             type="button"
@@ -575,13 +571,14 @@ function ClientCodeCard({
             Editar esta posición
           </Button>
         )}
-        <button
+        <Button
           type="button"
+          size="sm"
+          variant="outline"
           onClick={() => setTakenBlock(null)}
-          className="text-xs font-medium text-foreground/70 underline-offset-2 hover:underline"
         >
           Elegir otro código
-        </button>
+        </Button>
       </div>
     </div>
   );
