@@ -533,56 +533,106 @@ function ClientCodeCard({
     </Popover>
   );
 
-  const takenAlert = takenBlock && (
-    <div className="rounded-md border border-warning/40 bg-warning/10 p-4 text-[var(--status-warning-strong)]">
-      <div className="flex items-start gap-2">
-        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-        <p className="text-sm font-medium">
-          Este código ya está vinculado a una posición del acuerdo
-        </p>
-      </div>
-
-      <div className="mt-2 space-y-2 pl-6">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide">
-            {card.name}
-          </p>
-          <p className="mt-0 text-sm">
-            <span className="font-mono">{takenBlock.client_code}</span>
-            {" "}· {takenBlock.client_description ?? "—"}
-          </p>
+  const takenAlert = takenBlock && (() => {
+    const excluded = takenBlock.is_excluded;
+    const containerCls = excluded
+      ? "rounded-md border border-border bg-[var(--surface-1)] p-4 text-foreground"
+      : "rounded-md border border-warning/40 bg-warning/10 p-4 text-[var(--status-warning-strong)]";
+    const dividerCls = excluded ? "border-border" : "border-warning/20";
+    const Icon = excluded ? Info : AlertTriangle;
+    const title = excluded
+      ? "Este código está vinculado a una posición excluida del acuerdo"
+      : "Este código ya está vinculado a una posición del acuerdo";
+    const exclusionDateLabel = (() => {
+      if (!excluded || !takenBlock.exclusion_date) return "EXCLUIDA";
+      const d = new Date(takenBlock.exclusion_date);
+      if (Number.isNaN(d.getTime())) return "EXCLUIDA";
+      const s = d.toLocaleDateString("es-CO", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+      });
+      return `EXCLUIDA EL ${s.toUpperCase()}`;
+    })();
+    return (
+      <div className={containerCls}>
+        <div className="flex items-start gap-2">
+          <Icon className="mt-0.5 h-4 w-4 shrink-0" />
+          <p className="text-sm font-medium">{title}</p>
         </div>
 
-        <hr className="border-warning/20" />
+        <div className="mt-2 space-y-2 pl-6">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide">
+              {card.name}
+            </p>
+            <p className="mt-0 text-sm">
+              <span className="font-mono">{takenBlock.client_code}</span>
+              {" "}· {takenBlock.client_description ?? "—"}
+            </p>
+          </div>
 
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide">
-            SUMATEC
-          </p>
-          <p className="mt-0 text-sm">
-            <span className="font-mono">{takenBlock.sku ?? "—"}</span>
-            {" "}· {takenBlock.product_description ?? "—"}
-            {takenBlock.sale_price != null && (
-              <span className="font-sans font-medium">
-                {" "}· {formatMoneyCOP(takenBlock.sale_price)}
-              </span>
-            )}
-          </p>
+          <hr className={dividerCls} />
+
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide">
+              SUMATEC
+            </p>
+            <p className="mt-0 text-sm">
+              <span className="font-mono">{takenBlock.sku ?? "—"}</span>
+              {" "}· {takenBlock.product_description ?? "—"}
+              {takenBlock.sale_price != null && (
+                <span className="font-sans font-medium">
+                  {" "}· {formatMoneyCOP(takenBlock.sale_price)}
+                </span>
+              )}
+            </p>
+          </div>
+
+          {excluded && (
+            <div className="space-y-1.5 pt-1">
+              <FieldLabel>{exclusionDateLabel}</FieldLabel>
+              <Input
+                value={takenBlock.exclusion_reason ?? "—"}
+                readOnly
+                disabled
+                tabIndex={-1}
+                className={readonlyClass}
+              />
+            </div>
+          )}
         </div>
       </div>
-    </div>
-  );
+    );
+  })();
 
   const takenActions = takenBlock && !disabled && (
     <div className="flex justify-end gap-2">
-      {!initialLineId && (
-        <Button
-          type="button"
-          size="sm"
-          onClick={() => onRequestSwitchToPosition(takenBlock.position_id)}
-        >
-          Editar esta posición
-        </Button>
+      {takenBlock.is_excluded ? (
+        !initialLineId && (
+          <Button
+            type="button"
+            size="sm"
+            onClick={() =>
+              setReactivateTarget({
+                position_id: takenBlock.position_id,
+                sku: takenBlock.sku,
+              })
+            }
+          >
+            Reactivar esta posición
+          </Button>
+        )
+      ) : (
+        !initialLineId && (
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => onRequestSwitchToPosition(takenBlock.position_id)}
+          >
+            Editar esta posición
+          </Button>
+        )
       )}
       <Button
         type="button"
@@ -594,6 +644,7 @@ function ClientCodeCard({
       </Button>
     </div>
   );
+
 
 
   return (
