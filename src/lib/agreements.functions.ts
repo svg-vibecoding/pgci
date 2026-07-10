@@ -677,23 +677,13 @@ export const reactivateAgreementLine = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// Modelo de tránsito eliminado: se conserva la firma como no-op para no romper
+// llamadas antiguas del frontend hasta su próxima limpieza.
 export const deleteAgreementTransitLine = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => transitDeleteSchema.parse(d))
-  .handler(async ({ data, context }) => {
-    const { data: t, error: tErr } = await context.supabase
-      .from("agreement_transit_lines")
-      .select("agreement_id")
-      .eq("id", data.transit_id)
-      .maybeSingle();
-    if (tErr) throw new Error(tErr.message);
-    if (!t) return { ok: true };
-    await assertCanAdmin(context.supabase, t.agreement_id as string);
-    const { error } = await context.supabase
-      .from("agreement_transit_lines")
-      .delete()
-      .eq("id", data.transit_id);
-    if (error) throw new Error(error.message);
+  .handler(async ({ data }) => {
+    void data;
     return { ok: true };
   });
 
