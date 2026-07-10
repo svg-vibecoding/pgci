@@ -396,18 +396,18 @@ export function LineViewDialog({
 
 
         {/* Barra inferior */}
-        <div className="px-6 py-4 border-t border-border shrink-0 flex items-center justify-between gap-3 bg-white">
+        <div className="px-6 py-3 border-t border-border shrink-0 flex items-center justify-between gap-3 bg-white">
           <div className="text-xs text-muted-foreground">
             Vista de solo lectura.
-            {isExcluded &&
-              " Reactiva la posición desde la tabla para volver a editarla."}
+            {isExcluded && " Reactívala para volver a editarla."}
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
               Cerrar
             </Button>
             {showEditCta && onEdit && (
               <Button
+                size="sm"
                 onClick={() => {
                   onOpenChange(false);
                   onEdit(line.id);
@@ -419,6 +419,7 @@ export function LineViewDialog({
             )}
           </div>
         </div>
+
       </DialogContent>
     </Dialog>
   );
