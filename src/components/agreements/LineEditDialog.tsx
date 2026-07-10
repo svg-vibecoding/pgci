@@ -765,9 +765,7 @@ function ClientCodeCard({
             <AlertDialogTitle>Reactivar posición</AlertDialogTitle>
             <AlertDialogDescription>
               La posición {reactivateTarget?.sku ? `del SKU ${reactivateTarget.sku} ` : ""}
-              volverá al acuerdo tal como estaba antes de excluirse. Después
-              podrás editarla normalmente. El código seguirá asignado a esa
-              posición.
+              volverá al acuerdo tal como estaba antes de excluirse, y se abrirá para que la edites.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
