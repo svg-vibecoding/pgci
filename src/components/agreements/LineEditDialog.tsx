@@ -1670,7 +1670,6 @@ export function LineEditDialog({
                         </Alert>
                     </div>
                   )}
-                  </div>
                 </div>
               </section>
 
