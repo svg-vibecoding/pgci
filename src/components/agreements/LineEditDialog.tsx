@@ -948,6 +948,7 @@ export function LineEditDialog({
   agreementEndDate,
   agreementClients,
   clientCatalogPermissions,
+  onSwitchToPosition,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -960,9 +961,10 @@ export function LineEditDialog({
   agreementClients?: Array<{ id: string; name: string | null }>;
   // Permisos can_manage_client_catalog por cliente (RPC). Sin dato = false.
   clientCatalogPermissions?: Array<{ client_id: string; can_manage: boolean }>;
+  // Reabrir el modal como edición de otra posición (sin cerrar/navegar).
+  onSwitchToPosition?: (positionId: string) => void;
 }) {
   const qc = useQueryClient();
-  const navigate = useNavigate();
   const createFn = useServerFn(createAgreementLine);
   const patchFn = useServerFn(updateAgreementLine);
   const lookupFn = useServerFn(lookupProductBySku);
