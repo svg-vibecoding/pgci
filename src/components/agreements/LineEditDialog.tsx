@@ -329,19 +329,25 @@ function ClientCodeCard({
   const [takenBlock, setTakenBlock] = useState<TakenBlock | null>(null);
   const seq = useRef(0);
 
-  // Resincronizar cuando el diálogo se abre (incluyendo reabrir la misma posición).
-  useEffect(() => {
-    const has = entry.code.trim() !== "";
-    setMode(has ? "edit" : "search");
-    setOriginalDescription(has ? entry.description : null);
-    setIsNew(false);
-    setQuery("");
-    setResults([]);
-    setExpandedId(null);
-    setPopoverOpen(false);
-    setTakenBlock(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, initialLineId]);
+  // Resync por cambio de posición (o al abrir/cerrar). Se hace durante render
+  // con un ref para leer el `entry` ya poblado por el padre en este mismo
+  // ciclo — un useEffect corre bottom-up y vería el entry viejo.
+  const prevKeyRef = useRef<string | null | undefined>(undefined);
+  {
+    const key = open ? (initialLineId ?? "__new__") : null;
+    if (prevKeyRef.current !== key) {
+      prevKeyRef.current = key;
+      const has = entry.code.trim() !== "";
+      setMode(has ? "edit" : "search");
+      setOriginalDescription(has ? entry.description : null);
+      setIsNew(false);
+      setQuery("");
+      setResults([]);
+      setExpandedId(null);
+      setPopoverOpen(false);
+      setTakenBlock(null);
+    }
+  }
 
   useEffect(() => {
     if (!open || disabled) return;
@@ -999,6 +1005,23 @@ export function LineEditDialog({
   const [codeEntries, setCodeEntries] = useState<Map<string, ClientCodeEntry>>(
     new Map(),
   );
+  // Hidratación síncrona de codeEntries por cambio de posición: evita la
+  // carrera con ClientCodeCard cuando initial cambia sin cerrar el modal.
+  // Ver: React docs "Storing information from previous renders".
+  const hydratedForRef = useRef<string | null | undefined>(undefined);
+  {
+    const key = open ? (initial?.line_id ?? null) : undefined;
+    if (hydratedForRef.current !== key) {
+      hydratedForRef.current = key;
+      if (open) {
+        const m = new Map<string, ClientCodeEntry>();
+        for (const c of initial?.client_codes ?? []) {
+          m.set(c.client_id, { code: c.client_code, description: c.description });
+        }
+        setCodeEntries(m);
+      }
+    }
+  }
   const [creatingIncomplete, setCreatingIncomplete] = useState<Map<string, boolean>>(
     new Map(),
   );
@@ -1136,13 +1159,8 @@ export function LineEditDialog({
       par_price: normalizePriceOnBlur(merged.par_price),
     };
     setV(next);
-    // Hidratar tarjetas: partir de initial.client_codes y añadir placeholders
-    // vacíos para los clientes del acuerdo que aún no tengan entrada.
-    const m = new Map<string, ClientCodeEntry>();
-    for (const c of next.client_codes) {
-      m.set(c.client_id, { code: c.client_code, description: c.description });
-    }
-    setCodeEntries(m);
+    // codeEntries se hidrata sincrónicamente durante render (arriba) para
+    // evitar la carrera con ClientCodeCard al cambiar de posición.
     setProductMeta(null);
     setLookup({ kind: next.sku.trim() ? "idle" : "empty" });
     setNConflict({ kind: "idle", lines: [] });
