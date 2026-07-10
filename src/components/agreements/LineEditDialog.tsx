@@ -999,6 +999,23 @@ export function LineEditDialog({
   const [codeEntries, setCodeEntries] = useState<Map<string, ClientCodeEntry>>(
     new Map(),
   );
+  // Hidratación síncrona de codeEntries por cambio de posición: evita la
+  // carrera con ClientCodeCard cuando initial cambia sin cerrar el modal.
+  // Ver: React docs "Storing information from previous renders".
+  const hydratedForRef = useRef<string | null | undefined>(undefined);
+  {
+    const key = open ? (initial?.line_id ?? null) : undefined;
+    if (hydratedForRef.current !== key) {
+      hydratedForRef.current = key;
+      if (open) {
+        const m = new Map<string, ClientCodeEntry>();
+        for (const c of initial?.client_codes ?? []) {
+          m.set(c.client_id, { code: c.client_code, description: c.description });
+        }
+        setCodeEntries(m);
+      }
+    }
+  }
   const [creatingIncomplete, setCreatingIncomplete] = useState<Map<string, boolean>>(
     new Map(),
   );
