@@ -393,6 +393,35 @@ function AgreementLinesPage() {
     setEditOpen(true);
   };
 
+  const openViewForLine = (lineId: string) => {
+    const r = (lines ?? []).find((x) => x.id === lineId) as Line | undefined;
+    if (!r) return;
+    setViewTarget({
+      id: r.id as string,
+      kind: r.kind,
+      status: r.status as LineViewData["status"],
+      sku: r.products?.sku ?? null,
+      erp_description: r.products?.erp_description ?? null,
+      commercial_brand: r.products?.commercial_brand ?? null,
+      product_status: r.products?.status ?? null,
+      sale_price: (r.sale_price as number | null) ?? null,
+      par_price: (r.par_price as number | null) ?? null,
+      start_date: (r.start_date as string | null) ?? null,
+      end_date: (r.end_date as string | null) ?? null,
+      observations: (r.observations as string | null) ?? null,
+      exclusion_reason: (r.exclusion_reason as string | null) ?? null,
+      codes: (r.codes ?? []).map((c) => ({
+        client_id: c.client_id,
+        client_name: c.client_name ?? null,
+        client_code: c.client_code,
+        description: c.description ?? null,
+      })),
+      created_at: (r.created_at as string | null) ?? null,
+      updated_at: (r.updated_at as string | null) ?? null,
+    });
+    setViewOpen(true);
+  };
+
   const filtered = useMemo<Line[]>(() => {
     const rows = (lines ?? []) as Line[];
     const term = q.trim().toLowerCase();
