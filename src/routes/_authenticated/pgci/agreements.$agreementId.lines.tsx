@@ -990,6 +990,7 @@ function AgreementLinesPage() {
         initial={editInitial}
         agreementClients={agreementClients}
         clientCatalogPermissions={catalogPerms}
+        onSwitchToPosition={(positionId) => openEditForLine(positionId)}
       />
 
 
