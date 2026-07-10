@@ -12,7 +12,6 @@ import {
   Link2,
   Loader2,
   Lock,
-  Pencil,
   Plus,
   Search,
   Unlink,
