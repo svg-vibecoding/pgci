@@ -740,8 +740,8 @@ function ClientCodeCard({
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--status-warning-strong)]" />
               <span>
                 La descripción se actualizará en el catálogo de {card.name} al
-                guardar la posición, y afectará a otros acuerdos que usen este
-                código.
+                guardar la posición. Los cambios se reflejan en todos los
+                acuerdos que usen este código.
               </span>
             </div>
           )}
