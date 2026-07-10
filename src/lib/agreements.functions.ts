@@ -69,16 +69,8 @@ export const listAgreements = createServerFn({ method: "GET" })
       arr.push(name);
       byAgreement.set(aid, arr);
     }
-    const { data: transitRows, error: tErr } = await context.supabase
-      .from("agreement_transit_lines")
-      .select("agreement_id")
-      .in("agreement_id", ids);
-    if (tErr) throw new Error(`No se pudieron cargar líneas en tránsito: ${tErr.message}`);
+    // Modelo de tránsito eliminado: el conteo queda en 0 hasta que se retire el KPI.
     const transitByAgreement = new Map<string, number>();
-    for (const t of transitRows ?? []) {
-      const aid = (t as { agreement_id: string }).agreement_id;
-      transitByAgreement.set(aid, (transitByAgreement.get(aid) ?? 0) + 1);
-    }
 
     // can_admin por fila: super_admin → todos; sino, membresía como agreement_admin vigente
     const { data: superRes } = await context.supabase.rpc("is_super_admin");
