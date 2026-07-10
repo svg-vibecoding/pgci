@@ -393,11 +393,7 @@ export function LineViewDialog({
           </div>
         </div>
 
-                </section>
-              )}
-            </div>
-          </div>
-        </div>
+
 
         {/* Barra inferior */}
         <div className="px-6 py-4 border-t border-border shrink-0 flex items-center justify-between gap-3 bg-white">
