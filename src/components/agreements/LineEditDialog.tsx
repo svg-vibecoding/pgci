@@ -519,7 +519,7 @@ function ClientCodeCard({
   );
 
   const takenAlert = takenBlock && (
-    <div className="rounded-md border border-warning/40 bg-warning/10 p-4 space-y-4 text-[var(--status-warning-strong)]">
+    <div className="rounded-md border border-warning/40 bg-warning/10 p-4 text-[var(--status-warning-strong)]">
       <div className="flex items-start gap-2">
         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
         <p className="text-sm font-semibold">
@@ -527,41 +527,34 @@ function ClientCodeCard({
         </p>
       </div>
 
-      <div className="space-y-3">
-        <div className="space-y-1">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+      <div className="mt-3 space-y-3 pl-6">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-wide">
             {card.name}
           </p>
-          <p className="font-mono text-sm text-foreground">
-            {takenBlock.client_code}
+          <p className="mt-0.5 text-xs font-mono">
+            {takenBlock.client_code} · {takenBlock.client_description ?? "—"}
           </p>
-          {takenBlock.client_description && (
-            <p className="text-sm text-foreground">
-              {takenBlock.client_description}
-            </p>
-          )}
         </div>
-        <div className="space-y-1">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+
+        <hr className="border-warning/20" />
+
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-wide">
             SUMATEC
           </p>
-          <p className="font-mono text-sm text-foreground">
-            {takenBlock.sku ?? "—"}
+          <p className="mt-0.5 text-xs font-mono">
+            {takenBlock.sku ?? "—"} · {takenBlock.product_description ?? "—"}
+            {takenBlock.sale_price != null && (
+              <span className="font-medium">
+                {" "}· {formatMoneyCOP(takenBlock.sale_price)}
+              </span>
+            )}
           </p>
-          {takenBlock.product_description && (
-            <p className="text-sm text-foreground">
-              {takenBlock.product_description}
-            </p>
-          )}
-          {takenBlock.sale_price != null && (
-            <p className="text-sm font-medium tabular-nums text-foreground">
-              {formatMoneyCOP(takenBlock.sale_price)}
-            </p>
-          )}
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-end gap-3 pt-1">
+      <div className="mt-4 flex flex-wrap items-center justify-end gap-2 pl-6">
         {!initialLineId && (
           <Button
             type="button"
@@ -575,6 +568,7 @@ function ClientCodeCard({
           type="button"
           size="sm"
           variant="outline"
+          className="border-warning/50 bg-warning/10 text-[var(--status-warning-strong)] hover:bg-warning/20 hover:text-[var(--status-warning-strong)]"
           onClick={() => setTakenBlock(null)}
         >
           Elegir otro código
