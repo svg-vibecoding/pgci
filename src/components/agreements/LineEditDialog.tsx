@@ -796,12 +796,9 @@ function ClientCodeSearchList({
   loading,
   results,
   initialLineId,
-  expandedId,
-  onExpand,
   onSelectFree,
-  onSelectTakenActive,
+  onSelectTaken,
   onCreateNew,
-  onRequestReactivate,
   clientName,
   canManage,
 }: {
@@ -809,12 +806,9 @@ function ClientCodeSearchList({
   loading: boolean;
   results: ClientCodeSearchResult[];
   initialLineId: string | null;
-  expandedId: string | null;
-  onExpand: (id: string) => void;
   onSelectFree: (r: ClientCodeSearchResult) => void;
-  onSelectTakenActive: (r: ClientCodeSearchResult) => void;
+  onSelectTaken: (r: ClientCodeSearchResult) => void;
   onCreateNew: () => void;
-  onRequestReactivate: (r: ClientCodeSearchResult) => void;
   clientName: string;
   canManage: boolean;
 }) {
@@ -887,90 +881,27 @@ function ClientCodeSearchList({
           );
         }
 
-        const takenStatus = r.status;
         const isExcluded = posStatus === "excluded";
+        const badgeStatus = isExcluded ? "neutral" : "warning";
+        const badgeLabel = isExcluded ? "En posición excluida" : "En posición activa";
 
-        // Activa: un solo click selecciona → dispara la alerta amarilla en la tarjeta.
-        if (!isExcluded) {
-          return (
-            <button
-              key={r.client_product_id}
-              type="button"
-              onClick={() => onSelectTakenActive(r)}
-              className="flex w-full flex-col gap-0.5 px-3 py-2 text-left hover:bg-muted focus:bg-muted focus:outline-none"
-            >
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-sm font-medium text-muted-foreground">
-                  {r.client_code}
-                </span>
-                <StatusBadge size="sm" status="warning" label="En posición activa" />
-              </div>
-              {r.description && (
-                <span className="text-xs text-muted-foreground">{r.description}</span>
-              )}
-            </button>
-          );
-        }
-
-        // Excluida: se conserva la tarjeta expandible con "Reactivar posición".
-        const expanded = expandedId === r.client_product_id;
         return (
-          <div key={r.client_product_id} className="border-b border-border last:border-b-0">
-            <button
-              type="button"
-              onClick={() => onExpand(r.client_product_id)}
-              className="flex w-full flex-col gap-0.5 px-3 py-2 text-left hover:bg-muted focus:bg-muted focus:outline-none"
-            >
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-sm font-medium text-muted-foreground">
-                  {r.client_code}
-                </span>
-                <StatusBadge size="sm" status="neutral" label="En posición excluida" />
-                <ChevronDown
-                  className={cn(
-                    "ml-auto h-3.5 w-3.5 text-muted-foreground transition-transform",
-                    expanded && "rotate-180",
-                  )}
-                />
-              </div>
-              {r.description && (
-                <span className="text-xs text-muted-foreground">{r.description}</span>
-              )}
-            </button>
-            {expanded && (
-              <div className="mx-2 mb-2 rounded-md border border-border bg-muted/40 p-3 space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-sm font-medium text-foreground">
-                    {takenStatus.sku ?? "—"}
-                  </span>
-                  {takenStatus.sale_price != null && (
-                    <span className="text-xs tabular-nums text-muted-foreground">
-                      {formatMoneyCOP(takenStatus.sale_price)}
-                    </span>
-                  )}
-                </div>
-                {takenStatus.product_description && (
-                  <p className="text-xs text-muted-foreground">
-                    {takenStatus.product_description}
-                  </p>
-                )}
-                <p className="text-xs text-foreground">
-                  Este código está asignado a una posición excluida del acuerdo.
-                </p>
-                {canManage && (
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={() => onRequestReactivate(r)}
-                    >
-                      Reactivar posición
-                    </Button>
-                  </div>
-                )}
-              </div>
+          <button
+            key={r.client_product_id}
+            type="button"
+            onClick={() => onSelectTaken(r)}
+            className="flex w-full flex-col gap-0.5 px-3 py-2 text-left hover:bg-muted focus:bg-muted focus:outline-none"
+          >
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-sm font-medium text-muted-foreground">
+                {r.client_code}
+              </span>
+              <StatusBadge size="sm" status={badgeStatus} label={badgeLabel} />
+            </div>
+            {r.description && (
+              <span className="text-xs text-muted-foreground">{r.description}</span>
             )}
-          </div>
+          </button>
         );
       })}
       {showCreate && (
@@ -989,6 +920,7 @@ function ClientCodeSearchList({
     </div>
   );
 }
+
 
 
 export function LineEditDialog({
