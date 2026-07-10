@@ -513,22 +513,13 @@ function ClientCodeCard({
           loading={loading}
           results={results}
           initialLineId={initialLineId}
-          expandedId={expandedId}
-          onExpand={(id) => setExpandedId((prev) => (prev === id ? null : id))}
           onSelectFree={handleSelectFree}
-          onSelectTakenActive={handleSelectTakenActive}
+          onSelectTaken={handleSelectTaken}
           onCreateNew={handleCreateNew}
-          onRequestReactivate={(r) => {
-            if (r.status.kind !== "taken") return;
-            setReactivateTarget({
-              position_id: r.status.position_id,
-              sku: r.status.sku,
-            });
-            setPopoverOpen(false);
-          }}
           clientName={card.name}
           canManage={card.can_manage}
         />
+
       </PopoverContent>
     </Popover>
   );
