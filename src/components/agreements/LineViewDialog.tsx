@@ -403,12 +403,11 @@ export function LineViewDialog({
             {isExcluded && " Reactívala para volver a editarla."}
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cerrar
             </Button>
             {showEditCta && onEdit && (
               <Button
-                size="sm"
                 onClick={() => {
                   onOpenChange(false);
                   onEdit(line.id);
