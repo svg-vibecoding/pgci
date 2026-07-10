@@ -582,12 +582,12 @@ function ClientCodeCard({
 
           {excluded && (
             <div className="space-y-1.5 pt-1">
+              <p className="text-sm text-muted-foreground">
+                {takenBlock.exclusion_reason ?? "—"}
+              </p>
               <span className="text-[11px] font-medium text-text-tertiary">
                 {exclusionDateLabel}
               </span>
-              <div className="rounded-md border border-border bg-background p-2 text-sm text-muted-foreground">
-                {takenBlock.exclusion_reason ?? "—"}
-              </div>
             </div>
           )}
         </div>
