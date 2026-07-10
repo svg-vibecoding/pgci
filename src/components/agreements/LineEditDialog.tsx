@@ -329,19 +329,25 @@ function ClientCodeCard({
   const [takenBlock, setTakenBlock] = useState<TakenBlock | null>(null);
   const seq = useRef(0);
 
-  // Resincronizar cuando el diálogo se abre (incluyendo reabrir la misma posición).
-  useEffect(() => {
-    const has = entry.code.trim() !== "";
-    setMode(has ? "edit" : "search");
-    setOriginalDescription(has ? entry.description : null);
-    setIsNew(false);
-    setQuery("");
-    setResults([]);
-    setExpandedId(null);
-    setPopoverOpen(false);
-    setTakenBlock(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, initialLineId]);
+  // Resync por cambio de posición (o al abrir/cerrar). Se hace durante render
+  // con un ref para leer el `entry` ya poblado por el padre en este mismo
+  // ciclo — un useEffect corre bottom-up y vería el entry viejo.
+  const prevKeyRef = useRef<string | null | undefined>(undefined);
+  {
+    const key = open ? (initialLineId ?? "__new__") : null;
+    if (prevKeyRef.current !== key) {
+      prevKeyRef.current = key;
+      const has = entry.code.trim() !== "";
+      setMode(has ? "edit" : "search");
+      setOriginalDescription(has ? entry.description : null);
+      setIsNew(false);
+      setQuery("");
+      setResults([]);
+      setExpandedId(null);
+      setPopoverOpen(false);
+      setTakenBlock(null);
+    }
+  }
 
   useEffect(() => {
     if (!open || disabled) return;
