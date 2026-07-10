@@ -1036,6 +1036,16 @@ function AgreementLinesPage() {
         onSwitchToPosition={(positionId) => openEditForLine(positionId)}
       />
 
+      <LineViewDialog
+        open={viewOpen}
+        onOpenChange={setViewOpen}
+        line={viewTarget}
+        agreementName={agreement?.name as string | undefined}
+        agreementEndDate={agreement.end_date as string | null | undefined}
+        canEdit={canAdmin}
+        onEdit={(lineId) => openEditForLine(lineId)}
+      />
+
 
 
       <AlertDialog
