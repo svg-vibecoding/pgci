@@ -515,11 +515,11 @@ function ClientCodeCard({
         <div className="text-sm font-semibold text-foreground">{card.name}</div>
       </div>
 
-      {mode === "search" && searchBlock}
+      {mode === "search" && searchBlock(searchPlaceholder)}
 
       {mode === "creating" && (
         <>
-          {searchBlock}
+          {searchBlock(searchPlaceholder)}
           <div className="space-y-1.5">
             <FieldLabel>CÓDIGO</FieldLabel>
             <Input
