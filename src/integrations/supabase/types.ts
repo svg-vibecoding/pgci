@@ -932,6 +932,8 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          source: Database["public"]["Enums"]["code_source"]
+          source_reference: string | null
           valid_from: string
           valid_until: string | null
         }
@@ -941,6 +943,8 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          source?: Database["public"]["Enums"]["code_source"]
+          source_reference?: string | null
           valid_from: string
           valid_until?: string | null
         }
@@ -950,6 +954,8 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          source?: Database["public"]["Enums"]["code_source"]
+          source_reference?: string | null
           valid_from?: string
           valid_until?: string | null
         }
@@ -970,7 +976,7 @@ export type Database = {
           created_by: string | null
           id: string
           product_id: string
-          source: string | null
+          source: Database["public"]["Enums"]["code_source"]
           valid_from: string
           valid_until: string | null
         }
@@ -980,7 +986,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           product_id: string
-          source?: string | null
+          source?: Database["public"]["Enums"]["code_source"]
           valid_from: string
           valid_until?: string | null
         }
@@ -990,7 +996,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           product_id?: string
-          source?: string | null
+          source?: Database["public"]["Enums"]["code_source"]
           valid_from?: string
           valid_until?: string | null
         }
@@ -1013,26 +1019,32 @@ export type Database = {
       }
       client_products: {
         Row: {
+          brand: string | null
           client_code: string
           client_id: string
           created_at: string
           created_by: string | null
+          description: string | null
           id: string
           status: string
         }
         Insert: {
+          brand?: string | null
           client_code: string
           client_id: string
           created_at?: string
           created_by?: string | null
+          description?: string | null
           id?: string
           status?: string
         }
         Update: {
+          brand?: string | null
           client_code?: string
           client_id?: string
           created_at?: string
           created_by?: string | null
+          description?: string | null
           id?: string
           status?: string
         }
@@ -1469,7 +1481,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      code_source: "agreement" | "manual" | "quotation"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1596,6 +1608,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      code_source: ["agreement", "manual", "quotation"],
+    },
   },
 } as const
