@@ -335,10 +335,8 @@ export function LineViewDialog({
           <div className="min-h-0 overflow-y-auto bg-muted/20">
             <div className="p-5 space-y-4">
               <div className="flex items-center justify-between">
-                <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Códigos de cliente
-                </div>
-                <span className="text-[11px] text-muted-foreground">
+                <SectionHeader title="Códigos de cliente" number="04" />
+                <span className="text-xs text-muted-foreground">
                   {line.codes.length}
                 </span>
               </div>
