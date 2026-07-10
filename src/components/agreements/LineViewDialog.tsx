@@ -200,243 +200,199 @@ export function LineViewDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-6xl h-[92vh] flex flex-col overflow-hidden p-0 gap-0"
+        className="max-w-5xl max-h-[88vh] flex flex-col overflow-hidden p-0 gap-0"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
-        <DialogHeader className="px-6 py-4 border-b border-border shrink-0">
-          <div className="flex items-start justify-between gap-4">
+        <DialogHeader className="px-6 py-3 border-b border-border shrink-0">
+          <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
-              <DialogTitle className="text-2xl font-bold tracking-tight">
+              <DialogTitle className="text-xl font-bold tracking-tight">
                 {isTransit ? "Línea en tránsito" : "Posición del acuerdo"}
               </DialogTitle>
-              <DialogDescription className="text-sm text-muted-foreground">
+              <DialogDescription className="text-xs text-muted-foreground">
                 {agreementName || "Acuerdo comercial"}
               </DialogDescription>
             </div>
-            <div className="flex items-center gap-2 shrink-0 pt-1">
-              {isTransit && (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  <Truck className="h-3 w-3" />
-                  En tránsito
-                </span>
-              )}
-              <StatusBadge status={statusMeta.status} label={statusMeta.label} />
-            </div>
+            {isTransit && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground shrink-0">
+                <Truck className="h-3 w-3" />
+                En tránsito
+              </span>
+            )}
           </div>
         </DialogHeader>
 
         <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[minmax(0,55fr)_minmax(0,45fr)]">
-          {/* Columna izquierda — información de Sumatec y condiciones */}
+          {/* Columna izquierda — Sumatec + condiciones + vigencia + notas */}
           <div className="min-h-0 overflow-y-auto bg-white border-r border-border">
-            <div className="p-6 space-y-8">
+            <div className="p-5 space-y-5">
               {isExcluded && (
                 <Alert variant="warning">
                   <Ban className="h-4 w-4" />
                   <AlertDescription>
-                    <div className="space-y-1">
-                      <div className="text-sm font-semibold text-foreground">
-                        Posición excluida del acuerdo
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {line.exclusion_reason ?? "Sin motivo registrado."}
-                      </div>
+                    <div className="text-sm font-semibold text-foreground">
+                      Posición excluida
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {line.exclusion_reason ?? "Sin motivo registrado."}
                     </div>
                   </AlertDescription>
                 </Alert>
               )}
 
-              {/* Producto Sumatec */}
-              <section className="space-y-4">
-                <SectionHeader title="INFORMACIÓN DE SUMATEC" number="01" />
-                <div className="rounded-lg border border-input bg-muted/40 p-4 space-y-4">
-                  <div className="flex items-center gap-2">
-                    <div className="text-sm font-semibold text-foreground">
-                      SUMATEC
-                    </div>
-                    {line.product_status &&
-                      line.product_status !== "active" && (
-                        <Badge color="error" variant="soft">
-                          Inactivo en catálogo
-                        </Badge>
-                      )}
-                  </div>
+              {/* Card unificada: SUMATEC + condiciones comerciales */}
+              <section className="rounded-lg border border-input bg-muted/40 p-4 space-y-4 relative">
+                <div className="absolute top-3 right-3">
+                  <StatusBadge status={statusMeta.status} label={statusMeta.label} size="sm" />
+                </div>
 
-                  {line.sku ? (
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      <div className="space-y-1.5">
-                        <FieldLabel>Código Sumatec</FieldLabel>
-                        <ReadValue mono className="text-base font-semibold">
-                          {line.sku}
-                        </ReadValue>
-                      </div>
-                      <div className="space-y-1.5">
-                        <FieldLabel>Marca</FieldLabel>
-                        <ReadValue muted={!line.commercial_brand}>
-                          {line.commercial_brand ?? "—"}
-                        </ReadValue>
-                      </div>
-                      <div className="space-y-1.5 md:col-span-2">
-                        <FieldLabel>Descripción Sumatec</FieldLabel>
-                        <ReadValue muted={!line.erp_description}>
-                          {line.erp_description ?? "—"}
-                        </ReadValue>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-sm text-muted-foreground">
-                      Esta línea no tiene un producto Sumatec vinculado.
-                    </div>
+                <div className="flex items-center gap-2">
+                  <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    SUMATEC
+                  </div>
+                  {line.product_status && line.product_status !== "active" && (
+                    <Badge color="error" variant="soft">
+                      Inactivo
+                    </Badge>
                   )}
                 </div>
-              </section>
 
-              {/* Condiciones comerciales */}
-              <section className="space-y-4">
-                <SectionHeader
-                  title="CONDICIONES COMERCIALES"
-                  number="02"
-                />
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="rounded-lg border border-input p-4 space-y-1.5">
-                    <FieldLabel>Precio de venta</FieldLabel>
-                    <div className="text-lg font-semibold text-foreground">
-                      {line.sale_price != null
-                        ? formatMoneyCOP(line.sale_price)
-                        : "—"}
+                {line.sku ? (
+                  <div className="space-y-1">
+                    <div className="flex items-baseline gap-3 flex-wrap">
+                      <span className="font-mono text-base font-semibold text-foreground">
+                        {line.sku}
+                      </span>
+                      {line.commercial_brand && (
+                        <span className="text-xs text-muted-foreground uppercase tracking-wide">
+                          {line.commercial_brand}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-sm text-foreground">
+                      {line.erp_description ?? "—"}
                     </div>
                   </div>
-                  <div className="rounded-lg border border-input p-4 space-y-1.5">
+                ) : (
+                  <div className="text-sm text-muted-foreground italic">
+                    Sin producto Sumatec vinculado.
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-3 pt-3 border-t border-border/60">
+                  <div>
+                    <FieldLabel>Precio de venta</FieldLabel>
+                    <div className="text-base font-semibold text-foreground mt-0.5">
+                      {line.sale_price != null ? formatMoneyCOP(line.sale_price) : "—"}
+                    </div>
+                  </div>
+                  <div>
                     <FieldLabel>Precio par</FieldLabel>
-                    <div className="text-lg font-semibold text-foreground">
-                      {line.par_price != null
-                        ? formatMoneyCOP(line.par_price)
-                        : "—"}
+                    <div className="text-base font-semibold text-foreground mt-0.5">
+                      {line.par_price != null ? formatMoneyCOP(line.par_price) : "—"}
                     </div>
                   </div>
                 </div>
               </section>
 
               {/* Vigencia */}
-              <section className="space-y-4">
-                <SectionHeader title="VIGENCIA" number="03" />
-                <div className="rounded-lg border border-input p-4 space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <FieldLabel>Fecha de inicio</FieldLabel>
-                      <div className="flex items-center gap-2 text-sm text-foreground">
-                        <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                        {fmtDateLocal(line.start_date)}
-                      </div>
-                    </div>
-                    <div className="space-y-1.5">
-                      <FieldLabel>Fecha de fin</FieldLabel>
-                      <div className="flex items-center gap-2 text-sm text-foreground">
-                        <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                        {line.end_date
-                          ? fmtDateLocal(line.end_date)
-                          : agreementEndDate
-                            ? `${fmtDateLocal(agreementEndDate)} (del acuerdo)`
-                            : "—"}
-                      </div>
-                    </div>
+              <section className="rounded-lg border border-input p-4">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-foreground">{fmtDateLocal(line.start_date)}</span>
+                    <span className="text-muted-foreground">→</span>
+                    <span className="text-foreground">
+                      {line.end_date
+                        ? fmtDateLocal(line.end_date)
+                        : agreementEndDate
+                          ? `${fmtDateLocal(agreementEndDate)} (del acuerdo)`
+                          : "—"}
+                    </span>
                   </div>
                   {vig && vig.daysLeft != null && (
-                    <div className="pt-2 border-t border-border">
-                      <Badge color={vig.color} variant="soft">
-                        {vig.daysLeft < 0
-                          ? `Vencida hace ${Math.abs(vig.daysLeft)} días`
-                          : vig.daysLeft === 0
-                            ? "Vence hoy"
-                            : `Faltan ${vig.daysLeft} días`}
-                      </Badge>
-                    </div>
+                    <Badge color={vig.color} variant="soft">
+                      {vig.daysLeft < 0
+                        ? `Vencida hace ${Math.abs(vig.daysLeft)} días`
+                        : vig.daysLeft === 0
+                          ? "Vence hoy"
+                          : `Faltan ${vig.daysLeft} días`}
+                    </Badge>
                   )}
                 </div>
               </section>
 
               {/* Observaciones */}
-              <section className="space-y-4">
-                <SectionHeader title="OBSERVACIONES / NOTAS" number="04" />
-                <div
-                  className={cn(
-                    "rounded-lg border border-input p-4 text-sm whitespace-pre-wrap",
-                    line.observations
-                      ? "text-foreground"
-                      : "text-muted-foreground italic",
-                  )}
-                >
-                  {line.observations?.trim() ||
-                    "Sin observaciones registradas."}
-                </div>
-              </section>
+              {line.observations?.trim() && (
+                <section>
+                  <FieldLabel className="mb-1.5 block">Observaciones</FieldLabel>
+                  <div className="rounded-lg border border-input p-3 text-sm whitespace-pre-wrap text-foreground">
+                    {line.observations.trim()}
+                  </div>
+                </section>
+              )}
             </div>
           </div>
 
-          {/* Columna derecha — códigos de cliente + auditoría */}
+          {/* Columna derecha — códigos de cliente condensados */}
           <div className="min-h-0 overflow-y-auto bg-muted/20">
-            <div className="p-6 space-y-8">
-              <section className="space-y-4">
-                <SectionHeader
-                  title="CÓDIGOS DE CLIENTE"
-                  number="05"
-                />
-                {line.codes.length === 0 ? (
-                  <Alert variant="info">
-                    <Info className="h-4 w-4" />
-                    <AlertDescription>
-                      Esta posición no tiene códigos de cliente asociados.
-                    </AlertDescription>
-                  </Alert>
-                ) : (
-                  <div className="space-y-3">
-                    {line.codes.map((c) => (
-                      <div
-                        key={c.client_id + c.client_code}
-                        className="rounded-lg border border-input bg-white p-4 space-y-3"
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="text-sm font-semibold text-foreground truncate">
-                            {c.client_name ?? "Cliente sin nombre"}
-                          </div>
-                          <Tag className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                        </div>
-                        <div className="space-y-1.5">
-                          <FieldLabel>Código del cliente</FieldLabel>
-                          <ReadValue mono className="text-sm font-semibold">
-                            {c.client_code}
-                          </ReadValue>
-                        </div>
-                        <div className="space-y-1.5">
-                          <FieldLabel>Descripción del cliente</FieldLabel>
-                          <ReadValue muted={!c.description}>
-                            {c.description || "—"}
-                          </ReadValue>
-                        </div>
+            <div className="p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Códigos de cliente
+                </div>
+                <span className="text-[11px] text-muted-foreground">
+                  {line.codes.length}
+                </span>
+              </div>
+
+              {line.codes.length === 0 ? (
+                <Alert variant="info">
+                  <Info className="h-4 w-4" />
+                  <AlertDescription>
+                    Sin códigos de cliente asociados.
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <div className="space-y-2">
+                  {line.codes.map((c) => (
+                    <div
+                      key={c.client_id + c.client_code}
+                      className="rounded-lg border border-input bg-white p-3 space-y-1"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-semibold uppercase tracking-wide text-accent truncate">
+                          {c.client_name ?? "Cliente sin nombre"}
+                        </span>
+                        <Tag className="h-3 w-3 text-muted-foreground shrink-0" />
                       </div>
-                    ))}
-                  </div>
-                )}
-              </section>
+                      <div className="font-mono text-sm font-semibold text-foreground">
+                        {c.client_code}
+                      </div>
+                      <div className={cn("text-sm", c.description ? "text-foreground" : "text-muted-foreground italic")}>
+                        {c.description || "Sin descripción"}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {(line.created_at || line.updated_at) && (
-                <section className="space-y-4">
-                  <SectionHeader title="AUDITORÍA" number="06" />
-                  <div className="rounded-lg border border-input bg-white p-4 space-y-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Creada</span>
-                      <span className="text-foreground">
-                        {fmtDateTime(line.created_at)}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">
-                        Última modificación
-                      </span>
-                      <span className="text-foreground">
-                        {fmtDateTime(line.updated_at)}
-                      </span>
-                    </div>
+                <div className="pt-2 text-[11px] text-muted-foreground space-y-0.5">
+                  <div className="flex justify-between">
+                    <span>Creada</span>
+                    <span>{fmtDateTime(line.created_at)}</span>
                   </div>
+                  <div className="flex justify-between">
+                    <span>Modificada</span>
+                    <span>{fmtDateTime(line.updated_at)}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
                 </section>
               )}
             </div>
