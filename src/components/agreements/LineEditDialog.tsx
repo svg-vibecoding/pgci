@@ -1153,13 +1153,8 @@ export function LineEditDialog({
       par_price: normalizePriceOnBlur(merged.par_price),
     };
     setV(next);
-    // Hidratar tarjetas: partir de initial.client_codes y añadir placeholders
-    // vacíos para los clientes del acuerdo que aún no tengan entrada.
-    const m = new Map<string, ClientCodeEntry>();
-    for (const c of next.client_codes) {
-      m.set(c.client_id, { code: c.client_code, description: c.description });
-    }
-    setCodeEntries(m);
+    // codeEntries se hidrata sincrónicamente durante render (arriba) para
+    // evitar la carrera con ClientCodeCard al cambiar de posición.
     setProductMeta(null);
     setLookup({ kind: next.sku.trim() ? "idle" : "empty" });
     setNConflict({ kind: "idle", lines: [] });
