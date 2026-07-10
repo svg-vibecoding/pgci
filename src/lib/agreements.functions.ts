@@ -505,22 +505,13 @@ export const listAgreementLines = createServerFn({ method: "GET" })
       clients: ClientEmbed;
       client_products: { client_code: string | null } | null;
     };
-    type AtccRow = {
-      agreement_transit_id: string;
-      client_id: string;
-      client_product_id: string;
-      clients: ClientEmbed;
-      client_products: { client_code: string | null } | null;
-    };
     const apcc = ((apccRes.data ?? []) as unknown as ApccRow[]);
-    const atcc = ((atccRes.data ?? []) as unknown as AtccRow[]);
     const clientDisplay = (c: ClientEmbed): string | null =>
       c?.commercial_name ?? c?.legal_name ?? null;
 
     // Historial de descripciones más recientes por client_product_id.
     const cpIdsSet = new Set<string>();
     for (const c of apcc) if (c.client_product_id) cpIdsSet.add(c.client_product_id);
-    for (const c of atcc) if (c.client_product_id) cpIdsSet.add(c.client_product_id);
     const descByCp = new Map<string, string | null>();
     if (cpIdsSet.size > 0) {
       const { data: hist } = await context.supabase
@@ -552,23 +543,6 @@ export const listAgreementLines = createServerFn({ method: "GET" })
       codesByPos.set(c.agreement_position_id, arr);
     }
 
-
-
-
-    const codesByTransit = new Map<string, LineCode[]>();
-    for (const c of atcc) {
-      const code = c.client_products?.client_code ?? null;
-      if (!code) continue;
-      const arr = codesByTransit.get(c.agreement_transit_id) ?? [];
-      arr.push({
-        client_id: c.client_id,
-        client_name: clientDisplay(c.clients),
-        client_code: code,
-        description: descByCp.get(c.client_product_id) ?? null,
-      });
-      codesByTransit.set(c.agreement_transit_id, arr);
-    }
-
     const positionRows: AgreementLineRow[] = positions.map((r) => ({
       kind: "position",
       id: r.id as string,
@@ -588,38 +562,10 @@ export const listAgreementLines = createServerFn({ method: "GET" })
       codes: codesByPos.get(r.id as string) ?? [],
     }));
 
-    const transitRows: AgreementLineRow[] = transit.map((r) => {
-      const products = r.products as AgreementLineRow["products"];
-      return {
-        kind: "transit",
-        id: r.id as string,
-        agreement_id: r.agreement_id as string,
-        product_id: (r.product_id as string | null) ?? null,
-        sale_price: (r.sale_price as number | null) ?? null,
-        par_price: (r.par_price as number | null) ?? null,
-        start_date: (r.start_date as string | null) ?? null,
-        end_date: (r.end_date as string | null) ?? null,
-        observations: (r.observations as string | null) ?? null,
-        status: "pending",
-        pending_reason: (r.pending_reason as string | null) ?? null,
-        exclusion_reason: null,
-        created_at: r.created_at as string,
-        updated_at: r.updated_at as string,
-        products:
-          products ??
-          (r.sku_raw
-            ? {
-                sku: r.sku_raw as string,
-                erp_description: (r.description as string | null) ?? null,
-                commercial_brand: null,
-                status: null,
-              }
-            : null),
-        codes: codesByTransit.get(r.id as string) ?? [],
-      };
-    });
+    // Silencia variable no usada: `transit` es un placeholder tras la eliminación del modelo.
+    void transit;
 
-    return [...positionRows, ...transitRows].sort((a, b) =>
+    return positionRows.sort((a, b) =>
       (b.created_at ?? "").localeCompare(a.created_at ?? ""),
     );
   });
