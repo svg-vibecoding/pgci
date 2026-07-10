@@ -850,9 +850,9 @@ function ClientCodeSearchList({
           <button
             type="button"
             onClick={onCreateNew}
-            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground hover:bg-muted focus:bg-muted focus:outline-none"
+            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-info hover:text-info-strong hover:bg-muted focus:bg-muted focus:outline-none"
           >
-            <Plus className="h-3.5 w-3.5 text-muted-foreground" />
+            <Plus className="h-3.5 w-3.5 text-info" />
             Crear producto en el catálogo de {clientName}
           </button>
         </div>
