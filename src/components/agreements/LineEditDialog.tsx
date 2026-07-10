@@ -876,7 +876,6 @@ export function LineEditDialog({
   onOpenChange,
   agreementId,
   agreementName,
-  clientName,
   initial,
   agreementStartDate,
   agreementEndDate,
@@ -887,7 +886,6 @@ export function LineEditDialog({
   onOpenChange: (v: boolean) => void;
   agreementId: string;
   agreementName?: string | null;
-  clientName?: string | null;
   initial?: Partial<LineEditValues> | null;
   agreementStartDate?: string | null;
   agreementEndDate?: string | null;
@@ -1389,9 +1387,7 @@ export function LineEditDialog({
             {titleKind}
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
-            {agreementName && clientName
-              ? `${agreementName} · ${clientName}`
-              : agreementName || clientName || "Acuerdo comercial"}
+            {agreementName || "Acuerdo comercial"}
           </DialogDescription>
         </DialogHeader>
 
