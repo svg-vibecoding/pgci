@@ -403,8 +403,9 @@ function ClientCodeCard({
     setTakenBlock(null);
   };
 
-  const handleSelectTakenActive = (r: ClientCodeSearchResult) => {
+  const handleSelectTaken = (r: ClientCodeSearchResult) => {
     if (r.status.kind !== "taken") return;
+    const excluded = r.status.position_status === "excluded";
     setTakenBlock({
       position_id: r.status.position_id,
       client_code: r.client_code,
@@ -412,12 +413,16 @@ function ClientCodeCard({
       sku: r.status.sku,
       product_description: r.status.product_description,
       sale_price: r.status.sale_price,
+      is_excluded: excluded,
+      exclusion_reason: excluded ? r.status.exclusion_reason : null,
+      exclusion_date: excluded ? r.status.exclusion_date : null,
     });
     setPopoverOpen(false);
     setQuery("");
     setResults([]);
     setExpandedId(null);
   };
+
 
   const handleCreateNew = () => {
     // No auto-poblar: código y descripción quedan vacíos; el usuario los escribe.
