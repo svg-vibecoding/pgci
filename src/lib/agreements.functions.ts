@@ -2388,7 +2388,7 @@ export const getAgreementGroupRollup = createServerFn({ method: "GET" })
       if (e && (!maxEnd || e > maxEnd)) maxEnd = e;
     }
 
-    const sumField = (key: "lines_total" | "lines_active" | "lines_pending" | "lines_review" | "lines_excluded") =>
+    const sumField = (key: "lines_total" | "lines_active" | "lines_review" | "lines_excluded" | "lines_draft" | "lines_archived" | "lines_expired") =>
       rows.reduce(
         (acc, a) => acc + Number((a as Record<string, number | null>)[key] ?? 0),
         0,
@@ -2400,7 +2400,7 @@ export const getAgreementGroupRollup = createServerFn({ method: "GET" })
       unique_users: uniqueUsers,
       total_lines: sumField("lines_total"),
       lines_active: sumField("lines_active"),
-      lines_pending: sumField("lines_pending"),
+      lines_pending: 0,
       lines_review: sumField("lines_review"),
       lines_excluded: sumField("lines_excluded"),
       min_start: minStart,
