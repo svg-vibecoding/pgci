@@ -445,7 +445,7 @@ function ClientCodeCard({
 
   const searchBlock = (
     <div className="space-y-1.5">
-      <FieldLabel>Código</FieldLabel>
+      <FieldLabel>CÓDIGO DEL CLIENTE</FieldLabel>
       <Popover open={popoverOpen && !disabled} onOpenChange={(o) => !disabled && setPopoverOpen(o)}>
         <PopoverTrigger asChild>
           <div className="relative">
@@ -519,7 +519,7 @@ function ClientCodeCard({
         <>
           {searchBlock}
           <div className="space-y-1.5">
-            <FieldLabel>Código</FieldLabel>
+            <FieldLabel>CÓDIGO DEL CLIENTE</FieldLabel>
             <Input
               value={entry.code}
               disabled={disabled}
@@ -562,7 +562,7 @@ function ClientCodeCard({
         <>
           <div className="space-y-1.5">
             <div className="flex items-center justify-between gap-2">
-              <FieldLabel>Código</FieldLabel>
+              <FieldLabel>CÓDIGO DEL CLIENTE</FieldLabel>
               {!disabled && (
                 <button
                   type="button"
@@ -1392,11 +1392,11 @@ export function LineEditDialog({
             <div className="p-6 space-y-8">
               {/* Producto Jaivaná */}
               <section className="space-y-4">
-                <SectionHeader title="Producto Jaivaná" number="01" />
+                <SectionHeader title="INFORMACIÓN DE SUMATEC" number="01" />
                 <div className="rounded-lg border border-input bg-muted/40 p-4">
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-1.5 md:col-span-2">
-                    <FieldLabel>Producto Jaivaná</FieldLabel>
+                    <FieldLabel>INFORMACIÓN DE SUMATEC</FieldLabel>
                     <Popover open={searchOpen} onOpenChange={setSearchOpen}>
                       <PopoverTrigger asChild>
                         <div className="relative">
@@ -1769,7 +1769,7 @@ export function LineEditDialog({
           {/* Columna derecha — códigos por cliente */}
           <div className="min-h-0 overflow-y-auto bg-muted/20">
             <div className="p-6 space-y-4">
-              <SectionHeader title="Códigos por cliente" number="03" />
+              <SectionHeader title="INFORMACIÓN DEL CLIENTE" number="03" />
               <ClientCodeCards
                 clients={clientCards}
                 values={codeEntries}
