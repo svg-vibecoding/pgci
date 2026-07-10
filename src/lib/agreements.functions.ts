@@ -2341,7 +2341,7 @@ export const getAgreementGroupRollup = createServerFn({ method: "GET" })
     const { data: ags, error: aErr } = await context.supabase
       .from("agreements_with_counts")
       .select(
-        "id, lines_total, lines_active, lines_pending, lines_review, lines_excluded, start_date, end_date",
+        "id, lines_total, lines_active, lines_review, lines_excluded, lines_draft, lines_archived, lines_expired, start_date, end_date",
       )
       .eq("group_id", data.group_id);
     if (aErr) throw new Error(aErr.message);
@@ -2388,7 +2388,7 @@ export const getAgreementGroupRollup = createServerFn({ method: "GET" })
       if (e && (!maxEnd || e > maxEnd)) maxEnd = e;
     }
 
-    const sumField = (key: "lines_total" | "lines_active" | "lines_pending" | "lines_review" | "lines_excluded") =>
+    const sumField = (key: "lines_total" | "lines_active" | "lines_review" | "lines_excluded" | "lines_draft" | "lines_archived" | "lines_expired") =>
       rows.reduce(
         (acc, a) => acc + Number((a as Record<string, number | null>)[key] ?? 0),
         0,
@@ -2400,7 +2400,7 @@ export const getAgreementGroupRollup = createServerFn({ method: "GET" })
       unique_users: uniqueUsers,
       total_lines: sumField("lines_total"),
       lines_active: sumField("lines_active"),
-      lines_pending: sumField("lines_pending"),
+      lines_pending: 0,
       lines_review: sumField("lines_review"),
       lines_excluded: sumField("lines_excluded"),
       min_start: minStart,

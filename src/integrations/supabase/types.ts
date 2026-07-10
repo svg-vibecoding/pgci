@@ -1341,8 +1341,10 @@ export type Database = {
           group_name: string | null
           id: string | null
           lines_active: number | null
+          lines_archived: number | null
+          lines_draft: number | null
           lines_excluded: number | null
-          lines_pending: number | null
+          lines_expired: number | null
           lines_review: number | null
           lines_total: number | null
           members_count: number | null
@@ -1474,6 +1476,10 @@ export type Database = {
           status: string
           user_id: string
         }[]
+      }
+      position_covers_today: {
+        Args: { p_agr_end: string; p_pos_end: string; p_status: string }
+        Returns: boolean
       }
       reactivate_agreement_position: {
         Args: { p_position_id: string; p_reason?: string }
