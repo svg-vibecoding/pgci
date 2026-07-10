@@ -445,7 +445,7 @@ function ClientCodeCard({
 
   const searchBlock = (
     <div className="space-y-1.5">
-      <FieldLabel>CÓDIGO DEL CLIENTE</FieldLabel>
+      <FieldLabel>CÓDIGO</FieldLabel>
       <Popover open={popoverOpen && !disabled} onOpenChange={(o) => !disabled && setPopoverOpen(o)}>
         <PopoverTrigger asChild>
           <div className="relative">
@@ -519,7 +519,7 @@ function ClientCodeCard({
         <>
           {searchBlock}
           <div className="space-y-1.5">
-            <FieldLabel>CÓDIGO DEL CLIENTE</FieldLabel>
+            <FieldLabel>CÓDIGO</FieldLabel>
             <Input
               value={entry.code}
               disabled={disabled}
@@ -528,7 +528,7 @@ function ClientCodeCard({
             />
           </div>
           <div className="space-y-1.5">
-            <FieldLabel>Descripción</FieldLabel>
+            <FieldLabel>DESCRIPCIÓN DEL PRODUCTO</FieldLabel>
             <Input
               value={entry.description}
               disabled={disabled}
@@ -562,7 +562,7 @@ function ClientCodeCard({
         <>
           <div className="space-y-1.5">
             <div className="flex items-center justify-between gap-2">
-              <FieldLabel>CÓDIGO DEL CLIENTE</FieldLabel>
+              <FieldLabel>CÓDIGO</FieldLabel>
               {!disabled && (
                 <button
                   type="button"
@@ -583,7 +583,7 @@ function ClientCodeCard({
             />
           </div>
           <div className="space-y-1.5">
-            <FieldLabel>Descripción</FieldLabel>
+            <FieldLabel>DESCRIPCIÓN DEL PRODUCTO</FieldLabel>
             <Input
               value={entry.description}
               disabled={disabled}
@@ -1769,7 +1769,7 @@ export function LineEditDialog({
           {/* Columna derecha — códigos por cliente */}
           <div className="min-h-0 overflow-y-auto bg-muted/20">
             <div className="p-6 space-y-4">
-              <SectionHeader title="INFORMACIÓN DEL CLIENTE" number="03" />
+              <SectionHeader title="PRODUCTOS DEL CLIENTE" number="03" />
               <ClientCodeCards
                 clients={clientCards}
                 values={codeEntries}
