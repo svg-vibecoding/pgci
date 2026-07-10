@@ -450,12 +450,6 @@ function AgreementLinesPage() {
   }
 
   const canAdmin = !!ctx?.can_admin;
-  const clientName =
-    agreement.group_client_commercial_name?.trim() ||
-    agreement.group_client_legal_name ||
-    agreement.group_name ||
-    "—";
-
   const summaryCards: { key: LineCardKey; label: string; value: number }[] = [
     { key: "all", label: "Posiciones", value: counts.all },
     { key: "active", label: "Activas", value: counts.active },
@@ -991,7 +985,6 @@ function AgreementLinesPage() {
         onOpenChange={setEditOpen}
         agreementId={agreementId}
         agreementName={agreement?.name as string | undefined}
-        clientName={clientName}
         agreementStartDate={agreement.start_date as string | null | undefined}
         agreementEndDate={agreement.end_date as string | null | undefined}
         initial={editInitial}
