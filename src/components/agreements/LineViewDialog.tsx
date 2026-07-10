@@ -293,10 +293,11 @@ export function LineViewDialog({
               </section>
 
               {/* Vigencia */}
-              <section className="rounded-lg border border-input p-4">
+              <section className="rounded-lg border border-input p-4 space-y-3">
+                <SectionHeader title="Vigencia" number="02" />
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div className="flex items-center gap-2 text-sm">
-                    <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span className="text-foreground">{fmtDateLocal(line.start_date)}</span>
                     <span className="text-muted-foreground">→</span>
                     <span className="text-foreground">
