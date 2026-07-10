@@ -1528,26 +1528,22 @@ export function LineEditDialog({
                   )}
 
                   {lookup.kind === "inactive" && (
-                    <div className="md:col-span-2">
-                      <Alert variant="warning">
-                        <AlertDescription>
-                          Producto inactivo en el catálogo. Esta posición quedará
-                          en "Revisar".
-                        </AlertDescription>
-                      </Alert>
-                    </div>
+                    <Alert variant="warning">
+                      <AlertDescription>
+                        Producto inactivo en el catálogo. Esta posición quedará
+                        en "Revisar".
+                      </AlertDescription>
+                    </Alert>
                   )}
                   {lookup.kind === "not_found" && (
-                    <div className="md:col-span-2">
-                      <Alert variant="error">
-                        <AlertDescription>
-                          Código no encontrado en el catálogo Jaivaná
-                          {catalogDateLabel
-                            ? ` (última actualización: ${catalogDateLabel}).`
-                            : "."}
-                        </AlertDescription>
-                      </Alert>
-                    </div>
+                    <Alert variant="error">
+                      <AlertDescription>
+                        Código no encontrado en el catálogo Jaivaná
+                        {catalogDateLabel
+                          ? ` (última actualización: ${catalogDateLabel}).`
+                          : "."}
+                      </AlertDescription>
+                    </Alert>
                   )}
                   {nConflict.kind === "found" && (
                     <div className="md:col-span-2">
