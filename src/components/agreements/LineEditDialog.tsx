@@ -1401,8 +1401,11 @@ export function LineEditDialog({
                 <SectionHeader title="INFORMACIÓN DE SUMATEC" number="01" />
                 <div className="rounded-lg border border-input bg-muted/40 p-4">
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="space-y-1.5 md:col-span-2">
-                    <FieldLabel>INFORMACIÓN DE SUMATEC</FieldLabel>
+                  <div className="space-y-3 md:col-span-2">
+                    <div className="flex items-center gap-2">
+                      <div className="text-sm font-semibold text-foreground">Sumatec</div>
+                    </div>
+
                     <Popover open={searchOpen} onOpenChange={setSearchOpen}>
                       <PopoverTrigger asChild>
                         <div className="relative">
