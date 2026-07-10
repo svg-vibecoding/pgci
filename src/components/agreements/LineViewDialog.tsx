@@ -376,16 +376,19 @@ export function LineViewDialog({
               )}
 
               {(line.created_at || line.updated_at) && (
-                <div className="pt-2 text-[11px] text-muted-foreground space-y-0.5">
-                  <div className="flex justify-between">
-                    <span>Creada</span>
-                    <span>{fmtDateTime(line.created_at)}</span>
+                <section className="space-y-3 pt-2">
+                  <SectionHeader title="Auditoría" number="05" />
+                  <div className="text-sm text-muted-foreground space-y-1">
+                    <div className="flex justify-between">
+                      <span>Creada</span>
+                      <span className="text-foreground">{fmtDateTime(line.created_at)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Modificada</span>
+                      <span className="text-foreground">{fmtDateTime(line.updated_at)}</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Modificada</span>
-                    <span>{fmtDateTime(line.updated_at)}</span>
-                  </div>
-                </div>
+                </section>
               )}
             </div>
           </div>
