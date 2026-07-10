@@ -119,7 +119,7 @@ function PgciHome() {
             Hola, {profile?.full_name ?? "bienvenido"}
           </h1>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">
-            Tu plataforma de gestión comercial.
+            ¡Hoy será un gran día!
           </p>
         </div>
         <span className="inline-flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--surface-card)] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
