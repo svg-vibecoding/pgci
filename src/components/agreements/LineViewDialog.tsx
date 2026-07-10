@@ -246,21 +246,18 @@ export function LineViewDialog({
                   <StatusBadge status={statusMeta.status} label={statusMeta.label} size="sm" />
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    SUMATEC
-                  </div>
-                  {line.product_status && line.product_status !== "active" && (
-                    <Badge color="error" variant="soft">
-                      Inactivo
-                    </Badge>
-                  )}
-                </div>
+                <SectionHeader title="Sumatec" number="01" />
+
+                {line.product_status && line.product_status !== "active" && (
+                  <Badge color="error" variant="soft">
+                    Inactivo
+                  </Badge>
+                )}
 
                 {line.sku ? (
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     <div className="flex items-baseline gap-3 flex-wrap">
-                      <span className="font-mono text-base font-semibold text-foreground">
+                      <span className="font-mono text-lg font-semibold text-foreground">
                         {line.sku}
                       </span>
                       {line.commercial_brand && (
