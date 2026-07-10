@@ -1008,6 +1008,10 @@ export function LineEditDialog({
   );
   const hasCreatingIncomplete = Array.from(creatingIncomplete.values()).some(Boolean);
 
+  // Cambio a otra posición desde la alerta "código ya asignado".
+  const [pendingSwitchTarget, setPendingSwitchTarget] = useState<string | null>(null);
+
+
 
   // Buscador de productos (combobox)
   type ProductResult = {
