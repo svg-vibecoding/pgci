@@ -732,7 +732,7 @@ function AgreementLinesPage() {
               <TableHead className="w-32 whitespace-nowrap text-right">Precio</TableHead>
               <TableHead className="w-32 whitespace-nowrap">Vigencia</TableHead>
               <TableHead className="w-40 whitespace-nowrap">Estado</TableHead>
-              {canAdmin && <TableHead className="w-24 whitespace-nowrap text-right">Acciones</TableHead>}
+              <TableHead className="w-28 whitespace-nowrap text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
