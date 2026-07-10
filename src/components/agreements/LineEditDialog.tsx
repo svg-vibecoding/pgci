@@ -455,13 +455,7 @@ function ClientCodeCard({
       await reactivateFn({ data: { line_id: reactivateTarget.position_id } });
       toast.success("Posición reactivada");
       onReactivated();
-      const q = query.trim();
-      if (q.length >= 2) {
-        const res = await searchFn({
-          data: { agreement_id: agreementId, client_id: card.id, query: q },
-        });
-        setResults(res);
-      }
+      onRequestSwitchToPosition(reactivateTarget.position_id);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "No se pudo reactivar la posición");
     } finally {
