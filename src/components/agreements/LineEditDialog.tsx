@@ -1769,7 +1769,7 @@ export function LineEditDialog({
           {/* Columna derecha — códigos por cliente */}
           <div className="min-h-0 overflow-y-auto bg-muted/20">
             <div className="p-6 space-y-4">
-              <SectionHeader title="INFORMACIÓN DEL CLIENTE" number="03" />
+              <SectionHeader title="PRODUCTOS DEL CLIENTE" number="03" />
               <ClientCodeCards
                 clients={clientCards}
                 values={codeEntries}
