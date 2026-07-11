@@ -1453,8 +1453,10 @@ export function LineEditDialog({
         toast.success(
           isCreate ? "Posición creada y publicada" : "Posición actualizada y publicada",
         );
-      } else if (isPromotion || isCreate) {
+      } else if (isPromotion) {
         toast.success("Posición creada");
+      } else if (isCreate) {
+        toast.success("Registro creado en gestión");
       } else {
         toast.success("Posición actualizada");
       }

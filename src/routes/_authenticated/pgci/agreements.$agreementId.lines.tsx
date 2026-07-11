@@ -117,15 +117,19 @@ const STATUS_META: Record<
   excluded: { label: "Excluida", status: "neutral" },
 };
 
+function parseLocalDate(iso: string | null): Date | null {
+  if (!iso) return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  if (!m) return null;
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+}
+
 function coversTodayOf(
   lineEnd: string | null,
   agreementEnd: string | null,
 ): boolean {
-  const eff = lineEnd ?? agreementEnd ?? null;
-  if (!eff) return true;
-  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(eff);
-  if (!m) return true;
-  const end = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  const end = parseLocalDate(lineEnd ?? agreementEnd ?? null);
+  if (!end) return true;
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   return end.getTime() >= today.getTime();
@@ -142,15 +146,14 @@ function vigenciaBadge(
   lineEnd: string | null,
   agreementEnd: string | null,
 ): VigenciaBadge {
-  const eff = lineEnd ?? agreementEnd ?? null;
-  if (!eff) return { color: "neutral", label: "Sin vigencia" };
-  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(eff);
-  if (!m) return { color: "neutral", label: "Sin vigencia" };
-  const end = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  const end = parseLocalDate(lineEnd ?? agreementEnd ?? null);
+  if (!end) return { color: "neutral", label: "Sin vigencia" };
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const diffDays = Math.round((end.getTime() - today.getTime()) / 86_400_000);
-  const label = `${m[3]}/${m[2]}/${m[1]}`;
+  const dd = String(end.getDate()).padStart(2, "0");
+  const mm = String(end.getMonth() + 1).padStart(2, "0");
+  const label = `${dd}/${mm}/${end.getFullYear()}`;
   if (diffDays < 0) return { color: "error", label };
   if (diffDays <= 30) return { color: "warning", label };
   return { color: "info", label };
@@ -318,10 +321,6 @@ function AgreementLinesPage() {
   const conflictPositionCount = useMemo(
     () => conflictGroups.reduce((sum, g) => sum + (g.position_ids.length ?? 0), 0),
     [conflictGroups],
-  );
-  const unlinkedPositionCount = useMemo(
-    () => unlinkedGroups.reduce((sum, g) => sum + (g.position_ids.length ?? 0), 0),
-    [unlinkedGroups],
   );
   const unifiedPositionCount = useMemo(
     () => unifiedGroups.reduce((sum, g) => sum + (g.position_ids.length ?? 0), 0),
