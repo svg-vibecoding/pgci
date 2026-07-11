@@ -866,22 +866,6 @@ function AgreementLinesPage() {
                       {(r.status === "active" || r.status === "excluded") && meta && (
                         <StatusBadge status={meta.status} label={meta.label} />
                       )}
-                      {r.status === "pending" && (
-                        <div className="flex flex-wrap gap-1">
-                          {reasons.map((rsn) => (
-                            <Badge key={rsn} color="warning" variant="soft">
-                              <AlertTriangle className="h-3 w-3" />
-                              {PENDING_REASON_LABELS[rsn] ?? rsn}
-                            </Badge>
-                          ))}
-                          {vig.label === "Sin vigencia" && !reasons.includes("no_dates") && (
-                            <Badge color="warning" variant="soft">
-                              <AlertTriangle className="h-3 w-3" />
-                              Sin vigencia
-                            </Badge>
-                          )}
-                        </div>
-                      )}
                       {r.status === "requires_review" && (
                         <div className="flex flex-wrap gap-1">
                           {r.product_id && r.products?.status !== "active" && (
