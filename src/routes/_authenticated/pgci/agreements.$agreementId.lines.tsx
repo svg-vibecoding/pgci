@@ -462,6 +462,46 @@ function AgreementLinesPage() {
     });
   }, [lines, activeCard, q, skuConflictOnly, repeatedPositionIds, agreement?.end_date]);
 
+  // Publicables en la vista filtrada actual. Un checkbox por fila se habilita
+  // solo si isPublishable(row) — todos los ids en publishableInView pasan el gate.
+  const isPublishable = (r: Line): boolean => {
+    if (r.status !== "draft" && r.status !== "requires_review") return false;
+    if (!r.product_id) return false;
+    const sale = typeof r.sale_price === "number" ? r.sale_price : null;
+    if (sale == null || sale <= 0) return false;
+    if (!r.start_date) return false;
+    return coversTodayOf(
+      (r.end_date as string | null) ?? null,
+      (agreement?.end_date as string | null) ?? null,
+    );
+  };
+
+  const publishableInView = useMemo<string[]>(
+    () =>
+      filtered
+        .filter((r) => isPublishable(r))
+        .map((r) => r.id as string),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [filtered, agreement?.end_date],
+  );
+
+  // Reconciliar selectedIds ∩ publishableInView cuando cambia filtro/búsqueda.
+  // Preserva selección entre draft↔requires_review mientras sigan publicables.
+  useEffect(() => {
+    const allowed = new Set(publishableInView);
+    setSelectedIds((prev) => {
+      let changed = false;
+      const next = new Set<string>();
+      for (const id of prev) {
+        if (allowed.has(id)) next.add(id);
+        else changed = true;
+      }
+      return changed ? next : prev;
+    });
+  }, [publishableInView]);
+
+
+
 
   const handleExport = () => {
     if (!lines) return;
