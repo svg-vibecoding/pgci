@@ -515,21 +515,22 @@ function ClientAccess() {
             aria-expanded={bulkOpen}
           >
             <div className="flex items-center gap-2">
-              <Settings2 className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-semibold">Acciones masivas</span>
+              <Settings2 className="h-4 w-4 text-text-tertiary" />
+              <span className="suma-body font-semibold text-text-primary">Acciones masivas</span>
             </div>
             <ChevronDown
               className={cn(
-                "h-4 w-4 text-muted-foreground transition-transform",
+                "h-4 w-4 text-text-tertiary transition-transform",
                 bulkOpen && "rotate-180",
               )}
             />
           </button>
           {bulkOpen && (
             <div className="border-t border-border px-4 py-3 space-y-3">
-              <p className="text-xs text-muted-foreground">
+              <p className="suma-caption text-text-tertiary">
                 Aplican a los clientes que coincidan con el buscador activo.
               </p>
+
               <div className="divide-y divide-border rounded-md border border-border bg-background">
                 {[
                   {
