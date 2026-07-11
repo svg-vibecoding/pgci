@@ -1,5 +1,5 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { Gauge, Building2, Package, Users, LogOut, FileText, Search, Download, LayoutDashboard, UserCircle, type LucideIcon } from "lucide-react";
+import { Gauge, Building2, Package, Users, LogOut, FileText, Search, Download, LayoutDashboard, type LucideIcon } from "lucide-react";
 import { SumatecLogo } from "@/components/SumatecLogo";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -22,8 +22,7 @@ const SETUP_NAV: NavItem[] = [
 ];
 
 const PGCI_NAV: NavItem[] = [
-  { to: "/pgci", label: "Inicio", icon: LayoutDashboard, exact: true },
-  { to: "/pgci/profile", label: "Perfil comercial", icon: UserCircle },
+  { to: "/pgci", label: "Operación comercial", icon: LayoutDashboard, exact: true },
   { to: "/pgci/agreements", label: "Acuerdos", icon: FileText },
   { to: "/pgci/search", label: "Consulta", icon: Search, disabled: true, disabledHint: "En construcción" },
   { to: "/pgci/export", label: "Exportación", icon: Download, disabled: true, disabledHint: "En construcción" },

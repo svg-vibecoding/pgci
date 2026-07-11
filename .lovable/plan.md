@@ -1,39 +1,32 @@
-## Alinear el sidebar al sistema Sumatec
+## Objetivo
 
-El menú lateral usa tokens de color del sistema pero declara tamaños/pesos de forma ad-hoc. Lo unificamos a las utilidades `suma-*` y aligeramos el peso de los items idle, sin cambiar layout, iconografía, estados activos ni comportamiento.
+Unificar las vistas **Inicio** y **Perfil comercial** en un único módulo del menú lateral llamado **Operación comercial**, con un botón-link en la esquina superior derecha que alterna entre dos vistas dentro de la misma ruta.
 
-## Cambios en `src/components/layout/AppShell.tsx`
+## Cambios
 
-**`SectionLabel`** (encabezados "Setup Operativo", "PGCI")
-- De `text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-tertiary)]` a `suma-overline text-text-tertiary`.
-- Mantiene uppercase (es un overline por definición del sistema) y la línea divisoria.
+### 1. Navegación lateral (`src/components/layout/AppShell.tsx`)
+- Renombrar el item "Inicio" → **"Operación comercial"** (mantener icono `LayoutDashboard`, ruta `/pgci`).
+- Eliminar el item "Perfil comercial" del `PGCI_NAV`.
 
-**`NavList` items idle** (Plataforma, Usuarios, Clientes, Productos, Inicio, Acuerdos, etc.)
-- Tipografía: pasa de `text-sm font-medium` a `suma-body` (Roboto 14/20, regular).
-- Color: se mantiene `text-text-secondary` (#525763), mismo que subtítulos y body del sistema.
-- Hover: sigue con `hover:bg-[var(--gray-50)] hover:text-text-primary`.
-- Icono idle: sigue en `text-text-tertiary`, hover → `text-text-primary`.
+### 2. Ruta consolidada (`src/routes/_authenticated/pgci/index.tsx`)
+- Mantener header: `"Hola, {nombre}"` + subtítulo `"¡Hoy será un gran día!"`.
+- Reemplazar el chip estático "Operación comercial" por un **botón-link** (estilo ghost/link, no primario) que:
+  - Cuando la vista activa es Operación comercial → muestra texto **"Perfil comercial"** (con icono `UserCircle`).
+  - Cuando la vista activa es Perfil comercial → muestra texto **"Operación comercial"** (con icono `LayoutDashboard`).
+- Estado local `view: "ops" | "profile"` (default `"ops"`), controla qué bloque se renderiza debajo del header.
+- **Vista `ops`** (actual Inicio): KPIs Clientes asignados / Acuerdos activos, alerta de sin cartera, grid de módulos. Sin cambios de contenido.
+- **Vista `profile`**: renderiza las secciones actuales de `/pgci/profile` — Información personal, Seguridad (cambio de contraseña), Portafolio de accesos (accordion cliente → acuerdos → permisos), incluyendo alerta de Super Admin y bloque "Otros acuerdos". Se mantienen componentes y queries actuales.
 
-**`NavList` item activo** (fondo rojo)
-- Tipografía: `suma-body font-semibold` sobre `bg-[var(--color-primary)]`, texto `text-text-on-brand`.
-- Sin cambios visuales — sólo se atan a las utilidades del sistema.
+### 3. Refactor de la vista de perfil
+- Extraer el contenido de `src/routes/_authenticated/pgci/profile.tsx` a un componente reutilizable `src/components/pgci/CommercialProfileView.tsx` (sin header/KPIs propios, solo las 3 fichas) para consumirlo desde `index.tsx`.
+- Eliminar la ruta `src/routes/_authenticated/pgci/profile.tsx` para que `/pgci/profile` deje de existir.
+- Dejar que el plugin regenere `src/routeTree.gen.ts`.
 
-**Item deshabilitado** (Consulta, Exportación)
-- Tipografía base: `suma-body text-text-disabled`.
-- Chip "PRÓX...": de `text-[10px] font-semibold uppercase` a `suma-caption text-text-tertiary` (Roboto 12px, sin uppercase, para ser consistente con los chips de estado de módulos que ya unificamos en `/pgci`). Fondo `bg-[var(--gray-200)]` intacto.
+### 4. Detalles de UX
+- El botón-link va a la derecha del header (donde hoy está el chip), con transición sutil.
+- Al alternar, `scrollTo(0,0)` para reiniciar el scroll.
+- No se toca lógica de negocio, queries ni permisos.
 
-**Botón "Cerrar sesión"**
-- Se mantiene el `Button variant="ghost"`, sólo aseguramos que el `className` no fuerce peso extra: quedan las clases actuales de color `text-text-secondary hover:text-text-primary`. El componente `Button` ya define su tipografía; no se sobrescribe.
-
-## Fuera de alcance
-
-- No se cambia el ancho del sidebar, ni la separación entre secciones, ni los iconos.
-- No se toca el logo ni el borde derecho.
-- No se cambian los estados activo/hover a otros colores.
-- No se agrega token nuevo — quedó descartado el intermedio dedicado.
-
-## Resultado esperado
-
-- Items del menú se sienten más livianos (regular en lugar de medium) manteniendo el mismo gris que el resto de la interfaz.
-- Los overlines de sección y los chips "PRÓX..." dejan de tener tamaños/pesos hardcoded y pasan a compartir utilidad con el resto del sistema.
-- Cualquier cambio futuro en `suma-body` / `suma-overline` / `suma-caption` se refleja automáticamente en el menú.
+## Inventario post-cambio
+- Menú PGCI: Operación comercial · Acuerdos · Consulta · Exportación.
+- Ruta única `/pgci` con dos vistas conmutables por botón-link.

@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -16,7 +16,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { IndicatorCard } from "@/components/setup/IndicatorCard";
 import { InfoField, InfoSection } from "@/components/setup/InfoSection";
 import { StatusBadge, Badge, Chip } from "@/components/sumatec";
 import {
@@ -27,14 +26,6 @@ import {
   ShieldCheck,
   Users as UsersIcon,
 } from "lucide-react";
-
-export const Route = createFileRoute("/_authenticated/pgci/profile")({
-  head: () => ({ meta: [{ title: "Perfil comercial · PGCI" }] }),
-  component: ProfileView,
-});
-
-const roleLabel = (r?: string | null) =>
-  r === "super_admin" ? "Super admin" : r === "platform_user" ? "Usuario de plataforma" : r ?? "—";
 
 const memberRoleLabel = (r?: string | null) => {
   switch (r) {
@@ -51,7 +42,7 @@ const memberRoleLabel = (r?: string | null) => {
   }
 };
 
-function ProfileView() {
+export function CommercialProfileView() {
   const { data: profile, isLoading: loadingProfile } = useMyProfile();
   const userId = profile?.user_id ?? null;
   const isSuper = profile?.role === "super_admin";
@@ -103,7 +94,6 @@ function ProfileView() {
     },
   });
 
-  // Agreement -> clients (agreement_companies)
   const agreementIds = useMemo(
     () => (membersQ.data ?? []).map((m) => m.agreement_id),
     [membersQ.data],
@@ -123,7 +113,18 @@ function ProfileView() {
     },
   });
 
-  const isActive = profile?.status === "active";
+  const agreementsByClient = useMemo(() => {
+    const map = new Map<string, NonNullable<typeof membersQ.data>>();
+    const memberByAgr = new Map((membersQ.data ?? []).map((m) => [m.agreement_id, m]));
+    for (const row of agrClientsQ.data ?? []) {
+      const m = memberByAgr.get(row.agreement_id);
+      if (!m) continue;
+      const arr = map.get(row.client_id) ?? [];
+      arr.push(m);
+      map.set(row.client_id, arr);
+    }
+    return map;
+  }, [agrClientsQ.data, membersQ.data]);
 
   if (loadingProfile) {
     return (
@@ -139,23 +140,7 @@ function ProfileView() {
   }
 
   const assignedCount = accessQ.data?.length ?? 0;
-  const agreementsCount = membersQ.data?.length ?? 0;
 
-  // Group agreements by client via agreement_companies
-  const agreementsByClient = useMemo(() => {
-    const map = new Map<string, typeof membersQ.data>();
-    const memberByAgr = new Map((membersQ.data ?? []).map((m) => [m.agreement_id, m]));
-    for (const row of agrClientsQ.data ?? []) {
-      const m = memberByAgr.get(row.agreement_id);
-      if (!m) continue;
-      const arr = (map.get(row.client_id) ?? []) as NonNullable<typeof membersQ.data>;
-      arr.push(m);
-      map.set(row.client_id, arr as typeof membersQ.data);
-    }
-    return map;
-  }, [agrClientsQ.data, membersQ.data]);
-
-  // Agreements without a linked client visible (edge case)
   const memberAgreementIdsInMap = new Set(
     Array.from(agreementsByClient.values()).flatMap((arr) => (arr ?? []).map((m) => m.agreement_id)),
   );
@@ -165,43 +150,6 @@ function ProfileView() {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
-          <h1 className="suma-h1">Perfil comercial</h1>
-          <p className="suma-body text-text-secondary">
-            Consulta tu información, gestiona tu contraseña y revisa tus accesos en la PGCI.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {isSuper && (
-            <Badge color="accent" variant="soft">
-              {roleLabel(profile.role)}
-            </Badge>
-          )}
-          <StatusBadge
-            status={isActive ? "active" : "neutral"}
-            label={isActive ? "Activo" : "Inactivo"}
-          />
-        </div>
-      </header>
-
-      {/* KPIs */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <IndicatorCard
-          label="Clientes"
-          value={isSuper ? "Acceso total" : assignedCount}
-        />
-        <IndicatorCard
-          label="Acuerdos"
-          value={agreementsCount}
-        />
-        <IndicatorCard
-          label="Rol en la plataforma"
-          value={<span className="suma-h3">{roleLabel(profile.role)}</span>}
-        />
-      </div>
-
       {/* Información personal */}
       <Card>
         <CardHeader>
@@ -304,7 +252,6 @@ function ProfileView() {
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="pb-4">
-                      {/* Permisos sobre el cliente */}
                       <div className="mb-4">
                         <p className="suma-overline text-text-tertiary mb-2">
                           Permisos sobre el cliente
@@ -324,7 +271,6 @@ function ProfileView() {
                         )}
                       </div>
 
-                      {/* Acuerdos donde participo */}
                       <div>
                         <p className="suma-overline text-text-tertiary mb-2">
                           Acuerdos donde participas
@@ -444,7 +390,6 @@ function PasswordChangeForm() {
     if (!canSubmit) return;
     setSaving(true);
     try {
-      // Reautenticar con la contraseña actual
       const { data: userData } = await supabase.auth.getUser();
       const email = userData.user?.email;
       if (!email) throw new Error("No fue posible identificar tu sesión.");
