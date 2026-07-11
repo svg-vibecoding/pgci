@@ -128,12 +128,10 @@ export function TableHead({
   ...rest
 }: TableHeadProps) {
   const headStyle: CSSProperties = {
-    fontFamily: "var(--font-ui)",
-    fontWeight: "var(--fw-bold)",
-    fontSize: 11,
-    lineHeight: "16px",
-    letterSpacing: "0.05em",
-    textTransform: "uppercase",
+    fontFamily: "var(--font-body)",
+    fontWeight: "var(--fw-regular)",
+    fontSize: "var(--body-md)",
+    lineHeight: "var(--body-md-lh)",
     color: "var(--text-tertiary)",
     padding: "10px 16px",
     textAlign: numeric ? "right" : "left",
