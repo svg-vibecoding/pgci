@@ -222,25 +222,6 @@ function UsersList() {
         ),
     },
     {
-      id: "create",
-      header: "Crea acuerdos",
-      cell: (u) =>
-        u.role === "super_admin" ? (
-          <span className="text-text-tertiary">—</span>
-        ) : (
-          <div className="flex flex-wrap items-center gap-2">
-            {u.create_count > 0 ? (
-              <StatusBadge status="success" label="Sí" withIcon={false} />
-            ) : (
-              <StatusBadge status="neutral" label="No" withIcon={false} />
-            )}
-            <span className="text-[12px] text-text-tertiary">
-              {formatParticipation(u.admin_count, u.member_count)}
-            </span>
-          </div>
-        ),
-    },
-    {
       id: "status",
       header: "Estado",
       width: 110,
