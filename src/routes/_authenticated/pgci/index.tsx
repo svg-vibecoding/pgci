@@ -78,7 +78,8 @@ function statusChip(status: ModuleStatus) {
 
 
 function PgciHome() {
-  const { data: profile, isSuperAdmin } = useMyProfile();
+  const { data: profile } = useMyProfile();
+  const { isSuperAdmin } = useIsSuperAdmin();
   const userId = profile?.user_id;
 
   const clientsQuery = useQuery({
