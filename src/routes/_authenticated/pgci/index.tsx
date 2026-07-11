@@ -57,18 +57,18 @@ const MODULES: ModuleDef[] = [
 function statusChip(status: ModuleStatus) {
   if (status === "available")
     return (
-      <span className="suma-overline inline-flex items-center rounded-full bg-[var(--status-success-soft)] px-2.5 py-0.5 text-[var(--status-success-strong)]">
+      <span className="suma-caption inline-flex items-center rounded-full bg-[var(--status-success-soft)] px-2.5 py-0.5 text-[var(--status-success-strong)]">
         Disponible
       </span>
     );
   if (status === "soon")
     return (
-      <span className="suma-overline inline-flex items-center rounded-full bg-[var(--status-info-soft)] px-2.5 py-0.5 text-[var(--status-info-strong)]">
+      <span className="suma-caption inline-flex items-center rounded-full bg-[var(--status-info-soft)] px-2.5 py-0.5 text-[var(--status-info-strong)]">
         Disponible pronto
       </span>
     );
   return (
-    <span className="suma-overline inline-flex items-center rounded-full bg-[var(--gray-100)] px-2.5 py-0.5 text-text-tertiary">
+    <span className="suma-caption inline-flex items-center rounded-full bg-[var(--gray-100)] px-2.5 py-0.5 text-text-tertiary">
       En construcción
     </span>
   );
