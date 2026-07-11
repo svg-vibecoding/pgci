@@ -59,8 +59,10 @@ import {
   listClientCatalogPermissions,
   linkSkuPrice,
   unlinkSkuPrice,
+  publishAgreementPositions,
   type LineCode,
 } from "@/lib/agreements.functions";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
