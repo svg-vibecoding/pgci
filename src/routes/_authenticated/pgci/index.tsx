@@ -111,7 +111,7 @@ function PgciHome() {
   });
 
   const clientsCount = clientsQuery.data ?? 0;
-  const noClients = !clientsQuery.isLoading && clientsCount === 0;
+  const noClients = !clientsQuery.isLoading && clientsCount === 0 && !isSuperAdmin;
 
   return (
     <div className="space-y-5">
