@@ -723,9 +723,6 @@ function AgreementLinesPage() {
             )}
             {filtered.map((r) => {
               const meta = STATUS_META[r.status as keyof typeof STATUS_META] ?? null;
-              const reasons = (r.pending_reason ?? "")
-                .split(",")
-                .filter(Boolean) as ImportPendingReason[];
               const isExcluded = r.status === "excluded";
               const vig = vigenciaBadge(
                 r.end_date ?? null,
