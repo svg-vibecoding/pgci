@@ -43,7 +43,7 @@ function UsersList() {
       const { data: profiles, error } = await supabase
         .from("profiles")
         .select(
-          "user_id, full_name, email, role, status, erp_user_code, updated_at",
+          "user_id, full_name, email, role, status, erp_user_code, updated_at, created_at",
         )
         .order("full_name");
       if (error) throw error;
