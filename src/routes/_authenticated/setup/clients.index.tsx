@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,17 +11,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge, Chip, StatusBadge } from "@/components/sumatec";
-import { Plus, Search } from "lucide-react";
+import {
+  Badge,
+  Chip,
+  StatusBadge,
+  DataTable,
+  type DataTableColumn,
+  type RowAction,
+} from "@/components/sumatec";
+import { Eye, Pencil, Plus, Search, Building2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/setup/clients/")({
   head: () => ({ meta: [{ title: "Clientes · Setup · PGCI" }] }),
@@ -32,7 +31,24 @@ type CardKey = "all" | "holdings" | "direct" | "withAgreements";
 type StatusFilter = "all" | "active" | "inactive";
 type HoldingRelFilter = "all" | "linked" | "unlinked";
 
+type ClientRow = {
+  id: string;
+  commercial_name: string | null;
+  legal_name: string;
+  erp_name: string | null;
+  tax_id: string | null;
+  type: string;
+  status: string;
+  parent_client_id: string | null;
+  updated_at: string | null;
+  display_name: string;
+  company_count: number;
+  agreement_count: number;
+  parent_name: string | null;
+};
+
 function ClientsList() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [statusF, setStatusF] = useState<StatusFilter>("all");
   const [holdingRelF, setHoldingRelF] = useState<HoldingRelFilter>("all");
@@ -53,11 +69,11 @@ function ClientsList() {
         ),
       );
 
-      const ids = (clients ?? []).map((c) => c.id);
+      const ids = clients.map((c) => c.id);
       const childCounts = new Map<string, number>();
       const agreementCounts = new Map<string, number>();
       if (ids.length) {
-        (clients ?? []).forEach((c) => {
+        clients.forEach((c) => {
           if (c.parent_client_id) {
             childCounts.set(
               c.parent_client_id,
@@ -76,16 +92,16 @@ function ClientsList() {
         });
       }
       const nameById = new Map<string, string>();
-      (clients ?? []).forEach((c) => {
+      clients.forEach((c) => {
         nameById.set(c.id, c.commercial_name?.trim() || c.legal_name);
       });
-      return (clients ?? []).map((c) => ({
+      return clients.map((c) => ({
         ...c,
         display_name: c.commercial_name?.trim() || c.legal_name,
         company_count: childCounts.get(c.id) ?? 0,
         agreement_count: agreementCounts.get(c.id) ?? 0,
         parent_name: c.parent_client_id ? nameById.get(c.parent_client_id) ?? null : null,
-      }));
+      })) as ClientRow[];
     },
   });
 
@@ -97,15 +113,12 @@ function ClientsList() {
   const withAgreementsCount = all.filter((c) => c.agreement_count > 0).length;
 
   const filtered = all.filter((c) => {
-    // Card filter
     if (activeCard === "holdings" && c.type !== "holding") return false;
     if (activeCard === "direct" && c.type !== "direct") return false;
     if (activeCard === "withAgreements" && c.agreement_count === 0) return false;
 
-    // Status filter
     if (statusF !== "all" && c.status !== statusF) return false;
 
-    // Holding relation filter (applies only to direct clients)
     if (holdingRelF === "linked") {
       if (c.type !== "direct" || !c.parent_client_id) return false;
     } else if (holdingRelF === "unlinked") {
@@ -148,6 +161,89 @@ function ClientsList() {
     setHoldingRelF("all");
     setSearch("");
   };
+
+  const columns: DataTableColumn<ClientRow>[] = [
+    {
+      id: "client",
+      header: "Cliente",
+      cell: (c) => (
+        <div className="min-w-0">
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+            <span className="min-w-0 truncate text-[13px] font-semibold text-text-primary">
+              {c.display_name}
+            </span>
+            {c.type === "holding" && <Badge color="info">Holding</Badge>}
+          </div>
+          {c.parent_client_id && (
+            <div
+              className="line-clamp-2 text-[13px] leading-[1.35] text-text-secondary"
+              title={c.parent_name ?? undefined}
+            >
+              {c.parent_name ?? "—"}
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      id: "nit",
+      header: "NIT",
+      width: 140,
+      wrap: false,
+      cell: (c) =>
+        c.tax_id ? (
+          <span className="font-mono text-[12.5px] text-text-primary">{c.tax_id}</span>
+        ) : (
+          <span className="text-text-tertiary">—</span>
+        ),
+    },
+    {
+      id: "companies",
+      header: "Empresas",
+      width: 100,
+      numeric: true,
+      cell: (c) =>
+        c.type === "holding" ? (
+          c.company_count
+        ) : (
+          <span className="text-text-tertiary">—</span>
+        ),
+    },
+    {
+      id: "agreements",
+      header: "Acuerdos",
+      width: 100,
+      numeric: true,
+      cell: (c) => c.agreement_count,
+    },
+    {
+      id: "status",
+      header: "Estado",
+      width: 110,
+      wrap: false,
+      cell: (c) => (
+        <StatusBadge
+          status={c.status === "active" ? "active" : "neutral"}
+          label={c.status === "active" ? "Activo" : "Inactivo"}
+        />
+      ),
+    },
+  ];
+
+  const rowActions = (c: ClientRow): RowAction<ClientRow>[] => [
+    {
+      label: "Ver detalle",
+      icon: <Eye className="h-4 w-4" />,
+      onSelect: () =>
+        navigate({ to: "/setup/clients/$clientId", params: { clientId: c.id } }),
+    },
+    {
+      label: "Editar",
+      icon: <Pencil className="h-4 w-4" />,
+      onSelect: () =>
+        navigate({ to: "/setup/clients/$clientId/edit", params: { clientId: c.id } }),
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -237,42 +333,22 @@ function ClientsList() {
             </p>
             <div className="flex flex-wrap gap-2">
               {activeCard !== "all" && (
-                <Chip
-                  size="small"
-                  variant="soft"
-                  color="neutral"
-                  onRemove={() => setActiveCard("all")}
-                >
+                <Chip size="small" variant="soft" color="neutral" onRemove={() => setActiveCard("all")}>
                   {cardLabelByKey[activeCard]}
                 </Chip>
               )}
               {statusF !== "all" && (
-                <Chip
-                  size="small"
-                  variant="soft"
-                  color="neutral"
-                  onRemove={() => setStatusF("all")}
-                >
+                <Chip size="small" variant="soft" color="neutral" onRemove={() => setStatusF("all")}>
                   {statusF === "active" ? "Activos" : "Inactivos"}
                 </Chip>
               )}
               {holdingRelF !== "all" && (
-                <Chip
-                  size="small"
-                  variant="soft"
-                  color="neutral"
-                  onRemove={() => setHoldingRelF("all")}
-                >
+                <Chip size="small" variant="soft" color="neutral" onRemove={() => setHoldingRelF("all")}>
                   {holdingRelF === "linked" ? "Asociados a holding" : "Sin holding"}
                 </Chip>
               )}
               {search.trim() && (
-                <Chip
-                  size="small"
-                  variant="soft"
-                  color="neutral"
-                  onRemove={() => setSearch("")}
-                >
+                <Chip size="small" variant="soft" color="neutral" onRemove={() => setSearch("")}>
                   Búsqueda: {search.trim()}
                 </Chip>
               )}
@@ -287,74 +363,26 @@ function ClientsList() {
           </div>
         )}
 
-        <div className="rounded-lg border border-border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Cliente</TableHead>
-                <TableHead>NIT</TableHead>
-                <TableHead className="text-right">Empresas</TableHead>
-                <TableHead className="text-right">Acuerdos</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading && (
-                <TableRow><TableCell colSpan={6} className="text-center text-sm text-muted-foreground">Cargando…</TableCell></TableRow>
-              )}
-              {!isLoading && filtered.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">
-                    {all.length === 0
-                      ? "Aún no hay clientes creados. Crea los clientes piloto para continuar."
-                      : "No hay clientes que coincidan con los filtros."}
-                  </TableCell>
-                </TableRow>
-              )}
-              {filtered.map((c) => (
-                <TableRow key={c.id}>
-                  <TableCell className="font-medium">
-                    <div className="flex items-center gap-2">
-                      <Link to="/setup/clients/$clientId" params={{ clientId: c.id }} className="hover:underline">
-                        {c.display_name}
-                      </Link>
-                      {c.type === "holding" && (
-                        <Badge color="info">Holding</Badge>
-                      )}
-                    </div>
-                    {c.parent_client_id && (
-                      <span
-                        className="block text-xs text-muted-foreground truncate max-w-[260px]"
-                        title={c.parent_name ?? undefined}
-                      >
-                        {c.parent_name ?? "—"}
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{c.tax_id ?? "—"}</TableCell>
-                  <TableCell className="text-right">
-                    {c.type === "holding" ? c.company_count : "—"}
-                  </TableCell>
-                  <TableCell className="text-right">{c.agreement_count}</TableCell>
-                  <TableCell>
-                    <StatusBadge status={c.status === "active" ? "active" : "neutral"} label={c.status === "active" ? "Activo" : "Inactivo"} />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button asChild size="sm" variant="ghost">
-                        <Link to="/setup/clients/$clientId" params={{ clientId: c.id }}>Ver</Link>
-                      </Button>
-                      <Button asChild size="sm" variant="ghost">
-                        <Link to="/setup/clients/$clientId/edit" params={{ clientId: c.id }}>Editar</Link>
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        <DataTable
+          data={filtered}
+          columns={columns}
+          getRowId={(c) => c.id}
+          rowActions={rowActions}
+          onRowClick={(c) =>
+            navigate({ to: "/setup/clients/$clientId", params: { clientId: c.id } })
+          }
+          loading={isLoading}
+          empty={{
+            icon: <Building2 className="h-5 w-5" />,
+            title:
+              all.length === 0 ? "Aún no hay clientes" : "Sin resultados",
+            description:
+              all.length === 0
+                ? "Crea los clientes piloto para continuar."
+                : "No hay clientes que coincidan con los filtros.",
+          }}
+          ariaLabel="Clientes"
+        />
       </div>
     </div>
   );
