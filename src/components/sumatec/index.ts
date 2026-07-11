@@ -46,3 +46,12 @@ export type {
 
 export { SummaryToggle } from "./SummaryToggle";
 
+export { DataTable, IdentityCell, RowActionsMenu } from "./DataTable";
+export type {
+  DataTableColumn,
+  DataTableProps,
+  DataTableSelection,
+  RowAction,
+  ColumnAlign,
+} from "./DataTable";
+
