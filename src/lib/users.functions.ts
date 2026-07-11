@@ -90,8 +90,17 @@ export const createUser = createServerFn({ method: "POST" })
     });
 
     if (profileErr) {
+      console.error("[createUser] profiles insert failed", {
+        message: profileErr.message,
+        code: (profileErr as { code?: string }).code,
+        details: (profileErr as { details?: string }).details,
+        hint: (profileErr as { hint?: string }).hint,
+      });
       await supabaseAdmin.auth.admin.deleteUser(newUserId);
-      throw new Error(`No se pudo crear el perfil: ${profileErr.message}`);
+      const extra = (profileErr as { code?: string }).code
+        ? ` [${(profileErr as { code?: string }).code}]`
+        : "";
+      throw new Error(`No se pudo crear el perfil: ${profileErr.message}${extra}`);
     }
 
     return {
