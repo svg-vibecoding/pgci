@@ -967,7 +967,6 @@ function AgreementLinesPage() {
           </TableBody>
         </Table>
       </div>
-      )}
 
 
 
