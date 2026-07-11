@@ -1352,8 +1352,10 @@ export function LineEditDialog({
         throw new Error("El precio par debe ser mayor a 0");
       }
       const codes = buildClientCodes();
+      let saveRes: unknown;
+      let targetId: string | null = null;
       if (isEdit) {
-        return patchFn({
+        saveRes = await patchFn({
           data: {
             line_id: initial!.line_id!,
             kind: initial!.kind ?? "position",
@@ -1369,23 +1371,37 @@ export function LineEditDialog({
             confirm_n_conflict: true,
           },
         });
+        targetId = initial!.line_id!;
+      } else {
+        saveRes = await createFn({
+          data: {
+            agreement_id: agreementId,
+            sku: txt(v.sku) ?? undefined,
+            client_codes: codes,
+            sale_price: num(v.sale_price),
+            par_price: num(v.par_price) || undefined,
+            start_date: txt(v.start_date) ?? undefined,
+            end_date: txt(v.end_date) ?? undefined,
+            observations: txt(v.observations) ?? undefined,
+          },
+        });
+        // create_agreement_line devuelve { line_id, kind }
+        targetId = (saveRes as { line_id?: string } | null)?.line_id ?? null;
       }
-      return createFn({
-        data: {
-          agreement_id: agreementId,
-          sku: txt(v.sku) ?? undefined,
-          client_codes: codes,
-          sale_price: num(v.sale_price),
-          par_price: num(v.par_price) || undefined,
-          start_date: txt(v.start_date) ?? undefined,
-          end_date: txt(v.end_date) ?? undefined,
-          observations: txt(v.observations) ?? undefined,
-        },
-      });
+
+      // Encadenado publicar-al-guardar. Se salta si el guardado quedó bloqueado
+      // (RN-MATCH-01 / identity_no_codes): onSuccess muestra el toast de bloqueo.
+      const saveBlocked =
+        !!(saveRes as { blocked?: boolean } | null)?.blocked;
+      let publishRes: Awaited<ReturnType<typeof publishFn>> | null = null;
+      if (publishOnSave && canPublishNow && targetId && !saveBlocked) {
+        publishRes = await publishFn({ data: { ids: [targetId] } });
+      }
+      return { saveRes, publishRes };
     },
-    onSuccess: (res) => {
+    onSuccess: ({ saveRes, publishRes }) => {
       // (1) UPDATE bloqueado (RN-MATCH-01 o identity_no_codes)
-      const r = res as {
+      const r = saveRes as {
         blocked?: boolean;
         block_reason?: {
           code?: string;
@@ -1418,6 +1434,14 @@ export function LineEditDialog({
       const isPending = isCreate
         ? r?.kind === "transit"
         : !!r?.transit_id && !isPromotion;
+      // Con publicación exitosa el toast principal es "publicada".
+      const publishedOk =
+        !!publishRes && (publishRes.published ?? 0) > 0;
+      const publishFailed =
+        !!publishRes &&
+        (publishRes.not_publishable ?? 0) + (publishRes.skipped ?? 0) > 0 &&
+        (publishRes.published ?? 0) === 0;
+
       if (isPending) {
         const missing = computePendingLabels();
         toast.info(
@@ -1425,11 +1449,22 @@ export function LineEditDialog({
             ? `Guardado como pendiente — falta ${missing.join(", ")}`
             : "Guardado como pendiente",
         );
+      } else if (publishedOk) {
+        toast.success(
+          isCreate ? "Posición creada y publicada" : "Posición actualizada y publicada",
+        );
       } else if (isPromotion || isCreate) {
         toast.success("Posición creada");
       } else {
         toast.success("Posición actualizada");
       }
+
+      if (publishFailed) {
+        // Caso borde: guardado ok, publish rechazó (p.ej. venció entre save y publish).
+        const raw = publishRes?.details?.[0]?.reason ?? null;
+        toast.info(`No se pudo publicar: ${raw ?? "condiciones no cumplidas"}`);
+      }
+
       qc.invalidateQueries({ queryKey: ["agreements", "lines", agreementId] });
       qc.invalidateQueries({ queryKey: ["agreements", "detail", agreementId] });
       qc.invalidateQueries({ queryKey: ["agreements", "sku-groups", agreementId] });
