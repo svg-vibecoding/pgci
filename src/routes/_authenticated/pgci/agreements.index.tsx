@@ -351,18 +351,20 @@ function AgreementsList() {
             </Link>
           </Button>
         ) : (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span tabIndex={0}>
-                <Button disabled aria-disabled="true">
-                  <Lock className="mr-2 h-4 w-4" /> Crear acuerdo
-                </Button>
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>
-              Necesitas permiso para crear acuerdos. Solicítalo a un administrador.
-            </TooltipContent>
-          </Tooltip>
+          <TooltipProvider delayDuration={150}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span tabIndex={0}>
+                  <Button disabled aria-disabled="true">
+                    <Lock className="mr-2 h-4 w-4" /> Crear acuerdo
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                Necesitas permiso para crear acuerdos. Solicítalo a un administrador.
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         )}
       </header>
 
