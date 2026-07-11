@@ -2297,7 +2297,7 @@ export const getAgreementGroupRollup = createServerFn({ method: "GET" })
       unique_users: uniqueUsers,
       total_lines: sumField("lines_total"),
       lines_active: sumField("lines_active"),
-      lines_pending: 0,
+      
       lines_review: sumField("lines_review"),
       lines_excluded: sumField("lines_excluded"),
       min_start: minStart,
