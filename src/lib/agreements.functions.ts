@@ -677,16 +677,6 @@ export const reactivateAgreementLine = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-// Modelo de tránsito eliminado: se conserva la firma como no-op para no romper
-// llamadas antiguas del frontend hasta su próxima limpieza.
-export const deleteAgreementTransitLine = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => transitDeleteSchema.parse(d))
-  .handler(async ({ data }) => {
-    void data;
-    return { ok: true };
-  });
-
 export const lookupProductBySku = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => {
