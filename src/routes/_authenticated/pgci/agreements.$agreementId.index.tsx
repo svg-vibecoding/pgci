@@ -170,11 +170,9 @@ function AgreementDetail() {
   }
 
   const isActive = agreement.status === "active";
-  const total = agreement.lines_total ?? 0;
   const active = agreement.lines_active ?? 0;
-  const transit = transitCount ?? 0;
-  const review = agreement.lines_review ?? 0;
-  const excluded = agreement.lines_excluded ?? 0;
+  const memberCount = members?.length ?? 0;
+  const companyCount = companiesCount ?? 0;
 
   return (
     <div className="space-y-6">
@@ -212,25 +210,16 @@ function AgreementDetail() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Información comercial / Posiciones en el acuerdo</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-            <IndicatorCard label="Posiciones" value={total} />
-            <IndicatorCard label="Activas" value={active} />
-            <IndicatorCard label="Requieren revisión" value={review} />
-            <IndicatorCard label="Excluidas" value={excluded} />
-            <IndicatorCard label="En tránsito" value={transit} />
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
           <CardTitle className="text-base">Información general</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <IndicatorCard label="Clientes" value={companyCount} className="bg-[var(--surface-sunken)]" />
+            <IndicatorCard label="Usuarios" value={memberCount} className="bg-[var(--surface-sunken)]" />
+            <IndicatorCard label="Posiciones activas" value={active} className="bg-[var(--surface-sunken)]" />
+          </div>
           <InfoSection>
+
             <InfoField label="Alcance">
               {agreement.scope === "unit"
                 ? `${agreement.unit_name ?? "Unidad"} (cobertura por regional)`
