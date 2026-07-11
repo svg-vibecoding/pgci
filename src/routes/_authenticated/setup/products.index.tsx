@@ -167,7 +167,7 @@ function ProductsList() {
       <header className="flex items-center justify-between">
         <div>
           <h1 className="suma-h1">Productos</h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="suma-body text-text-secondary">
             Catálogo de Productos Jaivaná ERP.
           </p>
         </div>

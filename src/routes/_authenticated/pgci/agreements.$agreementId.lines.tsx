@@ -832,7 +832,7 @@ function AgreementLinesPage() {
 
       {(activeCard !== "all" || q.trim() || skuConflictOnly) && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-          <p className="text-sm text-muted-foreground">
+          <p className="suma-body text-text-secondary">
             {`${filtered.length} de ${totalCount} ${totalCount === 1 ? "posición" : "posiciones"}`}
           </p>
           <div className="flex flex-wrap gap-2">
