@@ -1,39 +1,28 @@
-## Sí, es totalmente viable
+## Cambio
 
-`DataTableColumn.header` ya acepta `ReactNode`, así que podemos poner el `Select` directamente adentro del `<th>` de la columna Cliente sin tocar el componente base de tabla.
+Actualizar `src/components/ui/input.tsx` para que todos los `Input` de la app hereden tipografía y placeholder del sistema Sumatec, sin excepciones responsive.
 
-## Qué cambia visualmente
+## Detalle
 
-- La columna "Cliente" deja de tener un label estático. En su lugar, el header muestra el **nombre del cliente seleccionado** en un negro más marcado (`text-text-primary`, misma tipografía `suma-body` que ya usan los demás headers, sin uppercase) y a la derecha un chevron.
-- Al hacer clic en el header se abre el mismo listado de clientes visibles del acuerdo. Cambiar de opción actualiza la proyección de la tabla igual que hoy.
-- El `Select` que hoy está sobre la barra de filtros (a la izquierda del buscador) desaparece: queda solo el buscador ocupando todo el ancho, más limpio.
+Reemplazar en el `className` del `<input>`:
 
-```text
-Antes                                             Después
-[ CORONA ▾ ] [ 🔍 Buscar SKU…              ] 🗇     [ 🔍 Buscar SKU…                       ] 🗇
-────────────────────────────────────────────      ────────────────────────────────────────────
-Cliente        Jaivaná    Marca   Precio  …       CORONA ▾      Jaivaná    Marca   Precio  …
+- `text-base ... md:text-sm` → clase de utilidad `suma-body` (Roboto 14px / 20px, `--fw-regular`, `--font-body`). Tamaño único en mobile y desktop, coherente con el resto del sistema.
+- `placeholder:text-muted-foreground` → `placeholder:text-text-tertiary` (token Sumatec `#8A8F9C`).
+- Mantener intactos: alto (`h-9`), radios, borde, fondo (`bg-card`), padding, focus ring, disabled — son parte del contrato visual del componente y no son tipográficos.
+
+Resultado del `className` final (referencia):
+
+```
+flex h-9 w-full rounded-md border border-input bg-card px-3 py-1 suma-body shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-text-tertiary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50
 ```
 
-## Comportamiento
+## Impacto
 
-- Si el acuerdo tiene **más de un cliente visible**: el header es interactivo (trigger del select), muestra el nombre del cliente activo + chevron.
-- Si sólo hay **un cliente visible**: el header muestra su nombre en texto plano, sin chevron ni interacción (evita el disclosure inútil).
-- El menú se abre en un popover (portal de shadcn), así que el header sticky de la tabla no lo recorta.
-- Al cambiar de cliente se sigue reseteando la selección de filas y recalculando la proyección — mismo `onValueChange` que ya existe.
-
-## Detalles técnicos
-
-- Archivo: `src/routes/_authenticated/pgci/agreements.$agreementId.lines.tsx`.
-- Extraer un pequeño componente local `ClientColumnHeader` que reciba `visibleClients`, `projectionClientId`, `setProjectionClientId` y renderice:
-  - `Select` de shadcn con `SelectTrigger` custom (sin borde ni fondo, sólo texto + chevron) para que se integre visualmente al header.
-  - Nombre en `suma-body text-text-primary font-medium`, chevron `ChevronDown` de lucide en `text-text-tertiary`.
-- Reemplazar `header: "Cliente"` de la columna `client` por `header: <ClientColumnHeader … />`.
-- Eliminar el bloque `visibleClients.length > 1 && <Select …>` de la barra de filtros (líneas ~738–754). El buscador queda como único hijo flex de esa fila.
-- Accesibilidad: `aria-label="Cambiar cliente"` en el trigger, chevron con `aria-hidden`.
-- Nada cambia en `DataTable`, tipos, ni en el resto de vistas.
+- Aplica a **todos** los `Input` de la app (buscadores, formularios, imports, diálogos).
+- No cambia altura ni layout, sólo familia/tamaño de fuente y color de placeholder.
+- No requiere migraciones ni cambios en consumidores.
 
 ## Fuera de alcance
 
-- No se modifica lógica de datos, permisos ni queries.
-- No se cambian las otras columnas ni el resto de la barra de filtros (chip de filtros activos permanece).
+- `Textarea`, `Select`, `Combobox` u otros controles: si se quieren unificar, se aborda en un cambio aparte.
+- Ajustes puntuales de tamaño en formularios que hoy dependieran de `text-base` en mobile — no hemos detectado ninguno crítico, pero si aparece se ajusta puntualmente.
