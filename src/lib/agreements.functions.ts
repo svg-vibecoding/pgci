@@ -53,7 +53,7 @@ export const listAgreements = createServerFn({ method: "GET" })
     const rows = data ?? [];
     const ids = rows.map((r) => r.id as string).filter(Boolean);
     if (ids.length === 0)
-      return rows.map((r) => ({ ...r, companies: [] as string[], lines_transit: 0, can_admin: false }));
+      return rows.map((r) => ({ ...r, companies: [] as string[], can_admin: false }));
     const { data: comps, error: cErr } = await context.supabase
       .from("agreement_companies")
       .select("agreement_id, clients:client_id(commercial_name, legal_name)")
