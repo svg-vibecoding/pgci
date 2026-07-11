@@ -621,10 +621,10 @@ function ClientAccess() {
                         <div className="flex min-w-0 flex-1 items-center gap-3">
                           <div
                             className={cn(
-                              "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors",
+                              "flex h-9 w-9 shrink-0 items-center justify-center rounded-full suma-caption font-semibold transition-colors",
                               st.assigned
                                 ? "bg-primary/10 text-primary"
-                                : "bg-muted text-muted-foreground",
+                                : "bg-muted text-text-tertiary",
                             )}
                             aria-hidden="true"
                           >
@@ -632,7 +632,7 @@ function ClientAccess() {
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
-                              <span className="truncate font-medium">{name}</span>
+                              <span className="truncate suma-body font-semibold text-text-primary">{name}</span>
                               {c.type === "holding" && (
                                 <Badge color="accent" variant="soft">
                                   Holding
@@ -640,11 +640,12 @@ function ClientAccess() {
                               )}
                             </div>
                             {parentName && (
-                              <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                              <p className="mt-0.5 truncate suma-caption text-text-tertiary">
                                 {parentName}
                               </p>
                             )}
                           </div>
+
                         </div>
                         <Switch
                           checked={st.assigned}
