@@ -86,31 +86,76 @@ function UserDetail() {
     },
   });
 
-  const { data: access } = useQuery({
+  const accessQ = useQuery({
     queryKey: ["users", userId, "access"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("user_client_access")
-        .select("id, client_id, can_create_agreements, created_at, clients ( id, commercial_name, legal_name, type, status )")
+        .select(
+          "id, client_id, can_create_agreements, can_manage_client_catalog, can_manage_matching, created_at, clients ( id, commercial_name, legal_name, type, status )",
+        )
         .eq("user_id", userId)
         .is("valid_until", null);
       if (error) throw error;
       return data ?? [];
     },
   });
+  const access = accessQ.data;
 
-  const { data: memberships } = useQuery({
+  const membersQ = useQuery({
     queryKey: ["users", userId, "agreement_members"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("agreement_members")
-        .select("id, agreement_id, role")
+        .select(
+          "id, agreement_id, role, can_view_costs, agreements ( id, name, status, scope, start_date, end_date )",
+        )
         .eq("user_id", userId)
         .is("valid_until", null);
       if (error) return [];
       return data ?? [];
     },
   });
+  const memberships = membersQ.data;
+
+  const agreementIds = useMemo(
+    () => (membersQ.data ?? []).map((m) => m.agreement_id),
+    [membersQ.data],
+  );
+
+  const agrClientsQ = useQuery({
+    queryKey: ["users", userId, "agr-companies", agreementIds.slice().sort().join(",")],
+    enabled: agreementIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("agreement_companies")
+        .select("agreement_id, client_id, clients ( id, commercial_name, legal_name )")
+        .in("agreement_id", agreementIds)
+        .is("valid_until", null);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const agreementsByClient = useMemo(() => {
+    const map = new Map<string, NonNullable<typeof membersQ.data>>();
+    const memberByAgr = new Map((membersQ.data ?? []).map((m) => [m.agreement_id, m]));
+    for (const row of agrClientsQ.data ?? []) {
+      const m = memberByAgr.get(row.agreement_id);
+      if (!m) continue;
+      const arr = map.get(row.client_id) ?? [];
+      arr.push(m);
+      map.set(row.client_id, arr);
+    }
+    return map;
+  }, [agrClientsQ.data, membersQ.data]);
+
+  const memberAgreementIdsInMap = new Set(
+    Array.from(agreementsByClient.values()).flatMap((arr) => (arr ?? []).map((m) => m.agreement_id)),
+  );
+  const unlinkedAgreements = (membersQ.data ?? []).filter(
+    (m) => !memberAgreementIdsInMap.has(m.agreement_id),
+  );
 
   const toggleStatus = useMutation({
     mutationFn: async (next: "active" | "inactive") => {
