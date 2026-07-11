@@ -243,7 +243,7 @@ export function CommercialProfileView() {
                         <div className="flex min-w-0 flex-1 items-center justify-between gap-3 pr-3">
                           <div className="flex min-w-0 items-center gap-2">
                             <Building2 className="h-4 w-4 shrink-0 text-text-tertiary" />
-                            <span className="truncate suma-body font-medium text-text-primary">
+                            <span className="truncate suma-body font-semibold text-text-primary">
                               {name}
                             </span>
                             {client?.type === "holding" && (
@@ -259,11 +259,11 @@ export function CommercialProfileView() {
                         </div>
                       </AccordionTrigger>
                       <AccordionContent className="pb-4">
-                        <div className="mb-4">
+                        <div className="mb-5 ml-6 border-l border-[var(--border-subtle)] pl-4">
                           <p className="suma-overline text-text-tertiary mb-2">
                             Permisos avanzados
                           </p>
-                          <div className="space-y-1">
+                          <div className="space-y-0.5">
                             {[
                               {
                                 icon: FileText,
@@ -288,10 +288,25 @@ export function CommercialProfileView() {
                                   className="flex items-center justify-between gap-4 py-1.5"
                                 >
                                   <div className="flex items-center gap-2">
-                                    <Icon className="h-4 w-4 text-text-tertiary" />
-                                    <span className="suma-body text-text-primary">
+                                    <Icon
+                                      className={cn(
+                                        "h-4 w-4",
+                                        perm.checked ? "text-text-secondary" : "text-text-tertiary/60",
+                                      )}
+                                    />
+                                    <span
+                                      className={cn(
+                                        "suma-body",
+                                        perm.checked ? "text-text-primary" : "text-text-tertiary",
+                                      )}
+                                    >
                                       {perm.label}
                                     </span>
+                                    {!perm.checked && (
+                                      <span className="suma-caption font-medium uppercase tracking-wide text-text-tertiary/80">
+                                        Off
+                                      </span>
+                                    )}
                                   </div>
                                   <Switch
                                     checked={perm.checked}
@@ -304,6 +319,7 @@ export function CommercialProfileView() {
                             })}
                           </div>
                         </div>
+
 
                         <div>
                           <p className="suma-overline text-text-tertiary mb-2">
