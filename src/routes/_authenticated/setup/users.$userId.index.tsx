@@ -197,15 +197,15 @@ function UserDetail() {
     <div className="-mt-6 space-y-5">
       <Link
         to="/setup/users"
-        className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+        className="inline-flex items-center gap-1 suma-caption font-medium text-text-secondary hover:text-text-primary"
       >
         <ArrowLeft className="h-3.5 w-3.5" /> Volver a usuarios
       </Link>
 
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">{user.full_name}</h1>
-          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+          <h1 className="suma-h1">{user.full_name}</h1>
+          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 suma-body text-text-secondary">
             {isSuper && (
               <Badge color="accent" variant="soft">
                 {roleLabel(user.role)}
@@ -217,6 +217,7 @@ function UserDetail() {
             />
           </div>
         </div>
+
 
         {isSuperAdmin && (
           <div className="flex flex-wrap gap-2">
