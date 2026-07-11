@@ -95,7 +95,13 @@ export const Route = createFileRoute(
   component: AgreementLinesPage,
 });
 
-type LineCardKey = "all" | "active" | "requires_review" | "excluded";
+type LineCardKey =
+  | "all"
+  | "active"
+  | "requires_review"
+  | "draft"
+  | "expired"
+  | "excluded";
 
 const STATUS_META: Record<
   Exclude<LineCardKey, "all">,
@@ -103,8 +109,24 @@ const STATUS_META: Record<
 > = {
   active: { label: "Activa", status: "active" },
   requires_review: { label: "Revisar", status: "danger" },
+  draft: { label: "En gestión", status: "neutral" },
+  expired: { label: "Vencida", status: "danger" },
   excluded: { label: "Excluida", status: "neutral" },
 };
+
+function coversTodayOf(
+  lineEnd: string | null,
+  agreementEnd: string | null,
+): boolean {
+  const eff = lineEnd ?? agreementEnd ?? null;
+  if (!eff) return true;
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(eff);
+  if (!m) return true;
+  const end = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return end.getTime() >= today.getTime();
+}
 const fmtMoney = (v: number | null) => formatMoneyCOP(v);
 
 
