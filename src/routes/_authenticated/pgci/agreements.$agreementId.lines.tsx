@@ -1356,21 +1356,24 @@ function AgreementLinesPage() {
           if (!publishMut.isPending) setConfirmPublishOpen(o);
         }}
       >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
+        <AlertDialogContent className="max-w-lg p-0 gap-0 overflow-hidden">
+          <AlertDialogHeader className="px-6 py-4 border-b border-border text-left space-y-1">
+            <AlertDialogTitle className="text-2xl font-bold tracking-tight">
               Publicar {selectedPublishable.length}{" "}
               {selectedPublishable.length === 1 ? "posición" : "posiciones"}
             </AlertDialogTitle>
-            <AlertDialogDescription>
-              {selectedPublishable.length === 1 ? "Esta" : "Estas"}{" "}
-              {selectedPublishable.length}{" "}
-              {selectedPublishable.length === 1 ? "posición pasará" : "posiciones pasarán"}{" "}
-              a estado Activa en el acuerdo &ldquo;{agreement.name as string}&rdquo;. La
-              acción es inmediata y visible para los clientes asignados.
+            <AlertDialogDescription className="text-sm text-muted-foreground">
+              {agreement.name as string}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
+          <div className="px-6 py-5 text-sm leading-relaxed text-foreground">
+            {selectedPublishable.length === 1 ? "Esta" : "Estas"}{" "}
+            <span className="font-semibold">{selectedPublishable.length}</span>{" "}
+            {selectedPublishable.length === 1 ? "posición pasará" : "posiciones pasarán"}{" "}
+            a estado <span className="font-semibold">Activa</span>. La acción es
+            inmediata y visible para los clientes asignados al acuerdo.
+          </div>
+          <AlertDialogFooter className="px-6 py-4 border-t border-border bg-muted/20">
             <AlertDialogCancel disabled={publishMut.isPending}>
               Cancelar
             </AlertDialogCancel>
