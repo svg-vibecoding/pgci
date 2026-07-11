@@ -367,6 +367,56 @@ function AgreementLinesPage() {
     onSettled: () => setLinkingProductId(null),
   });
 
+  const REASON_LABELS: Record<string, string> = {
+    no_sku: "sin SKU",
+    no_price: "sin precio",
+    no_dates: "sin fechas",
+    expired: "vencida",
+    estado_no_publicable: "estado no publicable",
+    sin_permiso: "sin permiso",
+    no_encontrada: "no encontrada",
+  };
+  const humanReason = (raw: string | null): string => {
+    if (!raw) return "no cumplía";
+    return raw
+      .split(",")
+      .map((p) => REASON_LABELS[p.trim()] ?? p.trim())
+      .join(" · ");
+  };
+
+  const publishMut = useMutation({
+    mutationFn: (ids: string[]) => publishFn({ data: { ids } }),
+    onSuccess: (res) => {
+      const published = res.published ?? 0;
+      const notPub = res.not_publishable ?? 0;
+      const skipped = res.skipped ?? 0;
+      if (published > 0) {
+        toast.success(
+          `${published} ${published === 1 ? "posición publicada" : "posiciones publicadas"}`,
+        );
+      }
+      if (notPub + skipped > 0) {
+        const notList = (res.details ?? [])
+          .filter((d) => d.result !== "publicada")
+          .map((d) => humanReason(d.reason));
+        const counts = new Map<string, number>();
+        for (const r of notList) counts.set(r, (counts.get(r) ?? 0) + 1);
+        const detail = Array.from(counts.entries())
+          .map(([k, v]) => `${v} ${k}`)
+          .join(", ");
+        toast.info(
+          `${notPub + skipped} ${notPub + skipped === 1 ? "no se publicó" : "no se publicaron"}: ${detail}`,
+        );
+      }
+      setSelectedIds(new Set());
+      setConfirmPublishOpen(false);
+      invalidateAll();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
+
   const openEditForLine = (lineId: string) => {
     const r = (lines ?? []).find((x) => x.id === lineId) as Line | undefined;
     if (!r) return;
