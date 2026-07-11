@@ -426,9 +426,7 @@ function PasswordChangeForm() {
 
   return (
     <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4 sm:max-w-md">
-      <p className="suma-caption text-text-tertiary">
-        Si accediste con una contraseña temporal entregada por el super admin, cámbiala aquí.
-      </p>
+
       <div className="space-y-1.5">
         <Label htmlFor="current-password">Contraseña actual</Label>
         <Input
