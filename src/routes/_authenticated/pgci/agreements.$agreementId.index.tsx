@@ -214,9 +214,9 @@ function AgreementDetail() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <IndicatorCard label="Clientes" value={companyCount} className="bg-[var(--surface-sunken)]" />
-            <IndicatorCard label="Usuarios" value={memberCount} className="bg-[var(--surface-sunken)]" />
-            <IndicatorCard label="Posiciones activas" value={active} className="bg-[var(--surface-sunken)]" />
+            <IndicatorCard label="Clientes" value={companyCount} />
+            <IndicatorCard label="Usuarios" value={memberCount} />
+            <IndicatorCard label="Posiciones activas" value={active} />
           </div>
           <InfoSection>
 
