@@ -953,39 +953,22 @@ function AgreementLinesPage() {
                             >
                               <Pencil className="h-4 w-4" />
                             </Button>
-                            {r.kind === "transit" ? (
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                onClick={() =>
-                                  setDeleteTransitTarget({
-                                    id: r.id as string,
-                                    sku: r.products?.sku ?? null,
-                                  })
-                                }
-                                aria-label="Eliminar"
-                                title="Eliminar"
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            ) : (
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                onClick={() =>
-                                  setExcludeTarget({
-                                    id: r.id as string,
-                                    sku: r.products?.sku ?? null,
-                                    description: r.products?.erp_description ?? null,
-                                    codes: r.codes ?? [],
-                                  })
-                                }
-                                aria-label="Excluir"
-                                title="Excluir"
-                              >
-                                <Ban className="h-4 w-4 text-destructive" />
-                              </Button>
-                            )}
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() =>
+                                setExcludeTarget({
+                                  id: r.id as string,
+                                  sku: r.products?.sku ?? null,
+                                  description: r.products?.erp_description ?? null,
+                                  codes: r.codes ?? [],
+                                })
+                              }
+                              aria-label="Excluir"
+                              title="Excluir"
+                            >
+                              <Ban className="h-4 w-4 text-destructive" />
+                            </Button>
                           </>
                         )
                       )}
