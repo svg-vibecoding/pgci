@@ -565,7 +565,7 @@ function ClientAccess() {
                       row.disabled && "opacity-50",
                     )}
                   >
-                    <span className="text-sm font-medium text-foreground">{row.label}</span>
+                    <span className="suma-body text-text-primary">{row.label}</span>
                     <Switch
                       checked={row.checked}
                       disabled={row.disabled}
