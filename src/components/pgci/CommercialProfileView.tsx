@@ -167,7 +167,7 @@ export function CommercialProfileView() {
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="suma-h4 text-text-primary">
+                <span className="suma-subtitle text-text-primary">
                   {profile.full_name || "—"}
                 </span>
 
