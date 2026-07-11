@@ -129,7 +129,7 @@ export function DataTable<T>({
                   scope="col"
                   style={colStyle(col)}
                   className={[
-                    "whitespace-nowrap px-4 py-2.5 font-ui text-[11px] font-bold uppercase tracking-[0.05em] text-text-tertiary",
+                    "suma-overline whitespace-nowrap px-4 py-2.5 text-text-tertiary",
                     alignClass(col),
                     col.headerClassName ?? "",
                   ].join(" ")}
