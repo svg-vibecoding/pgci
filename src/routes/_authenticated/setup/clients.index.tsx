@@ -280,7 +280,7 @@ function ClientsList() {
                 }
               >
                 <CardContent className="p-4">
-                  <div className="suma-caption text-text-tertiary">{c.label}</div>
+                  <div className="suma-overline text-text-tertiary">{c.label}</div>
                   <div className="mt-1 suma-metric">
                     {isLoading ? "—" : c.value}
                   </div>
