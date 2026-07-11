@@ -282,66 +282,103 @@ function ProductsList() {
           </div>
         )}
 
-        <div className="rounded-lg border border-border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Producto</TableHead>
-                <TableHead>Marca</TableHead>
-                <TableHead className="text-center">Acuerdos</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead>Última actualización</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading && (
-                <TableRow><TableCell colSpan={5} className="text-center text-sm text-muted-foreground">Cargando…</TableCell></TableRow>
-              )}
-              {!isLoading && isError && (
-                <TableRow>
-                  <TableCell colSpan={5} className="py-8 text-center text-sm text-destructive">
-                    No fue posible cargar el catálogo de productos. Intenta de nuevo más tarde.
-                  </TableCell>
-                </TableRow>
-              )}
-              {!isLoading && !isError && filtered.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">
-                    {all.length === 0
-                      ? "Aún no hay productos en el PIM. Impórtalos desde archivo para empezar."
-                      : "No hay productos que coincidan con los filtros."}
-                  </TableCell>
-                </TableRow>
-              )}
-              {!isError && filtered.map((p) => (
-                <TableRow key={p.id}>
-                  <TableCell>
-                    <div className="font-mono text-sm text-muted-foreground">{p.sku}</div>
+        {(() => {
+          type Product = (typeof filtered)[number];
+          const navigate = navigateFn;
+          const columns: DataTableColumn<Product>[] = [
+            {
+              id: "identity",
+              header: "Producto",
+              cell: (p) => (
+                <IdentityCell
+                  title={p.erp_description ?? "—"}
+                  subtitle={p.sku}
+                  monoSubtitle
+                />
+              ),
+            },
+            {
+              id: "brand",
+              header: "Marca",
+              width: 180,
+              cell: (p) => getBrand(p),
+            },
+            {
+              id: "agreements",
+              header: "Acuerdos",
+              width: 100,
+              numeric: true,
+              cell: (p) => (
+                <span className="font-mono">{agreementCounts?.get(p.id) ?? 0}</span>
+              ),
+            },
+            {
+              id: "status",
+              header: "Estado",
+              width: 120,
+              cell: (p) => (
+                <StatusBadge
+                  status={p.status === "active" ? "active" : "neutral"}
+                  label={p.status === "active" ? "Activo" : "Inactivo"}
+                />
+              ),
+            },
+            {
+              id: "updated",
+              header: "Actualizado",
+              width: 120,
+              cell: (p) =>
+                p.updated_at
+                  ? new Date(p.updated_at).toLocaleDateString("es-CO")
+                  : "—",
+            },
+          ];
+          return (
+            <DataTable<Product>
+              data={filtered}
+              columns={columns}
+              getRowId={(p) => p.id}
+              loading={isLoading}
+              error={
+                isError
+                  ? {
+                      message:
+                        "No fue posible cargar el catálogo de productos. Intenta de nuevo más tarde.",
+                    }
+                  : undefined
+              }
+              empty={{
+                icon: <PackageSearch className="h-5 w-5" />,
+                title:
+                  all.length === 0
+                    ? "Aún no hay productos en el PIM"
+                    : "Sin coincidencias",
+                description:
+                  all.length === 0
+                    ? "Impórtalos desde archivo para empezar."
+                    : "No hay productos que coincidan con los filtros actuales.",
+              }}
+              onRowClick={(p) =>
+                navigate({
+                  to: "/setup/products/$productId",
+                  params: { productId: p.id },
+                })
+              }
+              rowActions={(p) => [
+                {
+                  label: "Ver detalle",
+                  icon: <Eye className="h-4 w-4" />,
+                  onSelect: () =>
+                    navigate({
+                      to: "/setup/products/$productId",
+                      params: { productId: p.id },
+                    }),
+                },
+              ]}
+            />
+          );
+        })()}
 
-                    <Link
-                      to="/setup/products/$productId"
-                      params={{ productId: p.id }}
-                      className="hover:underline"
-                    >
-                      {p.erp_description}
-                    </Link>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{getBrand(p)}</TableCell>
-                  <TableCell className="text-center font-mono text-sm">
-                    {agreementCounts?.get(p.id) ?? 0}
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge status={p.status === "active" ? "active" : "neutral"} label={p.status === "active" ? "Activo" : "Inactivo"} />
-                  </TableCell>
-                  <TableCell className="text-muted-foreground text-xs">
-                    {p.updated_at ? new Date(p.updated_at).toLocaleDateString("es-CO") : "—"}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
     </div>
   );
 }
