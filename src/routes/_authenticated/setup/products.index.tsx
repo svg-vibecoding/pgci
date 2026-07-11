@@ -47,6 +47,7 @@ async function fetchAllPaginated<T>(
 
 
 function ProductsList() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [statusF, setStatusF] = useState<"all" | "active" | "inactive">("all");
   const [withAgreementsOnly, setWithAgreementsOnly] = useState(false);
@@ -284,7 +285,6 @@ function ProductsList() {
 
         {(() => {
           type Product = (typeof filtered)[number];
-          const navigate = navigateFn;
           const columns: DataTableColumn<Product>[] = [
             {
               id: "identity",
@@ -378,6 +378,7 @@ function ProductsList() {
             />
           );
         })()}
+      </div>
 
     </div>
   );
