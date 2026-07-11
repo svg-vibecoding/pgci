@@ -97,10 +97,10 @@ export const Route = createFileRoute(
   component: AgreementLinesPage,
 });
 
-type LineCardKey = "all" | "active" | "requires_review" | "excluded" | "transit";
+type LineCardKey = "all" | "active" | "requires_review" | "excluded";
 
 const STATUS_META: Record<
-  Exclude<LineCardKey, "all" | "transit">,
+  Exclude<LineCardKey, "all">,
   { label: string; status: StatusBadgeStatus }
 > = {
   active: { label: "Activa", status: "active" },
