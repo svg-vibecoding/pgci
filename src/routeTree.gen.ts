@@ -16,6 +16,7 @@ import { Route as AuthenticatedSetupRouteRouteImport } from './routes/_authentic
 import { Route as AuthenticatedPgciRouteRouteImport } from './routes/_authenticated/pgci/route'
 import { Route as AuthenticatedSetupIndexRouteImport } from './routes/_authenticated/setup/index'
 import { Route as AuthenticatedPgciIndexRouteImport } from './routes/_authenticated/pgci/index'
+import { Route as AuthenticatedPgciProfileRouteImport } from './routes/_authenticated/pgci/profile'
 import { Route as AuthenticatedSetupUsersIndexRouteImport } from './routes/_authenticated/setup/users.index'
 import { Route as AuthenticatedSetupProductsIndexRouteImport } from './routes/_authenticated/setup/products.index'
 import { Route as AuthenticatedSetupClientsIndexRouteImport } from './routes/_authenticated/setup/clients.index'
@@ -72,6 +73,12 @@ const AuthenticatedPgciIndexRoute = AuthenticatedPgciIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedPgciRouteRoute,
 } as any)
+const AuthenticatedPgciProfileRoute =
+  AuthenticatedPgciProfileRouteImport.update({
+    id: '/profile',
+    path: '/profile',
+    getParentRoute: () => AuthenticatedPgciRouteRoute,
+  } as any)
 const AuthenticatedSetupUsersIndexRoute =
   AuthenticatedSetupUsersIndexRouteImport.update({
     id: '/users/',
@@ -204,6 +211,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/pgci': typeof AuthenticatedPgciRouteRouteWithChildren
   '/setup': typeof AuthenticatedSetupRouteRouteWithChildren
+  '/pgci/profile': typeof AuthenticatedPgciProfileRoute
   '/pgci/': typeof AuthenticatedPgciIndexRoute
   '/setup/': typeof AuthenticatedSetupIndexRoute
   '/pgci/agreements/new': typeof AuthenticatedPgciAgreementsNewRoute
@@ -231,6 +239,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/pgci/profile': typeof AuthenticatedPgciProfileRoute
   '/pgci': typeof AuthenticatedPgciIndexRoute
   '/setup': typeof AuthenticatedSetupIndexRoute
   '/pgci/agreements/new': typeof AuthenticatedPgciAgreementsNewRoute
@@ -260,6 +269,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/pgci': typeof AuthenticatedPgciRouteRouteWithChildren
   '/_authenticated/setup': typeof AuthenticatedSetupRouteRouteWithChildren
+  '/_authenticated/pgci/profile': typeof AuthenticatedPgciProfileRoute
   '/_authenticated/pgci/': typeof AuthenticatedPgciIndexRoute
   '/_authenticated/setup/': typeof AuthenticatedSetupIndexRoute
   '/_authenticated/pgci/agreements/new': typeof AuthenticatedPgciAgreementsNewRoute
@@ -291,6 +301,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/pgci'
     | '/setup'
+    | '/pgci/profile'
     | '/pgci/'
     | '/setup/'
     | '/pgci/agreements/new'
@@ -318,6 +329,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/pgci/profile'
     | '/pgci'
     | '/setup'
     | '/pgci/agreements/new'
@@ -346,6 +358,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/pgci'
     | '/_authenticated/setup'
+    | '/_authenticated/pgci/profile'
     | '/_authenticated/pgci/'
     | '/_authenticated/setup/'
     | '/_authenticated/pgci/agreements/new'
@@ -426,6 +439,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/pgci/'
       preLoaderRoute: typeof AuthenticatedPgciIndexRouteImport
+      parentRoute: typeof AuthenticatedPgciRouteRoute
+    }
+    '/_authenticated/pgci/profile': {
+      id: '/_authenticated/pgci/profile'
+      path: '/profile'
+      fullPath: '/pgci/profile'
+      preLoaderRoute: typeof AuthenticatedPgciProfileRouteImport
       parentRoute: typeof AuthenticatedPgciRouteRoute
     }
     '/_authenticated/setup/users/': {
@@ -579,6 +599,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedPgciRouteRouteChildren {
+  AuthenticatedPgciProfileRoute: typeof AuthenticatedPgciProfileRoute
   AuthenticatedPgciIndexRoute: typeof AuthenticatedPgciIndexRoute
   AuthenticatedPgciAgreementsNewRoute: typeof AuthenticatedPgciAgreementsNewRoute
   AuthenticatedPgciGroupsGroupIdRoute: typeof AuthenticatedPgciGroupsGroupIdRoute
@@ -590,6 +611,7 @@ interface AuthenticatedPgciRouteRouteChildren {
 
 const AuthenticatedPgciRouteRouteChildren: AuthenticatedPgciRouteRouteChildren =
   {
+    AuthenticatedPgciProfileRoute: AuthenticatedPgciProfileRoute,
     AuthenticatedPgciIndexRoute: AuthenticatedPgciIndexRoute,
     AuthenticatedPgciAgreementsNewRoute: AuthenticatedPgciAgreementsNewRoute,
     AuthenticatedPgciGroupsGroupIdRoute: AuthenticatedPgciGroupsGroupIdRoute,
