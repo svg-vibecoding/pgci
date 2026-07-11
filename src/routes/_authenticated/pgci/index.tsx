@@ -163,7 +163,7 @@ function PgciHome() {
           <div>
             <h2 className="suma-h2">Tus módulos</h2>
             <p className="suma-body text-text-secondary">
-              Estas son las capacidades que tendrás disponibles en la PGCI.
+              Capacidades de gestión comercial que tendrás disponibles en la PGCI.
             </p>
           </div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
