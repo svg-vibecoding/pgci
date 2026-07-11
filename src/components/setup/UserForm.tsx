@@ -135,7 +135,7 @@ export function UserForm({
 
       {/* 2. Identidad del usuario */}
       <section className="space-y-2">
-        <h3 className="text-sm font-semibold">Información del usuario</h3>
+        
         <div className="grid gap-4 md:grid-cols-2">
           <div>
             <Label htmlFor="full_name">
