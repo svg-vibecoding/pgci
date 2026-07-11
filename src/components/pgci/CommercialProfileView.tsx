@@ -233,10 +233,6 @@ export function CommercialProfileView() {
                   const clientAgreements = client
                     ? (agreementsByClient.get(client.id) ?? [])
                     : [];
-                  const permChips: string[] = [];
-                  if (a.can_create_agreements) permChips.push("Crea acuerdos");
-                  if (a.can_manage_client_catalog) permChips.push("Catálogo del cliente");
-                  if (a.can_manage_matching) permChips.push("Matching");
                   return (
                     <AccordionItem
                       key={a.id}
