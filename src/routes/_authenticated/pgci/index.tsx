@@ -166,10 +166,10 @@ function PgciHome() {
       {/* Módulos */}
       <section className="space-y-4">
         <div>
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+          <h2 className="suma-overline text-text-tertiary">
             Tus módulos
           </h2>
-          <p className="mt-1 text-sm text-[var(--text-secondary)]">
+          <p className="mt-1 suma-body text-text-secondary">
             Estas son las capacidades que tendrás disponibles en la PGCI.
           </p>
         </div>
@@ -185,10 +185,10 @@ function PgciHome() {
                     </div>
                     {statusChip(m.status)}
                   </div>
-                  <h3 className="mt-4 text-base font-semibold text-[var(--text-primary)]">
+                  <h3 className="suma-h3 mt-4">
                     {m.title}
                   </h3>
-                  <p className="mt-1 flex-1 text-sm text-[var(--text-secondary)]">
+                  <p className="mt-1 flex-1 suma-body text-text-secondary">
                     {m.description}
                   </p>
                   <div className="mt-4">
