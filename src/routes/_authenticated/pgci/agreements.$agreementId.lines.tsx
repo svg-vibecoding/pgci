@@ -491,13 +491,15 @@ function AgreementLinesPage() {
   }
 
   const canAdmin = !!ctx?.can_admin;
-  const summaryCards: { key: LineCardKey; label: string; value: number }[] = [
-    { key: "all", label: "Posiciones", value: counts.all },
-    { key: "active", label: "Activas", value: counts.active },
-    { key: "requires_review", label: "Requieren revisión", value: counts.requires_review },
-    { key: "excluded", label: "Excluidas", value: counts.excluded },
-    
+  const num = (v: unknown): number => (typeof v === "number" ? v : 0);
+  const summaryCards: { key: Exclude<LineCardKey, "all">; label: string; value: number }[] = [
+    { key: "active", label: "Posiciones activas", value: num(agreement.lines_active) },
+    { key: "requires_review", label: "Requieren revisión", value: num(agreement.lines_review) },
+    { key: "draft", label: "En gestión", value: num(agreement.lines_draft) },
+    { key: "expired", label: "Vencidas", value: num(agreement.lines_expired) },
+    { key: "excluded", label: "Excluidas", value: num(agreement.lines_excluded) },
   ];
+  const totalCount = summaryCards.reduce((s, c) => s + c.value, 0);
 
   return (
     <div className="space-y-6">
