@@ -30,14 +30,14 @@ const HEADERS = [
 
 const STATUS_LABEL: Record<string, string> = {
   active: "Activa",
-  pending: "Pendiente",
   requires_review: "Requiere revisión",
+  draft: "En gestión",
   excluded: "Excluida",
+  archived: "Archivada",
 };
 
 const fmtDate = (v: string | null): string | null => {
   if (!v) return null;
-  // las fechas vienen como YYYY-MM-DD; las devolvemos como DD/MM/YYYY
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
   if (m) return `${m[3]}/${m[2]}/${m[1]}`;
   const d = new Date(v);
@@ -46,6 +46,29 @@ const fmtDate = (v: string | null): string | null => {
 };
 
 const v = <T>(value: T | null | undefined): T | null => (value == null ? null : value);
+
+const parseLocalDate = (iso: string | null): Date | null => {
+  if (!iso) return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  if (!m) {
+    const d = new Date(iso);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+};
+
+const coversToday = (
+  lineEnd: string | null,
+  agreementEnd: string | null,
+): boolean => {
+  const effective = lineEnd ?? agreementEnd;
+  if (!effective) return true;
+  const d = parseLocalDate(effective);
+  if (!d) return true;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return d.getTime() >= today.getTime();
+};
 
 export type AgreementExportPreset = "all" | "active" | "filtered";
 
@@ -66,21 +89,35 @@ const fileNameFor = (
 
 export function exportAgreementLines(
   lines: ExportAgreementLine[],
-  opts: { preset: AgreementExportPreset; agreementName: string },
+  opts: {
+    preset: AgreementExportPreset;
+    agreementName: string;
+    agreementEndDate: string | null;
+  },
 ) {
-  const data = lines.map((l) => [
-    v(l.client_code),
-    v(l.client_description),
-    v(l.sku),
-    v(l.erp_description),
-    v(l.commercial_brand),
-    l.sale_price ?? null,
-    l.par_price ?? null,
-    fmtDate(l.start_date),
-    fmtDate(l.end_date),
-    l.status ? STATUS_LABEL[l.status] ?? l.status : null,
-    v(l.observations),
-  ]);
+  const data = lines.map((l) => {
+    const statusLabel =
+      l.status === "active"
+        ? coversToday(l.end_date, opts.agreementEndDate)
+          ? "Activa"
+          : "Vencida"
+        : l.status
+          ? STATUS_LABEL[l.status] ?? l.status
+          : null;
+    return [
+      v(l.client_code),
+      v(l.client_description),
+      v(l.sku),
+      v(l.erp_description),
+      v(l.commercial_brand),
+      l.sale_price ?? null,
+      l.par_price ?? null,
+      fmtDate(l.start_date),
+      fmtDate(l.end_date),
+      statusLabel,
+      v(l.observations),
+    ];
+  });
 
   const ws = XLSX.utils.aoa_to_sheet([HEADERS, ...data]);
   const wb = XLSX.utils.book_new();

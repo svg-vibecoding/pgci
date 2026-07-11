@@ -579,6 +579,7 @@ function AgreementLinesPage() {
     exportAgreementLines(data, {
       preset,
       agreementName: (agreement?.name as string) ?? "acuerdo",
+      agreementEndDate: (agreement?.end_date as string | null) ?? null,
     });
   };
 
