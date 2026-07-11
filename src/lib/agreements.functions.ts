@@ -878,7 +878,7 @@ export const searchClientCodes = createServerFn({ method: "POST" })
     const takenRows: Array<{
       cp_id: string;
       pos_id: string;
-      pos_status: "active" | "excluded" | "pending" | "requires_review";
+      pos_status: "active" | "excluded" | "requires_review";
       sku: string | null;
       product_description: string | null;
       sale_price: number | null;
@@ -893,8 +893,8 @@ export const searchClientCodes = createServerFn({ method: "POST" })
       } | null;
       if (!pos) continue;
       const posStatus =
-        pos.status === "active" || pos.status === "excluded" || pos.status === "pending" || pos.status === "requires_review"
-          ? (pos.status as "active" | "excluded" | "pending" | "requires_review")
+        pos.status === "active" || pos.status === "excluded" || pos.status === "requires_review"
+          ? (pos.status as "active" | "excluded" | "requires_review")
           : "active";
       takenRows.push({
         cp_id: row.client_product_id as string,
