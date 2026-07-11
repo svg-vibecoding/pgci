@@ -205,7 +205,7 @@ function GroupDetail() {
           <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
             <IndicatorCard label="Posiciones" value={totalLines} />
             <IndicatorCard label="Activas" value={rollup?.lines_active ?? 0} />
-            <IndicatorCard label="Pendientes" value={rollup?.lines_pending ?? 0} />
+            
             <IndicatorCard
               label="Requieren revisión"
               value={rollup?.lines_review ?? 0}
