@@ -18,12 +18,15 @@ import {
 } from "@/components/ui/accordion";
 import { InfoField, InfoSection } from "@/components/setup/InfoSection";
 import { StatusBadge, Badge, Chip } from "@/components/sumatec";
+import { Switch } from "@/components/ui/switch";
 import {
   Building2,
   FileText,
   Info,
   KeyRound,
+  Layers,
   ShieldCheck,
+  Shuffle,
   UserRound,
   Users as UsersIcon,
 } from "lucide-react";
