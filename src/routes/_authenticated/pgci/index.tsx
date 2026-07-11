@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { CommercialProfileView } from "@/components/pgci/CommercialProfileView";
 
 export const Route = createFileRoute("/_authenticated/pgci/")({
-  head: () => ({ meta: [{ title: "Operación comercial · PGCI" }] }),
+  head: () => ({ meta: [{ title: "Perfil comercial · PGCI" }] }),
   component: PgciHome,
 });
 
