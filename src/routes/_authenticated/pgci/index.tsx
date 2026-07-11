@@ -118,11 +118,11 @@ function PgciHome() {
           <h1 className="suma-h1">
             Hola, {profile?.full_name ?? "bienvenido"}
           </h1>
-          <p className="mt-1 suma-caption">
+          <p className="suma-body text-text-secondary">
             ¡Hoy será un gran día!
           </p>
         </div>
-        <span className="suma-overline inline-flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--surface-card)] px-3 py-1 text-text-secondary">
+        <span className="suma-caption inline-flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--surface-card)] px-3 py-1 text-text-secondary">
           <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-primary)]" />
           Operación comercial
         </span>
