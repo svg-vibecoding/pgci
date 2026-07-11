@@ -57,18 +57,18 @@ const MODULES: ModuleDef[] = [
 function statusChip(status: ModuleStatus) {
   if (status === "available")
     return (
-      <span className="suma-overline inline-flex items-center rounded-full bg-[var(--status-success-soft)] px-2.5 py-0.5 text-[var(--status-success-strong)]">
+      <span className="suma-caption inline-flex items-center rounded-full bg-[var(--status-success-soft)] px-2.5 py-0.5 text-[var(--status-success-strong)]">
         Disponible
       </span>
     );
   if (status === "soon")
     return (
-      <span className="suma-overline inline-flex items-center rounded-full bg-[var(--status-info-soft)] px-2.5 py-0.5 text-[var(--status-info-strong)]">
+      <span className="suma-caption inline-flex items-center rounded-full bg-[var(--status-info-soft)] px-2.5 py-0.5 text-[var(--status-info-strong)]">
         Disponible pronto
       </span>
     );
   return (
-    <span className="suma-overline inline-flex items-center rounded-full bg-[var(--gray-100)] px-2.5 py-0.5 text-text-tertiary">
+    <span className="suma-caption inline-flex items-center rounded-full bg-[var(--gray-100)] px-2.5 py-0.5 text-text-tertiary">
       En construcción
     </span>
   );
@@ -118,11 +118,11 @@ function PgciHome() {
           <h1 className="suma-h1">
             Hola, {profile?.full_name ?? "bienvenido"}
           </h1>
-          <p className="mt-1 suma-caption">
+          <p className="suma-body text-text-secondary">
             ¡Hoy será un gran día!
           </p>
         </div>
-        <span className="suma-overline inline-flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--surface-card)] px-3 py-1 text-text-secondary">
+        <span className="suma-caption inline-flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--surface-card)] px-3 py-1 text-text-secondary">
           <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-primary)]" />
           Operación comercial
         </span>
@@ -166,10 +166,10 @@ function PgciHome() {
       {/* Módulos */}
       <section className="space-y-4">
         <div>
-          <h2 className="suma-overline text-text-tertiary">
+          <h2 className="suma-h3">
             Tus módulos
           </h2>
-          <p className="mt-1 suma-body text-text-secondary">
+          <p className="suma-body text-text-secondary">
             Estas son las capacidades que tendrás disponibles en la PGCI.
           </p>
         </div>
