@@ -54,9 +54,28 @@ export function DataTable<T>({
         : "text-left";
   };
 
+  // Reparto de sobrante entre columnas flex (sin width).
+  const flexCols = columns.filter((c) => c.width === undefined);
+  const hasFlex = flexCols.length > 0;
+  const totalFlex = flexCols.reduce((s, c) => s + (c.flex ?? 1), 0) || 1;
+  const fixedPxSum =
+    (hasSelection ? 40 : 0) +
+    (hasActions ? 48 : 0) +
+    columns.reduce(
+      (s, c) => s + (typeof c.width === "number" ? c.width : 0),
+      0,
+    );
+  const useFixed = layout === "fixed" || hasFlex;
+
   const colStyle = (col: DataTableColumn<T>): CSSProperties => {
-    if (col.width === undefined) return {};
-    return { width: typeof col.width === "number" ? `${col.width}px` : col.width };
+    if (col.width !== undefined) {
+      return {
+        width: typeof col.width === "number" ? `${col.width}px` : col.width,
+      };
+    }
+    // Columna flexible: reparte el sobrante en proporción a flex (default 1).
+    const share = (col.flex ?? 1) / totalFlex;
+    return { width: `calc((100% - ${fixedPxSum}px) * ${share})` };
   };
 
   const cellWrapClass = (col: DataTableColumn<T>) => {
@@ -76,7 +95,7 @@ export function DataTable<T>({
       >
         <table
           className={`w-full border-collapse font-body text-[13px] leading-5 text-text-secondary ${
-            layout === "fixed" ? "table-fixed" : "table-auto"
+            useFixed ? "table-fixed" : "table-auto"
           }`}
           aria-label={ariaLabel}
         >
