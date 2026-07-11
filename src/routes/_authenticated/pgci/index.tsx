@@ -115,14 +115,14 @@ function PgciHome() {
       {/* Header */}
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
+          <h1 className="suma-h1">
             Hola, {profile?.full_name ?? "bienvenido"}
           </h1>
-          <p className="mt-1 text-sm text-[var(--text-secondary)]">
+          <p className="mt-1 suma-caption">
             ¡Hoy será un gran día!
           </p>
         </div>
-        <span className="inline-flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--surface-card)] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
+        <span className="suma-overline inline-flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--surface-card)] px-3 py-1 text-text-secondary">
           <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-primary)]" />
           Operación comercial
         </span>
