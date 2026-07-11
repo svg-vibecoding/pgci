@@ -883,13 +883,13 @@ function AgreementLinesPage() {
               disabled={publishableInView.length === 0 || publishMut.isPending}
               onCheckedChange={() => toggleMaster()}
             />
-            <label htmlFor="publish-master" className="text-sm font-semibold text-foreground">
-              <span>{publishableInView.length}</span>{" "}
+            <label htmlFor="publish-master" className="suma-body text-text-secondary">
+              <span className="text-text-primary font-medium">{publishableInView.length}</span>{" "}
               {publishableInView.length === 1
                 ? "lista para publicar"
                 : "listas para publicar"}
               {selectedPublishable.length > 0 && (
-                <span className="ml-1 font-normal text-muted-foreground">
+                <span className="ml-1 text-text-tertiary">
                   · {selectedPublishable.length}{" "}
                   {selectedPublishable.length === 1
                     ? "seleccionada"
@@ -897,6 +897,7 @@ function AgreementLinesPage() {
                 </span>
               )}
             </label>
+
           </div>
           <div className="ml-auto">
             <Button

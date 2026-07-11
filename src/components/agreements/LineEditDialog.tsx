@@ -1987,8 +1987,8 @@ export function LineEditDialog({
           {canOfferPublish && !saveError && (
             <label
               className={cn(
-                "flex items-start gap-2 text-sm sm:mr-auto",
-                canPublishNow ? "text-foreground" : "text-muted-foreground",
+                "flex items-start gap-2 sm:mr-auto",
+                canPublishNow ? "" : "opacity-70",
               )}
             >
               <Checkbox
@@ -1999,8 +1999,8 @@ export function LineEditDialog({
                 className="mt-0.5"
               />
               <span className="flex flex-col leading-tight">
-                <span className="font-medium">Publicar en acuerdo al guardar</span>
-                <span className="text-xs text-muted-foreground">
+                <span className="suma-body text-text-primary font-medium">Publicar en acuerdo al guardar</span>
+                <span className="suma-caption text-text-tertiary">
                   {canPublishNow
                     ? isEdit
                       ? "Pasará a Activa al guardar."
@@ -2009,6 +2009,7 @@ export function LineEditDialog({
                 </span>
               </span>
             </label>
+
           )}
           <div className="sm:ml-auto flex gap-2">
             <Button
