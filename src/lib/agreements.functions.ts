@@ -69,8 +69,8 @@ export const listAgreements = createServerFn({ method: "GET" })
       arr.push(name);
       byAgreement.set(aid, arr);
     }
-    // Modelo de tránsito eliminado: el conteo queda en 0 hasta que se retire el KPI.
-    const transitByAgreement = new Map<string, number>();
+
+
 
     // can_admin por fila: super_admin → todos; sino, membresía como agreement_admin vigente
     const { data: superRes } = await context.supabase.rpc("is_super_admin");
