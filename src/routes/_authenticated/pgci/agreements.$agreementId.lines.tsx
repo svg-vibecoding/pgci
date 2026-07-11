@@ -366,7 +366,7 @@ function AgreementLinesPage() {
     if (!r) return;
     setEditInitial({
       line_id: r.id as string,
-      kind: r.kind,
+      kind: "position",
       sku: r.products?.sku ?? "",
       // Estado completo declarativo: preserva todos los códigos de otros clientes.
       client_codes: (r.codes ?? []).map((c) => ({
