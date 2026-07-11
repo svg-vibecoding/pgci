@@ -153,7 +153,7 @@ function PgciHome() {
             <Info className="h-4 w-4" />
             <AlertTitle>Aún no tienes clientes asignados</AlertTitle>
             <AlertDescription>
-              Un administrador te asignará la cartera de clientes antes de que puedas operar
+              Un administrador te asignará la cartera de clientes para que puedas operar
               acuerdos. Mientras tanto, puedes familiarizarte con los módulos
               disponibles.
             </AlertDescription>
