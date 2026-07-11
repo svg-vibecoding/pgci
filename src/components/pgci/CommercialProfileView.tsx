@@ -301,13 +301,9 @@ export function CommercialProfileView() {
                                         perm.checked ? "text-text-primary" : "text-text-tertiary",
                                       )}
                                     >
-                                      {perm.label}
+                                    {perm.label}
                                     </span>
-                                    {!perm.checked && (
-                                      <span className="suma-caption font-medium uppercase tracking-wide text-text-tertiary/80">
-                                        Off
-                                      </span>
-                                    )}
+
                                   </div>
                                   <Switch
                                     checked={perm.checked}
