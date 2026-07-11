@@ -83,7 +83,7 @@ function SetupHome() {
     {
       label: "Acuerdos",
       microcopy:
-        "Agrupadores, miembros, posiciones e importación de acuerdos comerciales.",
+        "Agrupadores, clientes, miembros y posiciones de acuerdos comerciales.",
       icon: Handshake,
       to: "/pgci/agreements",
     },
