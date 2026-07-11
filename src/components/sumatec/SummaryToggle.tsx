@@ -26,7 +26,7 @@ export function SummaryToggle({
 }) {
   return (
     <div className={cn("flex w-full items-center justify-between", className)}>
-      <p className="text-sm font-medium text-foreground">{summary}</p>
+      <p className="suma-body font-medium text-text-primary">{summary}</p>
       {canToggle && (
         <Button
           type="button"
