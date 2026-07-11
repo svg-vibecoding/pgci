@@ -279,7 +279,7 @@ function UsersList() {
     <div className="space-y-6">
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Usuarios y accesos</h1>
+          <h1 className="suma-h1">Usuarios y accesos</h1>
           <p className="text-sm text-muted-foreground">
             Administra los usuarios internos de la plataforma y sus accesos a clientes.
           </p>
