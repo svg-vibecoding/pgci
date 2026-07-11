@@ -6,15 +6,13 @@ import {
   Package,
   Users,
   ArrowRight,
-  Check,
   Handshake,
-  Clock,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/setup/")({
-  head: () => ({ meta: [{ title: "Setup · PGCI" }] }),
+  head: () => ({ meta: [{ title: "Plataforma · PGCI" }] }),
   component: SetupHome,
 });
 
@@ -22,7 +20,7 @@ function useSetupCounts() {
   return useQuery({
     queryKey: ["setup", "counts"],
     queryFn: async () => {
-      const [clients, productsActive, productsInactive, users, accesses] =
+      const [clients, productsActive, productsInactive, users, accesses, agreements] =
         await Promise.all([
           supabase.from("clients").select("*", { count: "exact", head: true }),
           supabase
@@ -37,7 +35,11 @@ function useSetupCounts() {
             .from("profiles")
             .select("*", { count: "exact", head: true })
             .eq("status", "active"),
-          supabase.from("user_client_access").select("*", { count: "exact", head: true }).is("valid_until", null),
+          supabase
+            .from("user_client_access")
+            .select("*", { count: "exact", head: true })
+            .is("valid_until", null),
+          supabase.from("agreements").select("*", { count: "exact", head: true }),
         ]);
       return {
         clients: clients.count ?? 0,
@@ -45,12 +47,11 @@ function useSetupCounts() {
         productsInactive: productsInactive.count ?? 0,
         users: users.count ?? 0,
         accesses: accesses.count ?? 0,
+        agreements: agreements.count ?? 0,
       };
     },
   });
 }
-
-type StepState = "done" | "next" | "pending" | "upcoming";
 
 function SetupHome() {
   const { data } = useSetupCounts();
@@ -58,288 +59,141 @@ function SetupHome() {
   const clients = data?.clients ?? 0;
   const productsActive = data?.productsActive ?? 0;
   const productsInactive = data?.productsInactive ?? 0;
-  const productsTotal = productsActive + productsInactive;
   const users = data?.users ?? 0;
   const accesses = data?.accesses ?? 0;
+  const agreements = data?.agreements ?? 0;
 
-  const clientsDone = clients > 0;
-  const productsDone = productsActive > 0;
-  const accessesDone = accesses > 0;
-
-  const prerequisites = [clientsDone, productsDone, accessesDone];
-  const prerequisitesDone = prerequisites.filter(Boolean).length;
-  const prerequisitesTotal = prerequisites.length;
-
-  const steps: Array<{ label: string; hint: string; state: StepState }> = [
+  const kpis: Array<{ label: string; value: string; hint: string }> = [
     {
       label: "Clientes",
-      hint: "Base comercial lista",
-      state: clientsDone ? "done" : "next",
+      value: clients.toLocaleString("es-CO"),
+      hint: "registrados en la base",
     },
     {
-      label: "Productos/PIM",
-      hint: "Catálogo Jaivaná cargado",
-      state: productsDone ? "done" : clientsDone ? "next" : "pending",
+      label: "Productos activos",
+      value: productsActive.toLocaleString("es-CO"),
+      hint: `${productsInactive.toLocaleString("es-CO")} inactivos`,
     },
     {
-      label: "Usuarios y accesos",
-      hint: "Pendiente de revisión",
-      state: accessesDone
-        ? "done"
-        : clientsDone && productsDone
-          ? "next"
-          : "pending",
+      label: "Usuarios activos",
+      value: users.toLocaleString("es-CO"),
+      hint: `${accesses.toLocaleString("es-CO")} accesos configurados`,
     },
     {
-      label: "Siguiente: Acuerdos",
-      hint: "Próximo módulo operativo",
-      state: "upcoming",
+      label: "Acuerdos",
+      value: agreements.toLocaleString("es-CO"),
+      hint: "registrados en la plataforma",
     },
   ];
 
-  const cards: Array<{
+  const modules: Array<{
     label: string;
-    value: string;
-    subvalue?: string;
     microcopy: string;
     icon: LucideIcon;
-    cta: string;
-    to?: string;
-    disabled?: boolean;
-    badge?: string;
+    to: string;
   }> = [
     {
       label: "Clientes",
-      value: `${clients} registrados`,
       microcopy:
         "Base comercial disponible para acuerdos y asignación de visibilidad.",
       icon: Building2,
-      cta: "Ir a Clientes",
       to: "/setup/clients",
     },
     {
-      label: "Productos/PIM",
-      value: `${productsTotal.toLocaleString("es-CO")} productos`,
-      subvalue: `${productsActive.toLocaleString("es-CO")} activos · ${productsInactive} inactivos`,
-      microcopy: "Catálogo Jaivaná listo para estructurar productos de acuerdo.",
+      label: "Productos / PIM",
+      microcopy:
+        "Catálogo Jaivaná para estructurar productos de acuerdo y equivalencias.",
       icon: Package,
-      cta: "Ir a Productos",
       to: "/setup/products",
     },
     {
       label: "Usuarios y accesos",
-      value: `${users} ${users === 1 ? "usuario activo" : "usuarios activos"}`,
-      subvalue: `${accesses} ${accesses === 1 ? "acceso configurado" : "accesos configurados"}`,
-      microcopy: "Define quién puede ver clientes y operar acuerdos.",
+      microcopy:
+        "Perfiles, roles y visibilidad de clientes por usuario.",
       icon: Users,
-      cta: "Ir a Usuarios",
       to: "/setup/users",
     },
     {
-      label: "ACUERDOS",
-      value: `${prerequisitesDone} de ${prerequisitesTotal}`,
+      label: "Acuerdos",
       microcopy:
-        "Clientes y PIM están listos. Falta revisar usuarios y accesos antes de avanzar.",
+        "Agrupadores, miembros, posiciones e importación de acuerdos comerciales.",
       icon: Handshake,
-      cta: "En preparación",
-      disabled: true,
+      to: "/pgci/agreements",
     },
-  ];
-
-  const checklist: Array<{ label: string; status: "done" | "pending" | "next" }> = [
-    {
-      label: "Clientes configurados",
-      status: clientsDone ? "done" : "pending",
-    },
-    {
-      label: "Productos/PIM cargado",
-      status: productsDone ? "done" : "pending",
-    },
-    {
-      label: "Usuarios y accesos revisados",
-      status: accessesDone ? "done" : "pending",
-    },
-    { label: "Acuerdos comerciales", status: "next" },
   ];
 
   return (
     <div className="space-y-10">
       {/* Header */}
       <header className="space-y-3">
-        <p className="suma-overline">GESTIÓN COMERCIAL INTELIGENTE</p>
+        <p className="suma-overline">PLATAFORMA · PGCI</p>
         <h1 className="suma-h1 max-w-3xl text-[var(--text-primary)]">
-          Prepara la base operativa para Acuerdos
+          Centro de operación comercial
         </h1>
-        <p className="max-w-3xl text-[15px] leading-relaxed text-[var(--text-secondary)]">
-          Valida clientes, productos y accesos antes de crear acuerdos comerciales.
-          Esta vista muestra qué está listo, qué falta y dónde continuar.
+        <p className="suma-body max-w-3xl text-[var(--text-secondary)]">
+          Todos los módulos de la PGCI están operativos. Administra clientes,
+          catálogo, usuarios y acuerdos comerciales desde un solo lugar.
         </p>
       </header>
 
-      {/* Stepper */}
-      <section
-        aria-label="Progreso de configuración"
-        className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6"
-      >
-        <div className="mb-5 flex items-center justify-between">
-          <p className="text-sm font-semibold text-[var(--text-primary)]">
-            Progreso de configuración
-          </p>
-          <p className="text-xs text-[var(--text-tertiary)]">
-            {prerequisitesDone} de {prerequisitesTotal}
-          </p>
+      {/* KPIs */}
+      <section aria-label="Indicadores de la plataforma">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {kpis.map((kpi) => (
+            <div
+              key={kpi.label}
+              className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] p-5 shadow-[var(--shadow-xs)]"
+            >
+              <p className="suma-overline">{kpi.label}</p>
+              <p className="suma-metric mt-2">{kpi.value}</p>
+              <p className="suma-caption mt-1">{kpi.hint}</p>
+            </div>
+          ))}
         </div>
-        <ol className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {steps.map((step, i) => {
-            const { state } = step;
-            return (
-              <li key={step.label} className="relative">
-                <div className="flex items-start gap-3">
-                  <span
-                    className={cn(
-                      "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold",
-                      state === "done" &&
-                        "bg-[var(--success-soft)] text-[var(--success-strong)]",
-                      state === "next" &&
-                        "bg-[var(--red-50)] text-[var(--color-primary)] ring-2 ring-[var(--color-primary)]",
-                      state === "pending" &&
-                        "bg-[var(--gray-100)] text-[var(--text-tertiary)]",
-                      state === "upcoming" &&
-                        "bg-[var(--gray-100)] text-[var(--text-secondary)]",
-                    )}
-                  >
-                    {state === "done" ? (
-                      <Check className="h-3.5 w-3.5" />
-                    ) : state === "upcoming" ? (
-                      <Clock className="h-3 w-3" />
-                    ) : (
-                      i + 1
-                    )}
-                  </span>
-                  <div className="min-w-0">
-                    <p
-                      className={cn(
-                        "text-sm font-semibold",
-                        state === "pending"
-                          ? "text-[var(--text-tertiary)]"
-                          : "text-[var(--text-primary)]",
-                      )}
-                    >
-                      {step.label}
-                    </p>
-                    <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
-                      {step.hint}
-                    </p>
-                  </div>
-                </div>
-              </li>
-            );
-          })}
-        </ol>
       </section>
 
-      {/* Cards de readiness */}
+      {/* Módulos */}
       <section className="space-y-4">
         <div>
-          <p className="suma-overline">ESTADO ACTUAL</p>
-          <h2 className="mt-1 text-lg font-semibold text-[var(--text-primary)]">
-            Base operativa
+          <p className="suma-overline">MÓDULOS</p>
+          <h2 className="suma-h2 mt-1 text-[var(--text-primary)]">
+            Administración de la plataforma
           </h2>
+          <p className="suma-body mt-1 text-[var(--text-secondary)]">
+            Entra a cada módulo para gestionar su información.
+          </p>
         </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {cards.map((c) => {
-            const Icon = c.icon;
-            const inner = (
-              <div
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {modules.map((m) => {
+            const Icon = m.icon;
+            return (
+              <Link
+                key={m.label}
+                to={m.to}
                 className={cn(
-                  "group flex h-full flex-col rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6 shadow-[var(--shadow-xs)] transition-all duration-200",
-                  c.to &&
-                    !c.disabled &&
-                    "hover:-translate-y-0.5 hover:border-[var(--border-default)] hover:shadow-[var(--shadow-md)]",
-                  c.disabled && "opacity-90",
+                  "group flex h-full flex-col rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6 shadow-[var(--shadow-xs)]",
+                  "transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--border-default)] hover:shadow-[var(--shadow-md)]",
                 )}
               >
-                <div className="mb-4 flex items-center justify-between">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--red-50)] text-[var(--color-primary)]">
-                    <Icon className="h-4 w-4" />
+                <div className="mb-4 flex items-center gap-3">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--red-50)] text-[var(--color-primary)]">
+                    <Icon className="h-5 w-5" />
                   </span>
-                  {c.badge && (
-                    <span className="rounded-full bg-[var(--gray-100)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
-                      {c.badge}
-                    </span>
-                  )}
+                  <h3 className="suma-h3 text-[var(--text-primary)]">
+                    {m.label}
+                  </h3>
                 </div>
-                <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-tertiary)]">
-                  {c.label}
+                <p className="suma-body flex-1 text-[var(--text-secondary)]">
+                  {m.microcopy}
                 </p>
-                <p className="mt-1 font-display text-[22px] font-bold leading-tight tracking-tight text-[var(--text-primary)]">
-                  {c.value}
+                <p className="suma-subtitle mt-4 inline-flex items-center gap-1 text-[var(--color-primary)] group-hover:gap-1.5">
+                  Abrir módulo
+                  <ArrowRight className="h-4 w-4" />
                 </p>
-                {c.subvalue && (
-                  <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
-                    {c.subvalue}
-                  </p>
-                )}
-                <p className="mt-2 flex-1 text-[13px] leading-relaxed text-[var(--text-secondary)]">
-                  {c.microcopy}
-                </p>
-                <p
-                  className={cn(
-                    "mt-4 inline-flex items-center gap-1 text-sm font-semibold",
-                    c.disabled
-                      ? "text-[var(--text-tertiary)]"
-                      : "text-[var(--color-primary)] group-hover:gap-1.5",
-                  )}
-                >
-                  {c.cta}
-                  {!c.disabled && <ArrowRight className="h-3.5 w-3.5" />}
-                </p>
-              </div>
-            );
-            return c.to && !c.disabled ? (
-              <Link key={c.label} to={c.to} className="block">
-                {inner}
               </Link>
-            ) : (
-              <div key={c.label}>{inner}</div>
             );
           })}
         </div>
-      </section>
-
-      {/* Checklist */}
-      <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6">
-        <p className="text-sm font-semibold text-[var(--text-primary)]">
-          Pendientes antes de Acuerdos
-        </p>
-        <ul className="mt-4 divide-y divide-[var(--border-subtle)]">
-          {checklist.map((item) => (
-            <li
-              key={item.label}
-              className="flex items-center justify-between py-3 text-sm"
-            >
-              <span className="text-[var(--text-primary)]">{item.label}</span>
-              <span
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold",
-                  item.status === "done" &&
-                    "bg-[var(--success-soft)] text-[var(--success-strong)]",
-                  item.status === "pending" &&
-                    "bg-[var(--gray-100)] text-[var(--text-secondary)]",
-                  item.status === "next" &&
-                    "bg-[var(--red-50)] text-[var(--color-primary)]",
-                )}
-              >
-                {item.status === "done" && <Check className="h-3 w-3" />}
-                {item.status === "done"
-                  ? "Listo"
-                  : item.status === "pending"
-                    ? "Pendiente"
-                    : "Siguiente módulo"}
-              </span>
-            </li>
-          ))}
-        </ul>
       </section>
     </div>
   );
