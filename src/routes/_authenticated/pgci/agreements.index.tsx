@@ -360,8 +360,10 @@ function AgreementsList() {
                   </Button>
                 </span>
               </TooltipTrigger>
-              <TooltipContent>
-                Necesitas permiso para crear acuerdos. Solicítalo a un administrador.
+              <TooltipContent className="max-w-[280px]">
+                Necesitas permiso para crear acuerdos.
+                <br />
+                Solicítalo a un administrador.
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
