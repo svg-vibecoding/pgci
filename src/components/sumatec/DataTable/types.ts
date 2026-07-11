@@ -8,6 +8,11 @@ export type DataTableColumn<T> = {
   cell: (row: T, index: number) => ReactNode;
   /** Ancho fijo en px o CSS string. Si se omite, la columna es flexible. */
   width?: number | string;
+  /**
+   * Peso de reparto del ancho sobrante entre columnas flexibles (sin `width`).
+   * Default 1. Análogo a `flex-grow`.
+   */
+  flex?: number;
   align?: ColumnAlign;
   /** Aplica `tabular-nums` y alineación derecha por defecto. */
   numeric?: boolean;
