@@ -754,12 +754,26 @@ function AgreementLinesPage() {
               </TableRow>
             )}
             {filtered.map((r) => {
-              const meta = STATUS_META[r.status as keyof typeof STATUS_META] ?? null;
               const isExcluded = r.status === "excluded";
               const vig = vigenciaBadge(
                 r.end_date ?? null,
                 (agreement.end_date as string | null) ?? null,
               );
+              const covers = coversTodayOf(
+                (r.end_date as string | null) ?? null,
+                (agreement.end_date as string | null) ?? null,
+              );
+              const badgeKey: Exclude<LineCardKey, "all"> | null =
+                r.status === "active"
+                  ? covers ? "active" : "expired"
+                  : r.status === "draft"
+                    ? "draft"
+                    : r.status === "excluded"
+                      ? "excluded"
+                      : r.status === "requires_review"
+                        ? "requires_review"
+                        : null;
+              const meta = badgeKey ? STATUS_META[badgeKey] : null;
               return (
                 <TableRow key={r.id as string}>
                   <TableCell>
