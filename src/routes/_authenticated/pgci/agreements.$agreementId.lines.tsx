@@ -240,16 +240,6 @@ function AgreementLinesPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const deleteTransit = useMutation({
-    mutationFn: (transitId: string) => deleteTransitFn({ data: { transit_id: transitId } }),
-    onSuccess: () => {
-      toast.success("Línea eliminada");
-      invalidateAll();
-      setDeleteTransitTarget(null);
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
 
   type Line = NonNullable<typeof lines>[number] & {
     kind: "position" | "transit";
@@ -262,14 +252,11 @@ function AgreementLinesPage() {
   };
 
   const counts = useMemo(() => {
-    const c = { all: 0, active: 0, requires_review: 0, excluded: 0, transit: 0 };
+    const c = { all: 0, active: 0, requires_review: 0, excluded: 0 };
     for (const r of (lines ?? []) as Line[]) {
-      if (r.kind === "transit") {
-        c.transit++;
-      } else {
-        const k = r.status as keyof typeof c;
-        if (k in c) c[k]++;
-      }
+      if (r.kind === "transit") continue;
+      const k = r.status as keyof typeof c;
+      if (k in c) c[k]++;
     }
     c.all = c.active + c.requires_review + c.excluded;
     return c;
