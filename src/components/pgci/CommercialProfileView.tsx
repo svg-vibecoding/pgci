@@ -158,14 +158,15 @@ export function CommercialProfileView() {
         </CardHeader>
         <CardContent>
           <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)]">
-              <UserRound className="h-6 w-6" />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-[var(--color-primary)]/10 text-[var(--color-primary)]">
+              <UserRound className="h-5 w-5" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="suma-h3 text-text-primary">
+                <span className="suma-body font-semibold text-text-primary text-[1.0625rem]">
                   {profile.full_name || "—"}
                 </span>
+
                 {fullProfile?.erp_user_code && (
                   <Badge color="accent" variant="soft">
                     {fullProfile.erp_user_code}
