@@ -82,6 +82,10 @@ export type LineEditValues = {
   // update_agreement_line — de lo contrario la RPC busca la fila en la
   // tabla equivocada y responde "Posición no encontrada".
   kind?: "position" | "transit";
+  // Estado actual de la posición existente. Solo se usa en edición para
+  // decidir si mostrar el checkbox "Publicar en acuerdo al guardar".
+  // Al crear, la posición nace 'draft' y el checkbox siempre aparece.
+  status?: "active" | "requires_review" | "excluded" | "draft" | "archived";
   sku: string;
   // Lista COMPLETA declarativa de códigos por cliente. Lo ausente se cierra.
   client_codes: LineEditClientCode[];
