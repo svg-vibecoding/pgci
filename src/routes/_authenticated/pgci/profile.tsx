@@ -56,6 +56,21 @@ function ProfileView() {
   const userId = profile?.user_id ?? null;
   const isSuper = profile?.role === "super_admin";
 
+  const fullProfileQ = useQuery({
+    queryKey: ["profile", "full", userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, email, erp_user_code, role, status, created_at")
+        .eq("user_id", userId!)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+  });
+  const fullProfile = fullProfileQ.data;
+
   const accessQ = useQuery({
     queryKey: ["profile", "client-access", userId],
     enabled: !!userId && !isSuper,
