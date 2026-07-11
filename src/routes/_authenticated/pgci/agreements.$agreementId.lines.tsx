@@ -19,6 +19,7 @@ import {
   Eye,
   Layers,
   Send,
+  ChevronDown,
 } from "lucide-react";
 import { AgreementBreadcrumb } from "@/components/agreements/AgreementBreadcrumb";
 import { AgreementHeader } from "@/components/agreements/AgreementHeader";
@@ -735,23 +736,7 @@ function AgreementLinesPage() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3 md:flex-nowrap">
-        {visibleClients.length > 1 && (
-          <Select
-            value={projectionClientId ?? undefined}
-            onValueChange={(v) => setProjectionClientId(v)}
-          >
-            <SelectTrigger className="w-[240px] shrink-0">
-              <SelectValue placeholder="Cliente…" />
-            </SelectTrigger>
-            <SelectContent>
-              {visibleClients.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.name?.trim() || "Sin nombre"}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
+
         <div className="relative w-full flex-1 min-w-[16rem]">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -1014,7 +999,40 @@ function AgreementLinesPage() {
         const columns: DataTableColumn<Line>[] = [
           {
             id: "client",
-            header: "Cliente",
+            header: (() => {
+              if (visibleClients.length <= 1) {
+                const only = visibleClients[0];
+                return (
+                  <span className="text-text-primary font-medium">
+                    {only?.name?.trim() || "Cliente"}
+                  </span>
+                );
+              }
+              const current = visibleClients.find((c) => c.id === projectionClientId);
+              return (
+                <Select
+                  value={projectionClientId ?? undefined}
+                  onValueChange={(v) => setProjectionClientId(v)}
+                >
+                  <SelectTrigger
+                    aria-label="Cambiar cliente"
+                    className="h-auto w-auto gap-1.5 border-0 bg-transparent p-0 text-text-primary font-medium shadow-none hover:text-text-primary focus:ring-0 focus-visible:ring-0 [&>svg]:hidden"
+                  >
+                    <span className="truncate">
+                      {current?.name?.trim() || "Cliente…"}
+                    </span>
+                    <ChevronDown aria-hidden className="h-3.5 w-3.5 text-text-tertiary" />
+                  </SelectTrigger>
+                  <SelectContent align="start">
+                    {visibleClients.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name?.trim() || "Sin nombre"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              );
+            })(),
             cell: (r) => {
               const codes = r.codes ?? [];
               const projected = projectionClientId
