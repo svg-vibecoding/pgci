@@ -23,6 +23,7 @@ const SETUP_NAV: NavItem[] = [
 
 const PGCI_NAV: NavItem[] = [
   { to: "/pgci", label: "Inicio", icon: LayoutDashboard, exact: true },
+  { to: "/pgci/profile", label: "Perfil comercial", icon: UserCircle },
   { to: "/pgci/agreements", label: "Acuerdos", icon: FileText },
   { to: "/pgci/search", label: "Consulta", icon: Search, disabled: true, disabledHint: "En construcción" },
   { to: "/pgci/export", label: "Exportación", icon: Download, disabled: true, disabledHint: "En construcción" },
