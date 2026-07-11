@@ -39,6 +39,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  DataTable,
+  IdentityCell,
+  type DataTableColumn,
+  type RowAction,
+} from "@/components/sumatec";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
