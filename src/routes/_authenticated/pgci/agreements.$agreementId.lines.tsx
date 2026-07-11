@@ -882,6 +882,7 @@ function AgreementLinesPage() {
             <Checkbox
               id="publish-master"
               aria-label="Seleccionar todas las publicables"
+              className="data-[state=indeterminate]:bg-primary data-[state=indeterminate]:text-primary-foreground"
               checked={
                 masterState === "checked"
                   ? true
@@ -892,19 +893,15 @@ function AgreementLinesPage() {
               disabled={publishableInView.length === 0 || publishMut.isPending}
               onCheckedChange={() => toggleMaster()}
             />
-            <label htmlFor="publish-master" className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">
-                {publishableInView.length}
-              </span>{" "}
+            <label htmlFor="publish-master" className="text-sm font-semibold text-foreground">
+              <span>{publishableInView.length}</span>{" "}
               {publishableInView.length === 1
                 ? "lista para publicar"
                 : "listas para publicar"}
               {selectedPublishable.length > 0 && (
                 <>
                   {" · "}
-                  <span className="font-medium text-foreground">
-                    {selectedPublishable.length}
-                  </span>{" "}
+                  <span>{selectedPublishable.length}</span>{" "}
                   {selectedPublishable.length === 1
                     ? "seleccionada"
                     : "seleccionadas"}
