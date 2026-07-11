@@ -390,7 +390,7 @@ function AgreementLinesPage() {
     if (!r) return;
     setViewTarget({
       id: r.id as string,
-      kind: r.kind,
+      kind: "position",
       status: r.status as LineViewData["status"],
       sku: r.products?.sku ?? null,
       erp_description: r.products?.erp_description ?? null,
