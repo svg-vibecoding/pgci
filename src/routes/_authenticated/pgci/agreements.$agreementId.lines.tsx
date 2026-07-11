@@ -409,15 +409,10 @@ function AgreementLinesPage() {
     const rows = (lines ?? []) as Line[];
     const term = q.trim().toLowerCase();
     return rows.filter((r) => {
-      if (activeCard === "all") {
-        if (r.kind === "transit") return false;
-      } else if (activeCard === "transit") {
-        if (r.kind !== "transit") return false;
-      } else {
-        if (r.kind === "transit" || r.status !== activeCard) return false;
-      }
+      if (r.kind === "transit") return false;
+      if (activeCard !== "all" && r.status !== activeCard) return false;
       if (skuConflictOnly) {
-        if (r.kind === "transit" || !repeatedPositionIds.has(r.id as string)) return false;
+        if (!repeatedPositionIds.has(r.id as string)) return false;
       }
       if (!term) return true;
       const sku = r.products?.sku ?? "";
