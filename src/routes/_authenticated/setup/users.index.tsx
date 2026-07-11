@@ -43,7 +43,7 @@ function UsersList() {
       const { data: profiles, error } = await supabase
         .from("profiles")
         .select(
-          "user_id, full_name, email, role, status, erp_user_code, updated_at",
+          "user_id, full_name, email, role, status, erp_user_code, updated_at, created_at",
         )
         .order("full_name");
       if (error) throw error;
@@ -219,6 +219,20 @@ function UsersList() {
           <span>
             {u.client_count} {u.client_count === 1 ? "cliente" : "clientes"}
           </span>
+        ),
+    },
+    {
+      id: "created",
+      header: "Creado",
+      width: 120,
+      wrap: false,
+      cell: (u) =>
+        u.created_at ? (
+          <span className="text-[13px] text-text-secondary tabular-nums">
+            {new Date(u.created_at).toLocaleDateString("es-CO")}
+          </span>
+        ) : (
+          <span className="text-text-tertiary">—</span>
         ),
     },
     {
@@ -416,6 +430,7 @@ type UserRow = {
   status: string;
   erp_user_code: string | null;
   updated_at: string | null;
+  created_at: string | null;
   client_count: number;
   create_count: number;
   admin_count: number;
