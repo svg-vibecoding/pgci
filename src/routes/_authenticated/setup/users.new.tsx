@@ -131,7 +131,7 @@ function NewUser() {
           }
         }}
       >
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Usuario creado</DialogTitle>
             <DialogDescription>
@@ -140,63 +140,67 @@ function NewUser() {
             </DialogDescription>
           </DialogHeader>
           {credentials && (
-            <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4 text-sm">
-              <div>
-                <p className="text-xs text-muted-foreground">Email</p>
-                <p className="font-medium">{credentials.email}</p>
+            <div className="space-y-4 rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-sunken)] p-4">
+              <div className="space-y-1">
+                <p className="suma-caption">Email</p>
+                <p className="suma-body text-text-primary">{credentials.email}</p>
               </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Contraseña temporal</p>
-                <p className="font-mono text-base">{credentials.temp_password}</p>
+              <div className="space-y-1">
+                <p className="suma-caption">Contraseña temporal</p>
+                <p
+                  className="text-text-primary"
+                  style={{ font: "var(--fw-semibold) var(--body-md)/var(--body-md-lh) var(--font-mono)" }}
+                >
+                  {credentials.temp_password}
+                </p>
               </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={copyCredentials}
+                className="w-full"
+              >
+                {copied ? (
+                  <>
+                    <Check className="mr-2 h-4 w-4" /> Copiado
+                  </>
+                ) : (
+                  <>
+                    <Copy className="mr-2 h-4 w-4" /> Copiar credenciales
+                  </>
+                )}
+              </Button>
             </div>
           )}
-          <DialogFooter className="flex-col gap-3 sm:flex-col">
+          <DialogFooter className="flex-row items-center justify-between gap-3 sm:justify-between sm:space-x-0">
+            <button
+              type="button"
+              onClick={() => {
+                if (!credentials) return;
+                const id = credentials.user_id;
+                setCredentials(null);
+                navigate({ to: "/setup/users/$userId", params: { userId: id } });
+              }}
+              className="inline-flex h-9 items-center justify-center rounded-md border border-transparent px-3 text-sm font-medium text-[var(--color-accent)] transition-colors hover:border-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-[var(--text-on-brand)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 cursor-pointer"
+            >
+              Ir al detalle
+            </button>
             <Button
               type="button"
-              variant="outline"
-              onClick={copyCredentials}
-              className="w-full"
+              onClick={() => {
+                if (!credentials) return;
+                const id = credentials.user_id;
+                setCredentials(null);
+                navigate({
+                  to: "/setup/users/$userId/client-access",
+                  params: { userId: id },
+                });
+              }}
             >
-              {copied ? (
-                <>
-                  <Check className="mr-2 h-4 w-4" /> Copiado
-                </>
-              ) : (
-                <>
-                  <Copy className="mr-2 h-4 w-4" /> Copiar credenciales
-                </>
-              )}
+              Clientes y permisos
             </Button>
-            <div className="flex w-full items-center justify-between gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => {
-                  if (!credentials) return;
-                  const id = credentials.user_id;
-                  setCredentials(null);
-                  navigate({ to: "/setup/users/$userId", params: { userId: id } });
-                }}
-              >
-                Ir al detalle
-              </Button>
-              <Button
-                type="button"
-                onClick={() => {
-                  if (!credentials) return;
-                  const id = credentials.user_id;
-                  setCredentials(null);
-                  navigate({
-                    to: "/setup/users/$userId/client-access",
-                    params: { userId: id },
-                  });
-                }}
-              >
-                Clientes y permisos
-              </Button>
-            </div>
           </DialogFooter>
+
         </DialogContent>
       </Dialog>
     </>
