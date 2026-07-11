@@ -166,10 +166,10 @@ function PgciHome() {
       {/* Módulos */}
       <section className="space-y-4">
         <div>
-          <h2 className="suma-overline text-text-tertiary">
+          <h2 className="suma-h3">
             Tus módulos
           </h2>
-          <p className="mt-1 suma-body text-text-secondary">
+          <p className="suma-body text-text-secondary">
             Estas son las capacidades que tendrás disponibles en la PGCI.
           </p>
         </div>
