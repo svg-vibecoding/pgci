@@ -598,6 +598,66 @@ function AgreementLinesPage() {
   ];
   const totalCount = summaryCards.reduce((s, c) => s + c.value, 0);
 
+  // Selección masiva SOLO cuando el filtro está en "En gestión" o "Revisar".
+  // Fuera de esos filtros, la tabla se ve igual que hoy: sin columna ni franja.
+  const selectionMode =
+    canAdmin && (activeCard === "draft" || activeCard === "requires_review");
+  const selectedPublishable = publishableInView.filter((id) =>
+    selectedIds.has(id),
+  );
+  const masterState: "empty" | "indeterminate" | "checked" =
+    publishableInView.length === 0
+      ? "empty"
+      : selectedPublishable.length === 0
+        ? "empty"
+        : selectedPublishable.length === publishableInView.length
+          ? "checked"
+          : "indeterminate";
+  const toggleMaster = () => {
+    setSelectedIds((prev) => {
+      if (masterState === "checked") {
+        // Deseleccionar solo las de la vista actual; preserva otras si hubiera.
+        const next = new Set(prev);
+        for (const id of publishableInView) next.delete(id);
+        return next;
+      }
+      // empty o indeterminate → seleccionar todas las publicables de la vista.
+      const next = new Set(prev);
+      for (const id of publishableInView) next.add(id);
+      return next;
+    });
+  };
+  const toggleRow = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  const rowDisabledReason = (r: Line): string => {
+    if (r.status === "excluded") return "Excluida";
+    if (r.status === "archived") return "Archivada";
+    if (r.status === "active") {
+      const covers = coversTodayOf(
+        (r.end_date as string | null) ?? null,
+        (agreement.end_date as string | null) ?? null,
+      );
+      return covers ? "Ya activa" : "Vencida";
+    }
+    // draft o requires_review pero incompleta
+    if (!r.product_id) return "Incompleta: sin SKU";
+    if ((r.sale_price ?? 0) <= 0) return "Incompleta: sin precio";
+    if (!r.start_date) return "Incompleta: sin fecha de inicio";
+    const covers = coversTodayOf(
+      (r.end_date as string | null) ?? null,
+      (agreement.end_date as string | null) ?? null,
+    );
+    if (!covers) return "Vencida";
+    return "No publicable";
+  };
+
+
   return (
     <div className="space-y-6">
       <AgreementBreadcrumb agreementId={agreementId} current="lines" />
