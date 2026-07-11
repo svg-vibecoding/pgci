@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { IndicatorCard } from "@/components/setup/IndicatorCard";
 
 export const Route = createFileRoute("/_authenticated/setup/")({
   head: () => ({ meta: [{ title: "Plataforma · PGCI" }] }),
@@ -20,33 +21,16 @@ function useSetupCounts() {
   return useQuery({
     queryKey: ["setup", "counts"],
     queryFn: async () => {
-      const [clients, productsActive, productsInactive, users, accesses, agreements] =
-        await Promise.all([
-          supabase.from("clients").select("*", { count: "exact", head: true }),
-          supabase
-            .from("products")
-            .select("*", { count: "exact", head: true })
-            .eq("status", "active"),
-          supabase
-            .from("products")
-            .select("*", { count: "exact", head: true })
-            .eq("status", "inactive"),
-          supabase
-            .from("profiles")
-            .select("*", { count: "exact", head: true })
-            .eq("status", "active"),
-          supabase
-            .from("user_client_access")
-            .select("*", { count: "exact", head: true })
-            .is("valid_until", null),
-          supabase.from("agreements").select("*", { count: "exact", head: true }),
-        ]);
+      const [users, clients, products, agreements] = await Promise.all([
+        supabase.from("profiles").select("*", { count: "exact", head: true }),
+        supabase.from("clients").select("*", { count: "exact", head: true }),
+        supabase.from("products").select("*", { count: "exact", head: true }),
+        supabase.from("agreements").select("*", { count: "exact", head: true }),
+      ]);
       return {
-        clients: clients.count ?? 0,
-        productsActive: productsActive.count ?? 0,
-        productsInactive: productsInactive.count ?? 0,
         users: users.count ?? 0,
-        accesses: accesses.count ?? 0,
+        clients: clients.count ?? 0,
+        products: products.count ?? 0,
         agreements: agreements.count ?? 0,
       };
     },
@@ -56,35 +40,18 @@ function useSetupCounts() {
 function SetupHome() {
   const { data } = useSetupCounts();
 
-  const clients = data?.clients ?? 0;
-  const productsActive = data?.productsActive ?? 0;
-  const productsInactive = data?.productsInactive ?? 0;
   const users = data?.users ?? 0;
-  const accesses = data?.accesses ?? 0;
+  const clients = data?.clients ?? 0;
+  const products = data?.products ?? 0;
   const agreements = data?.agreements ?? 0;
 
-  const kpis: Array<{ label: string; value: string; hint: string }> = [
-    {
-      label: "Clientes",
-      value: clients.toLocaleString("es-CO"),
-      hint: "registrados en la base",
-    },
-    {
-      label: "Productos activos",
-      value: productsActive.toLocaleString("es-CO"),
-      hint: `${productsInactive.toLocaleString("es-CO")} inactivos`,
-    },
-    {
-      label: "Usuarios activos",
-      value: users.toLocaleString("es-CO"),
-      hint: `${accesses.toLocaleString("es-CO")} accesos configurados`,
-    },
-    {
-      label: "Acuerdos",
-      value: agreements.toLocaleString("es-CO"),
-      hint: "registrados en la plataforma",
-    },
+  const kpis: Array<{ label: string; value: string }> = [
+    { label: "Usuarios", value: users.toLocaleString("es-CO") },
+    { label: "Clientes", value: clients.toLocaleString("es-CO") },
+    { label: "Productos", value: products.toLocaleString("es-CO") },
+    { label: "Acuerdos", value: agreements.toLocaleString("es-CO") },
   ];
+
 
   const modules: Array<{
     label: string;
@@ -145,14 +112,7 @@ function SetupHome() {
       <section aria-label="Indicadores de la plataforma">
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {kpis.map((kpi) => (
-            <div
-              key={kpi.label}
-              className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] p-5 shadow-[var(--shadow-xs)]"
-            >
-              <p className="suma-overline">{kpi.label}</p>
-              <p className="suma-metric mt-2">{kpi.value}</p>
-              <p className="suma-caption mt-1">{kpi.hint}</p>
-            </div>
+            <IndicatorCard key={kpi.label} label={kpi.label} value={kpi.value} />
           ))}
         </div>
       </section>
