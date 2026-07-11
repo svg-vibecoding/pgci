@@ -1352,6 +1352,47 @@ function AgreementLinesPage() {
         </AlertDialogContent>
       </AlertDialog>
 
+      <AlertDialog
+        open={confirmPublishOpen}
+        onOpenChange={(o) => {
+          if (!publishMut.isPending) setConfirmPublishOpen(o);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Publicar {selectedPublishable.length}{" "}
+              {selectedPublishable.length === 1 ? "posición" : "posiciones"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {selectedPublishable.length === 1 ? "Esta" : "Estas"}{" "}
+              {selectedPublishable.length}{" "}
+              {selectedPublishable.length === 1 ? "posición pasará" : "posiciones pasarán"}{" "}
+              a estado Activa en el acuerdo &ldquo;{agreement.name as string}&rdquo;. La
+              acción es inmediata y visible para los clientes asignados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={publishMut.isPending}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                publishMut.mutate(selectedPublishable);
+              }}
+              disabled={publishMut.isPending || selectedPublishable.length === 0}
+            >
+              {publishMut.isPending
+                ? "Publicando…"
+                : `Publicar ${selectedPublishable.length} ${selectedPublishable.length === 1 ? "posición" : "posiciones"}`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+
+
 
 
       <Dialog open={skuModalOpen} onOpenChange={setSkuModalOpen}>
