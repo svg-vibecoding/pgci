@@ -876,10 +876,60 @@ function AgreementLinesPage() {
         </div>
       )}
 
+      {selectionMode && (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2">
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="publish-master"
+              aria-label="Seleccionar todas las publicables"
+              checked={
+                masterState === "checked"
+                  ? true
+                  : masterState === "indeterminate"
+                    ? "indeterminate"
+                    : false
+              }
+              disabled={publishableInView.length === 0 || publishMut.isPending}
+              onCheckedChange={() => toggleMaster()}
+            />
+            <label htmlFor="publish-master" className="text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">
+                {publishableInView.length}
+              </span>{" "}
+              {publishableInView.length === 1
+                ? "lista para publicar"
+                : "listas para publicar"}
+              {selectedPublishable.length > 0 && (
+                <>
+                  {" · "}
+                  <span className="font-medium text-foreground">
+                    {selectedPublishable.length}
+                  </span>{" "}
+                  {selectedPublishable.length === 1
+                    ? "seleccionada"
+                    : "seleccionadas"}
+                </>
+              )}
+            </label>
+          </div>
+          <div className="ml-auto">
+            <Button
+              size="sm"
+              onClick={() => setConfirmPublishOpen(true)}
+              disabled={selectedPublishable.length === 0 || publishMut.isPending}
+            >
+              <Send className="mr-1.5 h-4 w-4" />
+              Publicar en acuerdo
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div className="overflow-x-auto rounded-lg border border-border bg-card">
         <Table className="table-fixed">
           <TableHeader>
             <TableRow>
+              {selectionMode && <TableHead className="w-10" aria-hidden />}
               <TableHead>Cliente</TableHead>
               <TableHead>Jaivaná</TableHead>
               <TableHead className="w-32 whitespace-nowrap">Marca</TableHead>
@@ -893,7 +943,7 @@ function AgreementLinesPage() {
             {loadingLines && (
               <TableRow>
                 <TableCell
-                  colSpan={7}
+                  colSpan={selectionMode ? 8 : 7}
                   className="py-6 text-center text-sm text-muted-foreground"
                 >
                   Cargando…
@@ -903,13 +953,14 @@ function AgreementLinesPage() {
             {!loadingLines && filtered.length === 0 && (
               <TableRow>
                 <TableCell
-                  colSpan={7}
+                  colSpan={selectionMode ? 8 : 7}
                   className="py-8 text-center text-sm text-muted-foreground"
                 >
                   No hay posiciones con esos filtros.
                 </TableCell>
               </TableRow>
             )}
+
             {filtered.map((r) => {
               const isExcluded = r.status === "excluded";
               const vig = vigenciaBadge(
