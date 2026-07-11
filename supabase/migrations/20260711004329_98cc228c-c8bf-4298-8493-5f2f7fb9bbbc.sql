@@ -1,0 +1,1 @@
+ALTER VIEW public.agreements_with_counts SET (security_invoker = true);
