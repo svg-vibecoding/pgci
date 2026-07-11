@@ -3,8 +3,9 @@ import type { CSSProperties } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Eye, FileText, Pencil, Plus, Search } from "lucide-react";
+import { Eye, FileText, Lock, Pencil, Plus, Search } from "lucide-react";
 import { listAgreements } from "@/lib/agreements.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -104,6 +105,17 @@ function AgreementsList() {
     queryKey: ["agreements", "list"],
     queryFn: () => listFn(),
   });
+
+  const { data: canCreate } = useQuery({
+    queryKey: ["rpc", "can_create_agreements"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("can_create_agreements");
+      if (error) throw error;
+      return !!data;
+    },
+  });
+  const canCreateEnabled = canCreate === true;
+
 
   const [search, setSearch] = useState("");
   const [statusF, setStatusF] = useState<StatusFilter>("all");
@@ -332,11 +344,28 @@ function AgreementsList() {
             Consulta y gestiona los acuerdos comerciales con clientes.
           </p>
         </div>
-        <Button asChild>
-          <Link to="/pgci/agreements/new">
-            <Plus className="mr-2 h-4 w-4" /> Crear acuerdo
-          </Link>
-        </Button>
+        {canCreateEnabled ? (
+          <Button asChild>
+            <Link to="/pgci/agreements/new">
+              <Plus className="mr-2 h-4 w-4" /> Crear acuerdo
+            </Link>
+          </Button>
+        ) : (
+          <TooltipProvider delayDuration={150}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span tabIndex={0}>
+                  <Button disabled aria-disabled="true">
+                    <Lock className="mr-2 h-4 w-4" /> Crear acuerdo
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                Necesitas permiso para crear acuerdos. Solicítalo a un administrador.
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
       </header>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
