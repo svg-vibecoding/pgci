@@ -1,28 +1,39 @@
-## Cambio
+## Alinear el sidebar al sistema Sumatec
 
-Actualizar `src/components/ui/input.tsx` para que todos los `Input` de la app hereden tipografía y placeholder del sistema Sumatec, sin excepciones responsive.
+El menú lateral usa tokens de color del sistema pero declara tamaños/pesos de forma ad-hoc. Lo unificamos a las utilidades `suma-*` y aligeramos el peso de los items idle, sin cambiar layout, iconografía, estados activos ni comportamiento.
 
-## Detalle
+## Cambios en `src/components/layout/AppShell.tsx`
 
-Reemplazar en el `className` del `<input>`:
+**`SectionLabel`** (encabezados "Setup Operativo", "PGCI")
+- De `text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-tertiary)]` a `suma-overline text-text-tertiary`.
+- Mantiene uppercase (es un overline por definición del sistema) y la línea divisoria.
 
-- `text-base ... md:text-sm` → clase de utilidad `suma-body` (Roboto 14px / 20px, `--fw-regular`, `--font-body`). Tamaño único en mobile y desktop, coherente con el resto del sistema.
-- `placeholder:text-muted-foreground` → `placeholder:text-text-tertiary` (token Sumatec `#8A8F9C`).
-- Mantener intactos: alto (`h-9`), radios, borde, fondo (`bg-card`), padding, focus ring, disabled — son parte del contrato visual del componente y no son tipográficos.
+**`NavList` items idle** (Plataforma, Usuarios, Clientes, Productos, Inicio, Acuerdos, etc.)
+- Tipografía: pasa de `text-sm font-medium` a `suma-body` (Roboto 14/20, regular).
+- Color: se mantiene `text-text-secondary` (#525763), mismo que subtítulos y body del sistema.
+- Hover: sigue con `hover:bg-[var(--gray-50)] hover:text-text-primary`.
+- Icono idle: sigue en `text-text-tertiary`, hover → `text-text-primary`.
 
-Resultado del `className` final (referencia):
+**`NavList` item activo** (fondo rojo)
+- Tipografía: `suma-body font-semibold` sobre `bg-[var(--color-primary)]`, texto `text-text-on-brand`.
+- Sin cambios visuales — sólo se atan a las utilidades del sistema.
 
-```
-flex h-9 w-full rounded-md border border-input bg-card px-3 py-1 suma-body shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-text-tertiary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50
-```
+**Item deshabilitado** (Consulta, Exportación)
+- Tipografía base: `suma-body text-text-disabled`.
+- Chip "PRÓX...": de `text-[10px] font-semibold uppercase` a `suma-caption text-text-tertiary` (Roboto 12px, sin uppercase, para ser consistente con los chips de estado de módulos que ya unificamos en `/pgci`). Fondo `bg-[var(--gray-200)]` intacto.
 
-## Impacto
-
-- Aplica a **todos** los `Input` de la app (buscadores, formularios, imports, diálogos).
-- No cambia altura ni layout, sólo familia/tamaño de fuente y color de placeholder.
-- No requiere migraciones ni cambios en consumidores.
+**Botón "Cerrar sesión"**
+- Se mantiene el `Button variant="ghost"`, sólo aseguramos que el `className` no fuerce peso extra: quedan las clases actuales de color `text-text-secondary hover:text-text-primary`. El componente `Button` ya define su tipografía; no se sobrescribe.
 
 ## Fuera de alcance
 
-- `Textarea`, `Select`, `Combobox` u otros controles: si se quieren unificar, se aborda en un cambio aparte.
-- Ajustes puntuales de tamaño en formularios que hoy dependieran de `text-base` en mobile — no hemos detectado ninguno crítico, pero si aparece se ajusta puntualmente.
+- No se cambia el ancho del sidebar, ni la separación entre secciones, ni los iconos.
+- No se toca el logo ni el borde derecho.
+- No se cambian los estados activo/hover a otros colores.
+- No se agrega token nuevo — quedó descartado el intermedio dedicado.
+
+## Resultado esperado
+
+- Items del menú se sienten más livianos (regular en lugar de medium) manteniendo el mismo gris que el resto de la interfaz.
+- Los overlines de sección y los chips "PRÓX..." dejan de tener tamaños/pesos hardcoded y pasan a compartir utilidad con el resto del sistema.
+- Cualquier cambio futuro en `suma-body` / `suma-overline` / `suma-caption` se refleja automáticamente en el menú.

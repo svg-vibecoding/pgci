@@ -31,7 +31,7 @@ const PGCI_NAV: NavItem[] = [
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div className="mx-3 mb-2 mt-2 flex items-center gap-3">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
+      <p className="suma-overline text-text-tertiary">
         {children}
       </p>
       <div className="h-px flex-1 bg-[var(--border-subtle)]" />
@@ -50,13 +50,13 @@ function NavList({ items, pathname }: { items: NavItem[]; pathname: string }) {
           return (
             <li key={item.to}>
               <div
-                className="group relative flex cursor-not-allowed items-center gap-2.5 rounded-sm px-3 py-2 text-sm text-[var(--text-disabled)] hover:bg-[var(--gray-50)]"
+                className="group relative flex cursor-not-allowed items-center gap-2.5 rounded-sm px-3 py-2 suma-body text-[var(--text-disabled)] hover:bg-[var(--gray-50)]"
                 title={item.disabledHint ?? "Disponible próximamente"}
               >
                 <Icon className="h-4 w-4" />
                 <span className="flex-1">{item.label}</span>
-                <span className="rounded-full bg-[var(--gray-200)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
-                  PRÓX...
+                <span className="suma-caption rounded-full bg-[var(--gray-200)] px-2 py-0.5 text-[var(--text-tertiary)]">
+                  Próx...
                 </span>
               </div>
             </li>
@@ -69,10 +69,10 @@ function NavList({ items, pathname }: { items: NavItem[]; pathname: string }) {
               to={item.to}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "group relative flex items-center gap-2.5 rounded-sm px-3 py-2 text-sm transition-colors duration-150",
+                "group relative flex items-center gap-2.5 rounded-sm px-3 py-2 suma-body transition-colors duration-150",
                 active
                   ? "bg-[var(--color-primary)] font-semibold text-[var(--text-on-brand)] hover:bg-[var(--color-primary-hover)]"
-                  : "font-medium text-[var(--text-secondary)] hover:bg-[var(--gray-50)] hover:text-[var(--text-primary)]",
+                  : "text-[var(--text-secondary)] hover:bg-[var(--gray-50)] hover:text-[var(--text-primary)]",
               )}
             >
               <Icon
