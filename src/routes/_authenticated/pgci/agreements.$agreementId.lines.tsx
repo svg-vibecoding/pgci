@@ -882,6 +882,7 @@ function AgreementLinesPage() {
             <Checkbox
               id="publish-master"
               aria-label="Seleccionar todas las publicables"
+              className="data-[state=indeterminate]:bg-primary data-[state=indeterminate]:text-primary-foreground"
               checked={
                 masterState === "checked"
                   ? true
@@ -892,19 +893,15 @@ function AgreementLinesPage() {
               disabled={publishableInView.length === 0 || publishMut.isPending}
               onCheckedChange={() => toggleMaster()}
             />
-            <label htmlFor="publish-master" className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">
-                {publishableInView.length}
-              </span>{" "}
+            <label htmlFor="publish-master" className="text-sm font-semibold text-foreground">
+              <span>{publishableInView.length}</span>{" "}
               {publishableInView.length === 1
                 ? "lista para publicar"
                 : "listas para publicar"}
               {selectedPublishable.length > 0 && (
                 <>
                   {" · "}
-                  <span className="font-medium text-foreground">
-                    {selectedPublishable.length}
-                  </span>{" "}
+                  <span>{selectedPublishable.length}</span>{" "}
                   {selectedPublishable.length === 1
                     ? "seleccionada"
                     : "seleccionadas"}
@@ -992,6 +989,7 @@ function AgreementLinesPage() {
                           aria-label={
                             publishable ? "Seleccionar posición" : "No publicable"
                           }
+                          className="disabled:border-muted-foreground/40 disabled:bg-muted disabled:opacity-100"
                           checked={selectedIds.has(r.id as string)}
                           disabled={!publishable || publishMut.isPending}
                           onCheckedChange={() => toggleRow(r.id as string)}
@@ -1358,21 +1356,24 @@ function AgreementLinesPage() {
           if (!publishMut.isPending) setConfirmPublishOpen(o);
         }}
       >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
+        <AlertDialogContent className="max-w-lg p-0 gap-0 overflow-hidden">
+          <AlertDialogHeader className="px-6 py-4 border-b border-border text-left space-y-1">
+            <AlertDialogTitle className="text-2xl font-bold tracking-tight">
               Publicar {selectedPublishable.length}{" "}
               {selectedPublishable.length === 1 ? "posición" : "posiciones"}
             </AlertDialogTitle>
-            <AlertDialogDescription>
-              {selectedPublishable.length === 1 ? "Esta" : "Estas"}{" "}
-              {selectedPublishable.length}{" "}
-              {selectedPublishable.length === 1 ? "posición pasará" : "posiciones pasarán"}{" "}
-              a estado Activa en el acuerdo &ldquo;{agreement.name as string}&rdquo;. La
-              acción es inmediata y visible para los clientes asignados.
+            <AlertDialogDescription className="text-sm text-muted-foreground">
+              {agreement.name as string}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
+          <div className="px-6 py-5 text-sm leading-relaxed text-foreground">
+            {selectedPublishable.length === 1 ? "Esta" : "Estas"}{" "}
+            <span className="font-semibold">{selectedPublishable.length}</span>{" "}
+            {selectedPublishable.length === 1 ? "posición pasará" : "posiciones pasarán"}{" "}
+            a estado <span className="font-semibold">Activa</span>. La acción es
+            inmediata y visible para los clientes asignados al acuerdo.
+          </div>
+          <AlertDialogFooter className="px-6 py-4 border-t border-border bg-muted/20">
             <AlertDialogCancel disabled={publishMut.isPending}>
               Cancelar
             </AlertDialogCancel>
