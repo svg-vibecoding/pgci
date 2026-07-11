@@ -97,7 +97,7 @@ export const listAgreements = createServerFn({ method: "GET" })
       companies: (byAgreement.get(r.id as string) ?? []).sort((a, b) =>
         a.localeCompare(b, "es", { sensitivity: "base" }),
       ),
-      lines_transit: transitByAgreement.get(r.id as string) ?? 0,
+      
       can_admin: adminIds.has(r.id as string),
     }));
   });
