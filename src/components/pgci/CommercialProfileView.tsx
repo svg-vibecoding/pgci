@@ -149,11 +149,11 @@ export function CommercialProfileView() {
   );
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Información personal */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Información personal</CardTitle>
+          <CardTitle className="suma-h3">Información personal</CardTitle>
         </CardHeader>
         <CardContent>
           <InfoSection>
@@ -167,178 +167,162 @@ export function CommercialProfileView() {
         </CardContent>
       </Card>
 
-      {/* Seguridad */}
+      {/* Clientes y accesos */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <KeyRound className="h-4 w-4 text-text-tertiary" />
-            Seguridad
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <PasswordChangeForm />
-        </CardContent>
-      </Card>
-
-      {/* Accesos */}
-      <section className="space-y-3">
-        <div>
-          <h2 className="suma-h3">Mis accesos</h2>
+          <CardTitle className="suma-h3">Clientes y accesos</CardTitle>
           <p className="suma-body text-text-secondary">
             Tu cartera de clientes y los acuerdos en los que participas, con los permisos vigentes en cada nivel.
           </p>
-        </div>
-
-        {isSuper ? (
-          <Alert variant="info">
-            <Info className="h-4 w-4" />
-            <AlertTitle>Acceso total</AlertTitle>
-            <AlertDescription>
-              Como super admin tienes acceso a todos los clientes y acuerdos de la plataforma.
-            </AlertDescription>
-          </Alert>
-        ) : accessQ.isLoading || agrClientsQ.isLoading || membersQ.isLoading ? (
-          <Skeleton className="h-40 w-full" />
-        ) : assignedCount === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-md border border-dashed border-[var(--border-subtle)] bg-[var(--surface-card)] py-10 text-center">
-            <Building2 className="mb-2 h-6 w-6 text-text-tertiary" />
-            <p className="suma-body text-text-primary">Aún no tienes clientes asignados.</p>
-            <p className="suma-caption text-text-tertiary">
-              Un super admin debe habilitar tu acceso a clientes para operar en la PGCI.
-            </p>
-          </div>
-        ) : (
-          <Accordion type="multiple" className="space-y-2">
-            {(accessQ.data ?? [])
-              .slice()
-              .sort((a, b) => {
-                const na = a.clients?.commercial_name?.trim() || a.clients?.legal_name || "";
-                const nb = b.clients?.commercial_name?.trim() || b.clients?.legal_name || "";
-                return na.localeCompare(nb, "es", { sensitivity: "base" });
-              })
-              .map((a) => {
-                const client = a.clients;
-                const name = client?.commercial_name?.trim() || client?.legal_name || "—";
-                const clientAgreements = client
-                  ? (agreementsByClient.get(client.id) ?? [])
-                  : [];
-                const permChips: string[] = [];
-                if (a.can_create_agreements) permChips.push("Crea acuerdos");
-                if (a.can_manage_client_catalog) permChips.push("Catálogo del cliente");
-                if (a.can_manage_matching) permChips.push("Matching");
-                return (
-                  <AccordionItem
-                    key={a.id}
-                    value={a.id}
-                    className="rounded-md border border-[var(--border-subtle)] bg-[var(--surface-card)] px-4"
-                  >
-                    <AccordionTrigger className="py-3 hover:no-underline">
-                      <div className="flex min-w-0 flex-1 items-center justify-between gap-3 pr-3">
-                        <div className="flex min-w-0 items-center gap-2">
-                          <Building2 className="h-4 w-4 shrink-0 text-text-tertiary" />
-                          <span className="truncate suma-body font-medium text-text-primary">
-                            {name}
-                          </span>
-                          {client?.type === "holding" && (
-                            <Badge color="accent" variant="soft">Holding</Badge>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {isSuper ? (
+            <Alert variant="info">
+              <Info className="h-4 w-4" />
+              <AlertTitle>Acceso total</AlertTitle>
+              <AlertDescription>
+                Como super admin tienes acceso a todos los clientes y acuerdos de la plataforma.
+              </AlertDescription>
+            </Alert>
+          ) : accessQ.isLoading || agrClientsQ.isLoading || membersQ.isLoading ? (
+            <Skeleton className="h-40 w-full" />
+          ) : assignedCount === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-md border border-dashed border-[var(--border-subtle)] bg-[var(--surface-card)] py-10 text-center">
+              <Building2 className="mb-2 h-6 w-6 text-text-tertiary" />
+              <p className="suma-body text-text-primary">Aún no tienes clientes asignados.</p>
+              <p className="suma-caption text-text-tertiary">
+                Un super admin debe habilitar tu acceso a clientes para operar en la PGCI.
+              </p>
+            </div>
+          ) : (
+            <Accordion type="multiple" className="space-y-2">
+              {(accessQ.data ?? [])
+                .slice()
+                .sort((a, b) => {
+                  const na = a.clients?.commercial_name?.trim() || a.clients?.legal_name || "";
+                  const nb = b.clients?.commercial_name?.trim() || b.clients?.legal_name || "";
+                  return na.localeCompare(nb, "es", { sensitivity: "base" });
+                })
+                .map((a) => {
+                  const client = a.clients;
+                  const name = client?.commercial_name?.trim() || client?.legal_name || "—";
+                  const clientAgreements = client
+                    ? (agreementsByClient.get(client.id) ?? [])
+                    : [];
+                  const permChips: string[] = [];
+                  if (a.can_create_agreements) permChips.push("Crea acuerdos");
+                  if (a.can_manage_client_catalog) permChips.push("Catálogo del cliente");
+                  if (a.can_manage_matching) permChips.push("Matching");
+                  return (
+                    <AccordionItem
+                      key={a.id}
+                      value={a.id}
+                      className="rounded-md border border-[var(--border-subtle)] bg-[var(--surface-card)] px-4"
+                    >
+                      <AccordionTrigger className="py-3 hover:no-underline">
+                        <div className="flex min-w-0 flex-1 items-center justify-between gap-3 pr-3">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <Building2 className="h-4 w-4 shrink-0 text-text-tertiary" />
+                            <span className="truncate suma-body font-medium text-text-primary">
+                              {name}
+                            </span>
+                            {client?.type === "holding" && (
+                              <Badge color="accent" variant="soft">Holding</Badge>
+                            )}
+                          </div>
+                          <div className="flex shrink-0 items-center gap-2">
+                            <span className="suma-caption text-text-tertiary">
+                              {clientAgreements?.length ?? 0}{" "}
+                              {(clientAgreements?.length ?? 0) === 1 ? "acuerdo" : "acuerdos"}
+                            </span>
+                          </div>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="pb-4">
+                        <div className="mb-4">
+                          <p className="suma-overline text-text-tertiary mb-2">
+                            Permisos sobre el cliente
+                          </p>
+                          {permChips.length === 0 ? (
+                            <p className="suma-caption text-text-tertiary">
+                              Solo consulta.
+                            </p>
+                          ) : (
+                            <div className="flex flex-wrap gap-1.5">
+                              {permChips.map((p) => (
+                                <Chip key={p} variant="soft">
+                                  {p}
+                                </Chip>
+                              ))}
+                            </div>
                           )}
                         </div>
-                        <div className="flex shrink-0 items-center gap-2">
-                          <span className="suma-caption text-text-tertiary">
-                            {clientAgreements?.length ?? 0}{" "}
-                            {(clientAgreements?.length ?? 0) === 1 ? "acuerdo" : "acuerdos"}
-                          </span>
+
+                        <div>
+                          <p className="suma-overline text-text-tertiary mb-2">
+                            Acuerdos donde participas
+                          </p>
+                          {clientAgreements && clientAgreements.length > 0 ? (
+                            <ul className="divide-y divide-[var(--border-subtle)] rounded-md border border-[var(--border-subtle)]">
+                              {clientAgreements.map((m) => {
+                                const agr = m.agreements as any;
+                                return (
+                                  <li
+                                    key={m.id}
+                                    className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+                                  >
+                                    <div className="min-w-0 flex items-center gap-2">
+                                      <FileText className="h-4 w-4 shrink-0 text-text-tertiary" />
+                                      {agr ? (
+                                        <Link
+                                          to="/pgci/agreements/$agreementId"
+                                          params={{ agreementId: agr.id }}
+                                          className="truncate suma-body text-text-primary hover:underline"
+                                        >
+                                          {agr.name}
+                                        </Link>
+                                      ) : (
+                                        <span className="truncate suma-body">Acuerdo</span>
+                                      )}
+                                      {agr?.status && (
+                                        <StatusBadge
+                                          status={agr.status === "active" ? "active" : "neutral"}
+                                          label={agr.status === "active" ? "Activo" : agr.status}
+                                        />
+                                      )}
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-1.5">
+                                      <Chip variant="soft">
+                                        <ShieldCheck className="h-3 w-3" />{" "}
+                                        {memberRoleLabel(m.role)}
+                                      </Chip>
+                                      {m.can_view_costs && (
+                                        <Chip variant="soft">Ve costos</Chip>
+                                      )}
+                                    </div>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          ) : (
+                            <p className="suma-caption text-text-tertiary">
+                              No participas en acuerdos de este cliente todavía.
+                            </p>
+                          )}
                         </div>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="pb-4">
-                      <div className="mb-4">
-                        <p className="suma-overline text-text-tertiary mb-2">
-                          Permisos sobre el cliente
-                        </p>
-                        {permChips.length === 0 ? (
-                          <p className="suma-caption text-text-tertiary">
-                            Solo consulta.
-                          </p>
-                        ) : (
-                          <div className="flex flex-wrap gap-1.5">
-                            {permChips.map((p) => (
-                              <Chip key={p} variant="soft">
-                                {p}
-                              </Chip>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  );
+                })}
+            </Accordion>
+          )}
 
-                      <div>
-                        <p className="suma-overline text-text-tertiary mb-2">
-                          Acuerdos donde participas
-                        </p>
-                        {clientAgreements && clientAgreements.length > 0 ? (
-                          <ul className="divide-y divide-[var(--border-subtle)] rounded-md border border-[var(--border-subtle)]">
-                            {clientAgreements.map((m) => {
-                              const agr = m.agreements as any;
-                              return (
-                                <li
-                                  key={m.id}
-                                  className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
-                                >
-                                  <div className="min-w-0 flex items-center gap-2">
-                                    <FileText className="h-4 w-4 shrink-0 text-text-tertiary" />
-                                    {agr ? (
-                                      <Link
-                                        to="/pgci/agreements/$agreementId"
-                                        params={{ agreementId: agr.id }}
-                                        className="truncate suma-body text-text-primary hover:underline"
-                                      >
-                                        {agr.name}
-                                      </Link>
-                                    ) : (
-                                      <span className="truncate suma-body">Acuerdo</span>
-                                    )}
-                                    {agr?.status && (
-                                      <StatusBadge
-                                        status={agr.status === "active" ? "active" : "neutral"}
-                                        label={agr.status === "active" ? "Activo" : agr.status}
-                                      />
-                                    )}
-                                  </div>
-                                  <div className="flex flex-wrap items-center gap-1.5">
-                                    <Chip variant="soft">
-                                      <ShieldCheck className="h-3 w-3" />{" "}
-                                      {memberRoleLabel(m.role)}
-                                    </Chip>
-                                    {m.can_view_costs && (
-                                      <Chip variant="soft">Ve costos</Chip>
-                                    )}
-                                  </div>
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        ) : (
-                          <p className="suma-caption text-text-tertiary">
-                            No participas en acuerdos de este cliente todavía.
-                          </p>
-                        )}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                );
-              })}
-          </Accordion>
-        )}
-
-        {unlinkedAgreements.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <UsersIcon className="h-4 w-4 text-text-tertiary" />
+          {unlinkedAgreements.length > 0 && (
+            <div className="pt-2">
+              <p className="suma-overline text-text-tertiary mb-2 flex items-center gap-2">
+                <UsersIcon className="h-3.5 w-3.5" />
                 Otros acuerdos donde participas
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+              </p>
               <ul className="divide-y divide-[var(--border-subtle)] rounded-md border border-[var(--border-subtle)]">
                 {unlinkedAgreements.map((m) => {
                   const agr = m.agreements as any;
@@ -368,10 +352,32 @@ export function CommercialProfileView() {
                   );
                 })}
               </ul>
-            </CardContent>
-          </Card>
-        )}
-      </section>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Seguridad (expandible, cerrada por defecto) */}
+      <Card>
+        <Accordion type="single" collapsible>
+          <AccordionItem value="security" className="border-0">
+            <AccordionTrigger className="px-6 py-4 hover:no-underline">
+              <div className="flex flex-1 items-start gap-3 pr-3 text-left">
+                <KeyRound className="mt-0.5 h-4 w-4 shrink-0 text-text-tertiary" />
+                <div className="min-w-0">
+                  <p className="suma-h3">Seguridad</p>
+                  <p className="suma-body text-text-secondary">
+                    Actualiza tu contraseña de acceso. Si accediste con una contraseña temporal entregada por el super admin, cámbiala aquí.
+                  </p>
+                </div>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-6 pb-6">
+              <PasswordChangeForm />
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      </Card>
     </div>
   );
 }
@@ -420,9 +426,7 @@ function PasswordChangeForm() {
 
   return (
     <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4 sm:max-w-md">
-      <p className="suma-caption text-text-tertiary">
-        Si accediste con una contraseña temporal entregada por el super admin, cámbiala aquí.
-      </p>
+
       <div className="space-y-1.5">
         <Label htmlFor="current-password">Contraseña actual</Label>
         <Input
