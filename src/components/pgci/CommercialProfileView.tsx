@@ -156,16 +156,30 @@ export function CommercialProfileView() {
           <CardTitle className="suma-h3">Información personal</CardTitle>
         </CardHeader>
         <CardContent>
-          <InfoSection>
-            <InfoField label="Nombre completo">{profile.full_name || "—"}</InfoField>
-            <InfoField label="Correo">{fullProfile?.email || "—"}</InfoField>
-            <InfoField label="Código ERP">{fullProfile?.erp_user_code || "—"}</InfoField>
-          </InfoSection>
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)]">
+              <UserRound className="h-6 w-6" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="suma-body font-medium text-text-primary">
+                  {profile.full_name || "—"}
+                </span>
+                {fullProfile?.erp_user_code && (
+                  <Chip variant="soft">{fullProfile.erp_user_code}</Chip>
+                )}
+              </div>
+              <p className="mt-1 suma-body text-text-secondary">
+                {fullProfile?.email || "—"}
+              </p>
+            </div>
+          </div>
           <p className="mt-4 suma-caption text-text-tertiary">
             Si necesitas actualizar tu información personal, contacta a un super admin.
           </p>
         </CardContent>
       </Card>
+
 
       {/* Clientes y accesos */}
       <Card>
