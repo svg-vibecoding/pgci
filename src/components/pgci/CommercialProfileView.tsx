@@ -24,6 +24,7 @@ import {
   Info,
   KeyRound,
   ShieldCheck,
+  UserRound,
   Users as UsersIcon,
 } from "lucide-react";
 
