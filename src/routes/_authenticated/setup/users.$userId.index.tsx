@@ -147,14 +147,17 @@ function UserDetail() {
 
         {isSuperAdmin && (
           <div className="flex flex-wrap gap-2">
-            <Button asChild variant="outline" size="sm">
-              <Link
-                to="/setup/users/$userId/client-access"
-                params={{ userId }}
-              >
-                <ShieldCheck className="mr-2 h-4 w-4" /> Clientes y permisos
-              </Link>
-            </Button>
+            {!isSuper && (
+              <Button asChild variant="outline" size="sm">
+                <Link
+                  to="/setup/users/$userId/client-access"
+                  params={{ userId }}
+                >
+                  <ShieldCheck className="mr-2 h-4 w-4" /> Clientes y permisos
+                </Link>
+              </Button>
+            )}
+
             <Button asChild variant="outline" size="sm">
               <Link to="/setup/users/$userId/edit" params={{ userId }}>
                 <Pencil className="mr-2 h-4 w-4" /> Editar
