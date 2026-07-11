@@ -113,7 +113,7 @@ function PgciHome() {
   const noClients = !clientsQuery.isLoading && clientsCount === 0;
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-5">
       {/* Header */}
       <header>
         <h1 className="suma-h1">
