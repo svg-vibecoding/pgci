@@ -736,23 +736,7 @@ function AgreementLinesPage() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3 md:flex-nowrap">
-        {visibleClients.length > 1 && (
-          <Select
-            value={projectionClientId ?? undefined}
-            onValueChange={(v) => setProjectionClientId(v)}
-          >
-            <SelectTrigger className="w-[240px] shrink-0">
-              <SelectValue placeholder="Cliente…" />
-            </SelectTrigger>
-            <SelectContent>
-              {visibleClients.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.name?.trim() || "Sin nombre"}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
+
         <div className="relative w-full flex-1 min-w-[16rem]">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
