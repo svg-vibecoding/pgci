@@ -344,90 +344,257 @@ function UserDetail() {
 
       {/* Cartera de clientes */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
-          <CardTitle className="text-base">Cartera de clientes</CardTitle>
-          {isSuperAdmin && assignedCount > 0 && (
+        <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
+          <div className="space-y-1">
+            <CardTitle className="text-base">Cartera de clientes</CardTitle>
+            <p className="suma-body text-text-secondary">
+              Clientes asignados a este usuario y acuerdos en los que participa, con los permisos vigentes en cada nivel.
+            </p>
+          </div>
+          {isSuperAdmin && !isSuper && assignedCount > 0 && (
             <Button asChild variant="outline" size="sm">
-              <Link
-                to="/setup/users/$userId/client-access"
-                params={{ userId }}
-              >
+              <Link to="/setup/users/$userId/client-access" params={{ userId }}>
                 <ShieldCheck className="mr-2 h-4 w-4" /> Clientes y permisos
               </Link>
             </Button>
           )}
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
           {isSuper ? (
             <Alert variant="info">
               <Info className="h-4 w-4" />
+              <AlertTitle>Acceso total</AlertTitle>
               <AlertDescription>
-                Los super admins tienen acceso total a todos los clientes y no requieren asignación manual.
+                Este usuario es super admin y tiene acceso a todos los clientes y acuerdos de la plataforma.
               </AlertDescription>
             </Alert>
+          ) : accessQ.isLoading || agrClientsQ.isLoading || membersQ.isLoading ? (
+            <Skeleton className="h-40 w-full" />
           ) : assignedCount === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-md border border-dashed border-border py-8 text-center">
-              <Building2 className="mb-2 h-6 w-6 text-muted-foreground" />
-              <p className="text-sm font-medium">Este usuario aún no tiene clientes asignados.</p>
+            <div className="flex flex-col items-center justify-center rounded-md border border-dashed border-[var(--border-subtle)] bg-[var(--surface-card)] py-10 text-center">
+              <Building2 className="mb-2 h-6 w-6 text-text-tertiary" />
+              <p className="suma-body text-text-primary">Este usuario aún no tiene clientes asignados.</p>
+              <p className="suma-caption text-text-tertiary">
+                Un super admin debe habilitar sus accesos para que pueda operar en la PGCI.
+              </p>
               {isSuperAdmin && (
                 <Button asChild variant="outline" size="sm" className="mt-3">
-                  <Link
-                    to="/setup/users/$userId/client-access"
-                    params={{ userId }}
-                  >
+                  <Link to="/setup/users/$userId/client-access" params={{ userId }}>
                     <ShieldCheck className="mr-2 h-4 w-4" /> Clientes y permisos
                   </Link>
                 </Button>
               )}
             </div>
           ) : (
-            <ul className="divide-y divide-border rounded-md border border-border">
-              {(access ?? []).map((a) => {
-                const c = a.clients;
-                const name = c?.commercial_name?.trim() || c?.legal_name || "—";
-                return (
-                  <li key={a.id} className="flex items-center justify-between gap-3 px-4 py-3">
-                    <div className="min-w-0 flex items-center gap-2">
-                      {c ? (
-                        <Link
-                          to="/setup/clients/$clientId"
-                          params={{ clientId: c.id }}
-                          className="truncate font-medium hover:underline"
-                        >
-                          {name}
-                        </Link>
-                      ) : (
-                        <span className="truncate font-medium">{name}</span>
-                      )}
-                      {c?.type === "holding" && (
-                        <Badge color="accent" variant="soft">Holding</Badge>
-                      )}
-                      {c?.status === "inactive" && (
-                        <Badge color="neutral" variant="soft">Inactivo</Badge>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+            <Accordion type="multiple" className="space-y-2">
+              {(access ?? [])
+                .slice()
+                .sort((a, b) => {
+                  const na = a.clients?.commercial_name?.trim() || a.clients?.legal_name || "";
+                  const nb = b.clients?.commercial_name?.trim() || b.clients?.legal_name || "";
+                  return na.localeCompare(nb, "es", { sensitivity: "base" });
+                })
+                .map((a) => {
+                  const client = a.clients;
+                  const name = client?.commercial_name?.trim() || client?.legal_name || "—";
+                  const clientAgreements = client
+                    ? (agreementsByClient.get(client.id) ?? [])
+                    : [];
+                  return (
+                    <AccordionItem
+                      key={a.id}
+                      value={a.id}
+                      className="rounded-md border border-[var(--border-subtle)] bg-[var(--surface-card)] px-4"
+                    >
+                      <AccordionTrigger className="py-3 hover:no-underline">
+                        <div className="flex min-w-0 flex-1 items-center justify-between gap-3 pr-3">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <Building2 className="h-4 w-4 shrink-0 text-text-tertiary" />
+                            {client ? (
+                              <Link
+                                to="/setup/clients/$clientId"
+                                params={{ clientId: client.id }}
+                                onClick={(e) => e.stopPropagation()}
+                                className="truncate suma-body font-bold! text-text-primary hover:underline"
+                              >
+                                {name}
+                              </Link>
+                            ) : (
+                              <span className="truncate suma-body font-bold! text-text-primary">
+                                {name}
+                              </span>
+                            )}
+                            {client?.type === "holding" && (
+                              <Badge color="accent" variant="soft">Holding</Badge>
+                            )}
+                            {client?.status === "inactive" && (
+                              <Badge color="neutral" variant="soft">Inactivo</Badge>
+                            )}
+                          </div>
+                          <div className="flex shrink-0 items-center gap-2">
+                            <span className="suma-caption text-text-tertiary">
+                              {clientAgreements?.length ?? 0}{" "}
+                              {(clientAgreements?.length ?? 0) === 1 ? "acuerdo" : "acuerdos"}
+                            </span>
+                          </div>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="pb-4">
+                        <div className="mb-5 ml-6 border-l border-[var(--border-subtle)] pl-4">
+                          <p className="suma-overline text-text-tertiary mb-2">
+                            Permisos avanzados
+                          </p>
+                          <div className="space-y-0.5">
+                            {[
+                              {
+                                icon: FileText,
+                                label: "Crear acuerdos",
+                                checked: !!a.can_create_agreements,
+                              },
+                              {
+                                icon: Layers,
+                                label: "Gestionar catálogo del cliente",
+                                checked: !!a.can_manage_client_catalog,
+                              },
+                              {
+                                icon: Shuffle,
+                                label: "Gestionar matching",
+                                checked: !!a.can_manage_matching,
+                              },
+                            ].map((perm) => {
+                              const Icon = perm.icon;
+                              return (
+                                <div
+                                  key={perm.label}
+                                  className="flex items-center justify-between gap-4 py-1.5"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <Icon
+                                      className={cn(
+                                        "h-4 w-4",
+                                        perm.checked ? "text-text-secondary" : "text-text-tertiary/60",
+                                      )}
+                                    />
+                                    <span
+                                      className={cn(
+                                        "suma-body",
+                                        perm.checked ? "text-text-primary" : "text-text-tertiary",
+                                      )}
+                                    >
+                                      {perm.label}
+                                    </span>
+                                  </div>
+                                  <Switch
+                                    checked={perm.checked}
+                                    disabled
+                                    aria-label={perm.label}
+                                    aria-readonly="true"
+                                  />
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        <div>
+                          <p className="suma-overline text-text-tertiary mb-2">
+                            Acuerdos donde participa
+                          </p>
+                          {clientAgreements && clientAgreements.length > 0 ? (
+                            <ul className="divide-y divide-[var(--border-subtle)] rounded-md border border-[var(--border-subtle)]">
+                              {clientAgreements.map((m) => {
+                                const agr = m.agreements as any;
+                                return (
+                                  <li
+                                    key={m.id}
+                                    className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+                                  >
+                                    <div className="min-w-0 flex items-center gap-2">
+                                      <FileText className="h-4 w-4 shrink-0 text-text-tertiary" />
+                                      {agr ? (
+                                        <Link
+                                          to="/pgci/agreements/$agreementId"
+                                          params={{ agreementId: agr.id }}
+                                          className="truncate suma-body text-text-primary hover:underline"
+                                        >
+                                          {agr.name}
+                                        </Link>
+                                      ) : (
+                                        <span className="truncate suma-body">Acuerdo</span>
+                                      )}
+                                      {agr?.status && (
+                                        <StatusBadge
+                                          status={agr.status === "active" ? "active" : "neutral"}
+                                          label={agr.status === "active" ? "Activo" : agr.status}
+                                        />
+                                      )}
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-1.5">
+                                      <Chip variant="soft">
+                                        <ShieldCheck className="h-3 w-3" />{" "}
+                                        {memberRoleLabel(m.role)}
+                                      </Chip>
+                                      {m.can_view_costs && (
+                                        <Chip variant="soft">Ve costos</Chip>
+                                      )}
+                                    </div>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          ) : (
+                            <p className="suma-caption text-text-tertiary">
+                              No participa en acuerdos de este cliente todavía.
+                            </p>
+                          )}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  );
+                })}
+            </Accordion>
+          )}
+
+          {unlinkedAgreements.length > 0 && (
+            <div className="pt-2">
+              <p className="suma-overline text-text-tertiary mb-2 flex items-center gap-2">
+                <UsersIcon className="h-3.5 w-3.5" />
+                Otros acuerdos donde participa
+              </p>
+              <ul className="divide-y divide-[var(--border-subtle)] rounded-md border border-[var(--border-subtle)]">
+                {unlinkedAgreements.map((m) => {
+                  const agr = m.agreements as any;
+                  return (
+                    <li
+                      key={m.id}
+                      className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+                    >
+                      <div className="min-w-0 flex items-center gap-2">
+                        <FileText className="h-4 w-4 shrink-0 text-text-tertiary" />
+                        {agr ? (
+                          <Link
+                            to="/pgci/agreements/$agreementId"
+                            params={{ agreementId: agr.id }}
+                            className="truncate suma-body text-text-primary hover:underline"
+                          >
+                            {agr.name}
+                          </Link>
+                        ) : (
+                          <span className="truncate suma-body">Acuerdo</span>
+                        )}
+                      </div>
+                      <Chip variant="soft">
+                        <ShieldCheck className="h-3 w-3" /> {memberRoleLabel(m.role)}
+                      </Chip>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Acuerdos en gestión */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Acuerdos en gestión</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Alert variant="info">
-            <Info className="h-4 w-4" />
-            <AlertDescription>
-              Los acuerdos en gestión se mostrarán cuando el módulo de Acuerdos esté activo.
-            </AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
     </div>
   );
 }
