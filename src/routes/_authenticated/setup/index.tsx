@@ -93,11 +93,9 @@ function SetupHome() {
     <div className="space-y-6">
       {/* Header */}
       <header className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0 flex-1 space-y-3">
-          <h1 className="suma-h1 text-[var(--text-primary)]">
-            Centro de operación comercial
-          </h1>
-          <p className="suma-body max-w-3xl text-[var(--text-secondary)]">
+        <div className="min-w-0 flex-1">
+          <h1 className="suma-h1">Centro de operación comercial</h1>
+          <p className="suma-body text-text-secondary">
             Todos los módulos de la PGCI están operativos. Administra clientes,
             catálogo, usuarios y acuerdos comerciales desde un solo lugar.
           </p>
