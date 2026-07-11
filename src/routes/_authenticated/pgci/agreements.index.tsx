@@ -473,7 +473,7 @@ function AgreementsList() {
               title: all.length === 0 ? "Aún no hay acuerdos" : "Sin resultados",
               description:
                 all.length === 0
-                  ? "Crea el primero para empezar a registrar información comercial."
+                  ? "Los acuerdos que gestiones o en los que participes aparecerán en esta lista."
                   : "No hay acuerdos que coincidan con los filtros.",
             }}
             ariaLabel="Acuerdos"
