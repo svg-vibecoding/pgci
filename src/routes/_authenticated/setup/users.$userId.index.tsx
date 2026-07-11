@@ -348,7 +348,7 @@ function UserDetail() {
       <Card>
         <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
           <div className="space-y-1">
-            <CardTitle className="text-base">Cartera de clientes</CardTitle>
+            <CardTitle className="suma-h3">Cartera de clientes</CardTitle>
             <p className="suma-body text-text-secondary">
               Clientes asignados a este usuario y acuerdos en los que participa, con los permisos vigentes en cada nivel.
             </p>
