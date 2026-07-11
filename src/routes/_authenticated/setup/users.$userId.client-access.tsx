@@ -581,23 +581,24 @@ function ClientAccess() {
         {/* Clients table with sticky header */}
         <div className="border-t border-border">
           {totalClients === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">
+            <p className="py-8 text-center suma-body text-text-secondary">
               No hay clientes activos disponibles.
             </p>
           ) : filteredClients.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">
+            <p className="py-8 text-center suma-body text-text-secondary">
               Sin resultados para esa búsqueda.
             </p>
           ) : (
             <div className="max-h-[calc(100vh-360px)] min-h-[280px] overflow-y-auto">
               <div className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-border bg-background px-4 py-2.5">
-                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <span className="suma-overline text-text-tertiary">
                   Cliente
                 </span>
-                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <span className="suma-overline text-text-tertiary">
                   Asignar
                 </span>
               </div>
+
               <ul className="divide-y divide-border">
                 {filteredClients.map((c) => {
                   const st = stateMap.get(c.id) ?? DEFAULT_ACCESS_STATE;
