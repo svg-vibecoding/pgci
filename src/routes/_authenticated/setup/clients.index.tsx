@@ -250,7 +250,7 @@ function ClientsList() {
       <header className="flex items-center justify-between">
         <div>
           <h1 className="suma-h1">Clientes</h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="suma-body text-text-secondary">
             Administra clientes como base para la gestión de acuerdos y la operación comercial.
           </p>
         </div>

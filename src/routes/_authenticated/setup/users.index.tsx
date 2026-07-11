@@ -274,7 +274,7 @@ function UsersList() {
       <header className="flex items-center justify-between">
         <div>
           <h1 className="suma-h1">Usuarios y accesos</h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="suma-body text-text-secondary">
             Administra los usuarios internos de la plataforma y sus accesos a clientes.
           </p>
         </div>
