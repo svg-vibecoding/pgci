@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
-import { FileText, Search, Download, Info, UserCircle, LayoutDashboard } from "lucide-react";
+import { FileText, Search, Download, Info } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMyProfile } from "@/hooks/use-profile";
 import { IndicatorCard } from "@/components/setup/IndicatorCard";
@@ -15,6 +14,7 @@ export const Route = createFileRoute("/_authenticated/pgci/")({
   head: () => ({ meta: [{ title: "Operación comercial · PGCI" }] }),
   component: PgciHome,
 });
+
 
 
 type ModuleStatus = "available" | "soon" | "wip";
