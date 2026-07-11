@@ -305,7 +305,7 @@ function UserDetail() {
       {/* Información del usuario */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Información del usuario</CardTitle>
+          <CardTitle className="suma-h3">Información del usuario</CardTitle>
         </CardHeader>
         <CardContent>
           <InfoSection>
