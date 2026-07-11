@@ -906,7 +906,8 @@ function AgreementLinesPage() {
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col items-start gap-1">
-                      {r.status === "requires_review" ? (
+                      {meta && <StatusBadge status={meta.status} label={meta.label} />}
+                      {r.status === "requires_review" && (
                         <div className="flex flex-wrap gap-1">
                           {r.product_id && r.products?.status !== "active" && (
                             <Badge color="error" variant="soft">
@@ -921,8 +922,6 @@ function AgreementLinesPage() {
                             </Badge>
                           )}
                         </div>
-                      ) : (
-                        meta && <StatusBadge status={meta.status} label={meta.label} />
                       )}
                       {isExcluded && r.exclusion_reason && (
                         <div className="text-xs text-muted-foreground line-clamp-2">
