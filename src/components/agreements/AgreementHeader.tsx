@@ -53,11 +53,6 @@ export function AgreementHeader({ agreementId }: AgreementHeaderProps) {
           status={isActive ? "active" : "neutral"}
           label={isActive ? "Activo" : "Inactivo"}
         />
-        <span>
-          {`${companyCount} ${companyCount === 1 ? "cliente cubierto" : "clientes cubiertos"}`}
-          {` · ${memberCount} ${memberCount === 1 ? "miembro" : "miembros"}`}
-          {` · ${total} ${total === 1 ? "posición" : "posiciones"}`}
-        </span>
       </div>
     </div>
   );
