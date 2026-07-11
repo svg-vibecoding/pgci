@@ -438,12 +438,12 @@ function ClientAccess() {
   };
 
   if (loadingAuth) {
-    return <p className="text-sm text-muted-foreground">Cargando…</p>;
+    return <p className="suma-body text-text-secondary">Cargando…</p>;
   }
   if (!isSuperAdmin) {
     return (
       <div className="space-y-3">
-        <p className="text-sm text-muted-foreground">
+        <p className="suma-body text-text-secondary">
           No tienes permisos para gestionar accesos.
         </p>
         <Button asChild variant="outline" size="sm">
@@ -456,10 +456,10 @@ function ClientAccess() {
   }
 
   if (profileQ.isLoading || clientsQ.isLoading || accessQ.isLoading) {
-    return <p className="text-sm text-muted-foreground">Cargando…</p>;
+    return <p className="suma-body text-text-secondary">Cargando…</p>;
   }
   if (!profileQ.data) {
-    return <p className="text-sm text-muted-foreground">Usuario no encontrado.</p>;
+    return <p className="suma-body text-text-secondary">Usuario no encontrado.</p>;
   }
 
   const user = profileQ.data;
@@ -469,20 +469,21 @@ function ClientAccess() {
       <Link
         to="/setup/users/$userId"
         params={{ userId }}
-        className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+        className="inline-flex items-center gap-1 suma-caption font-medium text-text-secondary hover:text-text-primary"
       >
         <ArrowLeft className="h-3.5 w-3.5" /> Volver al perfil
       </Link>
 
       <header className="space-y-2">
-        <h1 className="text-2xl font-bold tracking-tight">
+        <h1 className="suma-h1">
           Clientes y permisos de {user.full_name}
         </h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="suma-body text-text-secondary">
           Asígnale al usuario los clientes que podrá ver en la plataforma. También puedes habilitarle permisos de creación de acuerdos, gestión de catálogo del cliente y gestión de matching sobre clientes asignados.
         </p>
-        <p className="text-sm font-medium text-foreground">{initialSummaryText}</p>
+        <p className="suma-body font-medium text-text-primary">{initialSummaryText}</p>
       </header>
+
 
       {/* Unified clients container: search + bulk actions + table */}
       <Card>
