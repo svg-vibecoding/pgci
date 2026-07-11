@@ -176,19 +176,17 @@ function UsersList() {
         return (
           <div className="min-w-0">
             <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-              <span className="min-w-0 truncate text-[13px] font-semibold text-text-primary">
+              <span className="min-w-0 truncate font-ui text-[13px] font-semibold text-text-primary">
                 {u.full_name ?? "—"}
               </span>
               {isSuper && (
-                <Chip size="small" color="info">
-                  Super admin
-                </Chip>
+                <StatusBadge status="info" label="Super admin" withIcon={false} />
               )}
               {issues.length > 0 && (
                 <StatusBadge status="warning" label="Alerta" title={issues.join(" · ")} />
               )}
             </div>
-            <div className="text-[13px] leading-[1.35] text-text-secondary">
+            <div className="text-[12px] leading-[1.35] text-text-tertiary">
               {u.email ?? "—"}
             </div>
           </div>
@@ -232,13 +230,9 @@ function UsersList() {
         ) : (
           <div className="flex flex-wrap items-center gap-2">
             {u.create_count > 0 ? (
-              <Chip size="small" color="success">
-                Sí
-              </Chip>
+              <StatusBadge status="success" label="Sí" withIcon={false} />
             ) : (
-              <Chip size="small" color="neutral">
-                No
-              </Chip>
+              <StatusBadge status="neutral" label="No" withIcon={false} />
             )}
             <span className="text-[12px] text-text-tertiary">
               {formatParticipation(u.admin_count, u.member_count)}
