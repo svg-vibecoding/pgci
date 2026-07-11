@@ -35,8 +35,8 @@ function NewUser() {
   const [copied, setCopied] = useState(false);
 
   const mutation = useMutation({
-    mutationFn: (v: UserFormValues) =>
-      createUserFn({
+    mutationFn: async (v: UserFormValues) => {
+      const res = await createUserFn({
         data: {
           full_name: v.full_name.trim(),
           email: v.email.trim(),
@@ -45,7 +45,10 @@ function NewUser() {
           status: v.status,
           can_create_agreement_groups: v.can_create_agreement_groups,
         },
-      }),
+      });
+      if ("error" in res) throw new Error(res.error);
+      return res;
+    },
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["users"] });
       setCredentials(res);
