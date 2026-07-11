@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { FileText, Search, Download, Info } from "lucide-react";
+import { useState } from "react";
+import { FileText, Search, Download, Info, UserCircle, LayoutDashboard } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMyProfile } from "@/hooks/use-profile";
 import { IndicatorCard } from "@/components/setup/IndicatorCard";
@@ -8,9 +9,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { CommercialProfileView } from "@/components/pgci/CommercialProfileView";
 
 export const Route = createFileRoute("/_authenticated/pgci/")({
-  head: () => ({ meta: [{ title: "Inicio · PGCI" }] }),
+  head: () => ({ meta: [{ title: "Operación comercial · PGCI" }] }),
   component: PgciHome,
 });
 
@@ -78,6 +80,7 @@ function statusChip(status: ModuleStatus) {
 function PgciHome() {
   const { data: profile } = useMyProfile();
   const userId = profile?.user_id;
+  const [view, setView] = useState<"ops" | "profile">("ops");
 
   const clientsQuery = useQuery({
     queryKey: ["pgci-home", "clients-count", userId],
@@ -110,6 +113,10 @@ function PgciHome() {
   const clientsCount = clientsQuery.data ?? 0;
   const noClients = !clientsQuery.isLoading && clientsCount === 0;
 
+  const isProfile = view === "profile";
+  const ToggleIcon = isProfile ? LayoutDashboard : UserCircle;
+  const toggleLabel = isProfile ? "Operación comercial" : "Perfil comercial";
+
   return (
     <div className="space-y-10">
       {/* Header */}
@@ -122,93 +129,107 @@ function PgciHome() {
             ¡Hoy será un gran día!
           </p>
         </div>
-        <span className="suma-caption inline-flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--surface-card)] px-3 py-1 text-text-secondary">
-          <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-primary)]" />
-          Operación comercial
-        </span>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            setView(isProfile ? "ops" : "profile");
+            if (typeof window !== "undefined") window.scrollTo({ top: 0 });
+          }}
+          className="gap-2"
+        >
+          <ToggleIcon className="h-4 w-4" />
+          {toggleLabel}
+        </Button>
       </header>
 
-      {/* Indicadores */}
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {clientsQuery.isLoading ? (
-          <Skeleton className="h-[88px]" />
-        ) : (
-          <IndicatorCard
-            label="Clientes asignados"
-            value={clientsCount}
-            hint="en tu cartera"
-          />
-        )}
-        {agreementsQuery.isLoading ? (
-          <Skeleton className="h-[88px]" />
-        ) : (
-          <IndicatorCard
-            label="Acuerdos activos"
-            value={agreementsQuery.data ?? 0}
-            hint="donde participas"
-          />
-        )}
-      </section>
+      {isProfile ? (
+        <CommercialProfileView />
+      ) : (
+        <>
+          {/* Indicadores */}
+          <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {clientsQuery.isLoading ? (
+              <Skeleton className="h-[88px]" />
+            ) : (
+              <IndicatorCard
+                label="Clientes asignados"
+                value={clientsCount}
+                hint="en tu cartera"
+              />
+            )}
+            {agreementsQuery.isLoading ? (
+              <Skeleton className="h-[88px]" />
+            ) : (
+              <IndicatorCard
+                label="Acuerdos activos"
+                value={agreementsQuery.data ?? 0}
+                hint="donde participas"
+              />
+            )}
+          </section>
 
-      {/* Guía contextual cuando no hay cartera */}
-      {noClients && (
-        <Alert variant="info">
-          <Info className="h-4 w-4" />
-          <AlertTitle>Aún no tienes clientes asignados</AlertTitle>
-          <AlertDescription>
-            Un administrador te asignará la cartera antes de que puedas operar
-            acuerdos. Mientras tanto, puedes familiarizarte con los módulos
-            disponibles abajo.
-          </AlertDescription>
-        </Alert>
+          {/* Guía contextual cuando no hay cartera */}
+          {noClients && (
+            <Alert variant="info">
+              <Info className="h-4 w-4" />
+              <AlertTitle>Aún no tienes clientes asignados</AlertTitle>
+              <AlertDescription>
+                Un administrador te asignará la cartera antes de que puedas operar
+                acuerdos. Mientras tanto, puedes familiarizarte con los módulos
+                disponibles abajo.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Módulos */}
+          <section className="space-y-4">
+            <div>
+              <h2 className="suma-h3">
+                Tus módulos
+              </h2>
+              <p className="suma-body text-text-secondary">
+                Estas son las capacidades que tendrás disponibles en la PGCI.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              {MODULES.map((m) => {
+                const Icon = m.icon;
+                return (
+                  <Card key={m.key} className="flex flex-col">
+                    <CardContent className="flex flex-1 flex-col p-5">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-md bg-[var(--color-primary)]/10 text-[var(--color-primary)]">
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        {statusChip(m.status)}
+                      </div>
+                      <h3 className="suma-h3 mt-4">
+                        {m.title}
+                      </h3>
+                      <p className="mt-1 flex-1 suma-body text-text-secondary">
+                        {m.description}
+                      </p>
+                      <div className="mt-4">
+                        {m.status === "available" && m.to ? (
+                          <Button asChild variant="outline" size="sm" className="w-full">
+                            <Link to={m.to}>Abrir</Link>
+                          </Button>
+                        ) : (
+                          <Button variant="outline" size="sm" disabled className="w-full">
+                            Abrir
+                          </Button>
+                        )}
+                      </div>
+
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </section>
+        </>
       )}
-
-      {/* Módulos */}
-      <section className="space-y-4">
-        <div>
-          <h2 className="suma-h3">
-            Tus módulos
-          </h2>
-          <p className="suma-body text-text-secondary">
-            Estas son las capacidades que tendrás disponibles en la PGCI.
-          </p>
-        </div>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          {MODULES.map((m) => {
-            const Icon = m.icon;
-            return (
-              <Card key={m.key} className="flex flex-col">
-                <CardContent className="flex flex-1 flex-col p-5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-md bg-[var(--color-primary)]/10 text-[var(--color-primary)]">
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    {statusChip(m.status)}
-                  </div>
-                  <h3 className="suma-h3 mt-4">
-                    {m.title}
-                  </h3>
-                  <p className="mt-1 flex-1 suma-body text-text-secondary">
-                    {m.description}
-                  </p>
-                  <div className="mt-4">
-                    {m.status === "available" && m.to ? (
-                      <Button asChild variant="outline" size="sm" className="w-full">
-                        <Link to={m.to}>Abrir</Link>
-                      </Button>
-                    ) : (
-                      <Button variant="outline" size="sm" disabled className="w-full">
-                        Abrir
-                      </Button>
-                    )}
-                  </div>
-
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      </section>
     </div>
   );
 }
