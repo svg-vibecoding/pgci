@@ -76,7 +76,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { exportAgreementLines } from "@/lib/agreement-export";
-import { PENDING_REASON_LABELS, type ImportPendingReason } from "@/lib/agreement-import";
+
 import { LineEditDialog, type LineEditValues } from "@/components/agreements/LineEditDialog";
 import { LineViewDialog, type LineViewData } from "@/components/agreements/LineViewDialog";
 import {
