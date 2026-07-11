@@ -126,8 +126,8 @@ function SetupHome() {
     <div className="space-y-10">
       {/* Header */}
       <header className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0 space-y-3">
-          <h1 className="suma-h1 max-w-3xl text-[var(--text-primary)]">
+        <div className="min-w-0 flex-1 space-y-3">
+          <h1 className="suma-h1 text-[var(--text-primary)]">
             Centro de operación comercial
           </h1>
           <p className="suma-body max-w-3xl text-[var(--text-secondary)]">
@@ -135,7 +135,7 @@ function SetupHome() {
             catálogo, usuarios y acuerdos comerciales desde un solo lugar.
           </p>
         </div>
-        <span className="suma-caption inline-flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--surface-card)] px-3 py-1 text-text-secondary">
+        <span className="suma-caption inline-flex shrink-0 items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--surface-card)] px-3 py-1 text-text-secondary">
           <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-primary)]" />
           Plataforma PGCI
         </span>
