@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { FileText, Search, Download, Info } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useMyProfile } from "@/hooks/use-profile";
+import { useMyProfile, useIsSuperAdmin } from "@/hooks/use-profile";
 import { IndicatorCard } from "@/components/setup/IndicatorCard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -79,6 +79,7 @@ function statusChip(status: ModuleStatus) {
 
 function PgciHome() {
   const { data: profile } = useMyProfile();
+  const { isSuperAdmin } = useIsSuperAdmin();
   const userId = profile?.user_id;
 
   const clientsQuery = useQuery({
@@ -110,7 +111,7 @@ function PgciHome() {
   });
 
   const clientsCount = clientsQuery.data ?? 0;
-  const noClients = !clientsQuery.isLoading && clientsCount === 0;
+  const noClients = !clientsQuery.isLoading && clientsCount === 0 && !isSuperAdmin;
 
   return (
     <div className="space-y-5">
