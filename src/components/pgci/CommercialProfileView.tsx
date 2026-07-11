@@ -163,23 +163,28 @@ export function CommercialProfileView() {
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="suma-body font-medium text-text-primary">
+                <span className="suma-h3 text-text-primary">
                   {profile.full_name || "—"}
                 </span>
                 {fullProfile?.erp_user_code && (
-                  <Chip variant="soft">{fullProfile.erp_user_code}</Chip>
+                  <Badge color="accent" variant="soft">
+                    {fullProfile.erp_user_code}
+                  </Badge>
                 )}
               </div>
-              <p className="mt-1 suma-body text-text-secondary">
+              <p className="mt-0.5 suma-body text-text-secondary">
                 {fullProfile?.email || "—"}
               </p>
             </div>
           </div>
-          <p className="mt-4 suma-caption text-text-tertiary">
-            Si necesitas actualizar tu información personal, contacta a un super admin.
-          </p>
+          <div className="mt-4 border-t border-[var(--border-subtle)] pt-3">
+            <p className="suma-caption text-text-tertiary">
+              Si necesitas actualizar tu información personal, contacta a un super admin.
+            </p>
+          </div>
         </CardContent>
       </Card>
+
 
 
       {/* Clientes y accesos */}
