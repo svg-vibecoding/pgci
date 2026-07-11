@@ -17,13 +17,13 @@ export function IndicatorCard({
   return (
     <Card className={className}>
       <CardContent className="p-4">
-        <div className="text-xs text-muted-foreground">{label}</div>
+        <div className="suma-overline text-text-tertiary">{label}</div>
         <div className="mt-1 flex items-baseline gap-2">
-          <div className="text-2xl font-semibold tracking-tight">{value}</div>
-          {hint && <div className="text-xs text-muted-foreground">{hint}</div>}
+          <div className="suma-metric">{value}</div>
+          {hint && <div className="suma-caption">{hint}</div>}
         </div>
         {children && (
-          <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+          <div className="mt-2 space-y-0.5 suma-caption">
             {children}
           </div>
         )}
