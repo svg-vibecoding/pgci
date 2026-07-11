@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,17 +11,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
-import { Chip, StatusBadge } from "@/components/sumatec";
-import { Plus, Search } from "lucide-react";
+import {
+  Chip,
+  StatusBadge,
+  DataTable,
+  type DataTableColumn,
+  type RowAction,
+} from "@/components/sumatec";
+import { Eye, Pencil, Plus, Search, UserPlus } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/setup/users/")({
   head: () => ({ meta: [{ title: "Usuarios y accesos · Setup · PGCI" }] }),
@@ -33,6 +31,7 @@ type CreateFilter = "all" | "yes" | "no";
 type ParticipationFilter = "all" | "admin" | "member" | "both" | "none";
 
 function UsersList() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [createF, setCreateF] = useState<CreateFilter>("all");
   const [participationF, setParticipationF] = useState<ParticipationFilter>("all");
@@ -167,6 +166,115 @@ function UsersList() {
     setSearch("");
   };
 
+  const columns: DataTableColumn<UserRow>[] = [
+    {
+      id: "user",
+      header: "Usuario",
+      cell: (u) => {
+        const issues = getUserIssues(u);
+        const isSuper = u.role === "super_admin";
+        return (
+          <div className="min-w-0">
+            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+              <span className="min-w-0 truncate text-[13px] font-semibold text-text-primary">
+                {u.full_name ?? "—"}
+              </span>
+              {isSuper && (
+                <Chip size="small" color="info">
+                  Super admin
+                </Chip>
+              )}
+              {issues.length > 0 && (
+                <StatusBadge status="warning" label="Alerta" title={issues.join(" · ")} />
+              )}
+            </div>
+            <div className="text-[13px] leading-[1.35] text-text-secondary">
+              {u.email ?? "—"}
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      id: "code",
+      header: "Código",
+      width: 120,
+      wrap: false,
+      cell: (u) =>
+        u.erp_user_code ? (
+          <span className="font-mono text-[12.5px] text-text-primary">
+            {u.erp_user_code}
+          </span>
+        ) : (
+          <span className="text-text-tertiary">—</span>
+        ),
+    },
+    {
+      id: "cartera",
+      header: "Cartera",
+      width: 130,
+      wrap: false,
+      cell: (u) =>
+        u.role === "super_admin" ? (
+          <span className="text-text-tertiary">—</span>
+        ) : (
+          <span>
+            {u.client_count} {u.client_count === 1 ? "cliente" : "clientes"}
+          </span>
+        ),
+    },
+    {
+      id: "create",
+      header: "Crea acuerdos",
+      cell: (u) =>
+        u.role === "super_admin" ? (
+          <span className="text-text-tertiary">—</span>
+        ) : (
+          <div className="flex flex-wrap items-center gap-2">
+            {u.create_count > 0 ? (
+              <Chip size="small" color="success">
+                Sí
+              </Chip>
+            ) : (
+              <Chip size="small" color="neutral">
+                No
+              </Chip>
+            )}
+            <span className="text-[12px] text-text-tertiary">
+              {formatParticipation(u.admin_count, u.member_count)}
+            </span>
+          </div>
+        ),
+    },
+    {
+      id: "status",
+      header: "Estado",
+      width: 110,
+      wrap: false,
+      cell: (u) => (
+        <StatusBadge
+          status={u.status === "active" ? "active" : "neutral"}
+          label={u.status === "active" ? "Activo" : "Inactivo"}
+        />
+      ),
+    },
+  ];
+
+  const rowActions = (u: UserRow): RowAction<UserRow>[] => [
+    {
+      label: "Ver detalle",
+      icon: <Eye className="h-4 w-4" />,
+      onSelect: () =>
+        navigate({ to: "/setup/users/$userId", params: { userId: u.user_id } }),
+    },
+    {
+      label: "Editar",
+      icon: <Pencil className="h-4 w-4" />,
+      onSelect: () =>
+        navigate({ to: "/setup/users/$userId/edit", params: { userId: u.user_id } }),
+    },
+  ];
+
   return (
     <div className="space-y-6">
       <header className="flex items-center justify-between">
@@ -298,115 +406,28 @@ function UsersList() {
           </div>
         )}
 
-        <div className="rounded-lg border border-border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Usuario</TableHead>
-                <TableHead>Código</TableHead>
-                <TableHead>Cartera</TableHead>
-                <TableHead>Crea acuerdos</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading && (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center text-sm text-muted-foreground">
-                    Cargando…
-                  </TableCell>
-                </TableRow>
-              )}
-              {!isLoading && filtered.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">
-                    {all.length === 0
-                      ? "Aún no hay usuarios creados."
-                      : "No hay usuarios que coincidan con los filtros."}
-                  </TableCell>
-                </TableRow>
-              )}
-              {filtered.map((u) => {
-                const issues = getUserIssues(u);
-                const isSuper = u.role === "super_admin";
-                const isActive = u.status === "active";
-                return (
-                  <TableRow key={u.user_id}>
-                    <TableCell className="font-medium">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Link
-                          to="/setup/users/$userId"
-                          params={{ userId: u.user_id }}
-                          className="hover:underline"
-                        >
-                          {u.full_name}
-                        </Link>
-                        {isSuper && <Chip size="small" color="info">Super admin</Chip>}
-                        {issues.length > 0 && (
-                          <StatusBadge
-                            status="warning"
-                            label="Alerta"
-                            title={issues.join(" · ")}
-                          />
-                        )}
-                      </div>
-                      <span className="block text-xs text-muted-foreground">{u.email}</span>
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {u.erp_user_code ? u.erp_user_code : <span className="text-muted-foreground">—</span>}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {isSuper ? (
-                        <span className="text-muted-foreground">—</span>
-                      ) : (
-                        <span>
-                          {u.client_count} {u.client_count === 1 ? "cliente" : "clientes"}
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {isSuper ? (
-                        <span className="text-muted-foreground">—</span>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          {u.create_count > 0 ? (
-                            <Chip size="small" color="success">Sí</Chip>
-                          ) : (
-                            <Chip size="small" color="neutral">No</Chip>
-                          )}
-                          <span className="text-xs text-muted-foreground">
-                            {formatParticipation(u.admin_count, u.member_count)}
-                          </span>
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge
-                        status={isActive ? "active" : "neutral"}
-                        label={isActive ? "Activo" : "Inactivo"}
-                      />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button asChild size="sm" variant="ghost">
-                          <Link to="/setup/users/$userId" params={{ userId: u.user_id }}>
-                            Ver
-                          </Link>
-                        </Button>
-                        <Button asChild size="sm" variant="ghost">
-                          <Link to="/setup/users/$userId/edit" params={{ userId: u.user_id }}>
-                            Editar
-                          </Link>
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+        <DataTable
+          data={filtered}
+          columns={columns}
+          getRowId={(u) => u.user_id}
+          rowActions={rowActions}
+          onRowClick={(u) =>
+            navigate({ to: "/setup/users/$userId", params: { userId: u.user_id } })
+          }
+          loading={isLoading}
+          empty={{
+            icon: <UserPlus className="h-5 w-5" />,
+            title:
+              all.length === 0
+                ? "Aún no hay usuarios creados"
+                : "Sin resultados",
+            description:
+              all.length === 0
+                ? "Crea el primer usuario para empezar."
+                : "No hay usuarios que coincidan con los filtros.",
+          }}
+          ariaLabel="Usuarios"
+        />
       </div>
     </div>
   );
