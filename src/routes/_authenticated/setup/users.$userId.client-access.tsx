@@ -656,7 +656,7 @@ function ClientAccess() {
 
                       {st.assigned && (
                         <div className="mt-3 ml-12 border-l border-border pl-4">
-                          <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                          <div className="mb-2 suma-overline text-text-tertiary">
                             Permisos avanzados
                           </div>
                           <div className="space-y-1">
@@ -687,9 +687,10 @@ function ClientAccess() {
                                   className="flex items-center justify-between gap-4 py-1.5"
                                 >
                                   <div className="flex items-center gap-2">
-                                    <Icon className="h-4 w-4 text-muted-foreground" />
-                                    <span className="text-sm text-foreground">{perm.label}</span>
+                                    <Icon className="h-4 w-4 text-text-tertiary" />
+                                    <span className="suma-body text-text-primary">{perm.label}</span>
                                   </div>
+
                                   <Switch
                                     checked={perm.checked}
                                     onCheckedChange={perm.onChange}
