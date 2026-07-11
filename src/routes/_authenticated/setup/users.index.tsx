@@ -222,6 +222,20 @@ function UsersList() {
         ),
     },
     {
+      id: "created",
+      header: "Creado",
+      width: 120,
+      wrap: false,
+      cell: (u) =>
+        u.created_at ? (
+          <span className="text-[13px] text-text-secondary tabular-nums">
+            {new Date(u.created_at).toLocaleDateString("es-CO")}
+          </span>
+        ) : (
+          <span className="text-text-tertiary">—</span>
+        ),
+    },
+    {
       id: "status",
       header: "Estado",
       width: 110,
