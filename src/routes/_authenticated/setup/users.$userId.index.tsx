@@ -174,8 +174,9 @@ function UserDetail() {
     onError: () => toast.error("No fue posible cambiar el estado."),
   });
 
-  if (isLoading) return <p className="text-sm text-muted-foreground">Cargando…</p>;
-  if (!user) return <p className="text-sm text-muted-foreground">No encontrado.</p>;
+  if (isLoading) return <p className="suma-body text-text-secondary">Cargando…</p>;
+  if (!user) return <p className="suma-body text-text-secondary">No encontrado.</p>;
+
 
   const isActive = user.status === "active";
   const isSuper = user.role === "super_admin";
@@ -197,15 +198,15 @@ function UserDetail() {
     <div className="-mt-6 space-y-5">
       <Link
         to="/setup/users"
-        className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+        className="inline-flex items-center gap-1 suma-caption font-medium text-text-secondary hover:text-text-primary"
       >
         <ArrowLeft className="h-3.5 w-3.5" /> Volver a usuarios
       </Link>
 
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">{user.full_name}</h1>
-          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+          <h1 className="suma-h1">{user.full_name}</h1>
+          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 suma-body text-text-secondary">
             {isSuper && (
               <Badge color="accent" variant="soft">
                 {roleLabel(user.role)}
@@ -217,6 +218,7 @@ function UserDetail() {
             />
           </div>
         </div>
+
 
         {isSuperAdmin && (
           <div className="flex flex-wrap gap-2">
@@ -303,7 +305,7 @@ function UserDetail() {
       {/* Información del usuario */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Información del usuario</CardTitle>
+          <CardTitle className="suma-h3">Información del usuario</CardTitle>
         </CardHeader>
         <CardContent>
           <InfoSection>
@@ -346,7 +348,7 @@ function UserDetail() {
       <Card>
         <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
           <div className="space-y-1">
-            <CardTitle className="text-base">Cartera de clientes</CardTitle>
+            <CardTitle className="suma-h3">Cartera de clientes</CardTitle>
             <p className="suma-body text-text-secondary">
               Clientes asignados a este usuario y acuerdos en los que participa, con los permisos vigentes en cada nivel.
             </p>
