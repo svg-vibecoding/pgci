@@ -160,7 +160,7 @@ function SetupHome() {
       {/* Módulos */}
       <section className="space-y-4">
         <div>
-          <p className="suma-overline">MÓDULOS</p>
+          
           <h2 className="suma-h2 mt-1 text-[var(--text-primary)]">
             Administración de la plataforma
           </h2>
