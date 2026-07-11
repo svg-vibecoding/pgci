@@ -114,7 +114,9 @@ export function UserForm({
         const payload: UserFormValues = isSuper
           ? { ...v, can_create_agreement_groups: false }
           : v;
-        onSubmit(payload);
+        void Promise.resolve(onSubmit(payload)).catch(() => {
+          // The route-level mutation handlers show the error toast.
+        });
       }}
     >
       {/* 1. Rol global */}

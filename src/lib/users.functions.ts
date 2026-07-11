@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { generateTempPassword, getCreateUserFailureMessage } from "@/lib/users.server";
 
 const createUserSchema = z.object({
   full_name: z.string().trim().min(1, "Nombre requerido").max(120),
@@ -18,18 +19,6 @@ const createUserSchema = z.object({
 
 export type CreateUserInput = z.input<typeof createUserSchema>;
 
-function generateTempPassword(): string {
-  const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
-  const lower = "abcdefghijkmnpqrstuvwxyz";
-  const digits = "23456789";
-  const symbols = "!@#$%*?";
-  const all = upper + lower + digits + symbols;
-  const pick = (s: string) => s[Math.floor(Math.random() * s.length)];
-  const base = [pick(upper), pick(lower), pick(digits), pick(symbols)];
-  for (let i = 0; i < 8; i++) base.push(pick(all));
-  return base.sort(() => Math.random() - 0.5).join("");
-}
-
 export const createUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => createUserSchema.parse(data))
@@ -37,8 +26,8 @@ export const createUser = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
 
     const { data: isSuper, error: roleErr } = await supabase.rpc("is_super_admin");
-    if (roleErr) throw new Error("No se pudo verificar permisos");
-    if (!isSuper) throw new Error("Solo super admins pueden crear usuarios");
+    if (roleErr) return { error: "No se pudo verificar permisos" };
+    if (!isSuper) return { error: "Solo super admins pueden crear usuarios" };
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -55,7 +44,6 @@ export const createUser = createServerFn({ method: "POST" })
       const status = (createErr as { status?: number } | null)?.status;
       const code = (createErr as { code?: string } | null)?.code;
       const name = (createErr as { name?: string } | null)?.name;
-      const rawMsg = createErr?.message?.trim();
       console.error("[createUser] auth.admin.createUser failed", {
         message: createErr?.message,
         status,
@@ -63,16 +51,7 @@ export const createUser = createServerFn({ method: "POST" })
         name,
         hasUser: !!created?.user,
       });
-      const msg =
-        rawMsg && rawMsg.length > 0
-          ? rawMsg
-          : "No se pudo crear el usuario (sin mensaje del proveedor de auth)";
-      if (msg.toLowerCase().includes("already") || msg.toLowerCase().includes("registered")) {
-        throw new Error("Ya existe un usuario con ese email");
-      }
-      throw new Error(
-        `${msg}${code ? ` [${code}]` : ""}${status ? ` (HTTP ${status})` : ""}`,
-      );
+      return { error: getCreateUserFailureMessage(createErr) };
     }
 
     const newUserId = created.user.id;
@@ -96,11 +75,18 @@ export const createUser = createServerFn({ method: "POST" })
         details: (profileErr as { details?: string }).details,
         hint: (profileErr as { hint?: string }).hint,
       });
-      await supabaseAdmin.auth.admin.deleteUser(newUserId);
+      const { error: cleanupErr } = await supabaseAdmin.auth.admin.deleteUser(newUserId);
+      if (cleanupErr) {
+        console.error("[createUser] auth cleanup failed", {
+          message: cleanupErr.message,
+          status: (cleanupErr as { status?: number }).status,
+          code: (cleanupErr as { code?: string }).code,
+        });
+      }
       const extra = (profileErr as { code?: string }).code
         ? ` [${(profileErr as { code?: string }).code}]`
         : "";
-      throw new Error(`No se pudo crear el perfil: ${profileErr.message}${extra}`);
+      return { error: `No se pudo crear el perfil: ${profileErr.message}${extra}` };
     }
 
     return {
