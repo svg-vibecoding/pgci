@@ -302,7 +302,7 @@ function ProfileView() {
                           <div className="flex flex-wrap gap-1.5">
                             {permChips.map((p) => (
                               <Chip key={p} variant="soft">
-                                <ShieldCheck className="h-3 w-3" /> {p}
+                                {p}
                               </Chip>
                             ))}
                           </div>
@@ -485,7 +485,7 @@ function PasswordChangeForm() {
           required
         />
         {tooShort && (
-          <p className="suma-caption text-text-danger">
+          <p className="suma-caption text-destructive">
             La contraseña debe tener al menos 8 caracteres.
           </p>
         )}
@@ -501,7 +501,7 @@ function PasswordChangeForm() {
           required
         />
         {mismatch && (
-          <p className="suma-caption text-text-danger">
+          <p className="suma-caption text-destructive">
             Las contraseñas no coinciden.
           </p>
         )}
