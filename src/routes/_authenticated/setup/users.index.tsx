@@ -209,7 +209,7 @@ function UsersList() {
     },
     {
       id: "cartera",
-      header: "Cartera",
+      header: "Clientes",
       width: 130,
       wrap: false,
       cell: (u) =>
