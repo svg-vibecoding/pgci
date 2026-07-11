@@ -766,7 +766,7 @@ export type ClientCodeSearchResult = {
     | {
         kind: "taken";
         position_id: string;
-        position_status: "active" | "excluded" | "pending" | "requires_review";
+        position_status: "active" | "excluded" | "requires_review";
         sku: string | null;
         product_description: string | null;
         sale_price: number | null;
