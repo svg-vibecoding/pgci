@@ -210,8 +210,8 @@ function ProfileView() {
         <CardContent>
           <InfoSection>
             <InfoField label="Nombre completo">{profile.full_name || "—"}</InfoField>
-            <InfoField label="Correo">{(profile as any).email || "—"}</InfoField>
-            <InfoField label="Código ERP">{(profile as any).erp_user_code || "—"}</InfoField>
+            <InfoField label="Correo">{fullProfile?.email || "—"}</InfoField>
+            <InfoField label="Código ERP">{fullProfile?.erp_user_code || "—"}</InfoField>
           </InfoSection>
           <p className="mt-4 suma-caption text-text-tertiary">
             Si necesitas actualizar tu información personal, contacta a un super admin.
