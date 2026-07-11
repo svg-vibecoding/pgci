@@ -262,7 +262,6 @@ function AgreementLinesPage() {
 
 
   type Line = NonNullable<typeof lines>[number] & {
-    kind: "position" | "transit";
     products?: {
       sku?: string | null;
       erp_description?: string | null;
@@ -271,16 +270,6 @@ function AgreementLinesPage() {
     } | null;
   };
 
-  const counts = useMemo(() => {
-    const c = { all: 0, active: 0, requires_review: 0, excluded: 0 };
-    for (const r of (lines ?? []) as Line[]) {
-      if (r.kind === "transit") continue;
-      const k = r.status as keyof typeof c;
-      if (k in c) c[k]++;
-    }
-    c.all = c.active + c.requires_review + c.excluded;
-    return c;
-  }, [lines]);
 
   // Mapa por posición → grupo SKU (para chips) y set de ids en conflicto (para filtrar).
   const groupByPositionId = useMemo(() => {
