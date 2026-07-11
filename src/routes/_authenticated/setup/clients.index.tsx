@@ -378,7 +378,7 @@ function ClientsList() {
               all.length === 0 ? "Aún no hay clientes" : "Sin resultados",
             description:
               all.length === 0
-                ? "Crea los clientes que gestionarás en la plataforma para continuar."
+                ? "Crea clientes para la gestión de acuerdos y operación comercial."
                 : "No hay clientes que coincidan con los filtros.",
           }}
           ariaLabel="Clientes"
