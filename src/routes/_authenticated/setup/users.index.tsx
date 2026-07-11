@@ -430,6 +430,7 @@ type UserRow = {
   status: string;
   erp_user_code: string | null;
   updated_at: string | null;
+  created_at: string | null;
   client_count: number;
   create_count: number;
   admin_count: number;
