@@ -1978,9 +1978,35 @@ export function LineEditDialog({
           </div>
         </div>
 
-        <div className="px-6 py-4 border-t border-border bg-muted/30 shrink-0 flex flex-col sm:flex-row sm:items-center gap-2">
+        <div className="px-6 py-4 border-t border-border bg-muted/30 shrink-0 flex flex-col sm:flex-row sm:items-center gap-3">
           {saveError && (
             <p className="text-xs text-destructive sm:mr-auto">{saveError}</p>
+          )}
+          {canOfferPublish && !saveError && (
+            <label
+              className={cn(
+                "flex items-start gap-2 text-sm sm:mr-auto",
+                canPublishNow ? "text-foreground" : "text-muted-foreground",
+              )}
+            >
+              <Checkbox
+                id="publish-on-save"
+                checked={publishOnSave}
+                onCheckedChange={(c) => setPublishOnSave(c === true)}
+                disabled={!canPublishNow || save.isPending}
+                className="mt-0.5"
+              />
+              <span className="flex flex-col leading-tight">
+                <span className="font-medium">Publicar en acuerdo al guardar</span>
+                <span className="text-xs text-muted-foreground">
+                  {canPublishNow
+                    ? isEdit
+                      ? "Pasará a Activa al guardar."
+                      : "Nacerá como Activa."
+                    : "Completa producto, precio y fechas vigentes para habilitar."}
+                </span>
+              </span>
+            </label>
           )}
           <div className="sm:ml-auto flex gap-2">
             <Button
@@ -2001,11 +2027,17 @@ export function LineEditDialog({
               }}
               disabled={save.isPending || hasCreatingIncomplete}
             >
-              {save.isPending ? "Guardando…" : isEdit ? "Guardar cambios" : "Guardar"}
-
+              {save.isPending
+                ? "Guardando…"
+                : publishOnSave && canPublishNow
+                  ? "Guardar y publicar"
+                  : isEdit
+                    ? "Guardar cambios"
+                    : "Guardar"}
             </Button>
           </div>
         </div>
+
 
       </DialogContent>
 
