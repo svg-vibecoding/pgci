@@ -112,14 +112,7 @@ function SetupHome() {
       <section aria-label="Indicadores de la plataforma">
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {kpis.map((kpi) => (
-            <div
-              key={kpi.label}
-              className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] p-5 shadow-[var(--shadow-xs)]"
-            >
-              <p className="suma-overline">{kpi.label}</p>
-              <p className="suma-metric mt-2">{kpi.value}</p>
-              <p className="suma-caption mt-1">{kpi.hint}</p>
-            </div>
+            <IndicatorCard key={kpi.label} label={kpi.label} value={kpi.value} />
           ))}
         </div>
       </section>
