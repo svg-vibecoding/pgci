@@ -244,7 +244,7 @@ export function CommercialProfileView() {
                         <div className="flex min-w-0 flex-1 items-center justify-between gap-3 pr-3">
                           <div className="flex min-w-0 items-center gap-2">
                             <Building2 className="h-4 w-4 shrink-0 text-text-tertiary" />
-                            <span className="truncate suma-body font-semibold text-text-primary">
+                            <span className="truncate suma-body font-bold text-text-primary">
                               {name}
                             </span>
                             {client?.type === "holding" && (
@@ -301,13 +301,9 @@ export function CommercialProfileView() {
                                         perm.checked ? "text-text-primary" : "text-text-tertiary",
                                       )}
                                     >
-                                      {perm.label}
+                                    {perm.label}
                                     </span>
-                                    {!perm.checked && (
-                                      <span className="suma-caption font-medium uppercase tracking-wide text-text-tertiary/80">
-                                        Off
-                                      </span>
-                                    )}
+
                                   </div>
                                   <Switch
                                     checked={perm.checked}
