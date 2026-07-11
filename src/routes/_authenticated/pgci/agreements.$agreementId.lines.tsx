@@ -19,6 +19,7 @@ import {
   Eye,
   Layers,
   Send,
+  ChevronDown,
 } from "lucide-react";
 import { AgreementBreadcrumb } from "@/components/agreements/AgreementBreadcrumb";
 import { AgreementHeader } from "@/components/agreements/AgreementHeader";
