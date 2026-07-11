@@ -95,7 +95,13 @@ export const Route = createFileRoute(
   component: AgreementLinesPage,
 });
 
-type LineCardKey = "all" | "active" | "requires_review" | "excluded";
+type LineCardKey =
+  | "all"
+  | "active"
+  | "requires_review"
+  | "draft"
+  | "expired"
+  | "excluded";
 
 const STATUS_META: Record<
   Exclude<LineCardKey, "all">,
@@ -103,8 +109,24 @@ const STATUS_META: Record<
 > = {
   active: { label: "Activa", status: "active" },
   requires_review: { label: "Revisar", status: "danger" },
+  draft: { label: "En gestión", status: "neutral" },
+  expired: { label: "Vencida", status: "danger" },
   excluded: { label: "Excluida", status: "neutral" },
 };
+
+function coversTodayOf(
+  lineEnd: string | null,
+  agreementEnd: string | null,
+): boolean {
+  const eff = lineEnd ?? agreementEnd ?? null;
+  if (!eff) return true;
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(eff);
+  if (!m) return true;
+  const end = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return end.getTime() >= today.getTime();
+}
 const fmtMoney = (v: number | null) => formatMoneyCOP(v);
 
 
@@ -240,7 +262,6 @@ function AgreementLinesPage() {
 
 
   type Line = NonNullable<typeof lines>[number] & {
-    kind: "position" | "transit";
     products?: {
       sku?: string | null;
       erp_description?: string | null;
@@ -249,16 +270,6 @@ function AgreementLinesPage() {
     } | null;
   };
 
-  const counts = useMemo(() => {
-    const c = { all: 0, active: 0, requires_review: 0, excluded: 0 };
-    for (const r of (lines ?? []) as Line[]) {
-      if (r.kind === "transit") continue;
-      const k = r.status as keyof typeof c;
-      if (k in c) c[k]++;
-    }
-    c.all = c.active + c.requires_review + c.excluded;
-    return c;
-  }, [lines]);
 
   // Mapa por posición → grupo SKU (para chips) y set de ids en conflicto (para filtrar).
   const groupByPositionId = useMemo(() => {
@@ -355,7 +366,7 @@ function AgreementLinesPage() {
     if (!r) return;
     setEditInitial({
       line_id: r.id as string,
-      kind: r.kind,
+      kind: "position",
       sku: r.products?.sku ?? "",
       // Estado completo declarativo: preserva todos los códigos de otros clientes.
       client_codes: (r.codes ?? []).map((c) => ({
@@ -379,7 +390,7 @@ function AgreementLinesPage() {
     if (!r) return;
     setViewTarget({
       id: r.id as string,
-      kind: r.kind,
+      kind: "position",
       status: r.status as LineViewData["status"],
       sku: r.products?.sku ?? null,
       erp_description: r.products?.erp_description ?? null,
@@ -406,9 +417,30 @@ function AgreementLinesPage() {
   const filtered = useMemo<Line[]>(() => {
     const rows = (lines ?? []) as Line[];
     const term = q.trim().toLowerCase();
+    const agreementEnd = (agreement?.end_date as string | null) ?? null;
     return rows.filter((r) => {
-      if (r.kind === "transit") return false;
-      if (activeCard !== "all" && r.status !== activeCard) return false;
+      const rowEnd = (r.end_date as string | null) ?? null;
+      const covers = coversTodayOf(rowEnd, agreementEnd);
+      switch (activeCard) {
+        case "all":
+          if (r.status === "archived") return false;
+          break;
+        case "active":
+          if (r.status !== "active" || !covers) return false;
+          break;
+        case "requires_review":
+          if (r.status !== "requires_review") return false;
+          break;
+        case "draft":
+          if (r.status !== "draft") return false;
+          break;
+        case "expired":
+          if (r.status !== "active" || covers) return false;
+          break;
+        case "excluded":
+          if (r.status !== "excluded") return false;
+          break;
+      }
       if (skuConflictOnly) {
         if (!repeatedPositionIds.has(r.id as string)) return false;
       }
@@ -421,7 +453,7 @@ function AgreementLinesPage() {
         .join(" ");
       return [sku, erp, brand, codesFlat].some((s) => s.toLowerCase().includes(term));
     });
-  }, [lines, activeCard, q, skuConflictOnly, repeatedPositionIds]);
+  }, [lines, activeCard, q, skuConflictOnly, repeatedPositionIds, agreement?.end_date]);
 
 
   const handleExport = () => {
@@ -459,13 +491,15 @@ function AgreementLinesPage() {
   }
 
   const canAdmin = !!ctx?.can_admin;
-  const summaryCards: { key: LineCardKey; label: string; value: number }[] = [
-    { key: "all", label: "Posiciones", value: counts.all },
-    { key: "active", label: "Activas", value: counts.active },
-    { key: "requires_review", label: "Requieren revisión", value: counts.requires_review },
-    { key: "excluded", label: "Excluidas", value: counts.excluded },
-    
+  const num = (v: unknown): number => (typeof v === "number" ? v : 0);
+  const summaryCards: { key: Exclude<LineCardKey, "all">; label: string; value: number }[] = [
+    { key: "active", label: "Posiciones activas", value: num(agreement.lines_active) },
+    { key: "requires_review", label: "Requieren revisión", value: num(agreement.lines_review) },
+    { key: "draft", label: "En gestión", value: num(agreement.lines_draft) },
+    { key: "expired", label: "Vencidas", value: num(agreement.lines_expired) },
+    { key: "excluded", label: "Excluidas", value: num(agreement.lines_excluded) },
   ];
+  const totalCount = summaryCards.reduce((s, c) => s + c.value, 0);
 
   return (
     <div className="space-y-6">
@@ -636,7 +670,7 @@ function AgreementLinesPage() {
       {(activeCard !== "all" || q.trim() || skuConflictOnly) && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <p className="text-sm text-muted-foreground">
-            {`${filtered.length} de ${counts.all} ${counts.all === 1 ? "posición" : "posiciones"}`}
+            {`${filtered.length} de ${totalCount} ${totalCount === 1 ? "posición" : "posiciones"}`}
           </p>
           <div className="flex flex-wrap gap-2">
             {activeCard !== "all" && (
@@ -720,12 +754,26 @@ function AgreementLinesPage() {
               </TableRow>
             )}
             {filtered.map((r) => {
-              const meta = STATUS_META[r.status as keyof typeof STATUS_META] ?? null;
               const isExcluded = r.status === "excluded";
               const vig = vigenciaBadge(
                 r.end_date ?? null,
                 (agreement.end_date as string | null) ?? null,
               );
+              const covers = coversTodayOf(
+                (r.end_date as string | null) ?? null,
+                (agreement.end_date as string | null) ?? null,
+              );
+              const badgeKey: Exclude<LineCardKey, "all"> | null =
+                r.status === "active"
+                  ? covers ? "active" : "expired"
+                  : r.status === "draft"
+                    ? "draft"
+                    : r.status === "excluded"
+                      ? "excluded"
+                      : r.status === "requires_review"
+                        ? "requires_review"
+                        : null;
+              const meta = badgeKey ? STATUS_META[badgeKey] : null;
               return (
                 <TableRow key={r.id as string}>
                   <TableCell>
@@ -754,7 +802,7 @@ function AgreementLinesPage() {
                   <TableCell>
                     <div className="flex items-center gap-1.5">
                       <span className="font-mono text-sm">{r.products?.sku ?? "—"}</span>
-                      {r.kind === "position" && (() => {
+                      {(() => {
                         const g = groupByPositionId.get(r.id as string);
                         if (!g) return null;
                         if (g.state === "conflict") {
@@ -858,10 +906,7 @@ function AgreementLinesPage() {
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col items-start gap-1">
-                      {(r.status === "active" || r.status === "excluded") && meta && (
-                        <StatusBadge status={meta.status} label={meta.label} />
-                      )}
-                      {r.status === "requires_review" && (
+                      {r.status === "requires_review" ? (
                         <div className="flex flex-wrap gap-1">
                           {r.product_id && r.products?.status !== "active" && (
                             <Badge color="error" variant="soft">
@@ -876,6 +921,8 @@ function AgreementLinesPage() {
                             </Badge>
                           )}
                         </div>
+                      ) : (
+                        meta && <StatusBadge status={meta.status} label={meta.label} />
                       )}
                       {isExcluded && r.exclusion_reason && (
                         <div className="text-xs text-muted-foreground line-clamp-2">

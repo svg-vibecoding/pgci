@@ -434,8 +434,8 @@ export type AgreementLineRow = {
   start_date: string | null;
   end_date: string | null;
   observations: string | null;
-  status: "active" | "requires_review" | "excluded" | "pending";
-  pending_reason: string | null;
+  status: "active" | "requires_review" | "excluded" | "draft" | "archived";
+
   exclusion_reason: string | null;
   created_at: string;
   updated_at: string;
@@ -553,8 +553,7 @@ export const listAgreementLines = createServerFn({ method: "GET" })
       start_date: (r.start_date as string | null) ?? null,
       end_date: (r.end_date as string | null) ?? null,
       observations: (r.observations as string | null) ?? null,
-      status: r.status as "active" | "requires_review" | "excluded",
-      pending_reason: null,
+      status: r.status as AgreementLineRow["status"],
       exclusion_reason: exclusionByPos.get(r.id as string) ?? null,
       created_at: r.created_at as string,
       updated_at: r.updated_at as string,
@@ -767,7 +766,7 @@ export type ClientCodeSearchResult = {
     | {
         kind: "taken";
         position_id: string;
-        position_status: "active" | "excluded" | "pending" | "requires_review";
+        position_status: "active" | "excluded" | "requires_review";
         sku: string | null;
         product_description: string | null;
         sale_price: number | null;
@@ -879,7 +878,7 @@ export const searchClientCodes = createServerFn({ method: "POST" })
     const takenRows: Array<{
       cp_id: string;
       pos_id: string;
-      pos_status: "active" | "excluded" | "pending" | "requires_review";
+      pos_status: "active" | "excluded" | "requires_review";
       sku: string | null;
       product_description: string | null;
       sale_price: number | null;
@@ -894,8 +893,8 @@ export const searchClientCodes = createServerFn({ method: "POST" })
       } | null;
       if (!pos) continue;
       const posStatus =
-        pos.status === "active" || pos.status === "excluded" || pos.status === "pending" || pos.status === "requires_review"
-          ? (pos.status as "active" | "excluded" | "pending" | "requires_review")
+        pos.status === "active" || pos.status === "excluded" || pos.status === "requires_review"
+          ? (pos.status as "active" | "excluded" | "requires_review")
           : "active";
       takenRows.push({
         cp_id: row.client_product_id as string,
