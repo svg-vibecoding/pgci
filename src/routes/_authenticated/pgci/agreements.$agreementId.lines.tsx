@@ -373,6 +373,7 @@ function AgreementLinesPage() {
     setEditInitial({
       line_id: r.id as string,
       kind: "position",
+      status: r.status as LineEditValues["status"],
       sku: r.products?.sku ?? "",
       // Estado completo declarativo: preserva todos los códigos de otros clientes.
       client_codes: (r.codes ?? []).map((c) => ({
