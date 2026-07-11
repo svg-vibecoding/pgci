@@ -52,11 +52,27 @@ export const createUser = createServerFn({ method: "POST" })
     });
 
     if (createErr || !created.user) {
-      const msg = createErr?.message ?? "No se pudo crear el usuario";
+      const status = (createErr as { status?: number } | null)?.status;
+      const code = (createErr as { code?: string } | null)?.code;
+      const name = (createErr as { name?: string } | null)?.name;
+      const rawMsg = createErr?.message?.trim();
+      console.error("[createUser] auth.admin.createUser failed", {
+        message: createErr?.message,
+        status,
+        code,
+        name,
+        hasUser: !!created?.user,
+      });
+      const msg =
+        rawMsg && rawMsg.length > 0
+          ? rawMsg
+          : "No se pudo crear el usuario (sin mensaje del proveedor de auth)";
       if (msg.toLowerCase().includes("already") || msg.toLowerCase().includes("registered")) {
         throw new Error("Ya existe un usuario con ese email");
       }
-      throw new Error(msg);
+      throw new Error(
+        `${msg}${code ? ` [${code}]` : ""}${status ? ` (HTTP ${status})` : ""}`,
+      );
     }
 
     const newUserId = created.user.id;
@@ -74,8 +90,17 @@ export const createUser = createServerFn({ method: "POST" })
     });
 
     if (profileErr) {
+      console.error("[createUser] profiles insert failed", {
+        message: profileErr.message,
+        code: (profileErr as { code?: string }).code,
+        details: (profileErr as { details?: string }).details,
+        hint: (profileErr as { hint?: string }).hint,
+      });
       await supabaseAdmin.auth.admin.deleteUser(newUserId);
-      throw new Error(`No se pudo crear el perfil: ${profileErr.message}`);
+      const extra = (profileErr as { code?: string }).code
+        ? ` [${(profileErr as { code?: string }).code}]`
+        : "";
+      throw new Error(`No se pudo crear el perfil: ${profileErr.message}${extra}`);
     }
 
     return {
