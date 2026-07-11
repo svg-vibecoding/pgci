@@ -12,9 +12,7 @@ import {
   Download,
   Upload,
   X,
-  AlertTriangle,
   XCircle,
-  Trash2,
   Info,
   Link2,
   Unlink,
@@ -55,7 +53,6 @@ import {
   listAgreementLines,
   excludeAgreementLine,
   reactivateAgreementLine,
-  deleteAgreementTransitLine,
   listAgreementSkuGroups,
   listAgreementCompanies,
   listClientCatalogPermissions,
@@ -79,7 +76,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { exportAgreementLines } from "@/lib/agreement-export";
-import { PENDING_REASON_LABELS, type ImportPendingReason } from "@/lib/agreement-import";
+
 import { LineEditDialog, type LineEditValues } from "@/components/agreements/LineEditDialog";
 import { LineViewDialog, type LineViewData } from "@/components/agreements/LineViewDialog";
 import {
@@ -98,10 +95,10 @@ export const Route = createFileRoute(
   component: AgreementLinesPage,
 });
 
-type LineCardKey = "all" | "active" | "requires_review" | "excluded" | "transit";
+type LineCardKey = "all" | "active" | "requires_review" | "excluded";
 
 const STATUS_META: Record<
-  Exclude<LineCardKey, "all" | "transit">,
+  Exclude<LineCardKey, "all">,
   { label: string; status: StatusBadgeStatus }
 > = {
   active: { label: "Activa", status: "active" },
@@ -142,7 +139,7 @@ function AgreementLinesPage() {
   const linesFn = useServerFn(listAgreementLines);
   const excludeFn = useServerFn(excludeAgreementLine);
   const reactivateFn = useServerFn(reactivateAgreementLine);
-  const deleteTransitFn = useServerFn(deleteAgreementTransitLine);
+  
   const skuGroupsFn = useServerFn(listAgreementSkuGroups);
   const linkFn = useServerFn(linkSkuPrice);
   const unlinkFn = useServerFn(unlinkSkuPrice);
@@ -212,9 +209,6 @@ function AgreementLinesPage() {
     description: string | null;
     codes: LineCode[];
   } | null>(null);
-  const [deleteTransitTarget, setDeleteTransitTarget] = useState<{ id: string; sku: string | null } | null>(
-    null,
-  );
   const [reason, setReason] = useState("");
 
   const invalidateAll = () => {
@@ -244,16 +238,6 @@ function AgreementLinesPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const deleteTransit = useMutation({
-    mutationFn: (transitId: string) => deleteTransitFn({ data: { transit_id: transitId } }),
-    onSuccess: () => {
-      toast.success("Línea eliminada");
-      invalidateAll();
-      setDeleteTransitTarget(null);
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
 
   type Line = NonNullable<typeof lines>[number] & {
     kind: "position" | "transit";
@@ -266,14 +250,11 @@ function AgreementLinesPage() {
   };
 
   const counts = useMemo(() => {
-    const c = { all: 0, active: 0, requires_review: 0, excluded: 0, transit: 0 };
+    const c = { all: 0, active: 0, requires_review: 0, excluded: 0 };
     for (const r of (lines ?? []) as Line[]) {
-      if (r.kind === "transit") {
-        c.transit++;
-      } else {
-        const k = r.status as keyof typeof c;
-        if (k in c) c[k]++;
-      }
+      if (r.kind === "transit") continue;
+      const k = r.status as keyof typeof c;
+      if (k in c) c[k]++;
     }
     c.all = c.active + c.requires_review + c.excluded;
     return c;
@@ -426,15 +407,10 @@ function AgreementLinesPage() {
     const rows = (lines ?? []) as Line[];
     const term = q.trim().toLowerCase();
     return rows.filter((r) => {
-      if (activeCard === "all") {
-        if (r.kind === "transit") return false;
-      } else if (activeCard === "transit") {
-        if (r.kind !== "transit") return false;
-      } else {
-        if (r.kind === "transit" || r.status !== activeCard) return false;
-      }
+      if (r.kind === "transit") return false;
+      if (activeCard !== "all" && r.status !== activeCard) return false;
       if (skuConflictOnly) {
-        if (r.kind === "transit" || !repeatedPositionIds.has(r.id as string)) return false;
+        if (!repeatedPositionIds.has(r.id as string)) return false;
       }
       if (!term) return true;
       const sku = r.products?.sku ?? "";
@@ -488,7 +464,7 @@ function AgreementLinesPage() {
     { key: "active", label: "Activas", value: counts.active },
     { key: "requires_review", label: "Requieren revisión", value: counts.requires_review },
     { key: "excluded", label: "Excluidas", value: counts.excluded },
-    { key: "transit", label: "En tránsito", value: counts.transit },
+    
   ];
 
   return (
@@ -660,9 +636,7 @@ function AgreementLinesPage() {
       {(activeCard !== "all" || q.trim() || skuConflictOnly) && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <p className="text-sm text-muted-foreground">
-            {activeCard === "transit"
-              ? `${filtered.length} ${filtered.length === 1 ? "línea en tránsito" : "líneas en tránsito"}`
-              : `${filtered.length} de ${counts.all} ${counts.all === 1 ? "posición" : "posiciones"}`}
+            {`${filtered.length} de ${counts.all} ${counts.all === 1 ? "posición" : "posiciones"}`}
           </p>
           <div className="flex flex-wrap gap-2">
             {activeCard !== "all" && (
@@ -711,17 +685,6 @@ function AgreementLinesPage() {
         </div>
       )}
 
-      {!loadingLines && activeCard === "transit" && !q.trim() && filtered.length === 0 ? (
-        <Alert variant="info">
-          <Info className="h-4 w-4" />
-          <AlertTitle>No hay información en tránsito</AlertTitle>
-          <AlertDescription>
-            Aquí aparecen las filas cargadas al acuerdo que aún no son posiciones porque
-            les falta SKU, precio o vigencia. Cuando se completan, pasan automáticamente
-            a Posiciones.
-          </AlertDescription>
-        </Alert>
-      ) : (
       <div className="overflow-x-auto rounded-lg border border-border bg-card">
         <Table className="table-fixed">
           <TableHeader>
@@ -758,9 +721,6 @@ function AgreementLinesPage() {
             )}
             {filtered.map((r) => {
               const meta = STATUS_META[r.status as keyof typeof STATUS_META] ?? null;
-              const reasons = (r.pending_reason ?? "")
-                .split(",")
-                .filter(Boolean) as ImportPendingReason[];
               const isExcluded = r.status === "excluded";
               const vig = vigenciaBadge(
                 r.end_date ?? null,
@@ -901,22 +861,6 @@ function AgreementLinesPage() {
                       {(r.status === "active" || r.status === "excluded") && meta && (
                         <StatusBadge status={meta.status} label={meta.label} />
                       )}
-                      {r.status === "pending" && (
-                        <div className="flex flex-wrap gap-1">
-                          {reasons.map((rsn) => (
-                            <Badge key={rsn} color="warning" variant="soft">
-                              <AlertTriangle className="h-3 w-3" />
-                              {PENDING_REASON_LABELS[rsn] ?? rsn}
-                            </Badge>
-                          ))}
-                          {vig.label === "Sin vigencia" && !reasons.includes("no_dates") && (
-                            <Badge color="warning" variant="soft">
-                              <AlertTriangle className="h-3 w-3" />
-                              Sin vigencia
-                            </Badge>
-                          )}
-                        </div>
-                      )}
                       {r.status === "requires_review" && (
                         <div className="flex flex-wrap gap-1">
                           {r.product_id && r.products?.status !== "active" && (
@@ -975,39 +919,22 @@ function AgreementLinesPage() {
                             >
                               <Pencil className="h-4 w-4" />
                             </Button>
-                            {r.kind === "transit" ? (
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                onClick={() =>
-                                  setDeleteTransitTarget({
-                                    id: r.id as string,
-                                    sku: r.products?.sku ?? null,
-                                  })
-                                }
-                                aria-label="Eliminar"
-                                title="Eliminar"
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            ) : (
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                onClick={() =>
-                                  setExcludeTarget({
-                                    id: r.id as string,
-                                    sku: r.products?.sku ?? null,
-                                    description: r.products?.erp_description ?? null,
-                                    codes: r.codes ?? [],
-                                  })
-                                }
-                                aria-label="Excluir"
-                                title="Excluir"
-                              >
-                                <Ban className="h-4 w-4 text-destructive" />
-                              </Button>
-                            )}
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() =>
+                                setExcludeTarget({
+                                  id: r.id as string,
+                                  sku: r.products?.sku ?? null,
+                                  description: r.products?.erp_description ?? null,
+                                  codes: r.codes ?? [],
+                                })
+                              }
+                              aria-label="Excluir"
+                              title="Excluir"
+                            >
+                              <Ban className="h-4 w-4 text-destructive" />
+                            </Button>
                           </>
                         )
                       )}
@@ -1019,7 +946,6 @@ function AgreementLinesPage() {
           </TableBody>
         </Table>
       </div>
-      )}
 
 
 
@@ -1139,34 +1065,7 @@ function AgreementLinesPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog
-        open={!!deleteTransitTarget}
-        onOpenChange={(o) => {
-          if (!o) setDeleteTransitTarget(null);
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Eliminar línea en tránsito</AlertDialogTitle>
-            <AlertDialogDescription>
-              La línea en tránsito se eliminará permanentemente. Esta acción no se
-              puede deshacer.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteTransit.isPending}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => {
-                e.preventDefault();
-                if (deleteTransitTarget) deleteTransit.mutate(deleteTransitTarget.id);
-              }}
-              disabled={deleteTransit.isPending}
-            >
-              Eliminar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+
 
       <Dialog open={skuModalOpen} onOpenChange={setSkuModalOpen}>
         <DialogContent className="max-w-2xl">

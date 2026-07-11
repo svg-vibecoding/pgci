@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { transitDeleteSchema } from "./agreements.schemas";
+
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   agreementCreateSchema,
@@ -53,7 +53,7 @@ export const listAgreements = createServerFn({ method: "GET" })
     const rows = data ?? [];
     const ids = rows.map((r) => r.id as string).filter(Boolean);
     if (ids.length === 0)
-      return rows.map((r) => ({ ...r, companies: [] as string[], lines_transit: 0, can_admin: false }));
+      return rows.map((r) => ({ ...r, companies: [] as string[], can_admin: false }));
     const { data: comps, error: cErr } = await context.supabase
       .from("agreement_companies")
       .select("agreement_id, clients:client_id(commercial_name, legal_name)")
@@ -69,8 +69,8 @@ export const listAgreements = createServerFn({ method: "GET" })
       arr.push(name);
       byAgreement.set(aid, arr);
     }
-    // Modelo de tránsito eliminado: el conteo queda en 0 hasta que se retire el KPI.
-    const transitByAgreement = new Map<string, number>();
+
+
 
     // can_admin por fila: super_admin → todos; sino, membresía como agreement_admin vigente
     const { data: superRes } = await context.supabase.rpc("is_super_admin");
@@ -97,7 +97,7 @@ export const listAgreements = createServerFn({ method: "GET" })
       companies: (byAgreement.get(r.id as string) ?? []).sort((a, b) =>
         a.localeCompare(b, "es", { sensitivity: "base" }),
       ),
-      lines_transit: transitByAgreement.get(r.id as string) ?? 0,
+      
       can_admin: adminIds.has(r.id as string),
     }));
   });
@@ -674,16 +674,6 @@ export const reactivateAgreementLine = createServerFn({ method: "POST" })
       // SKU) se propagan tal cual: son legibles y accionables.
       throw new Error(error.message);
     }
-    return { ok: true };
-  });
-
-// Modelo de tránsito eliminado: se conserva la firma como no-op para no romper
-// llamadas antiguas del frontend hasta su próxima limpieza.
-export const deleteAgreementTransitLine = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => transitDeleteSchema.parse(d))
-  .handler(async ({ data }) => {
-    void data;
     return { ok: true };
   });
 
@@ -2307,7 +2297,7 @@ export const getAgreementGroupRollup = createServerFn({ method: "GET" })
       unique_users: uniqueUsers,
       total_lines: sumField("lines_total"),
       lines_active: sumField("lines_active"),
-      lines_pending: 0,
+      
       lines_review: sumField("lines_review"),
       lines_excluded: sumField("lines_excluded"),
       min_start: minStart,
