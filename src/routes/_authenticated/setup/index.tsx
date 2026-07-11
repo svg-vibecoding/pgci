@@ -126,7 +126,10 @@ function SetupHome() {
     <div className="space-y-10">
       {/* Header */}
       <header className="space-y-3">
-        <p className="suma-overline">PLATAFORMA · PGCI</p>
+        <span className="suma-caption inline-flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--surface-card)] px-3 py-1 text-text-secondary">
+          <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-primary)]" />
+          Plataforma PGCI
+        </span>
         <h1 className="suma-h1 max-w-3xl text-[var(--text-primary)]">
           Centro de operación comercial
         </h1>
