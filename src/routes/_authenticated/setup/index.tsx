@@ -60,6 +60,13 @@ function SetupHome() {
     to: string;
   }> = [
     {
+      label: "Usuarios y accesos",
+      microcopy:
+        "Perfiles, roles y visibilidad de clientes por usuario.",
+      icon: Users,
+      to: "/setup/users",
+    },
+    {
       label: "Clientes",
       microcopy:
         "Base comercial disponible para acuerdos y asignación de visibilidad.",
@@ -72,13 +79,6 @@ function SetupHome() {
         "Catálogo Jaivaná para estructurar productos de acuerdo y equivalencias.",
       icon: Package,
       to: "/setup/products",
-    },
-    {
-      label: "Usuarios y accesos",
-      microcopy:
-        "Perfiles, roles y visibilidad de clientes por usuario.",
-      icon: Users,
-      to: "/setup/users",
     },
     {
       label: "Acuerdos",
