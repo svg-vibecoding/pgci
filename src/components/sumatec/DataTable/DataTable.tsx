@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Tooltip,
@@ -13,13 +13,14 @@ import type { DataTableColumn, DataTableProps } from "./types";
  * DataTable — tabla transversal del Sumatec Design System.
  *
  * Reglas (no negociables por vista):
- *  - Densidad única: header 36px, filas 44/56px, padding 12px 16px.
+ *  - Densidad única: header 36px, filas con padding 12/16, alto flexible según contenido.
  *  - Tipografía: header 11px uppercase Montserrat / body 13px Roboto.
  *  - Alineación numérica: siempre derecha con tabular-nums.
  *  - Acciones: una sola columna ⋯ (sticky derecha) con DropdownMenu.
  *  - Fila entera clickeable via onRowClick; el menú y checkbox no propagan.
+ *  - Sin scroll horizontal: el contenido de texto envuelve; las columnas
+ *    numéricas/fechas/estado no envuelven.
  *  - Loading = skeleton rows; empty/error = estados propios.
- *  - Header sticky dentro del contenedor con scroll interno.
  */
 export function DataTable<T>({
   data,
@@ -32,6 +33,7 @@ export function DataTable<T>({
   error,
   empty,
   maxHeight,
+  layout = "auto",
   className,
   ariaLabel,
 }: DataTableProps<T>) {
@@ -57,13 +59,25 @@ export function DataTable<T>({
     return { width: typeof col.width === "number" ? `${col.width}px` : col.width };
   };
 
+  const cellWrapClass = (col: DataTableColumn<T>) => {
+    if (col.truncate) return "truncate max-w-0";
+    // Numéricas/fechas: no partir el valor.
+    const noWrap = col.wrap === false || col.numeric === true;
+    return noWrap ? "whitespace-nowrap" : "whitespace-normal break-words";
+  };
+
   return (
     <div
       className={`overflow-hidden rounded-lg border border-border bg-card ${className ?? ""}`}
     >
-      <div className="w-full overflow-auto" style={containerStyle}>
+      <div
+        className={`w-full overflow-x-hidden ${maxHeight ? "overflow-y-auto" : ""}`}
+        style={containerStyle}
+      >
         <table
-          className="w-full border-collapse font-body text-[13px] leading-5 text-text-secondary"
+          className={`w-full border-collapse font-body text-[13px] leading-5 text-text-secondary ${
+            layout === "fixed" ? "table-fixed" : "table-auto"
+          }`}
           aria-label={ariaLabel}
         >
           <thead className="sticky top-0 z-10 bg-surface-page">
@@ -108,7 +122,7 @@ export function DataTable<T>({
                 <th
                   scope="col"
                   aria-label="Acciones"
-                  className="sticky right-0 z-20 w-12 bg-surface-page px-4 py-2.5"
+                  className="w-12 bg-surface-page px-4 py-2.5"
                 />
               )}
             </tr>
@@ -203,9 +217,9 @@ export function DataTable<T>({
                     {hasSelection && (
                       <td
                         onClick={(e) => e.stopPropagation()}
-                        className="sticky left-0 z-[1] w-10 bg-inherit px-4 py-3 align-middle"
+                        className="sticky left-0 z-[1] w-10 bg-inherit px-4 py-3 align-top"
                       >
-                        <div className="flex items-center justify-center">
+                        <div className="flex items-center justify-center pt-0.5">
                           {selectable ? (
                             <Checkbox
                               aria-label={selection!.ariaLabel ?? "Seleccionar fila"}
@@ -228,10 +242,10 @@ export function DataTable<T>({
                             : undefined
                         }
                         className={[
-                          "px-4 py-3 align-middle",
+                          "px-4 py-3 align-top",
                           alignClass(col),
                           col.numeric ? "tabular-nums" : "",
-                          col.truncate ? "max-w-0 truncate" : "",
+                          cellWrapClass(col),
                           col.cellClassName ?? "",
                         ].join(" ")}
                       >
@@ -241,7 +255,7 @@ export function DataTable<T>({
                     {hasActions && (
                       <td
                         onClick={(e) => e.stopPropagation()}
-                        className="sticky right-0 z-[1] w-12 bg-inherit px-2 py-2 text-right"
+                        className="w-12 bg-inherit px-2 py-2 text-right align-top"
                       >
                         <RowActionsMenu row={row} actions={actions} />
                       </td>

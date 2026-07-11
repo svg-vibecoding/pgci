@@ -291,9 +291,8 @@ function ProductsList() {
               header: "Producto",
               cell: (p) => (
                 <IdentityCell
-                  title={p.erp_description ?? "—"}
-                  subtitle={p.sku}
-                  monoSubtitle
+                  code={p.sku ?? "—"}
+                  description={p.erp_description ?? "—"}
                 />
               ),
             },

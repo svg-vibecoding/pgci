@@ -11,8 +11,13 @@ export type DataTableColumn<T> = {
   align?: ColumnAlign;
   /** Aplica `tabular-nums` y alineación derecha por defecto. */
   numeric?: boolean;
-  /** Trunca a 1 línea con tooltip nativo. */
+  /** Fuerza truncado a 1 línea (opt-in). Por defecto las celdas hacen wrap. */
   truncate?: boolean;
+  /**
+   * Permite salto de línea del contenido. Default true.
+   * Poner false en columnas numéricas/fechas/estado para no partir el valor.
+   */
+  wrap?: boolean;
   /** Clases extra para <th>. */
   headerClassName?: string;
   /** Clases extra para <td>. */
@@ -55,6 +60,12 @@ export type DataTableProps<T> = {
   empty?: { icon?: ReactNode; title: string; description?: string; action?: ReactNode };
   /** Altura máxima con scroll vertical interno. */
   maxHeight?: number | string;
+  /**
+   * "auto" (default): la tabla respeta el ancho del contenedor,
+   * columnas flexibles se reparten el sobrante, sin scroll horizontal.
+   * "fixed": layout tabla fijo, útil si necesitas anchos exactos.
+   */
+  layout?: "auto" | "fixed";
   /** Extra al contenedor exterior. */
   className?: string;
   /** ID interno para aria-labelledby de acciones. */

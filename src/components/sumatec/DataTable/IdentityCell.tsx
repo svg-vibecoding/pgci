@@ -1,53 +1,44 @@
 import type { ReactNode } from "react";
 
 type IdentityCellProps = {
-  /** Título principal (nombre, descripción). */
-  title: ReactNode;
-  /** Subtítulo (código, SKU, NIT). */
-  subtitle?: ReactNode;
-  /** Subtítulo en fuente mono (para códigos). */
-  monoSubtitle?: boolean;
-  /** Título en mono. */
-  monoTitle?: boolean;
-  /** Insignia o icono a la derecha del título. */
+  /** Línea 1: código (SKU, código de cliente, NIT). Siempre mono. */
+  code: ReactNode;
+  /** Línea 2: descripción / nombre. Fuente normal. */
+  description?: ReactNode;
+  /** Insignia o icono a la derecha del código. */
   trailing?: ReactNode;
 };
 
 /**
  * IdentityCell — celda estándar de identidad para DataTable.
- * Dos líneas: título (primario, semibold) + subtítulo (secundario, más pequeño).
- * Trunca a 1 línea cada una con tooltip nativo.
+ *
+ * Regla del sistema (no negociable):
+ *  - Línea 1 = código en mono, semibold, text-primary, 12.5px.
+ *  - Línea 2 = descripción en sans, regular, text-secondary, 13px
+ *    (misma escala que las demás columnas de texto).
+ *  - Sin gap extra entre líneas: leen como bloque.
+ *  - Wrapping natural en 2 líneas máximo con tooltip nativo.
  */
-export function IdentityCell({
-  title,
-  subtitle,
-  monoSubtitle = false,
-  monoTitle = false,
-  trailing,
-}: IdentityCellProps) {
-  const titleText = typeof title === "string" ? title : undefined;
-  const subtitleText = typeof subtitle === "string" ? subtitle : undefined;
+export function IdentityCell({ code, description, trailing }: IdentityCellProps) {
+  const codeText = typeof code === "string" ? code : undefined;
+  const descText = typeof description === "string" ? description : undefined;
   return (
     <div className="min-w-0">
       <div className="flex min-w-0 items-center gap-1.5">
         <span
-          className={`min-w-0 truncate font-semibold text-text-primary ${
-            monoTitle ? "font-mono text-[13px]" : "text-[13px]"
-          }`}
-          title={titleText}
+          className="min-w-0 truncate font-mono text-[12.5px] font-semibold text-text-primary"
+          title={codeText}
         >
-          {title}
+          {code}
         </span>
         {trailing ? <span className="shrink-0">{trailing}</span> : null}
       </div>
-      {subtitle ? (
+      {description ? (
         <div
-          className={`mt-0.5 truncate text-[11.5px] text-text-tertiary ${
-            monoSubtitle ? "font-mono" : ""
-          }`}
-          title={subtitleText}
+          className="line-clamp-2 text-[13px] font-normal leading-[1.35] text-text-secondary"
+          title={descText}
         >
-          {subtitle}
+          {description}
         </div>
       ) : null}
     </div>

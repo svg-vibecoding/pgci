@@ -1015,7 +1015,6 @@ function AgreementLinesPage() {
           {
             id: "client",
             header: "Cliente",
-            width: 220,
             cell: (r) => {
               const codes = r.codes ?? [];
               const projected = projectionClientId
@@ -1026,9 +1025,8 @@ function AgreementLinesPage() {
               }
               return (
                 <IdentityCell
-                  title={projected.client_code}
-                  subtitle={projected.description ?? "—"}
-                  monoTitle
+                  code={projected.client_code}
+                  description={projected.description ?? "—"}
                 />
               );
             },
@@ -1038,9 +1036,8 @@ function AgreementLinesPage() {
             header: "Jaivaná",
             cell: (r) => (
               <IdentityCell
-                title={r.products?.sku ?? "—"}
-                subtitle={r.products?.erp_description ?? "—"}
-                monoTitle
+                code={r.products?.sku ?? "—"}
+                description={r.products?.erp_description ?? "—"}
                 trailing={skuGroupBadge(r)}
               />
             ),
@@ -1054,8 +1051,9 @@ function AgreementLinesPage() {
           {
             id: "price",
             header: "Precio",
-            width: 130,
+            width: 110,
             numeric: true,
+            wrap: false,
             cell: (r) => (
               <div>
                 <div className="text-text-primary">{fmtMoney(r.sale_price ?? null)}</div>
@@ -1070,7 +1068,8 @@ function AgreementLinesPage() {
           {
             id: "vigencia",
             header: "Vigencia",
-            width: 130,
+            width: 120,
+            wrap: false,
             cell: (r) => {
               const vig = vigenciaBadge(
                 r.end_date ?? null,
@@ -1082,7 +1081,8 @@ function AgreementLinesPage() {
           {
             id: "status",
             header: "Estado",
-            width: 180,
+            width: 130,
+            wrap: false,
             cell: (r) => {
               const covers = coversTodayOf(
                 (r.end_date as string | null) ?? null,
