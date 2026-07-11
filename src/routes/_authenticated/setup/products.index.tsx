@@ -1,17 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   DropdownMenu,
@@ -19,8 +11,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { StatusBadge, Chip } from "@/components/sumatec";
-import { Upload, Download, ChevronDown, Search } from "lucide-react";
+import {
+  StatusBadge,
+  Chip,
+  DataTable,
+  IdentityCell,
+  type DataTableColumn,
+} from "@/components/sumatec";
+import { Upload, Download, ChevronDown, Search, Eye, PackageSearch } from "lucide-react";
 import { exportProductsXlsx } from "@/lib/product-export";
 
 export const Route = createFileRoute("/_authenticated/setup/products/")({
