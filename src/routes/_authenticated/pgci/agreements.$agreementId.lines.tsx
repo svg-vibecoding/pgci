@@ -984,7 +984,40 @@ function AgreementLinesPage() {
               const meta = badgeKey ? STATUS_META[badgeKey] : null;
               return (
                 <TableRow key={r.id as string}>
+                  {selectionMode &&
+                    (() => {
+                      const publishable = isPublishable(r);
+                      const box = (
+                        <Checkbox
+                          aria-label={
+                            publishable ? "Seleccionar posición" : "No publicable"
+                          }
+                          checked={selectedIds.has(r.id as string)}
+                          disabled={!publishable || publishMut.isPending}
+                          onCheckedChange={() => toggleRow(r.id as string)}
+                        />
+                      );
+                      return (
+                        <TableCell className="w-10 align-middle">
+                          {publishable ? (
+                            box
+                          ) : (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="inline-flex">{box}</span>
+                                </TooltipTrigger>
+                                <TooltipContent side="right">
+                                  {rowDisabledReason(r)}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                        </TableCell>
+                      );
+                    })()}
                   <TableCell>
+
                     {(() => {
                       const codes = r.codes ?? [];
                       // Proyección por cliente seleccionado. Nunca oculta filas.
