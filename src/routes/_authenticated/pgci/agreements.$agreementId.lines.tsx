@@ -19,7 +19,6 @@ import {
   Eye,
   Layers,
   Send,
-  ChevronDown,
 } from "lucide-react";
 import { AgreementBreadcrumb } from "@/components/agreements/AgreementBreadcrumb";
 import { AgreementHeader } from "@/components/agreements/AgreementHeader";
@@ -1016,12 +1015,11 @@ function AgreementLinesPage() {
                 >
                   <SelectTrigger
                     aria-label="Cambiar cliente"
-                    className="h-auto w-auto gap-1.5 border-0 bg-transparent p-0 text-text-primary font-medium shadow-none hover:text-text-primary focus:ring-0 focus-visible:ring-0 [&>svg]:hidden"
+                    className="h-auto w-auto gap-1.5 border-0 bg-transparent p-0 text-text-primary font-medium shadow-none hover:text-text-primary focus:ring-0 focus-visible:ring-0 [&>svg:last-child]:h-3.5 [&>svg:last-child]:w-3.5 [&>svg:last-child]:text-text-tertiary [&>svg:last-child]:opacity-100"
                   >
                     <span className="truncate">
                       {current?.name?.trim() || "Cliente…"}
                     </span>
-                    <ChevronDown aria-hidden className="h-3.5 w-3.5 text-text-tertiary" />
                   </SelectTrigger>
                   <SelectContent align="start">
                     {visibleClients.map((c) => (
