@@ -180,7 +180,7 @@ export function CommercialProfileView() {
           </div>
           <div className="mt-4 border-t border-[var(--border-subtle)] pt-3">
             <p className="suma-caption text-text-tertiary">
-              Si necesitas actualizar tu información personal, contacta a un super admin.
+              Si necesitas actualizar tu información personal, contacta a un administrador.
             </p>
           </div>
         </CardContent>
