@@ -344,11 +344,26 @@ function AgreementsList() {
             Consulta y gestiona los acuerdos comerciales con clientes.
           </p>
         </div>
-        <Button asChild>
-          <Link to="/pgci/agreements/new">
-            <Plus className="mr-2 h-4 w-4" /> Crear acuerdo
-          </Link>
-        </Button>
+        {canCreateEnabled ? (
+          <Button asChild>
+            <Link to="/pgci/agreements/new">
+              <Plus className="mr-2 h-4 w-4" /> Crear acuerdo
+            </Link>
+          </Button>
+        ) : (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span tabIndex={0}>
+                <Button disabled aria-disabled="true">
+                  <Lock className="mr-2 h-4 w-4" /> Crear acuerdo
+                </Button>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              Necesitas permiso para crear acuerdos. Solicítalo a un administrador.
+            </TooltipContent>
+          </Tooltip>
+        )}
       </header>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
