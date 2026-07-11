@@ -417,9 +417,30 @@ function AgreementLinesPage() {
   const filtered = useMemo<Line[]>(() => {
     const rows = (lines ?? []) as Line[];
     const term = q.trim().toLowerCase();
+    const agreementEnd = (agreement?.end_date as string | null) ?? null;
     return rows.filter((r) => {
-      if (r.kind === "transit") return false;
-      if (activeCard !== "all" && r.status !== activeCard) return false;
+      const rowEnd = (r.end_date as string | null) ?? null;
+      const covers = coversTodayOf(rowEnd, agreementEnd);
+      switch (activeCard) {
+        case "all":
+          if (r.status === "archived") return false;
+          break;
+        case "active":
+          if (r.status !== "active" || !covers) return false;
+          break;
+        case "requires_review":
+          if (r.status !== "requires_review") return false;
+          break;
+        case "draft":
+          if (r.status !== "draft") return false;
+          break;
+        case "expired":
+          if (r.status !== "active" || covers) return false;
+          break;
+        case "excluded":
+          if (r.status !== "excluded") return false;
+          break;
+      }
       if (skuConflictOnly) {
         if (!repeatedPositionIds.has(r.id as string)) return false;
       }
@@ -432,7 +453,7 @@ function AgreementLinesPage() {
         .join(" ");
       return [sku, erp, brand, codesFlat].some((s) => s.toLowerCase().includes(term));
     });
-  }, [lines, activeCard, q, skuConflictOnly, repeatedPositionIds]);
+  }, [lines, activeCard, q, skuConflictOnly, repeatedPositionIds, agreement?.end_date]);
 
 
   const handleExport = () => {
