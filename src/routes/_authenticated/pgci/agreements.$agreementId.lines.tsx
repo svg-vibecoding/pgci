@@ -899,13 +899,12 @@ function AgreementLinesPage() {
                 ? "lista para publicar"
                 : "listas para publicar"}
               {selectedPublishable.length > 0 && (
-                <>
-                  {" · "}
-                  <span>{selectedPublishable.length}</span>{" "}
+                <span className="ml-1 font-normal text-muted-foreground">
+                  · {selectedPublishable.length}{" "}
                   {selectedPublishable.length === 1
                     ? "seleccionada"
                     : "seleccionadas"}
-                </>
+                </span>
               )}
             </label>
           </div>
