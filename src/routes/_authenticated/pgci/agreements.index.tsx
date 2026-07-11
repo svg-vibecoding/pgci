@@ -327,7 +327,7 @@ function AgreementsList() {
     <div className="space-y-6">
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Acuerdos comerciales</h1>
+          <h1 className="suma-h1">Acuerdos comerciales</h1>
           <p className="text-sm text-muted-foreground">
             Consulta y gestiona los acuerdos comerciales con clientes.
           </p>
