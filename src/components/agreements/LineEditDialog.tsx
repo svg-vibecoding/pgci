@@ -66,8 +66,10 @@ import {
   searchProducts,
   searchClientCodes,
   reactivateAgreementLine,
+  publishAgreementPositions,
   type ClientCodeSearchResult,
 } from "@/lib/agreements.functions";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export type LineEditClientCode = {
   client_id: string;
@@ -82,6 +84,10 @@ export type LineEditValues = {
   // update_agreement_line — de lo contrario la RPC busca la fila en la
   // tabla equivocada y responde "Posición no encontrada".
   kind?: "position" | "transit";
+  // Estado actual de la posición existente. Solo se usa en edición para
+  // decidir si mostrar el checkbox "Publicar en acuerdo al guardar".
+  // Al crear, la posición nace 'draft' y el checkbox siempre aparece.
+  status?: "active" | "requires_review" | "excluded" | "draft" | "archived";
   sku: string;
   // Lista COMPLETA declarativa de códigos por cliente. Lo ausente se cierra.
   client_codes: LineEditClientCode[];
@@ -1267,6 +1273,57 @@ export function LineEditDialog({
   };
 
   const isEdit = !!initial?.line_id;
+  const publishFn = useServerFn(publishAgreementPositions);
+
+  // El checkbox "Publicar en acuerdo al guardar" aparece:
+  //  - al CREAR (la posición nace 'draft' y podrá publicarse si está completa)
+  //  - al EDITAR solo si la posición está en 'draft' o 'requires_review'
+  const canOfferPublish =
+    !isEdit ||
+    initial?.status === "draft" ||
+    initial?.status === "requires_review";
+
+  const [publishOnSave, setPublishOnSave] = useState(false);
+
+  // isPublishableDraft(values): completa (SKU, precio, fecha inicio) y vigente
+  // (fecha efectiva de fin no vencida). Usa las fechas efectivas del acuerdo
+  // cuando la posición no las trae, coincidiendo con publish_positions RPC.
+  const canPublishNow = useMemo(() => {
+    if (!canOfferPublish) return false;
+    if (!productId) return false;
+    const sale = parsePriceInput(v.sale_price);
+    if (sale == null || sale <= 0) return false;
+    const effStart = v.start_date.trim() || agreementStartDate || "";
+    const effEnd = v.end_date.trim() || agreementEndDate || "";
+    if (!effStart || !effEnd) return false;
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(effEnd);
+    if (m) {
+      const end = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      if (end.getTime() < today.getTime()) return false;
+    }
+    return true;
+  }, [
+    canOfferPublish,
+    productId,
+    v.sale_price,
+    v.start_date,
+    v.end_date,
+    agreementStartDate,
+    agreementEndDate,
+  ]);
+
+  // Si la validación deja de cumplirse (p.ej. el usuario borra el precio),
+  // desmarcar publishOnSave para que el label del botón vuelva a "Guardar".
+  useEffect(() => {
+    if (!canPublishNow && publishOnSave) setPublishOnSave(false);
+  }, [canPublishNow, publishOnSave]);
+
+  // Resetear publishOnSave al abrir/cerrar el modal o al cambiar de posición.
+  useEffect(() => {
+    if (!open) setPublishOnSave(false);
+  }, [open, initial?.line_id]);
 
   const computePendingLabels = (): string[] => {
     const missing: string[] = [];
@@ -1295,8 +1352,10 @@ export function LineEditDialog({
         throw new Error("El precio par debe ser mayor a 0");
       }
       const codes = buildClientCodes();
+      let saveRes: unknown;
+      let targetId: string | null = null;
       if (isEdit) {
-        return patchFn({
+        saveRes = await patchFn({
           data: {
             line_id: initial!.line_id!,
             kind: initial!.kind ?? "position",
@@ -1312,23 +1371,37 @@ export function LineEditDialog({
             confirm_n_conflict: true,
           },
         });
+        targetId = initial!.line_id!;
+      } else {
+        saveRes = await createFn({
+          data: {
+            agreement_id: agreementId,
+            sku: txt(v.sku) ?? undefined,
+            client_codes: codes,
+            sale_price: num(v.sale_price),
+            par_price: num(v.par_price) || undefined,
+            start_date: txt(v.start_date) ?? undefined,
+            end_date: txt(v.end_date) ?? undefined,
+            observations: txt(v.observations) ?? undefined,
+          },
+        });
+        // create_agreement_line devuelve { line_id, kind }
+        targetId = (saveRes as { line_id?: string } | null)?.line_id ?? null;
       }
-      return createFn({
-        data: {
-          agreement_id: agreementId,
-          sku: txt(v.sku) ?? undefined,
-          client_codes: codes,
-          sale_price: num(v.sale_price),
-          par_price: num(v.par_price) || undefined,
-          start_date: txt(v.start_date) ?? undefined,
-          end_date: txt(v.end_date) ?? undefined,
-          observations: txt(v.observations) ?? undefined,
-        },
-      });
+
+      // Encadenado publicar-al-guardar. Se salta si el guardado quedó bloqueado
+      // (RN-MATCH-01 / identity_no_codes): onSuccess muestra el toast de bloqueo.
+      const saveBlocked =
+        !!(saveRes as { blocked?: boolean } | null)?.blocked;
+      let publishRes: Awaited<ReturnType<typeof publishFn>> | null = null;
+      if (publishOnSave && canPublishNow && targetId && !saveBlocked) {
+        publishRes = await publishFn({ data: { ids: [targetId] } });
+      }
+      return { saveRes, publishRes };
     },
-    onSuccess: (res) => {
+    onSuccess: ({ saveRes, publishRes }) => {
       // (1) UPDATE bloqueado (RN-MATCH-01 o identity_no_codes)
-      const r = res as {
+      const r = saveRes as {
         blocked?: boolean;
         block_reason?: {
           code?: string;
@@ -1361,6 +1434,14 @@ export function LineEditDialog({
       const isPending = isCreate
         ? r?.kind === "transit"
         : !!r?.transit_id && !isPromotion;
+      // Con publicación exitosa el toast principal es "publicada".
+      const publishedOk =
+        !!publishRes && (publishRes.published ?? 0) > 0;
+      const publishFailed =
+        !!publishRes &&
+        (publishRes.not_publishable ?? 0) + (publishRes.skipped ?? 0) > 0 &&
+        (publishRes.published ?? 0) === 0;
+
       if (isPending) {
         const missing = computePendingLabels();
         toast.info(
@@ -1368,11 +1449,22 @@ export function LineEditDialog({
             ? `Guardado como pendiente — falta ${missing.join(", ")}`
             : "Guardado como pendiente",
         );
+      } else if (publishedOk) {
+        toast.success(
+          isCreate ? "Posición creada y publicada" : "Posición actualizada y publicada",
+        );
       } else if (isPromotion || isCreate) {
         toast.success("Posición creada");
       } else {
         toast.success("Posición actualizada");
       }
+
+      if (publishFailed) {
+        // Caso borde: guardado ok, publish rechazó (p.ej. venció entre save y publish).
+        const raw = publishRes?.details?.[0]?.reason ?? null;
+        toast.info(`No se pudo publicar: ${raw ?? "condiciones no cumplidas"}`);
+      }
+
       qc.invalidateQueries({ queryKey: ["agreements", "lines", agreementId] });
       qc.invalidateQueries({ queryKey: ["agreements", "detail", agreementId] });
       qc.invalidateQueries({ queryKey: ["agreements", "sku-groups", agreementId] });
@@ -1886,9 +1978,35 @@ export function LineEditDialog({
           </div>
         </div>
 
-        <div className="px-6 py-4 border-t border-border bg-muted/30 shrink-0 flex flex-col sm:flex-row sm:items-center gap-2">
+        <div className="px-6 py-4 border-t border-border bg-muted/30 shrink-0 flex flex-col sm:flex-row sm:items-center gap-3">
           {saveError && (
             <p className="text-xs text-destructive sm:mr-auto">{saveError}</p>
+          )}
+          {canOfferPublish && !saveError && (
+            <label
+              className={cn(
+                "flex items-start gap-2 text-sm sm:mr-auto",
+                canPublishNow ? "text-foreground" : "text-muted-foreground",
+              )}
+            >
+              <Checkbox
+                id="publish-on-save"
+                checked={publishOnSave}
+                onCheckedChange={(c) => setPublishOnSave(c === true)}
+                disabled={!canPublishNow || save.isPending}
+                className="mt-0.5"
+              />
+              <span className="flex flex-col leading-tight">
+                <span className="font-medium">Publicar en acuerdo al guardar</span>
+                <span className="text-xs text-muted-foreground">
+                  {canPublishNow
+                    ? isEdit
+                      ? "Pasará a Activa al guardar."
+                      : "Nacerá como Activa."
+                    : "Completa producto, precio y fechas vigentes para habilitar."}
+                </span>
+              </span>
+            </label>
           )}
           <div className="sm:ml-auto flex gap-2">
             <Button
@@ -1909,11 +2027,17 @@ export function LineEditDialog({
               }}
               disabled={save.isPending || hasCreatingIncomplete}
             >
-              {save.isPending ? "Guardando…" : isEdit ? "Guardar cambios" : "Guardar"}
-
+              {save.isPending
+                ? "Guardando…"
+                : publishOnSave && canPublishNow
+                  ? "Guardar y publicar"
+                  : isEdit
+                    ? "Guardar cambios"
+                    : "Guardar"}
             </Button>
           </div>
         </div>
+
 
       </DialogContent>
 

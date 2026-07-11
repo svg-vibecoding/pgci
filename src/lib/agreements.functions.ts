@@ -676,6 +676,40 @@ export const reactivateAgreementLine = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// ---------------------------------------------------------------------------
+// Publicación de posiciones (draft/requires_review → active)
+// ---------------------------------------------------------------------------
+
+export type PublishPositionsDetail = {
+  position_id: string;
+  result: "publicada" | "no_publicable" | "omitida";
+  reason: string | null;
+};
+
+export type PublishPositionsResult = {
+  published: number;
+  not_publishable: number;
+  skipped: number;
+  details: PublishPositionsDetail[];
+};
+
+export const publishAgreementPositions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ ids: z.array(z.string().uuid()).min(1) }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<PublishPositionsResult> => {
+    const { data: res, error } = await context.supabase.rpc("publish_positions", {
+      p_position_ids: data.ids,
+    });
+    if (error) {
+      if (error.code === "42501")
+        throw new Error("No tienes permisos sobre este acuerdo");
+      throw new Error(`No se pudo publicar: ${error.message}`);
+    }
+    return res as unknown as PublishPositionsResult;
+  });
+
 export const lookupProductBySku = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => {

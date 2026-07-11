@@ -18,6 +18,7 @@ import {
   Unlink,
   Eye,
   Layers,
+  Send,
 } from "lucide-react";
 import { AgreementBreadcrumb } from "@/components/agreements/AgreementBreadcrumb";
 import { AgreementHeader } from "@/components/agreements/AgreementHeader";
@@ -58,8 +59,10 @@ import {
   listClientCatalogPermissions,
   linkSkuPrice,
   unlinkSkuPrice,
+  publishAgreementPositions,
   type LineCode,
 } from "@/lib/agreements.functions";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -165,6 +168,7 @@ function AgreementLinesPage() {
   const skuGroupsFn = useServerFn(listAgreementSkuGroups);
   const linkFn = useServerFn(linkSkuPrice);
   const unlinkFn = useServerFn(unlinkSkuPrice);
+  const publishFn = useServerFn(publishAgreementPositions);
   const companiesFn = useServerFn(listAgreementCompanies);
   const catalogPermsFn = useServerFn(listClientCatalogPermissions);
 
@@ -232,6 +236,8 @@ function AgreementLinesPage() {
     codes: LineCode[];
   } | null>(null);
   const [reason, setReason] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [confirmPublishOpen, setConfirmPublishOpen] = useState(false);
 
   const invalidateAll = () => {
     qc.invalidateQueries({ queryKey: ["agreements", "lines", agreementId] });
@@ -361,12 +367,63 @@ function AgreementLinesPage() {
     onSettled: () => setLinkingProductId(null),
   });
 
+  const REASON_LABELS: Record<string, string> = {
+    no_sku: "sin SKU",
+    no_price: "sin precio",
+    no_dates: "sin fechas",
+    expired: "vencida",
+    estado_no_publicable: "estado no publicable",
+    sin_permiso: "sin permiso",
+    no_encontrada: "no encontrada",
+  };
+  const humanReason = (raw: string | null): string => {
+    if (!raw) return "no cumplía";
+    return raw
+      .split(",")
+      .map((p) => REASON_LABELS[p.trim()] ?? p.trim())
+      .join(" · ");
+  };
+
+  const publishMut = useMutation({
+    mutationFn: (ids: string[]) => publishFn({ data: { ids } }),
+    onSuccess: (res) => {
+      const published = res.published ?? 0;
+      const notPub = res.not_publishable ?? 0;
+      const skipped = res.skipped ?? 0;
+      if (published > 0) {
+        toast.success(
+          `${published} ${published === 1 ? "posición publicada" : "posiciones publicadas"}`,
+        );
+      }
+      if (notPub + skipped > 0) {
+        const notList = (res.details ?? [])
+          .filter((d) => d.result !== "publicada")
+          .map((d) => humanReason(d.reason));
+        const counts = new Map<string, number>();
+        for (const r of notList) counts.set(r, (counts.get(r) ?? 0) + 1);
+        const detail = Array.from(counts.entries())
+          .map(([k, v]) => `${v} ${k}`)
+          .join(", ");
+        toast.info(
+          `${notPub + skipped} ${notPub + skipped === 1 ? "no se publicó" : "no se publicaron"}: ${detail}`,
+        );
+      }
+      setSelectedIds(new Set());
+      setConfirmPublishOpen(false);
+      invalidateAll();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
+
   const openEditForLine = (lineId: string) => {
     const r = (lines ?? []).find((x) => x.id === lineId) as Line | undefined;
     if (!r) return;
     setEditInitial({
       line_id: r.id as string,
       kind: "position",
+      status: r.status as LineEditValues["status"],
       sku: r.products?.sku ?? "",
       // Estado completo declarativo: preserva todos los códigos de otros clientes.
       client_codes: (r.codes ?? []).map((c) => ({
@@ -455,6 +512,46 @@ function AgreementLinesPage() {
     });
   }, [lines, activeCard, q, skuConflictOnly, repeatedPositionIds, agreement?.end_date]);
 
+  // Publicables en la vista filtrada actual. Un checkbox por fila se habilita
+  // solo si isPublishable(row) — todos los ids en publishableInView pasan el gate.
+  const isPublishable = (r: Line): boolean => {
+    if (r.status !== "draft" && r.status !== "requires_review") return false;
+    if (!r.product_id) return false;
+    const sale = typeof r.sale_price === "number" ? r.sale_price : null;
+    if (sale == null || sale <= 0) return false;
+    if (!r.start_date) return false;
+    return coversTodayOf(
+      (r.end_date as string | null) ?? null,
+      (agreement?.end_date as string | null) ?? null,
+    );
+  };
+
+  const publishableInView = useMemo<string[]>(
+    () =>
+      filtered
+        .filter((r) => isPublishable(r))
+        .map((r) => r.id as string),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [filtered, agreement?.end_date],
+  );
+
+  // Reconciliar selectedIds ∩ publishableInView cuando cambia filtro/búsqueda.
+  // Preserva selección entre draft↔requires_review mientras sigan publicables.
+  useEffect(() => {
+    const allowed = new Set(publishableInView);
+    setSelectedIds((prev) => {
+      let changed = false;
+      const next = new Set<string>();
+      for (const id of prev) {
+        if (allowed.has(id)) next.add(id);
+        else changed = true;
+      }
+      return changed ? next : prev;
+    });
+  }, [publishableInView]);
+
+
+
 
   const handleExport = () => {
     if (!lines) return;
@@ -500,6 +597,66 @@ function AgreementLinesPage() {
     { key: "excluded", label: "Excluidas", value: num(agreement.lines_excluded) },
   ];
   const totalCount = summaryCards.reduce((s, c) => s + c.value, 0);
+
+  // Selección masiva SOLO cuando el filtro está en "En gestión" o "Revisar".
+  // Fuera de esos filtros, la tabla se ve igual que hoy: sin columna ni franja.
+  const selectionMode =
+    canAdmin && (activeCard === "draft" || activeCard === "requires_review");
+  const selectedPublishable = publishableInView.filter((id) =>
+    selectedIds.has(id),
+  );
+  const masterState: "empty" | "indeterminate" | "checked" =
+    publishableInView.length === 0
+      ? "empty"
+      : selectedPublishable.length === 0
+        ? "empty"
+        : selectedPublishable.length === publishableInView.length
+          ? "checked"
+          : "indeterminate";
+  const toggleMaster = () => {
+    setSelectedIds((prev) => {
+      if (masterState === "checked") {
+        // Deseleccionar solo las de la vista actual; preserva otras si hubiera.
+        const next = new Set(prev);
+        for (const id of publishableInView) next.delete(id);
+        return next;
+      }
+      // empty o indeterminate → seleccionar todas las publicables de la vista.
+      const next = new Set(prev);
+      for (const id of publishableInView) next.add(id);
+      return next;
+    });
+  };
+  const toggleRow = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  const rowDisabledReason = (r: Line): string => {
+    if (r.status === "excluded") return "Excluida";
+    if (r.status === "archived") return "Archivada";
+    if (r.status === "active") {
+      const covers = coversTodayOf(
+        (r.end_date as string | null) ?? null,
+        (agreement.end_date as string | null) ?? null,
+      );
+      return covers ? "Ya activa" : "Vencida";
+    }
+    // draft o requires_review pero incompleta
+    if (!r.product_id) return "Incompleta: sin SKU";
+    if ((r.sale_price ?? 0) <= 0) return "Incompleta: sin precio";
+    if (!r.start_date) return "Incompleta: sin fecha de inicio";
+    const covers = coversTodayOf(
+      (r.end_date as string | null) ?? null,
+      (agreement.end_date as string | null) ?? null,
+    );
+    if (!covers) return "Vencida";
+    return "No publicable";
+  };
+
 
   return (
     <div className="space-y-6">
@@ -719,10 +876,60 @@ function AgreementLinesPage() {
         </div>
       )}
 
+      {selectionMode && (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2">
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="publish-master"
+              aria-label="Seleccionar todas las publicables"
+              checked={
+                masterState === "checked"
+                  ? true
+                  : masterState === "indeterminate"
+                    ? "indeterminate"
+                    : false
+              }
+              disabled={publishableInView.length === 0 || publishMut.isPending}
+              onCheckedChange={() => toggleMaster()}
+            />
+            <label htmlFor="publish-master" className="text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">
+                {publishableInView.length}
+              </span>{" "}
+              {publishableInView.length === 1
+                ? "lista para publicar"
+                : "listas para publicar"}
+              {selectedPublishable.length > 0 && (
+                <>
+                  {" · "}
+                  <span className="font-medium text-foreground">
+                    {selectedPublishable.length}
+                  </span>{" "}
+                  {selectedPublishable.length === 1
+                    ? "seleccionada"
+                    : "seleccionadas"}
+                </>
+              )}
+            </label>
+          </div>
+          <div className="ml-auto">
+            <Button
+              size="sm"
+              onClick={() => setConfirmPublishOpen(true)}
+              disabled={selectedPublishable.length === 0 || publishMut.isPending}
+            >
+              <Send className="mr-1.5 h-4 w-4" />
+              Publicar en acuerdo
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div className="overflow-x-auto rounded-lg border border-border bg-card">
         <Table className="table-fixed">
           <TableHeader>
             <TableRow>
+              {selectionMode && <TableHead className="w-10" aria-hidden />}
               <TableHead>Cliente</TableHead>
               <TableHead>Jaivaná</TableHead>
               <TableHead className="w-32 whitespace-nowrap">Marca</TableHead>
@@ -736,7 +943,7 @@ function AgreementLinesPage() {
             {loadingLines && (
               <TableRow>
                 <TableCell
-                  colSpan={7}
+                  colSpan={selectionMode ? 8 : 7}
                   className="py-6 text-center text-sm text-muted-foreground"
                 >
                   Cargando…
@@ -746,13 +953,14 @@ function AgreementLinesPage() {
             {!loadingLines && filtered.length === 0 && (
               <TableRow>
                 <TableCell
-                  colSpan={7}
+                  colSpan={selectionMode ? 8 : 7}
                   className="py-8 text-center text-sm text-muted-foreground"
                 >
                   No hay posiciones con esos filtros.
                 </TableCell>
               </TableRow>
             )}
+
             {filtered.map((r) => {
               const isExcluded = r.status === "excluded";
               const vig = vigenciaBadge(
@@ -776,7 +984,40 @@ function AgreementLinesPage() {
               const meta = badgeKey ? STATUS_META[badgeKey] : null;
               return (
                 <TableRow key={r.id as string}>
+                  {selectionMode &&
+                    (() => {
+                      const publishable = isPublishable(r);
+                      const box = (
+                        <Checkbox
+                          aria-label={
+                            publishable ? "Seleccionar posición" : "No publicable"
+                          }
+                          checked={selectedIds.has(r.id as string)}
+                          disabled={!publishable || publishMut.isPending}
+                          onCheckedChange={() => toggleRow(r.id as string)}
+                        />
+                      );
+                      return (
+                        <TableCell className="w-10 align-middle">
+                          {publishable ? (
+                            box
+                          ) : (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="inline-flex">{box}</span>
+                                </TooltipTrigger>
+                                <TooltipContent side="right">
+                                  {rowDisabledReason(r)}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                        </TableCell>
+                      );
+                    })()}
                   <TableCell>
+
                     {(() => {
                       const codes = r.codes ?? [];
                       // Proyección por cliente seleccionado. Nunca oculta filas.
@@ -1110,6 +1351,47 @@ function AgreementLinesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog
+        open={confirmPublishOpen}
+        onOpenChange={(o) => {
+          if (!publishMut.isPending) setConfirmPublishOpen(o);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Publicar {selectedPublishable.length}{" "}
+              {selectedPublishable.length === 1 ? "posición" : "posiciones"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {selectedPublishable.length === 1 ? "Esta" : "Estas"}{" "}
+              {selectedPublishable.length}{" "}
+              {selectedPublishable.length === 1 ? "posición pasará" : "posiciones pasarán"}{" "}
+              a estado Activa en el acuerdo &ldquo;{agreement.name as string}&rdquo;. La
+              acción es inmediata y visible para los clientes asignados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={publishMut.isPending}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                publishMut.mutate(selectedPublishable);
+              }}
+              disabled={publishMut.isPending || selectedPublishable.length === 0}
+            >
+              {publishMut.isPending
+                ? "Publicando…"
+                : `Publicar ${selectedPublishable.length} ${selectedPublishable.length === 1 ? "posición" : "posiciones"}`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+
 
 
 
