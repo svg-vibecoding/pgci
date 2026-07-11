@@ -55,7 +55,6 @@ import {
   listAgreementLines,
   excludeAgreementLine,
   reactivateAgreementLine,
-  deleteAgreementTransitLine,
   listAgreementSkuGroups,
   listAgreementCompanies,
   listClientCatalogPermissions,
