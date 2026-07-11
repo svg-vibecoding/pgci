@@ -106,6 +106,17 @@ function AgreementsList() {
     queryFn: () => listFn(),
   });
 
+  const { data: canCreate } = useQuery({
+    queryKey: ["rpc", "can_create_agreements"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("can_create_agreements");
+      if (error) throw error;
+      return !!data;
+    },
+  });
+  const canCreateEnabled = canCreate === true;
+
+
   const [search, setSearch] = useState("");
   const [statusF, setStatusF] = useState<StatusFilter>("all");
   const [activeCard, setActiveCard] = useState<CardKey>("all");
