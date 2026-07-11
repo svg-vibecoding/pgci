@@ -211,9 +211,6 @@ function AgreementLinesPage() {
     description: string | null;
     codes: LineCode[];
   } | null>(null);
-  const [deleteTransitTarget, setDeleteTransitTarget] = useState<{ id: string; sku: string | null } | null>(
-    null,
-  );
   const [reason, setReason] = useState("");
 
   const invalidateAll = () => {
