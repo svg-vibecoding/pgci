@@ -141,7 +141,7 @@ function AgreementLinesPage() {
   const linesFn = useServerFn(listAgreementLines);
   const excludeFn = useServerFn(excludeAgreementLine);
   const reactivateFn = useServerFn(reactivateAgreementLine);
-  const deleteTransitFn = useServerFn(deleteAgreementTransitLine);
+  
   const skuGroupsFn = useServerFn(listAgreementSkuGroups);
   const linkFn = useServerFn(linkSkuPrice);
   const unlinkFn = useServerFn(unlinkSkuPrice);
