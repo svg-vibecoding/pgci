@@ -310,8 +310,8 @@ function UsersList() {
                 }
               >
                 <CardContent className="p-4">
-                  <div className="text-xs text-muted-foreground">{c.label}</div>
-                  <div className="mt-1 text-2xl font-semibold tracking-tight">
+                  <div className="suma-overline text-text-tertiary">{c.label}</div>
+                  <div className="mt-1 suma-metric">
                     {isLoading ? "—" : c.value}
                   </div>
                 </CardContent>
