@@ -989,6 +989,7 @@ function AgreementLinesPage() {
                           aria-label={
                             publishable ? "Seleccionar posición" : "No publicable"
                           }
+                          className="disabled:border-muted-foreground/40 disabled:bg-muted disabled:opacity-100"
                           checked={selectedIds.has(r.id as string)}
                           disabled={!publishable || publishMut.isPending}
                           onCheckedChange={() => toggleRow(r.id as string)}
