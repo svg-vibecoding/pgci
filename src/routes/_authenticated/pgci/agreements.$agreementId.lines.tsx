@@ -927,48 +927,163 @@ function AgreementLinesPage() {
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-lg border border-border bg-card">
-        <Table className="table-fixed">
-          <TableHeader>
-            <TableRow>
-              {selectionMode && <TableHead className="w-10" aria-hidden />}
-              <TableHead>Cliente</TableHead>
-              <TableHead>Jaivaná</TableHead>
-              <TableHead className="w-32 whitespace-nowrap">Marca</TableHead>
-              <TableHead className="w-32 whitespace-nowrap text-right">Precio</TableHead>
-              <TableHead className="w-32 whitespace-nowrap">Vigencia</TableHead>
-              <TableHead className="w-40 whitespace-nowrap">Estado</TableHead>
-              <TableHead className="w-28 whitespace-nowrap text-right">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loadingLines && (
-              <TableRow>
-                <TableCell
-                  colSpan={selectionMode ? 8 : 7}
-                  className="py-6 text-center text-sm text-muted-foreground"
-                >
-                  Cargando…
-                </TableCell>
-              </TableRow>
-            )}
-            {!loadingLines && filtered.length === 0 && (
-              <TableRow>
-                <TableCell
-                  colSpan={selectionMode ? 8 : 7}
-                  className="py-8 text-center text-sm text-muted-foreground"
-                >
-                  No hay posiciones con esos filtros.
-                </TableCell>
-              </TableRow>
-            )}
+      {(() => {
+        const skuGroupBadge = (r: Line) => {
+          const g = groupByPositionId.get(r.id as string);
+          if (!g) return null;
+          if (g.state === "conflict") {
+            const conflictPrices = g.prices.slice().sort((a, b) => a - b);
+            const minPrice = conflictPrices[0] ?? null;
+            const maxPrice = conflictPrices[conflictPrices.length - 1] ?? null;
+            return (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span>
+                      <Badge color="neutral" variant="soft">
+                        <Info className="h-3 w-3" />
+                        Precios ({new Set(g.prices).size})
+                      </Badge>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs">
+                    <div className="space-y-1">
+                      <div className="font-medium">
+                        SKU en {g.position_ids.length} posiciones
+                      </div>
+                      <div>
+                        Precios no vinculados ({fmtMoney(minPrice)} – {fmtMoney(maxPrice)})
+                      </div>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            );
+          }
+          if (g.state === "repeated") {
+            return (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Unlink
+                      className="h-3.5 w-3.5 text-muted-foreground"
+                      aria-label="SKU repetido"
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs">
+                    <div className="space-y-1">
+                      <div className="font-medium">
+                        SKU en {g.position_ids.length} posiciones
+                      </div>
+                      <div>
+                        Precios no vinculados ({fmtMoney(g.prices[0] ?? null)})
+                      </div>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            );
+          }
+          if (g.state === "unified") {
+            return (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link2
+                      className="h-3.5 w-3.5 text-muted-foreground"
+                      aria-label="SKU vinculado"
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs">
+                    <div className="space-y-1">
+                      <div className="font-medium">
+                        SKU en {g.position_ids.length} posiciones
+                      </div>
+                      <div>
+                        Precios vinculados ({fmtMoney(g.prices[0] ?? null)})
+                      </div>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            );
+          }
+          return null;
+        };
 
-            {filtered.map((r) => {
-              const isExcluded = r.status === "excluded";
+        const columns: DataTableColumn<Line>[] = [
+          {
+            id: "client",
+            header: "Cliente",
+            width: 220,
+            cell: (r) => {
+              const codes = r.codes ?? [];
+              const projected = projectionClientId
+                ? codes.find((c) => c.client_id === projectionClientId)
+                : codes[0];
+              if (!projected) {
+                return <span className="font-mono text-text-tertiary">—</span>;
+              }
+              return (
+                <IdentityCell
+                  title={projected.client_code}
+                  subtitle={projected.description ?? "—"}
+                  monoTitle
+                />
+              );
+            },
+          },
+          {
+            id: "jaivana",
+            header: "Jaivaná",
+            cell: (r) => (
+              <IdentityCell
+                title={r.products?.sku ?? "—"}
+                subtitle={r.products?.erp_description ?? "—"}
+                monoTitle
+                trailing={skuGroupBadge(r)}
+              />
+            ),
+          },
+          {
+            id: "brand",
+            header: "Marca",
+            width: 140,
+            cell: (r) => r.products?.commercial_brand ?? "—",
+          },
+          {
+            id: "price",
+            header: "Precio",
+            width: 130,
+            numeric: true,
+            cell: (r) => (
+              <div>
+                <div className="text-text-primary">{fmtMoney(r.sale_price ?? null)}</div>
+                {r.par_price != null && r.par_price > 0 && (
+                  <div className="text-[11.5px] text-text-tertiary">
+                    par {fmtMoney(r.par_price)}
+                  </div>
+                )}
+              </div>
+            ),
+          },
+          {
+            id: "vigencia",
+            header: "Vigencia",
+            width: 130,
+            cell: (r) => {
               const vig = vigenciaBadge(
                 r.end_date ?? null,
                 (agreement.end_date as string | null) ?? null,
               );
+              return <Badge color={vig.color}>{vig.label}</Badge>;
+            },
+          },
+          {
+            id: "status",
+            header: "Estado",
+            width: 180,
+            cell: (r) => {
               const covers = coversTodayOf(
                 (r.end_date as string | null) ?? null,
                 (agreement.end_date as string | null) ?? null,
@@ -984,258 +1099,112 @@ function AgreementLinesPage() {
                         ? "requires_review"
                         : null;
               const meta = badgeKey ? STATUS_META[badgeKey] : null;
-              return (
-                <TableRow key={r.id as string}>
-                  {selectionMode &&
-                    (() => {
-                      const publishable = isPublishable(r);
-                      const box = (
-                        <Checkbox
-                          aria-label={
-                            publishable ? "Seleccionar posición" : "No publicable"
-                          }
-                          className="disabled:border-muted-foreground/40 disabled:bg-muted disabled:opacity-100"
-                          checked={selectedIds.has(r.id as string)}
-                          disabled={!publishable || publishMut.isPending}
-                          onCheckedChange={() => toggleRow(r.id as string)}
-                        />
-                      );
-                      return (
-                        <TableCell className="w-10 align-middle">
-                          {publishable ? (
-                            box
-                          ) : (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span className="inline-flex">{box}</span>
-                                </TooltipTrigger>
-                                <TooltipContent side="right">
-                                  {rowDisabledReason(r)}
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          )}
-                        </TableCell>
-                      );
-                    })()}
-                  <TableCell>
-
-                    {(() => {
-                      const codes = r.codes ?? [];
-                      // Proyección por cliente seleccionado. Nunca oculta filas.
-                      const open = codes;
-                      const projected =
-                        projectionClientId
-                          ? open.find((c) => c.client_id === projectionClientId)
-                          : open[0];
-                      if (projected) {
-                        return (
-                          <div>
-                            <div className="font-mono text-sm">{projected.client_code}</div>
-                            <div className="text-xs text-muted-foreground line-clamp-2">
-                              {projected.description ?? "—"}
-                            </div>
-                          </div>
-                        );
-                      }
-                      return <div className="font-mono text-sm">—</div>;
-                    })()}
-
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-mono text-sm">{r.products?.sku ?? "—"}</span>
-                      {(() => {
-                        const g = groupByPositionId.get(r.id as string);
-                        if (!g) return null;
-                        if (g.state === "conflict") {
-                          const conflictPrices = g.prices.slice().sort((a, b) => a - b);
-                          const minPrice = conflictPrices[0] ?? null;
-                          const maxPrice = conflictPrices[conflictPrices.length - 1] ?? null;
-                          return (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span>
-                                    <Badge color="neutral" variant="soft">
-                                      <Info className="h-3 w-3" />
-                                      Precios ({new Set(g.prices).size})
-                                    </Badge>
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="max-w-xs">
-                                  <div className="space-y-1">
-                                    <div className="font-medium">
-                                      SKU en {g.position_ids.length} posiciones
-                                    </div>
-                                    <div>
-                                      Precios no vinculados ({fmtMoney(minPrice)} – {fmtMoney(maxPrice)})
-                                    </div>
-                                  </div>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          );
-                        }
-                        if (g.state === "repeated") {
-                          return (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Unlink
-                                    className="h-3.5 w-3.5 text-muted-foreground"
-                                    aria-label="SKU repetido"
-                                  />
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="max-w-xs">
-                                  <div className="space-y-1">
-                                    <div className="font-medium">
-                                      SKU en {g.position_ids.length} posiciones
-                                    </div>
-                                    <div>
-                                      Precios no vinculados ({fmtMoney(g.prices[0] ?? null)})
-                                    </div>
-                                  </div>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          );
-                        }
-                        if (g.state === "unified") {
-                          return (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Link2
-                                    className="h-3.5 w-3.5 text-muted-foreground"
-                                    aria-label="SKU vinculado"
-                                  />
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="max-w-xs">
-                                  <div className="space-y-1">
-                                    <div className="font-medium">
-                                      SKU en {g.position_ids.length} posiciones
-                                    </div>
-                                    <div>
-                                      Precios vinculados ({fmtMoney(g.prices[0] ?? null)})
-                                    </div>
-                                  </div>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          );
-                        }
-                        return null;
-                      })()}
-                    </div>
-                    <div className="text-xs text-muted-foreground line-clamp-2">
-                      {r.products?.erp_description ?? "—"}
-                    </div>
-                  </TableCell>
-
-                  <TableCell className="text-sm">
-                    {r.products?.commercial_brand ?? "—"}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    <div>{fmtMoney(r.sale_price ?? null)}</div>
-                    {r.par_price != null && r.par_price > 0 && (
-                      <div className="text-xs text-muted-foreground">
-                        par&nbsp;&nbsp;{fmtMoney(r.par_price)}
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell className="whitespace-nowrap">
-                    <Badge color={vig.color}>{vig.label}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col items-start gap-1">
-                      {meta && <StatusBadge status={meta.status} label={meta.label} />}
-                      {r.status === "requires_review" && (
-                        <div className="flex flex-wrap gap-1">
-                          {r.product_id && r.products?.status !== "active" && (
-                            <Badge color="error" variant="soft">
-                              <XCircle className="h-3 w-3" />
-                              SKU inactivo
-                            </Badge>
-                          )}
-                          {vig.color === "error" && (
-                            <Badge color="error" variant="soft">
-                              <XCircle className="h-3 w-3" />
-                              Vigencia vencida
-                            </Badge>
-                          )}
-                        </div>
-                      )}
-                      {isExcluded && r.exclusion_reason && (
-                        <div className="text-xs text-muted-foreground line-clamp-2">
-                          {r.exclusion_reason}
-                        </div>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => openViewForLine(r.id as string)}
-                        aria-label="Ver"
-                        title="Ver posición"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      {canAdmin && (
-                        isExcluded ? (
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => reactivate.mutate(r.id as string)}
-                            aria-label="Reactivar"
-                            title="Reactivar"
-                          >
-                            <RotateCcw className="h-4 w-4" />
-                          </Button>
-                        ) : (
-                          <>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => {
-                                openEditForLine(r.id as string);
-                              }}
-                              aria-label="Editar"
-                              title="Editar"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() =>
-                                setExcludeTarget({
-                                  id: r.id as string,
-                                  sku: r.products?.sku ?? null,
-                                  description: r.products?.erp_description ?? null,
-                                  codes: r.codes ?? [],
-                                })
-                              }
-                              aria-label="Excluir"
-                              title="Excluir"
-                            >
-                              <Ban className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </>
-                        )
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
+              const vig = vigenciaBadge(
+                r.end_date ?? null,
+                (agreement.end_date as string | null) ?? null,
               );
-            })}
-          </TableBody>
-        </Table>
-      </div>
+              return (
+                <div className="flex flex-col items-start gap-1">
+                  {meta && <StatusBadge status={meta.status} label={meta.label} />}
+                  {r.status === "requires_review" && (
+                    <div className="flex flex-wrap gap-1">
+                      {r.product_id && r.products?.status !== "active" && (
+                        <Badge color="error" variant="soft">
+                          <XCircle className="h-3 w-3" />
+                          SKU inactivo
+                        </Badge>
+                      )}
+                      {vig.color === "error" && (
+                        <Badge color="error" variant="soft">
+                          <XCircle className="h-3 w-3" />
+                          Vigencia vencida
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+                  {r.status === "excluded" && r.exclusion_reason && (
+                    <div className="text-[11.5px] text-text-tertiary line-clamp-2">
+                      {r.exclusion_reason}
+                    </div>
+                  )}
+                </div>
+              );
+            },
+          },
+        ];
+
+        const rowActions = (r: Line): RowAction<Line>[] => {
+          const isExcluded = r.status === "excluded";
+          const actions: RowAction<Line>[] = [
+            {
+              label: "Ver detalle",
+              icon: <Eye className="h-4 w-4" />,
+              onSelect: () => openViewForLine(r.id as string),
+            },
+          ];
+          if (canAdmin) {
+            if (isExcluded) {
+              actions.push({
+                label: "Reactivar",
+                icon: <RotateCcw className="h-4 w-4" />,
+                onSelect: () => reactivate.mutate(r.id as string),
+              });
+            } else {
+              actions.push({
+                label: "Editar",
+                icon: <Pencil className="h-4 w-4" />,
+                onSelect: () => openEditForLine(r.id as string),
+              });
+              actions.push({
+                label: "Excluir",
+                icon: <Ban className="h-4 w-4" />,
+                destructive: true,
+                onSelect: () =>
+                  setExcludeTarget({
+                    id: r.id as string,
+                    sku: r.products?.sku ?? null,
+                    description: r.products?.erp_description ?? null,
+                    codes: r.codes ?? [],
+                  }),
+              });
+            }
+          }
+          return actions;
+        };
+
+        return (
+          <DataTable<Line>
+            data={filtered}
+            columns={columns}
+            getRowId={(r) => r.id as string}
+            loading={loadingLines}
+            onRowClick={(r) => openViewForLine(r.id as string)}
+            rowActions={rowActions}
+            empty={{
+              icon: <Search className="h-5 w-5" />,
+              title: "Sin posiciones",
+              description: "No hay posiciones con esos filtros.",
+            }}
+            selection={
+              selectionMode
+                ? {
+                    getRowId: (r) => r.id as string,
+                    selectedIds,
+                    onToggleRow: (r) => toggleRow(r.id as string),
+                    onToggleAll: toggleMaster,
+                    masterState,
+                    masterDisabled:
+                      publishableInView.length === 0 || publishMut.isPending,
+                    isRowSelectable: (r) => isPublishable(r),
+                    rowDisabledReason: (r) => rowDisabledReason(r),
+                    ariaLabel: "Seleccionar posición",
+                  }
+                : undefined
+            }
+          />
+        );
+      })()}
+
 
 
 
