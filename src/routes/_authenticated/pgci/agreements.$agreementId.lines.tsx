@@ -638,9 +638,7 @@ function AgreementLinesPage() {
       {(activeCard !== "all" || q.trim() || skuConflictOnly) && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <p className="text-sm text-muted-foreground">
-            {activeCard === "transit"
-              ? `${filtered.length} ${filtered.length === 1 ? "línea en tránsito" : "líneas en tránsito"}`
-              : `${filtered.length} de ${counts.all} ${counts.all === 1 ? "posición" : "posiciones"}`}
+            {`${filtered.length} de ${counts.all} ${counts.all === 1 ? "posición" : "posiciones"}`}
           </p>
           <div className="flex flex-wrap gap-2">
             {activeCard !== "all" && (
