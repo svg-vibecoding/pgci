@@ -802,7 +802,7 @@ function AgreementLinesPage() {
                   <TableCell>
                     <div className="flex items-center gap-1.5">
                       <span className="font-mono text-sm">{r.products?.sku ?? "—"}</span>
-                      {r.kind === "position" && (() => {
+                      {(() => {
                         const g = groupByPositionId.get(r.id as string);
                         if (!g) return null;
                         if (g.state === "conflict") {
