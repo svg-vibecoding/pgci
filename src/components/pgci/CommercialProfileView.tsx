@@ -265,27 +265,55 @@ export function CommercialProfileView() {
                       <AccordionContent className="pb-4">
                         <div className="mb-4">
                           <p className="suma-overline text-text-tertiary mb-2">
-                            Permisos sobre el cliente
+                            Permisos avanzados
                           </p>
-                          {permChips.length === 0 ? (
-                            <p className="suma-caption text-text-tertiary">
-                              Solo consulta.
-                            </p>
-                          ) : (
-                            <div className="flex flex-wrap gap-1.5">
-                              {permChips.map((p) => (
-                                <Chip key={p} variant="soft">
-                                  {p}
-                                </Chip>
-                              ))}
-                            </div>
-                          )}
+                          <div className="space-y-1">
+                            {[
+                              {
+                                icon: FileText,
+                                label: "Crear acuerdos",
+                                checked: !!a.can_create_agreements,
+                              },
+                              {
+                                icon: Layers,
+                                label: "Gestionar catálogo del cliente",
+                                checked: !!a.can_manage_client_catalog,
+                              },
+                              {
+                                icon: Shuffle,
+                                label: "Gestionar matching",
+                                checked: !!a.can_manage_matching,
+                              },
+                            ].map((perm) => {
+                              const Icon = perm.icon;
+                              return (
+                                <div
+                                  key={perm.label}
+                                  className="flex items-center justify-between gap-4 py-1.5"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <Icon className="h-4 w-4 text-text-tertiary" />
+                                    <span className="suma-body text-text-primary">
+                                      {perm.label}
+                                    </span>
+                                  </div>
+                                  <Switch
+                                    checked={perm.checked}
+                                    disabled
+                                    aria-label={perm.label}
+                                    aria-readonly="true"
+                                  />
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
 
                         <div>
                           <p className="suma-overline text-text-tertiary mb-2">
                             Acuerdos donde participas
                           </p>
+
                           {clientAgreements && clientAgreements.length > 0 ? (
                             <ul className="divide-y divide-[var(--border-subtle)] rounded-md border border-[var(--border-subtle)]">
                               {clientAgreements.map((m) => {
