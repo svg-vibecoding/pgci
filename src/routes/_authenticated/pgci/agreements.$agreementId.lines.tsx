@@ -466,7 +466,7 @@ function AgreementLinesPage() {
     { key: "active", label: "Activas", value: counts.active },
     { key: "requires_review", label: "Requieren revisión", value: counts.requires_review },
     { key: "excluded", label: "Excluidas", value: counts.excluded },
-    { key: "transit", label: "En tránsito", value: counts.transit },
+    
   ];
 
   return (
