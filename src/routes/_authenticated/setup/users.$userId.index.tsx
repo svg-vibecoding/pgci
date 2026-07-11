@@ -1,11 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,7 +25,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { StatusBadge, Badge } from "@/components/sumatec";
+import { StatusBadge, Badge, Chip } from "@/components/sumatec";
 import { IndicatorCard } from "@/components/setup/IndicatorCard";
 import { InfoField, InfoSection } from "@/components/setup/InfoSection";
 import { useIsSuperAdmin } from "@/hooks/use-profile";
@@ -28,7 +37,26 @@ import {
   AlertTriangle,
   Info,
   ShieldCheck,
+  FileText,
+  Layers,
+  Shuffle,
+  Users as UsersIcon,
 } from "lucide-react";
+
+const memberRoleLabel = (r?: string | null) => {
+  switch (r) {
+    case "agreement_admin":
+      return "Admin del acuerdo";
+    case "agreement_editor":
+      return "Editor";
+    case "agreement_viewer":
+      return "Consulta";
+    case "agreement_member":
+      return "Miembro";
+    default:
+      return r ?? "Miembro";
+  }
+};
 
 export const Route = createFileRoute("/_authenticated/setup/users/$userId/")({
   head: () => ({ meta: [{ title: "Usuario · Setup · PGCI" }] }),
