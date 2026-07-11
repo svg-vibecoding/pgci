@@ -236,6 +236,8 @@ function AgreementLinesPage() {
     codes: LineCode[];
   } | null>(null);
   const [reason, setReason] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [confirmPublishOpen, setConfirmPublishOpen] = useState(false);
 
   const invalidateAll = () => {
     qc.invalidateQueries({ queryKey: ["agreements", "lines", agreementId] });
