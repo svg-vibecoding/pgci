@@ -1273,6 +1273,57 @@ export function LineEditDialog({
   };
 
   const isEdit = !!initial?.line_id;
+  const publishFn = useServerFn(publishAgreementPositions);
+
+  // El checkbox "Publicar en acuerdo al guardar" aparece:
+  //  - al CREAR (la posición nace 'draft' y podrá publicarse si está completa)
+  //  - al EDITAR solo si la posición está en 'draft' o 'requires_review'
+  const canOfferPublish =
+    !isEdit ||
+    initial?.status === "draft" ||
+    initial?.status === "requires_review";
+
+  const [publishOnSave, setPublishOnSave] = useState(false);
+
+  // isPublishableDraft(values): completa (SKU, precio, fecha inicio) y vigente
+  // (fecha efectiva de fin no vencida). Usa las fechas efectivas del acuerdo
+  // cuando la posición no las trae, coincidiendo con publish_positions RPC.
+  const canPublishNow = useMemo(() => {
+    if (!canOfferPublish) return false;
+    if (!productId) return false;
+    const sale = parsePriceInput(v.sale_price);
+    if (sale == null || sale <= 0) return false;
+    const effStart = v.start_date.trim() || agreementStartDate || "";
+    const effEnd = v.end_date.trim() || agreementEndDate || "";
+    if (!effStart || !effEnd) return false;
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(effEnd);
+    if (m) {
+      const end = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      if (end.getTime() < today.getTime()) return false;
+    }
+    return true;
+  }, [
+    canOfferPublish,
+    productId,
+    v.sale_price,
+    v.start_date,
+    v.end_date,
+    agreementStartDate,
+    agreementEndDate,
+  ]);
+
+  // Si la validación deja de cumplirse (p.ej. el usuario borra el precio),
+  // desmarcar publishOnSave para que el label del botón vuelva a "Guardar".
+  useEffect(() => {
+    if (!canPublishNow && publishOnSave) setPublishOnSave(false);
+  }, [canPublishNow, publishOnSave]);
+
+  // Resetear publishOnSave al abrir/cerrar el modal o al cambiar de posición.
+  useEffect(() => {
+    if (!open) setPublishOnSave(false);
+  }, [open, initial?.line_id]);
 
   const computePendingLabels = (): string[] => {
     const missing: string[] = [];
