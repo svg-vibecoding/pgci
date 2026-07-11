@@ -249,7 +249,7 @@ function ClientsList() {
     <div className="space-y-6">
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Clientes</h1>
+          <h1 className="suma-h1">Clientes</h1>
           <p className="text-sm text-muted-foreground">
             Administra clientes como base para la gestión de acuerdos y la operación comercial.
           </p>
@@ -280,8 +280,8 @@ function ClientsList() {
                 }
               >
                 <CardContent className="p-4">
-                  <div className="text-xs text-muted-foreground">{c.label}</div>
-                  <div className="mt-1 text-2xl font-semibold tracking-tight">
+                  <div className="suma-overline text-text-tertiary">{c.label}</div>
+                  <div className="mt-1 suma-metric">
                     {isLoading ? "—" : c.value}
                   </div>
                 </CardContent>

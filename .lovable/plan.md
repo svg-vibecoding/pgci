@@ -1,38 +1,69 @@
-
 ## Diagnóstico
 
-Hoy `Cliente` y `Jaivaná` son columnas flexibles sin ancho declarado, y la tabla está en modo `table-auto`. El navegador reparte el sobrante según el contenido mínimo de cada celda: Jaivaná trae descripciones más largas que Cliente, así que se lleva más ancho. `Marca` sí tiene ancho fijo (140) y no absorbe sobrante, por eso queda "aire" entre `Marca` y `Precio` (que solo aparece cuando Cliente/Jaivaná son cortos y no consumen el resto).
+El sistema Sumatec ya tiene la escala tipográfica definida en `src/styles.css` como `@utility`:
 
-## Propuesta (una sola opción, ancla del sistema)
+- `suma-h1` (Montserrat Bold) — títulos de página
+- `suma-h2`, `suma-h3`, `suma-h4` — jerarquía secundaria
+- `suma-subtitle` — subtítulos de sección
+- `suma-overline` — eyebrows en mayúsculas (labels de KPI, encabezados de tabla, labels de formulario)
+- `suma-caption` — metadata secundaria
+- `suma-body` — cuerpo
 
-Regla nueva del DataTable: **las columnas flexibles se reparten el ancho sobrante en partes iguales, independientes del contenido.**
+El problema: **ninguna de estas utilidades se está usando en las vistas operativas**. Cada archivo reinventa el estilo con combinaciones distintas de Tailwind, y por eso los headers no se sienten iguales entre sí ni con la tabla nueva:
 
-### Cambios al sistema (`DataTable.tsx` + `types.ts`)
+| Elemento | Hoy conviven | Debería ser |
+|---|---|---|
+| H1 de página | `text-2xl font-bold tracking-tight` (users, clients, agreements, products, acuerdo detalle) vs `text-2xl font-semibold tracking-tight` (pgci/index) | `suma-h1` |
+| Número KPI | `text-2xl font-semibold tracking-tight` (5 archivos, copiado y pegado) | `suma-h2` (o token dedicado `suma-metric`) |
+| Label KPI | `text-xs text-muted-foreground` (sin mayúsculas, sin tracking) | `suma-overline` |
+| Eyebrow de sección/campo | `text-[11px] font-semibold uppercase tracking-wider text-muted-foreground` (repetido ~10 veces) | `suma-overline` |
+| Header de tabla | `font-ui text-[11px] font-bold uppercase tracking-[0.05em] text-text-tertiary` (DataTable) | Ya alineado, pero conviene expresarlo como `suma-overline` para que sea el mismo token |
+| Color de texto secundario | `text-muted-foreground` vs `text-text-tertiary` vs `text-[var(--text-secondary)]` mezclados en la misma pantalla | Un solo token semántico (`text-text-secondary` o `text-muted-foreground`, no ambos) |
+| Título de diálogo | `text-2xl font-bold tracking-tight` / `text-xl font-bold tracking-tight` | `suma-h2` / `suma-h3` |
 
-- Nueva prop de columna `flex?: number` (default `1` cuando `width` no está definido). Es la fracción de ancho sobrante que le toca a esa columna, tipo `flex-grow` de CSS.
-- Implementación: si hay columnas sin `width`, la tabla pasa a `table-fixed` internamente y a cada columna flex se le asigna `width: (flex_i / sum_flex) * 100%` sobre el sobrante después de restar los `width` fijos. Esto reparte de forma exacta, sin depender del contenido.
-- `table-fixed` respeta esos porcentajes; el wrapping ya existente (line-clamp 2 + break-words) sigue absorbiendo textos largos sin romper el layout.
-- Nada cambia para columnas con `width` explícito.
+Además hay dos tokens de color equivalentes (`--muted-foreground` shadcn y `--text-secondary/tertiary` Sumatec) que se usan indistintamente. Eso también contribuye al ruido visual.
 
-### Aplicación en Posiciones
+## Alcance de la propuesta
 
-- `Cliente` y `Jaivaná` quedan ambas sin `width` y con `flex: 1` (implícito). Resultado: mitad y mitad del sobrante, siempre. El "aire" entre Marca y Precio desaparece porque el 100% del ancho se distribuye.
-- El resto (`Marca 140`, `Precio 110`, `Vigencia 120`, `Estado 130`, `Acciones 48`, selección `40`) queda igual.
+Cambios **solo al sistema y a las vistas ya migradas al DataTable** (para no meterme en dialogs de dominio esta ronda). Objetivo: que Montserrat y Roboto se manifiesten en escalas fijas del sistema y no en clases ad-hoc.
 
-### Aplicación en Productos
+### 1. `src/styles.css` — cerrar la escala
 
-- `Producto` (única flexible) sigue tomando todo el sobrante — comportamiento idéntico al actual, no rompe nada.
+- Añadir `@utility suma-metric` (número grande de KPI: Montserrat, `--h2`, `fw-bold`, `tracking-tight`, `tabular-nums`) para que todas las tarjetas usen el mismo.
+- Confirmar que `suma-overline` cubre eyebrow de KPI, label de formulario y header de tabla con el mismo peso/tracking. Ajustar `--overline` a 11px / `tracking-[0.05em]` si hace falta para no romper la tabla.
+- Documentar (comentario) los tokens de color permitidos para texto secundario y dejar uno canónico (propongo `text-text-secondary` / `text-text-tertiary` Sumatec) para vistas nuevas; mantener `muted-foreground` solo dentro de componentes shadcn que ya lo traen internamente.
 
-## Efectos colaterales
+### 2. `DataTable`
 
-- Con `table-fixed`, columnas de texto podrían mostrar 3ª línea en filas con descripciones muy largas. Ya está limitado a 2 líneas por `line-clamp-2` en `IdentityCell`; el resto de columnas de texto simple (Marca) casi nunca supera una línea.
-- Si en el futuro alguien quiere una tabla donde la flex derecha sea "más ancha" (ej. flex 2 vs 1), la prop `flex` ya lo permite sin refactor.
+- Reemplazar el string en el `<th>` por `className="suma-overline px-4 py-2.5 text-text-tertiary"` (misma salida visual, misma fuente, pero declarativo).
 
-## Archivos
+### 3. Vistas de lista ya migradas
 
-- `src/components/sumatec/DataTable/types.ts` — añadir `flex?: number`.
-- `src/components/sumatec/DataTable/DataTable.tsx` — calcular anchos porcentuales para columnas flex y forzar `table-fixed` cuando haya al menos una flex.
-- `src/routes/_authenticated/pgci/agreements.$agreementId.lines.tsx` — sin cambios (Cliente y Jaivaná ya están sin `width`).
-- `src/routes/_authenticated/setup/products.index.tsx` — sin cambios.
+Aplicar el mismo reemplazo puntual (sin tocar layout ni lógica):
 
-Sin cambios de comportamiento, RLS, filtros ni datos.
+- `src/routes/_authenticated/setup/users.index.tsx`
+- `src/routes/_authenticated/setup/clients.index.tsx`
+- `src/routes/_authenticated/setup/products.index.tsx`
+- `src/routes/_authenticated/pgci/agreements.index.tsx`
+- `src/routes/_authenticated/pgci/agreements.$agreementId.lines.tsx`
+- `src/routes/_authenticated/pgci/agreements.$agreementId.index.tsx` (solo eyebrows)
+- `src/components/agreements/AgreementHeader.tsx` (H1 del acuerdo)
+- `src/components/agreements/AgreementBreadcrumb.tsx` (usar `suma-caption`)
+
+Reemplazos mecánicos:
+
+- `text-2xl font-bold tracking-tight` en H1 de página → `suma-h1`
+- Número de KPI (`text-2xl font-semibold tracking-tight`) → `suma-metric`
+- Label de KPI (`text-xs text-muted-foreground`) → `suma-overline text-text-tertiary`
+- Eyebrow `text-[11px] font-semibold uppercase tracking-wider text-muted-foreground` → `suma-overline`
+- Metadata bajo el H1 del acuerdo (`text-sm text-muted-foreground`) → `suma-caption`
+
+### 4. Fuera de alcance
+
+- Dialogs internos (`LineViewDialog`, `LineEditDialog`, `AgreementImportWizard`) — se migran cuando toque revisarlos por contenido, no en esta pasada.
+- Página landing `pgci/index.tsx` — la reviso aparte porque mezcla utilities de landing.
+- No se toca ningún color de marca ni tamaños de la tabla (Roboto 13px sigue igual).
+
+## Resultado esperado
+
+Todos los headers de página, KPIs, eyebrows y encabezados de tabla en las vistas operativas quedan expresados con las mismas 3–4 utilidades Sumatec. Cambiar el sistema (por ejemplo, subir H1 a 26px) pasa a ser una edición en `styles.css` en vez de un find-and-replace por todo el repo.

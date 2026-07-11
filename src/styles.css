@@ -497,6 +497,13 @@
   text-transform: uppercase;
   color: var(--text-secondary);
 }
+/* Número grande de KPI/metric cards. Montserrat, mismo tamaño que H2. */
+@utility suma-metric {
+  font: var(--fw-bold) var(--h2) / var(--h2-lh) var(--font-display);
+  letter-spacing: var(--tracking-tight);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
 
 
 /* Landing / editorial utilities

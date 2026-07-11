@@ -46,8 +46,9 @@ export function AgreementHeader({ agreementId }: AgreementHeaderProps) {
 
   return (
     <div className="min-w-0">
-      <h1 className="text-2xl font-bold tracking-tight">{agreement.name}</h1>
-      <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+      <h1 className="suma-h1">{agreement.name}</h1>
+      <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 suma-caption">
+
         <StatusBadge
           status={isActive ? "active" : "neutral"}
           label={isActive ? "Activo" : "Inactivo"}
