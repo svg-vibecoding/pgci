@@ -9,6 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SumatecLogo } from "@/components/SumatecLogo";
+import {
+  AuthLoadingScreen,
+  useAuthResolved,
+} from "@/components/AuthLoadingScreen";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -24,6 +28,7 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
+  const authResolved = useAuthResolved();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +49,11 @@ function AuthPage() {
     setLoading(false);
     navigate({ to: landing });
   }
+
+  // Mientras la sesión no esté definitivamente resuelta, no pintamos el
+  // formulario: podría ser un paso intermedio de la cadena de redirects
+  // (F5 en una ruta protegida rebota aquí un instante antes de volver).
+  if (!authResolved) return <AuthLoadingScreen />;
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-[var(--surface-page)] px-6">
