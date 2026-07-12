@@ -50,6 +50,11 @@ function AuthPage() {
     navigate({ to: landing });
   }
 
+  // Mientras la sesión no esté definitivamente resuelta, no pintamos el
+  // formulario: podría ser un paso intermedio de la cadena de redirects
+  // (F5 en una ruta protegida rebota aquí un instante antes de volver).
+  if (!authResolved) return <AuthLoadingScreen />;
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-[var(--surface-page)] px-6">
       <form
