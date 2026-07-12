@@ -500,7 +500,7 @@
 /* Label de formulario. Montserrat medium, 14px, sin uppercase. */
 @utility suma-label {
   font: var(--fw-medium) var(--subtitle-2) / var(--subtitle-2-lh) var(--font-ui);
-  color: var(--text-secondary);
+  color: var(--text-primary);
 }
 /* Número grande de KPI/metric cards. Montserrat, mismo tamaño que H2. */
 @utility suma-metric {
