@@ -616,8 +616,8 @@ function ImportPim() {
 function Meta({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-md border border-border bg-muted/40 px-3 py-2">
-      <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className="text-sm font-medium text-foreground break-words">{value}</dd>
+      <dt className="suma-overline text-text-secondary">{label}</dt>
+      <dd className="suma-body font-medium text-text-primary break-words">{value}</dd>
     </div>
   );
 }
@@ -639,11 +639,11 @@ function Stat({
         ? "text-[var(--info-strong)]"
         : accent === "danger"
           ? "text-destructive"
-          : "text-foreground";
+          : "text-text-primary";
   return (
     <div className="rounded-lg border border-border p-3">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className={`text-2xl font-bold ${color}`}>{value}</p>
+      <p className="suma-overline text-text-secondary">{label}</p>
+      <p className={`suma-metric ${color}`}>{value}</p>
     </div>
   );
 }
@@ -659,9 +659,9 @@ function DataTable({
 }) {
   return (
     <div className="overflow-auto">
-      <table className="w-full text-xs">
+      <table className="w-full suma-caption">
         <thead>
-          <tr className="text-left text-muted-foreground">
+          <tr className="text-left text-text-tertiary">
             {columns.map((c) => (
               <th key={c} className="py-1 pr-3 font-medium">
                 {c}
@@ -673,7 +673,7 @@ function DataTable({
           {rows.map((row, i) => (
             <tr key={i} className="border-t border-border/60">
               {row.map((cell, j) => (
-                <td key={j} className="py-1 pr-3">
+                <td key={j} className="py-1 pr-3 text-text-primary">
                   {cell}
                 </td>
               ))}
@@ -682,7 +682,7 @@ function DataTable({
         </tbody>
       </table>
       {truncated && truncated > 0 ? (
-        <p className="mt-1 text-xs text-muted-foreground">…y {truncated} más.</p>
+        <p className="mt-1 suma-caption text-text-tertiary">…y {truncated} más.</p>
       ) : null}
     </div>
   );
