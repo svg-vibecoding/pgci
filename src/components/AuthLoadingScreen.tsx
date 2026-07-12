@@ -1,11 +1,9 @@
 import { SumatecLogo } from "@/components/SumatecLogo";
+import { authResolvedOnce } from "@/integrations/supabase/auth-ready";
 
 /**
  * Pantalla de carga única usada mientras la sesión se resuelve
  * (waitForAuthReady) y los layouts protegidos cargan su perfil.
- * Vive en tres puntos coherentes: router pendingComponent, root
- * pendingComponent y layouts _authenticated/*. Debe ser SIEMPRE
- * el mismo componente para no producir saltos visuales.
  */
 export function AuthLoadingScreen() {
   return (
@@ -24,4 +22,15 @@ export function AuthLoadingScreen() {
   );
 }
 
+/**
+ * Fallback usado por el router para beforeLoad pending. Solo pinta el splash
+ * durante el arranque en frío / F5 (sesión aún no resuelta por primera vez).
+ * En navegación interna con sesión ya lista devuelve null — sin flash.
+ */
+export function InitialAuthPendingFallback() {
+  if (authResolvedOnce) return null;
+  return <AuthLoadingScreen />;
+}
+
 export default AuthLoadingScreen;
+
