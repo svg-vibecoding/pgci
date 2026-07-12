@@ -227,8 +227,13 @@ export function AgreementForm({
           {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
         </div>
 
-        <div className="space-y-2">
-          <Label>Vigencia</Label>
+        <div className="space-y-3">
+          <div>
+            <h2 className="suma-h4">Vigencia</h2>
+            <p className="mt-1 suma-body text-text-secondary">
+              Período general del acuerdo. Si lo defines, se aplica por defecto a las posiciones que no tengan su propia vigencia. Cada posición puede tener fechas propias que prevalecen sobre estas.
+            </p>
+          </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1">
               <Label htmlFor="start_date" className="text-xs text-muted-foreground">
@@ -264,10 +269,6 @@ export function AgreementForm({
               )}
             </div>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Si se indican, las fechas aplicarán por defecto a cada posición del
-            acuerdo que no tenga vigencia propia.
-          </p>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
