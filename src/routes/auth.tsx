@@ -56,7 +56,7 @@ function AuthPage() {
           </h1>
           <p className="suma-subtitle mt-10 hidden sm:block">
             <span className="text-text-secondary" style={{ fontWeight: 400 }}>
-              La <span style={{ fontWeight: 700 }}>PGCI</span> reúne solicitudes, acuerdos, equivalencias de productos, precios, vigencias y condiciones comerciales en un solo lugar:{" "}
+              La <span className="text-text-primary" style={{ fontWeight: 700 }}>PGCI</span> reúne solicitudes, acuerdos, equivalencias de productos, precios, vigencias y condiciones comerciales en un solo lugar:{" "}
             </span>
             <span className="text-text-primary" style={{ fontWeight: 700 }}>
               Información estructurada, disponible y con todo su historial.
