@@ -628,14 +628,7 @@ function ClientAccess() {
             </p>
           ) : (
             <div>
-              <div className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-border bg-background px-4 py-2.5">
-                <span className="suma-overline text-text-tertiary">
-                  Cliente
-                </span>
-                <span className="suma-overline text-text-tertiary">
-                  Asignar
-                </span>
-              </div>
+
 
               <ul className="divide-y divide-border">
                 {pagedClients.map((c) => {
@@ -685,11 +678,16 @@ function ClientAccess() {
                           </div>
 
                         </div>
-                        <Switch
-                          checked={st.assigned}
-                          onCheckedChange={(v) => setAssigned(c.id, v)}
-                          aria-label={`Asignar ${name}`}
-                        />
+                        <div className="flex shrink-0 items-center gap-2">
+                          <span className="suma-caption text-text-tertiary">
+                            {st.assigned ? "Asignado" : "Asignar"}
+                          </span>
+                          <Switch
+                            checked={st.assigned}
+                            onCheckedChange={(v) => setAssigned(c.id, v)}
+                            aria-label={`Asignar ${name}`}
+                          />
+                        </div>
                       </div>
 
                       {st.assigned && (
