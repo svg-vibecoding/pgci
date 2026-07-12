@@ -14,7 +14,6 @@ export const Route = createFileRoute("/auth")({
   ssr: false,
   head: () => ({ meta: [{ title: "Acceso · PGCI" }] }),
   beforeLoad: async () => {
-    // Si ya hay sesión, va directo a su landing por rol.
     const landing = await resolveAuthLanding();
     if (landing) throw redirect({ to: landing });
   },
@@ -45,44 +44,53 @@ function AuthPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[var(--surface-page)] px-6">
-      <form
-        onSubmit={onSubmit}
-        className="w-full max-w-md space-y-5 rounded-lg border border-border bg-card p-8 shadow-sm"
-      >
-        <div className="flex flex-col items-center">
-          <SumatecLogo className="h-14 w-auto" />
+    <main className="grid min-h-screen grid-cols-1 lg:grid-cols-3">
+      {/* Panel de marca */}
+      <section className="flex flex-col justify-center bg-[var(--surface-page)] px-8 py-12 sm:px-12 lg:col-span-2 lg:px-20 lg:py-16">
+        <div className="max-w-2xl space-y-8">
+          <SumatecLogo className="h-12 w-auto lg:h-14" />
+          <h1 className="suma-display-sm text-text-primary lg:suma-display-md">
+            La gestión comercial, convertida en{" "}
+            <span className="text-[var(--red-500)]">fuente de verdad.</span>
+          </h1>
+          <p className="suma-body text-text-secondary hidden sm:block">
+            La PGCI reúne solicitudes, acuerdos, equivalencias de productos, precios, vigencias y condiciones comerciales en un solo lugar: información estructurada, disponible y con todo su historial.
+          </p>
         </div>
-        <h1 className="text-left text-lg font-semibold text-foreground">
-          PGCI Gestión Comercial Inteligente
-        </h1>
-        <div className="space-y-2">
-          <Label htmlFor="email">Correo</Label>
-          <Input
-            id="email"
-            type="email"
-            autoComplete="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="password">Contraseña</Label>
-          <Input
-            id="password"
-            type="password"
-            autoComplete="current-password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </div>
-        {error && <p className="text-sm text-destructive">{error}</p>}
-        <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? "Ingresando…" : "Ingresar"}
-        </Button>
-      </form>
+      </section>
+
+      {/* Panel de login */}
+      <section className="flex items-center justify-center bg-[var(--surface-card)] px-6 py-10 sm:px-10 lg:border-l lg:border-border lg:py-16">
+        <form onSubmit={onSubmit} className="w-full max-w-sm space-y-5">
+          <h2 className="suma-h4 text-text-primary">Ingresa a PGCI</h2>
+          <div className="space-y-2">
+            <Label htmlFor="email" className="suma-label">Correo</Label>
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password" className="suma-label">Contraseña</Label>
+            <Input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+          {error && <p className="suma-caption text-destructive">{error}</p>}
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? "Ingresando…" : "Ingresar"}
+          </Button>
+        </form>
+      </section>
     </main>
   );
 }
