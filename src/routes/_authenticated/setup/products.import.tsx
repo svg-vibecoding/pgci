@@ -506,9 +506,8 @@ function ImportPim() {
               <AlertDialogTitle>Confirmar importación PIM</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-2">
-                <p>Vas a actualizar el catálogo PIM por Código Jaivaná.</p>
                 <p>
-                  Los productos ausentes del archivo no se modificarán ni se inactivarán.
+                  Se actualizará el catálogo con los productos del archivo, identificándolos por su Código Jaivaná: los que ya existen se actualizan y los nuevos se crean. Los productos que no estén en el archivo se conservan sin cambios.
                 </p>
                 <p className="text-text-primary">
                   <strong>{totals.crear}</strong> nuevos,{" "}
