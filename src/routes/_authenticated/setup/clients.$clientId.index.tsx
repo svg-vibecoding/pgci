@@ -146,7 +146,7 @@ function ViewClient() {
       {/* Encabezado */}
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="suma-h2 text-text-primary">{displayName}</h1>
+          <h1 className="suma-h1 text-text-primary">{displayName}</h1>
           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 suma-body text-text-secondary">
             <Badge color={isHolding ? "accent" : "neutral"} variant="soft">
               {isHolding ? "Holding" : "Directo"}
