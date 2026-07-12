@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+
 import { Calendar, Info, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge, SummaryToggle } from "@/components/sumatec";
-import { supabase } from "@/integrations/supabase/client";
+
 import {
   Select,
   SelectContent,
@@ -74,7 +74,12 @@ export type AssignableClient = {
   id: string;
   legal_name: string;
   commercial_name: string | null;
+  tax_id: string | null;
+  tax_id_type: string | null;
+  type: string | null;
 };
+
+
 
 
 function Req() {
@@ -83,8 +88,8 @@ function Req() {
 
 export function AgreementForm({
   initial,
-  clients: _clients,
-  clientsLoading: _clientsLoading,
+  clients,
+  clientsLoading = false,
   groups,
   groupsLoading,
   canCreateGroups = false,
@@ -115,24 +120,8 @@ export function AgreementForm({
   const [companiesDetailOpen, setCompaniesDetailOpen] = useState(false);
   const [groupOpen, setGroupOpen] = useState(initial.group_mode !== "none");
 
-  const activeClientsQ = useQuery({
-    queryKey: ["clients", "picker-active-agreement-companies"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("clients")
-        .select("id, commercial_name, legal_name, tax_id, tax_id_type, type")
-        .eq("status", "active");
-      if (error) throw error;
-      return [...(data ?? [])].sort((a, b) =>
-        (a.commercial_name?.trim() || a.legal_name || "").localeCompare(
-          b.commercial_name?.trim() || b.legal_name || "",
-          "es",
-          { sensitivity: "base" },
-        ),
-      );
-    },
-    enabled: !lockClient,
-  });
+  const allCompaniesLoading = clientsLoading;
+
 
   async function handle(e: React.FormEvent) {
     e.preventDefault();
@@ -179,7 +168,7 @@ export function AgreementForm({
   }
 
 
-  const allCompanies = activeClientsQ.data ?? [];
+  const allCompanies: AssignableClient[] = lockClient ? [] : clients;
   const companyById = useMemo(() => {
     const m = new Map<string, (typeof allCompanies)[number]>();
     for (const c of allCompanies) m.set(c.id, c);
@@ -398,7 +387,7 @@ export function AgreementForm({
 
             {/* Lista de clientes */}
             <div className="max-h-72 overflow-y-auto border-t border-border">
-              {activeClientsQ.isLoading ? (
+              {allCompaniesLoading ? (
                 <p className="py-6 text-center text-sm text-muted-foreground">
                   Cargando…
                 </p>

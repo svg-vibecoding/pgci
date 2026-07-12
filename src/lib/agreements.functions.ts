@@ -160,20 +160,20 @@ export const listAssignableClients = createServerFn({ method: "GET" })
       [...list].sort((a, b) =>
         displayName(a).localeCompare(displayName(b), "es", { sensitivity: "base" }),
       );
+    const clientCols =
+      "id, legal_name, commercial_name, tax_id, tax_id_type, type, status";
     const { data: isSuper } = await context.supabase.rpc("is_super_admin");
     if (isSuper) {
       const { data, error } = await context.supabase
         .from("clients")
-        .select("id, legal_name, commercial_name, status")
+        .select(clientCols)
         .eq("status", "active");
       if (error) throw new Error(error.message);
       return byName(data ?? []);
     }
     const { data, error } = await context.supabase
       .from("user_client_access")
-      .select(
-        "client_id, can_create_agreements, clients:client_id(id, legal_name, commercial_name, status)",
-      )
+      .select(`client_id, can_create_agreements, clients:client_id(${clientCols})`)
       .eq("can_create_agreements", true)
       .is("valid_until", null);
     if (error) throw new Error(error.message);
@@ -182,6 +182,9 @@ export const listAssignableClients = createServerFn({ method: "GET" })
         id: string;
         legal_name: string;
         commercial_name: string | null;
+        tax_id: string | null;
+        tax_id_type: string | null;
+        type: string | null;
         status: string;
       } | null)
       .filter((c): c is NonNullable<typeof c> => !!c && c.status === "active");
