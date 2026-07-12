@@ -223,7 +223,38 @@ function ImportPim() {
           <CardTitle className="suma-h4">1. Sube el archivo</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <Input type="file" accept=".csv,.xlsx,.xls" onChange={onFile} />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,.xlsx,.xls"
+            onChange={onFile}
+            className="sr-only"
+          />
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Paperclip className="mr-2 h-4 w-4" />
+              {fileName ? "Cambiar archivo" : "Seleccionar archivo"}
+            </Button>
+            {fileName ? (
+              <div className="flex items-center gap-2 suma-body text-text-primary">
+                <span className="break-all">{fileName}</span>
+                <button
+                  type="button"
+                  onClick={resetAll}
+                  aria-label="Quitar archivo"
+                  className="rounded-full p-1 text-text-tertiary hover:bg-muted hover:text-text-primary"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ) : (
+              <span className="suma-body text-text-tertiary">Sin archivo seleccionado</span>
+            )}
+          </div>
           {fileError && <p className="suma-caption text-destructive">{fileError}</p>}
         </CardContent>
       </Card>
