@@ -39,6 +39,7 @@ function ClientAccess() {
   const { isSuperAdmin, isLoading: loadingAuth } = useIsSuperAdmin();
 
   const [search, setSearch] = useState("");
+  const [assignedFilter, setAssignedFilter] = useState<"all" | "assigned">("all");
   const [stateMap, setStateMap] = useState<Map<string, AccessState>>(new Map());
   const [initialMap, setInitialMap] = useState<Map<string, AccessState>>(new Map());
   const [saving, setSaving] = useState(false);
@@ -50,7 +51,7 @@ function ClientAccess() {
 
   useEffect(() => {
     setPage(1);
-  }, [search]);
+  }, [search, assignedFilter]);
 
   const profileQ = useQuery({
     queryKey: ["users", userId, "profile-min"],
