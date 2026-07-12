@@ -427,7 +427,7 @@ function ImportPim() {
                       Errores ({diff.errors.length})
                     </AccordionTrigger>
                     <AccordionContent>
-                      <ul className="space-y-1 text-xs text-muted-foreground">
+                      <ul className="space-y-1 suma-caption text-text-secondary">
                         {diff.errors.slice(0, 200).map((e) =>
                           e.errors.map((er, idx) => (
                             <li key={`${e.rowNumber}-${idx}`}>
@@ -441,7 +441,7 @@ function ImportPim() {
                         )}
                       </ul>
                       {diff.errors.length > 200 && (
-                        <p className="mt-1 text-xs text-muted-foreground">
+                        <p className="mt-1 suma-caption text-text-tertiary">
                           …y {diff.errors.length - 200} filas más con error.
                         </p>
                       )}
