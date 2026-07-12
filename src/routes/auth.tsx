@@ -51,6 +51,7 @@ function AuthPage() {
           <SumatecLogo className="h-12 w-auto lg:h-14" />
           <h1 className="suma-display-md text-text-primary lg:suma-display-lg">
             La gestión comercial, convertida en{" "}
+            <br />
             <span className="text-[var(--red-500)]">fuente de verdad.</span>
           </h1>
           <p className="suma-subtitle text-text-secondary hidden sm:block font-normal">
