@@ -120,10 +120,18 @@ function RootComponent() {
   const router = useRouter();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+      if (event === "SIGNED_OUT") {
+        // Cancel in-flight queries before the 401 storm hits, then let the
+        // auth gate redirect. Don't refetch — the session is gone.
+        await queryClient.cancelQueries();
+        queryClient.clear();
+        router.invalidate();
+        return;
+      }
       router.invalidate();
-      if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
+      queryClient.invalidateQueries();
     });
     return () => subscription.unsubscribe();
   }, [router, queryClient]);
