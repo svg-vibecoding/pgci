@@ -207,8 +207,8 @@ function ImportPim() {
       </div>
       <header className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Importar PIM</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="suma-h1 text-text-primary">Importar PIM</h1>
+          <p className="mt-1 suma-body text-text-secondary">
             Carga un archivo CSV o XLSX. Se hará un upsert por Código Jaivaná.
           </p>
         </div>
@@ -223,9 +223,10 @@ function ImportPim() {
         </CardHeader>
         <CardContent className="space-y-3">
           <Input type="file" accept=".csv,.xlsx,.xls" onChange={onFile} />
-          {fileError && <p className="text-sm text-destructive">{fileError}</p>}
+          {fileError && <p className="suma-caption text-destructive">{fileError}</p>}
         </CardContent>
       </Card>
+
 
       {diff && totals && (
         <>
