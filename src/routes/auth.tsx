@@ -46,7 +46,7 @@ function AuthPage() {
   return (
     <main className="grid min-h-screen grid-cols-1 lg:grid-cols-3">
       {/* Panel de marca */}
-      <section className="flex flex-col justify-center bg-[var(--surface-page)] px-8 py-12 sm:px-12 lg:col-span-2 lg:px-20 lg:py-16">
+      <section className="flex flex-col justify-center bg-[var(--surface-card)] px-8 py-12 sm:px-12 lg:col-span-2 lg:px-20 lg:py-16">
         <div className="max-w-3xl">
           <SumatecLogo className="mb-6 -ml-3 h-14 w-auto lg:-ml-4 lg:h-16" />
           <h1 className="suma-display-md text-text-primary lg:suma-display-lg">
@@ -67,7 +67,7 @@ function AuthPage() {
 
 
       {/* Panel de login */}
-      <section className="flex items-center justify-center bg-[var(--surface-card)] px-6 py-10 sm:px-10 lg:border-l lg:border-border lg:py-16">
+      <section className="flex items-center justify-center bg-[var(--surface-page)] px-6 py-10 sm:px-10 lg:border-l lg:border-border lg:py-16">
         <form onSubmit={onSubmit} className="w-full max-w-sm space-y-5">
           <h2 className="suma-h4 text-text-primary">Ingresa a PGCI</h2>
           <div className="space-y-2">
