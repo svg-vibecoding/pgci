@@ -67,7 +67,7 @@ function AuthPage() {
 
 
       {/* Panel de login */}
-      <section className="flex items-center justify-center bg-[var(--surface-card)] px-6 py-10 sm:px-10 lg:border-l lg:border-border lg:py-16">
+      <section className="flex items-center justify-center bg-[var(--surface-page)] px-6 py-10 sm:px-10 lg:border-l lg:border-border lg:py-16">
         <form onSubmit={onSubmit} className="w-full max-w-sm space-y-5">
           <h2 className="suma-h4 text-text-primary">Ingresa a PGCI</h2>
           <div className="space-y-2">
