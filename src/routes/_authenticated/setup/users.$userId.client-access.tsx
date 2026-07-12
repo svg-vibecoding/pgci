@@ -603,7 +603,7 @@ function ClientAccess() {
               Sin resultados para esa búsqueda.
             </p>
           ) : (
-            <div className="max-h-[calc(100vh-360px)] min-h-[280px] overflow-y-auto">
+            <div>
               <div className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-border bg-background px-4 py-2.5">
                 <span className="suma-overline text-text-tertiary">
                   Cliente
