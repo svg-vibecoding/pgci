@@ -151,19 +151,22 @@ function ClientAccess() {
   const filteredClients = useMemo(() => {
     if (!clientsQ.data) return [];
     const q = search.trim().toLowerCase();
-    const list = q
+    let list = q
       ? clientsQ.data.filter((c) => {
           const name = (c.commercial_name || c.legal_name || "").toLowerCase();
           const legal = (c.legal_name || "").toLowerCase();
           return name.includes(q) || legal.includes(q);
         })
       : clientsQ.data;
+    if (assignedFilter === "assigned") {
+      list = list.filter((c) => stateMap.get(c.id)?.assigned);
+    }
     return [...list].sort((a, b) => {
       const nameA = (a.commercial_name || a.legal_name || "").toLowerCase();
       const nameB = (b.commercial_name || b.legal_name || "").toLowerCase();
       return nameA.localeCompare(nameB);
     });
-  }, [clientsQ.data, search]);
+  }, [clientsQ.data, search, assignedFilter, stateMap]);
 
   const totalPages = Math.max(1, Math.ceil(filteredClients.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
