@@ -163,6 +163,13 @@ function ClientAccess() {
     });
   }, [clientsQ.data, search]);
 
+  const totalPages = Math.max(1, Math.ceil(filteredClients.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pagedClients = useMemo(
+    () => filteredClients.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [filteredClients, currentPage],
+  );
+
   const visibleAllAssigned = useMemo(() => {
     if (filteredClients.length === 0) return false;
     return filteredClients.every((c) => stateMap.get(c.id)?.assigned);
