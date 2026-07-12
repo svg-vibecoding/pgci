@@ -532,27 +532,27 @@ function ImportPim() {
           </CardHeader>
           <CardContent className="space-y-4">
             {finalSummary.status === "confirmed" ? (
-              <p className="text-sm text-[var(--success-strong)]">
+              <p className="suma-body text-[var(--success-strong)]">
                 Importación completada correctamente.
               </p>
             ) : (
               <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3">
-                <p className="text-sm font-medium text-destructive">
+                <p className="suma-body font-medium text-destructive">
                   No se aplicaron cambios al catálogo.
                 </p>
                 {finalSummary.errorMessage && (
-                  <p className="mt-1 text-xs text-destructive/90">
+                  <p className="mt-1 suma-caption text-destructive/90">
                     {finalSummary.errorMessage}
                   </p>
                 )}
-                <p className="mt-2 text-xs text-muted-foreground">
+                <p className="mt-2 suma-caption text-text-tertiary">
                   Mantuvimos la previsualización cargada para que puedas reintentar
                   o cargar otro archivo.
                 </p>
               </div>
             )}
 
-            <dl className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+            <dl className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <Meta label="Usuario" value={finalSummary.executedByEmail ?? "—"} />
               <Meta
                 label="Fecha"
@@ -567,15 +567,15 @@ function ImportPim() {
               />
             </dl>
 
-            <ul className="text-sm text-muted-foreground">
-              <li>Total filas: <strong className="text-foreground">{finalSummary.totalRows}</strong></li>
-              <li>Creados: <strong className="text-foreground">{finalSummary.created}</strong></li>
-              <li>Actualizados: <strong className="text-foreground">{finalSummary.updated}</strong></li>
-              <li>Sin cambios: <strong className="text-foreground">{finalSummary.unchanged}</strong></li>
-              <li>Omitidos por error: <strong className="text-foreground">{finalSummary.errors}</strong></li>
-              <li>SKUs duplicados: <strong className="text-foreground">{finalSummary.duplicateSkus}</strong></li>
-              <li>Inactivados: <strong className="text-foreground">{finalSummary.inactivated}</strong></li>
-              <li>Campos limpiados: <strong className="text-foreground">{finalSummary.cleared}</strong></li>
+            <ul className="suma-body text-text-secondary space-y-1">
+              <li>Total filas: <strong className="text-text-primary">{finalSummary.totalRows}</strong></li>
+              <li>Creados: <strong className="text-text-primary">{finalSummary.created}</strong></li>
+              <li>Actualizados: <strong className="text-text-primary">{finalSummary.updated}</strong></li>
+              <li>Sin cambios: <strong className="text-text-primary">{finalSummary.unchanged}</strong></li>
+              <li>Omitidos por error: <strong className="text-text-primary">{finalSummary.errors}</strong></li>
+              <li>SKUs duplicados: <strong className="text-text-primary">{finalSummary.duplicateSkus}</strong></li>
+              <li>Inactivados: <strong className="text-text-primary">{finalSummary.inactivated}</strong></li>
+              <li>Campos limpiados: <strong className="text-text-primary">{finalSummary.cleared}</strong></li>
             </ul>
 
             <div className="flex flex-wrap gap-2">
