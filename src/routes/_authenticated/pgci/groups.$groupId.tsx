@@ -455,7 +455,8 @@ function MembersByAgreementSection({ groupId }: { groupId: string }) {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="space-y-0">
+
         <CardTitle className="suma-h4">Miembros por acuerdo</CardTitle>
         <p className="mt-1 text-xs text-muted-foreground">
           Personas con acceso a los acuerdos que agrupa este grupo.
