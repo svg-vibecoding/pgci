@@ -244,7 +244,7 @@ function ImportPim() {
               </div>
 
               {(inactivations.length > 0 || clearedFields.length > 0) && (
-                <div className="flex flex-wrap gap-2 text-xs">
+                <div className="flex flex-wrap gap-2 suma-caption">
                   {inactivations.length > 0 && (
                     <span className="rounded-full border border-border bg-muted px-2 py-1">
                       Inactivados: <strong>{inactivations.length}</strong>
@@ -260,10 +260,10 @@ function ImportPim() {
 
               {diff.duplicateSkus.length > 0 && (
                 <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4">
-                  <p className="text-sm font-medium text-destructive">
+                  <p className="suma-body font-medium text-destructive">
                     La importación está bloqueada hasta corregir los SKUs duplicados.
                   </p>
-                  <ul className="mt-2 max-h-40 overflow-auto text-xs text-destructive">
+                  <ul className="mt-2 max-h-40 overflow-auto suma-caption text-destructive">
                     {diff.duplicateSkus.map((d) => (
                       <li key={d.sku} className="font-mono">
                         {d.sku} — filas: {d.rows.join(", ")}
@@ -272,6 +272,7 @@ function ImportPim() {
                   </ul>
                 </div>
               )}
+
 
               <Accordion type="multiple" className="w-full">
                 {diff.toCreate.length > 0 && (
