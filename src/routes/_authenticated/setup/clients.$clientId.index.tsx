@@ -320,7 +320,7 @@ function ViewClient() {
               <div className="space-y-1">
                 <p className="suma-body text-text-primary">Sin acuerdos asociados.</p>
                 <p className="suma-caption text-text-tertiary">
-                  Los acuerdos se crean desde el módulo de Acuerdos.
+                  Acá se reflejarán los acuerdos asignados al cliente.
                 </p>
               </div>
             </div>
@@ -358,9 +358,9 @@ function ViewClient() {
           <div className="flex flex-col items-center justify-center rounded-md border border-dashed border-border py-8 text-center">
             <Users className="mb-2 h-6 w-6 text-text-tertiary" />
             <div className="space-y-1">
-              <p className="suma-body text-text-primary">Sin usuarios asociados aún.</p>
+              <p className="suma-body text-text-primary">Sin usuarios asociados.</p>
               <p className="suma-caption text-text-tertiary">
-                Disponible cuando se construya el módulo de Usuarios.
+                Acá se reflejarán los usuarios con acceso al cliente.
               </p>
             </div>
           </div>
