@@ -673,10 +673,12 @@ function Stat({
           ? "text-destructive"
           : "text-text-primary";
   return (
-    <div className="rounded-lg border border-border p-3">
-      <p className="suma-overline text-text-secondary">{label}</p>
-      <p className={`suma-metric ${color}`}>{value}</p>
-    </div>
+    <Card>
+      <CardContent className="p-4">
+        <div className="suma-label">{label}</div>
+        <div className={`mt-1 suma-metric ${color}`}>{value}</div>
+      </CardContent>
+    </Card>
   );
 }
 
