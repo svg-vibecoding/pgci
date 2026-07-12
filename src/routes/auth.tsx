@@ -1,6 +1,10 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  getLandingForUserId,
+  resolveAuthLanding,
+} from "@/integrations/supabase/auth-routing";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,15 +14,10 @@ export const Route = createFileRoute("/auth")({
   ssr: false,
   head: () => ({ meta: [{ title: "Acceso · PGCI" }] }),
   beforeLoad: async () => {
-    const { data } = await supabase.auth.getUser();
-    if (!data.user) return;
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role, status")
-      .eq("user_id", data.user.id)
-      .maybeSingle();
-    const isSuper = profile?.role === "super_admin" && profile?.status === "active";
-    throw redirect({ to: isSuper ? "/setup" : "/pgci" });
+    // Usa la misma fuente de verdad (waitForAuthReady) que el gate protegido
+    // y `/`. Si ya hay sesión, va directo a su landing por rol.
+    const landing = await resolveAuthLanding();
+    if (landing) throw redirect({ to: landing });
   },
   component: AuthPage,
 });
