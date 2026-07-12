@@ -207,8 +207,8 @@ function ImportPim() {
       </div>
       <header className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Importar PIM</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="suma-h1 text-text-primary">Importar PIM</h1>
+          <p className="mt-1 suma-body text-text-secondary">
             Carga un archivo CSV o XLSX. Se hará un upsert por Código Jaivaná.
           </p>
         </div>
@@ -223,9 +223,10 @@ function ImportPim() {
         </CardHeader>
         <CardContent className="space-y-3">
           <Input type="file" accept=".csv,.xlsx,.xls" onChange={onFile} />
-          {fileError && <p className="text-sm text-destructive">{fileError}</p>}
+          {fileError && <p className="suma-caption text-destructive">{fileError}</p>}
         </CardContent>
       </Card>
+
 
       {diff && totals && (
         <>
@@ -243,7 +244,7 @@ function ImportPim() {
               </div>
 
               {(inactivations.length > 0 || clearedFields.length > 0) && (
-                <div className="flex flex-wrap gap-2 text-xs">
+                <div className="flex flex-wrap gap-2 suma-caption">
                   {inactivations.length > 0 && (
                     <span className="rounded-full border border-border bg-muted px-2 py-1">
                       Inactivados: <strong>{inactivations.length}</strong>
@@ -259,10 +260,10 @@ function ImportPim() {
 
               {diff.duplicateSkus.length > 0 && (
                 <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4">
-                  <p className="text-sm font-medium text-destructive">
+                  <p className="suma-body font-medium text-destructive">
                     La importación está bloqueada hasta corregir los SKUs duplicados.
                   </p>
-                  <ul className="mt-2 max-h-40 overflow-auto text-xs text-destructive">
+                  <ul className="mt-2 max-h-40 overflow-auto suma-caption text-destructive">
                     {diff.duplicateSkus.map((d) => (
                       <li key={d.sku} className="font-mono">
                         {d.sku} — filas: {d.rows.join(", ")}
@@ -271,6 +272,7 @@ function ImportPim() {
                   </ul>
                 </div>
               )}
+
 
               <Accordion type="multiple" className="w-full">
                 {diff.toCreate.length > 0 && (
@@ -305,15 +307,15 @@ function ImportPim() {
                             key={u.next.sku}
                             className="rounded-lg border border-border p-3"
                           >
-                            <p className="mb-2 text-sm font-medium">
+                            <p className="mb-2 suma-body font-medium text-text-primary">
                               <span className="font-mono">{u.next.sku}</span>{" "}
-                              <span className="text-muted-foreground">
+                              <span className="text-text-secondary">
                                 — {u.next.erp_description}
                               </span>
                             </p>
-                            <table className="w-full text-xs">
+                            <table className="w-full suma-caption">
                               <thead>
-                                <tr className="text-left text-muted-foreground">
+                                <tr className="text-left text-text-tertiary">
                                   <th className="py-1 pr-3">Campo</th>
                                   <th className="py-1 pr-3">Antes</th>
                                   <th className="py-1">Nuevo</th>
@@ -323,13 +325,13 @@ function ImportPim() {
                                 {u.changedFields.map((f) => (
                                   <tr key={f} className="border-t border-border/60">
                                     <td className="py-1 pr-3">{FIELD_LABELS[f]}</td>
-                                    <td className="py-1 pr-3 text-muted-foreground">
+                                    <td className="py-1 pr-3 text-text-tertiary">
                                       {formatFieldValue(
                                         f,
                                         (u.current as Record<string, unknown>)[f],
                                       )}
                                     </td>
-                                    <td className="py-1 font-medium">
+                                    <td className="py-1 font-medium text-text-primary">
                                       {formatFieldValue(
                                         f,
                                         (u.next as Record<string, unknown>)[f],
@@ -342,7 +344,7 @@ function ImportPim() {
                           </div>
                         ))}
                         {diff.toUpdate.length > 100 && (
-                          <p className="text-xs text-muted-foreground">
+                          <p className="suma-caption text-text-tertiary">
                             …y {diff.toUpdate.length - 100} más.
                           </p>
                         )}
@@ -351,22 +353,23 @@ function ImportPim() {
                   </AccordionItem>
                 )}
 
+
                 {diff.unchanged.length > 0 && (
                   <AccordionItem value="unchanged">
                     <AccordionTrigger>
                       Sin cambios ({diff.unchanged.length})
                     </AccordionTrigger>
                     <AccordionContent>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="suma-body text-text-secondary">
                         Estos productos están en el archivo pero no presentan diferencias.
                       </p>
-                      <ul className="mt-2 max-h-48 overflow-auto text-xs font-mono">
+                      <ul className="mt-2 max-h-48 overflow-auto suma-caption font-mono">
                         {diff.unchanged.slice(0, 200).map((p) => (
                           <li key={p.sku}>{p.sku}</li>
                         ))}
                       </ul>
                       {diff.unchanged.length > 200 && (
-                        <p className="mt-1 text-xs text-muted-foreground">
+                        <p className="mt-1 suma-caption text-text-tertiary">
                           …y {diff.unchanged.length - 200} más.
                         </p>
                       )}
@@ -380,7 +383,7 @@ function ImportPim() {
                       Inactivados ({inactivations.length})
                     </AccordionTrigger>
                     <AccordionContent>
-                      <p className="mb-2 text-sm text-muted-foreground">
+                      <p className="mb-2 suma-body text-text-secondary">
                         Estos productos pasarán a Inactivo. Si están asociados a productos
                         de acuerdo, deberán quedar en revisión en el flujo correspondiente.
                       </p>
@@ -402,7 +405,7 @@ function ImportPim() {
                       Campos limpiados ({clearedFields.length})
                     </AccordionTrigger>
                     <AccordionContent>
-                      <p className="mb-2 text-sm text-muted-foreground">
+                      <p className="mb-2 suma-body text-text-secondary">
                         Estos campos se limpiarán porque el archivo trae la columna vacía.
                       </p>
                       <DataTable
@@ -424,7 +427,7 @@ function ImportPim() {
                       Errores ({diff.errors.length})
                     </AccordionTrigger>
                     <AccordionContent>
-                      <ul className="space-y-1 text-xs text-muted-foreground">
+                      <ul className="space-y-1 suma-caption text-text-secondary">
                         {diff.errors.slice(0, 200).map((e) =>
                           e.errors.map((er, idx) => (
                             <li key={`${e.rowNumber}-${idx}`}>
@@ -438,7 +441,7 @@ function ImportPim() {
                         )}
                       </ul>
                       {diff.errors.length > 200 && (
-                        <p className="mt-1 text-xs text-muted-foreground">
+                        <p className="mt-1 suma-caption text-text-tertiary">
                           …y {diff.errors.length - 200} filas más con error.
                         </p>
                       )}
@@ -470,9 +473,9 @@ function ImportPim() {
             <AlertDialogHeader>
               <AlertDialogTitle>Confirmar importación PIM</AlertDialogTitle>
               <AlertDialogDescription asChild>
-                <div className="space-y-2 text-sm">
+                <div className="space-y-2 suma-body text-text-primary">
                   <p>Vas a actualizar el catálogo PIM por Código Jaivaná.</p>
-                  <p className="text-muted-foreground">
+                  <p className="text-text-secondary">
                     Los productos ausentes del archivo no se modificarán ni se inactivarán.
                   </p>
                   <p>
@@ -482,19 +485,19 @@ function ImportPim() {
                     <strong>{totals.rechazados}</strong> omitidos por error.
                   </p>
                   {diff.errors.length > 0 && (
-                    <p className="text-muted-foreground">
+                    <p className="text-text-secondary">
                       Se importarán las filas válidas y se omitirán las filas con error.
                     </p>
                   )}
                   {inactivations.length > 0 && (
-                    <p className="text-muted-foreground">
+                    <p className="text-text-secondary">
                       {inactivations.length} producto(s) pasarán a Inactivo. Si están
                       asociados a acuerdos, deberán quedar en revisión en el flujo
                       correspondiente.
                     </p>
                   )}
                   {clearedFields.length > 0 && (
-                    <p className="text-muted-foreground">
+                    <p className="text-text-secondary">
                       Algunos campos opcionales serán limpiados porque el archivo trae
                       valores vacíos ({clearedFields.length}).
                     </p>
@@ -529,27 +532,27 @@ function ImportPim() {
           </CardHeader>
           <CardContent className="space-y-4">
             {finalSummary.status === "confirmed" ? (
-              <p className="text-sm text-[var(--success-strong)]">
+              <p className="suma-body text-[var(--success-strong)]">
                 Importación completada correctamente.
               </p>
             ) : (
               <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3">
-                <p className="text-sm font-medium text-destructive">
+                <p className="suma-body font-medium text-destructive">
                   No se aplicaron cambios al catálogo.
                 </p>
                 {finalSummary.errorMessage && (
-                  <p className="mt-1 text-xs text-destructive/90">
+                  <p className="mt-1 suma-caption text-destructive/90">
                     {finalSummary.errorMessage}
                   </p>
                 )}
-                <p className="mt-2 text-xs text-muted-foreground">
+                <p className="mt-2 suma-caption text-text-tertiary">
                   Mantuvimos la previsualización cargada para que puedas reintentar
                   o cargar otro archivo.
                 </p>
               </div>
             )}
 
-            <dl className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+            <dl className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <Meta label="Usuario" value={finalSummary.executedByEmail ?? "—"} />
               <Meta
                 label="Fecha"
@@ -564,15 +567,15 @@ function ImportPim() {
               />
             </dl>
 
-            <ul className="text-sm text-muted-foreground">
-              <li>Total filas: <strong className="text-foreground">{finalSummary.totalRows}</strong></li>
-              <li>Creados: <strong className="text-foreground">{finalSummary.created}</strong></li>
-              <li>Actualizados: <strong className="text-foreground">{finalSummary.updated}</strong></li>
-              <li>Sin cambios: <strong className="text-foreground">{finalSummary.unchanged}</strong></li>
-              <li>Omitidos por error: <strong className="text-foreground">{finalSummary.errors}</strong></li>
-              <li>SKUs duplicados: <strong className="text-foreground">{finalSummary.duplicateSkus}</strong></li>
-              <li>Inactivados: <strong className="text-foreground">{finalSummary.inactivated}</strong></li>
-              <li>Campos limpiados: <strong className="text-foreground">{finalSummary.cleared}</strong></li>
+            <ul className="suma-body text-text-secondary space-y-1">
+              <li>Total filas: <strong className="text-text-primary">{finalSummary.totalRows}</strong></li>
+              <li>Creados: <strong className="text-text-primary">{finalSummary.created}</strong></li>
+              <li>Actualizados: <strong className="text-text-primary">{finalSummary.updated}</strong></li>
+              <li>Sin cambios: <strong className="text-text-primary">{finalSummary.unchanged}</strong></li>
+              <li>Omitidos por error: <strong className="text-text-primary">{finalSummary.errors}</strong></li>
+              <li>SKUs duplicados: <strong className="text-text-primary">{finalSummary.duplicateSkus}</strong></li>
+              <li>Inactivados: <strong className="text-text-primary">{finalSummary.inactivated}</strong></li>
+              <li>Campos limpiados: <strong className="text-text-primary">{finalSummary.cleared}</strong></li>
             </ul>
 
             <div className="flex flex-wrap gap-2">
@@ -613,8 +616,8 @@ function ImportPim() {
 function Meta({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-md border border-border bg-muted/40 px-3 py-2">
-      <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className="text-sm font-medium text-foreground break-words">{value}</dd>
+      <dt className="suma-overline text-text-secondary">{label}</dt>
+      <dd className="suma-body font-medium text-text-primary break-words">{value}</dd>
     </div>
   );
 }
@@ -636,11 +639,11 @@ function Stat({
         ? "text-[var(--info-strong)]"
         : accent === "danger"
           ? "text-destructive"
-          : "text-foreground";
+          : "text-text-primary";
   return (
     <div className="rounded-lg border border-border p-3">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className={`text-2xl font-bold ${color}`}>{value}</p>
+      <p className="suma-overline text-text-secondary">{label}</p>
+      <p className={`suma-metric ${color}`}>{value}</p>
     </div>
   );
 }
@@ -656,9 +659,9 @@ function DataTable({
 }) {
   return (
     <div className="overflow-auto">
-      <table className="w-full text-xs">
+      <table className="w-full suma-caption">
         <thead>
-          <tr className="text-left text-muted-foreground">
+          <tr className="text-left text-text-tertiary">
             {columns.map((c) => (
               <th key={c} className="py-1 pr-3 font-medium">
                 {c}
@@ -670,7 +673,7 @@ function DataTable({
           {rows.map((row, i) => (
             <tr key={i} className="border-t border-border/60">
               {row.map((cell, j) => (
-                <td key={j} className="py-1 pr-3">
+                <td key={j} className="py-1 pr-3 text-text-primary">
                   {cell}
                 </td>
               ))}
@@ -679,7 +682,7 @@ function DataTable({
         </tbody>
       </table>
       {truncated && truncated > 0 ? (
-        <p className="mt-1 text-xs text-muted-foreground">…y {truncated} más.</p>
+        <p className="mt-1 suma-caption text-text-tertiary">…y {truncated} más.</p>
       ) : null}
     </div>
   );
