@@ -98,6 +98,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   }),
   shellComponent: RootShell,
   component: RootComponent,
+  pendingComponent: AuthLoadingScreen,
   notFoundComponent: NotFoundComponent,
   errorComponent: ErrorComponent,
 });
