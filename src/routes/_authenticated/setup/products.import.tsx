@@ -360,16 +360,16 @@ function ImportPim() {
                       Sin cambios ({diff.unchanged.length})
                     </AccordionTrigger>
                     <AccordionContent>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="suma-body text-text-secondary">
                         Estos productos están en el archivo pero no presentan diferencias.
                       </p>
-                      <ul className="mt-2 max-h-48 overflow-auto text-xs font-mono">
+                      <ul className="mt-2 max-h-48 overflow-auto suma-caption font-mono">
                         {diff.unchanged.slice(0, 200).map((p) => (
                           <li key={p.sku}>{p.sku}</li>
                         ))}
                       </ul>
                       {diff.unchanged.length > 200 && (
-                        <p className="mt-1 text-xs text-muted-foreground">
+                        <p className="mt-1 suma-caption text-text-tertiary">
                           …y {diff.unchanged.length - 200} más.
                         </p>
                       )}
