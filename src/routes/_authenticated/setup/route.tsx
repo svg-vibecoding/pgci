@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useIsSuperAdmin } from "@/hooks/use-profile";
 import { AppShell } from "@/components/layout/AppShell";
+import { AuthLoadingScreen } from "@/components/AuthLoadingScreen";
 
 export const Route = createFileRoute("/_authenticated/setup")({
   component: SetupLayout,
@@ -10,11 +11,7 @@ function SetupLayout() {
   const { isSuperAdmin, isLoading } = useIsSuperAdmin();
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[var(--surface-page)]">
-        <p className="text-sm text-muted-foreground">Cargando…</p>
-      </div>
-    );
+    return <AuthLoadingScreen />;
   }
 
   if (!isSuperAdmin) {
