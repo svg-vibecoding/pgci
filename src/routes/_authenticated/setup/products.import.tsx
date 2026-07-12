@@ -675,7 +675,7 @@ function Stat({
   return (
     <Card>
       <CardContent className="p-4">
-        <div className="suma-label">{label}</div>
+        <div className="suma-body text-text-tertiary">{label}</div>
         <div className={`mt-1 suma-metric ${color}`}>{value}</div>
       </CardContent>
     </Card>
