@@ -194,7 +194,8 @@ export function CommercialProfileView() {
 
       {/* Clientes y accesos */}
       <Card>
-        <CardHeader>
+        <CardHeader className="space-y-0">
+
           <CardTitle className="suma-h4">Clientes y accesos</CardTitle>
           <p className="mt-1 suma-body text-text-secondary">
 

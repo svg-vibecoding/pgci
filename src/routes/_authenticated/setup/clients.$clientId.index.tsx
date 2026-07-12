@@ -306,7 +306,8 @@ function ViewClient() {
 
       {/* Acuerdos asociados */}
       <Card>
-        <CardHeader>
+        <CardHeader className="space-y-0">
+
           <CardTitle className="suma-h4">Acuerdos asociados</CardTitle>
           <p className="mt-1 suma-body text-text-secondary">
             Acuerdos comerciales registrados para este cliente.
@@ -346,7 +347,8 @@ function ViewClient() {
 
       {/* Usuarios asociados */}
       <Card>
-        <CardHeader>
+        <CardHeader className="space-y-0">
+
           <CardTitle className="suma-h4">Usuarios asociados</CardTitle>
           <p className="mt-1 suma-body text-text-secondary">
             Usuarios con acceso a este cliente. Se gestionan desde el módulo Usuarios.
@@ -368,7 +370,8 @@ function ViewClient() {
       {/* Empresas del cliente (solo holdings) */}
       {isHolding && (
         <Card>
-          <CardHeader>
+          <CardHeader className="space-y-0">
+
             <CardTitle className="suma-h4">Empresas del cliente</CardTitle>
             <p className="mt-1 suma-body text-text-secondary">
               Clientes directos asociados a este holding.
