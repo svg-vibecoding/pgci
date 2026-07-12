@@ -226,7 +226,7 @@ function ViewClient() {
       {/* Información del cliente */}
       <Card>
         <CardHeader>
-          <CardTitle className="suma-h3">Información del cliente</CardTitle>
+          <CardTitle className="suma-h4">Información del cliente</CardTitle>
         </CardHeader>
         <CardContent>
           <InfoSection>
@@ -296,7 +296,7 @@ function ViewClient() {
       {data.notes?.trim() && (
         <Card>
           <CardHeader>
-            <CardTitle className="suma-h3">Notas internas</CardTitle>
+            <CardTitle className="suma-h4">Notas internas</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="whitespace-pre-wrap suma-body text-text-primary">{data.notes}</p>
@@ -307,7 +307,7 @@ function ViewClient() {
       {/* Acuerdos asociados */}
       <Card>
         <CardHeader>
-          <CardTitle className="suma-h3">Acuerdos asociados</CardTitle>
+          <CardTitle className="suma-h4">Acuerdos asociados</CardTitle>
           <p className="mt-1 suma-body text-text-secondary">
             Acuerdos comerciales registrados para este cliente.
           </p>
@@ -347,7 +347,7 @@ function ViewClient() {
       {/* Usuarios asociados */}
       <Card>
         <CardHeader>
-          <CardTitle className="suma-h3">Usuarios asociados</CardTitle>
+          <CardTitle className="suma-h4">Usuarios asociados</CardTitle>
           <p className="mt-1 suma-body text-text-secondary">
             Usuarios con acceso a este cliente. Se gestionan desde el módulo Usuarios.
           </p>
@@ -369,7 +369,7 @@ function ViewClient() {
       {isHolding && (
         <Card>
           <CardHeader>
-            <CardTitle className="suma-h3">Empresas del cliente</CardTitle>
+            <CardTitle className="suma-h4">Empresas del cliente</CardTitle>
             <p className="mt-1 suma-body text-text-secondary">
               Clientes directos asociados a este holding.
             </p>
