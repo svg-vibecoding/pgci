@@ -74,7 +74,12 @@ export type AssignableClient = {
   id: string;
   legal_name: string;
   commercial_name: string | null;
+  tax_id: string | null;
+  tax_id_type: string | null;
+  type: string | null;
 };
+
+
 
 
 function Req() {
