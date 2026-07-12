@@ -784,3 +784,57 @@ function ClientAccess() {
     </div>
   );
 }
+
+function PaginationFooter({
+  currentPage,
+  totalPages,
+  onChange,
+}: {
+  currentPage: number;
+  totalPages: number;
+  onChange: (page: number) => void;
+}) {
+  const pages: (number | "…")[] = [];
+  if (totalPages <= 7) {
+    for (let i = 1; i <= totalPages; i++) pages.push(i);
+  } else {
+    const add = (v: number | "…") => pages.push(v);
+    add(1);
+    const start = Math.max(2, currentPage - 1);
+    const end = Math.min(totalPages - 1, currentPage + 1);
+    if (start > 2) add("…");
+    for (let i = start; i <= end; i++) add(i);
+    if (end < totalPages - 1) add("…");
+    add(totalPages);
+  }
+  return (
+    <nav
+      className="flex items-center justify-center gap-1 border-t border-border px-4 py-3"
+      aria-label="Paginación de clientes"
+    >
+      {pages.map((p, i) =>
+        p === "…" ? (
+          <span key={`e-${i}`} className="px-2 suma-caption text-text-tertiary">
+            …
+          </span>
+        ) : (
+          <button
+            key={p}
+            type="button"
+            onClick={() => onChange(p)}
+            aria-current={p === currentPage ? "page" : undefined}
+            aria-label={`Página ${p}`}
+            className={cn(
+              "min-w-8 rounded-md px-2.5 py-1 suma-caption font-medium transition-colors",
+              p === currentPage
+                ? "bg-primary text-primary-foreground"
+                : "text-text-secondary hover:bg-muted",
+            )}
+          >
+            {p}
+          </button>
+        ),
+      )}
+    </nav>
+  );
+}
