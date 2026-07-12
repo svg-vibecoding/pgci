@@ -1,43 +1,267 @@
-## Diagnóstico: por qué te saca de sesión a mitad de uso
 
-Revisé el flujo de auth y encontré **tres puntos que, combinados, explican los cierres de sesión inesperados**:
+# Refactor a AuthProvider único — diseño de implementación
 
-### 1. `beforeLoad` en `_authenticated` llama a `supabase.auth.getUser()` en cada navegación
-`src/routes/_authenticated/route.tsx` hace una llamada de red a `/auth/v1/user` **cada vez que navegas a cualquier ruta protegida** (y también en cada preload por hover de un `<Link>`, porque `defaultPreloadStaleTime: 0` en `src/router.tsx`).
+## Archivos
 
-- Si esa llamada falla por cualquier razón transitoria (red, 5xx momentáneo, timeout, token justo expirando antes de que el auto-refresh corra), el `beforeLoad` lanza `redirect({ to: "/auth" })` y quedas fuera.
-- En los logs de auth se ven ráfagas de `/user` seguidas — eso es este `beforeLoad` disparándose múltiples veces por interacción.
-
-### 2. El listener global reacciona a `SIGNED_OUT` invalidando router
-En `src/routes/__root.tsx` (línea 123), `onAuthStateChange` invalida el router en `SIGNED_OUT`. Si Supabase falla al refrescar el token (por ejemplo, un refresh token rotado en otra pestaña, o una respuesta 400 del endpoint `/token?grant_type=refresh_token`), dispara `SIGNED_OUT` automáticamente → el `beforeLoad` corre de nuevo sin usuario → redirect a `/auth`. Síntoma exacto: "estaba trabajando y de golpe volví al login".
-
-### 3. `attachSupabaseAuth` lee `getSession()` en cada server function
-Cada llamada RPC (guardar cliente, toggles de asignación, etc.) pasa por `getSession()` client-side. En momentos donde el refresh está en curso, puede devolver una sesión vacía y el server responde `Unauthorized`. Eso no cierra sesión por sí solo, pero contribuye a la sensación de "algo se cae".
+- **Nuevos**: `src/integrations/supabase/auth-store.ts`, `src/components/AuthProvider.tsx`
+- **Reescritos**: `__root.tsx`, `router.tsx`, `_authenticated/route.tsx`, `auth.tsx`, `index.tsx`, `AuthLoadingScreen.tsx`, `auth-routing.ts`, `start.ts`
+- **Borrados**: `auth-ready.ts`, `auth-attacher-ready.ts`
 
 ---
 
-## Plan de acción (sin tocar lógica de negocio)
+## 1) `src/integrations/supabase/auth-store.ts` (NUEVO — reemplaza `auth-ready.ts`)
 
-**A. Bajar la presión sobre `/auth/v1/user`** — `src/routes/_authenticated/route.tsx`
-- Reemplazar `getUser()` por `getSession()` en `beforeLoad`. `getSession()` es local (lee de `localStorage`), no hace red, y es lo que Supabase recomienda para gates de UI. La validación real del token la hace igual el server en `requireSupabaseAuth`.
-- Solo redirigir a `/auth` cuando **no hay sesión** en absoluto, no cuando hay error de red.
+Store singleton que sirve al mismo tiempo a React (via `useSyncExternalStore`) y a `beforeLoad` (via `await ready`). Sin timeout, sin flag inmortal.
 
-**B. Endurecer el `onAuthStateChange`** — `src/routes/__root.tsx`
-- Mantener la invalidación en `SIGNED_IN` / `USER_UPDATED`.
-- En `SIGNED_OUT`: solo invalidar router (para que el gate haga su trabajo) y **cancelar queries en vuelo** antes, para evitar la tormenta de 401 que también dispara el listener.
-- Ignorar explícitamente `TOKEN_REFRESHED` e `INITIAL_SESSION` (ya se ignoran, mantener).
+```ts
+import type { Session } from "@supabase/supabase-js";
+import { supabase } from "./client";
 
-**C. Reducir preloads agresivos** — `src/router.tsx`
-- Subir `defaultPreloadStaleTime` a algo como `30_000` (30s) para que el hover sobre un `<Link>` no re-dispare `beforeLoad` una y otra vez. Esto reduce llamadas de auth y de datos sin cambiar comportamiento visible.
+export type AuthState =
+  | { status: "loading"; session: null }
+  | { status: "signed-in"; session: Session }
+  | { status: "signed-out"; session: null };
 
-**D. Verificación**
-- Después de aplicar, probar: navegar entre Setup → Usuarios → Cliente y permisos, guardar cambios, dejar la pestaña en segundo plano ~5 min y volver. No debería expulsar.
-- Revisar logs de auth: la ráfaga de `/user` debe desaparecer.
+let state: AuthState = { status: "loading", session: null };
+const listeners = new Set<() => void>();
+
+let resolveReady!: () => void;
+const readyPromise = new Promise<void>((r) => { resolveReady = r; });
+let resolved = false;
+
+function set(next: AuthState) {
+  state = next;
+  if (!resolved) { resolved = true; resolveReady(); }
+  for (const l of listeners) l();
+}
+
+if (typeof window !== "undefined") {
+  supabase.auth.onAuthStateChange((event, session) => {
+    // INITIAL_SESSION (con o sin sesión), SIGNED_IN, SIGNED_OUT,
+    // TOKEN_REFRESHED, USER_UPDATED — todos son verdad definitiva.
+    if (session) set({ status: "signed-in", session });
+    else if (event === "SIGNED_OUT" || event === "INITIAL_SESSION")
+      set({ status: "signed-out", session: null });
+    else if (state.status === "signed-in" && !session)
+      set({ status: "signed-out", session: null });
+  });
+}
+
+export const authStore = {
+  getState: () => state,
+  getServerState: () => ({ status: "loading", session: null } as AuthState),
+  subscribe: (cb: () => void) => { listeners.add(cb); return () => { listeners.delete(cb); }; },
+  ready: readyPromise,
+};
+```
 
 ---
 
-### Fuera de alcance
-- No toco `signOut` de `AppShell`, ni la lógica de guardado, ni permisos, ni el switch "Ver asignados" recién hecho.
-- No cambio archivos auto-generados (`client.ts`, `auth-middleware.ts`, `auth-attacher.ts`).
+## 2) `src/components/AuthProvider.tsx` (NUEVO)
 
-¿Apruebas para implementar?
+```tsx
+import { useSyncExternalStore } from "react";
+import { authStore, type AuthState } from "@/integrations/supabase/auth-store";
+import { AuthLoadingScreen } from "./AuthLoadingScreen";
+
+export function useAuth(): AuthState {
+  return useSyncExternalStore(authStore.subscribe, authStore.getState, authStore.getServerState);
+}
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const auth = useAuth();
+  if (auth.status === "loading") return <AuthLoadingScreen />;
+  return <>{children}</>;
+}
+```
+
+**Efecto clave**: mientras `loading`, no hay `<Outlet />` montado en ningún nivel. Ninguna ruta se renderiza hasta que sepamos. Cero flash por construcción.
+
+---
+
+## 3) `src/routes/__root.tsx` — cambios
+
+```tsx
+// borrar: import { resetAuthReady } from "..."
+// borrar: import { AuthLoadingScreen } from "..."   (ya no se usa aquí)
+// añadir: import { AuthProvider } from "@/components/AuthProvider";
+// añadir: import { authStore } from "@/integrations/supabase/auth-store";
+
+export const Route = createRootRouteWithContext<{
+  queryClient: QueryClient;
+  authStore: typeof authStore;   // ← inyectado
+}>()({
+  // borrar: pendingComponent: AuthLoadingScreen,
+  ...
+});
+
+function RootComponent() {
+  const { queryClient } = Route.useRouteContext();
+  const router = useRouter();
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event) => {
+      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+      if (event === "SIGNED_OUT") {
+        await queryClient.cancelQueries();
+        queryClient.clear();
+        router.invalidate();
+        return;
+      }
+      router.invalidate();
+      queryClient.invalidateQueries();
+    });
+    return () => subscription.unsubscribe();
+  }, [router, queryClient]);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <Outlet />
+      </AuthProvider>
+      <Toaster />
+    </QueryClientProvider>
+  );
+}
+```
+
+En `src/router.tsx` inyectar `authStore` en context:
+```tsx
+import { authStore } from "./integrations/supabase/auth-store";
+// borrar defaultPendingComponent / defaultPendingMs / defaultPendingMinMs
+createRouter({
+  routeTree,
+  context: { queryClient, authStore },
+  scrollRestoration: true,
+  defaultPreloadStaleTime: 30_000,
+});
+```
+
+---
+
+## 4) `src/routes/_authenticated/route.tsx` — nuevo beforeLoad
+
+```tsx
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+
+export const Route = createFileRoute("/_authenticated")({
+  ssr: false,
+  beforeLoad: async ({ context }) => {
+    await context.authStore.ready;                          // primera vez: espera evento real
+    const s = context.authStore.getState();
+    if (s.status !== "signed-in") throw redirect({ to: "/auth" });
+    return { user: s.session.user };
+  },
+  component: () => <Outlet />,
+});
+```
+
+Sin `waitForAuthReady`, sin timeout, sin race. En navegación interna `ready` ya está resuelta → `beforeLoad` retorna sincrónicamente sin re-mostrar nada.
+
+---
+
+## 5) `src/routes/index.tsx` y `src/routes/auth.tsx`
+
+`auth-routing.ts` deja de importar `waitForAuthReady`:
+
+```ts
+// auth-routing.ts
+import { authStore } from "./auth-store";
+export async function resolveAuthLanding() {
+  await authStore.ready;
+  const s = authStore.getState();
+  if (s.status !== "signed-in") return null;
+  return getLandingForUserId(s.session.user.id);
+}
+```
+
+`index.tsx`: añadir `ssr: false` (su beforeLoad depende de sesión de cliente).
+`auth.tsx`: eliminar `import { AuthLoadingScreen, useAuthResolved }`, eliminar `const authResolved = useAuthResolved();` y el `if (!authResolved) return <AuthLoadingScreen />;`. El `beforeLoad` queda intacto. Como el AuthProvider ya no monta hijos en `loading`, cuando `AuthPage` se monte la sesión ya está resuelta.
+
+---
+
+## 6) `src/components/AuthLoadingScreen.tsx` — recortar
+
+Queda solo el componente visual. Se borran: `useAuthResolved`, `InitialAuthPendingFallback`, imports de `auth-ready`.
+
+```tsx
+import { SumatecLogo } from "@/components/SumatecLogo";
+export function AuthLoadingScreen() {
+  return (
+    <main role="status" aria-live="polite" aria-label="Cargando"
+      className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[var(--surface-page)] px-6">
+      <SumatecLogo className="h-12 w-auto" />
+      <div aria-hidden="true"
+        className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--border-subtle)] border-t-[var(--color-primary)]" />
+    </main>
+  );
+}
+export default AuthLoadingScreen;
+```
+
+---
+
+## 7) Layouts `pgci/route.tsx` y `setup/route.tsx`
+
+Se mantienen `useMyProfile` / `useIsSuperAdmin`. El `if (isLoading) return <AuthLoadingScreen />` se puede **dejar tal cual** — ya no es "auth splash", es "cargando perfil del módulo", y visualmente es el mismo componente. No hay duplicación conceptual: cuando estos layouts se montan, la auth ya resolvió; el splash aquí solo cubre el fetch de perfil. Decisión: dejarlos sin cambios (una línea menos de refactor, cero regresión visual).
+
+---
+
+## 8) `src/start.ts` — volver al attacher estándar
+
+```ts
+import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
+// borrar: import attachSupabaseAuthReady
+export const startInstance = createStart(() => ({
+  functionMiddleware: [attachSupabaseAuth],
+  requestMiddleware: [errorMiddleware],
+}));
+```
+
+`attachSupabaseAuth` llama a `supabase.auth.getSession()`. Con el AuthProvider bloqueando el árbol en `loading`, ningún serverFn se dispara antes de que supabase-js haya rehidratado → sin race.
+
+---
+
+## 9) Borrar archivos
+
+- `rm src/integrations/supabase/auth-ready.ts`
+- `rm src/integrations/supabase/auth-attacher-ready.ts`
+
+---
+
+## 5) Verificación de referencias colgantes
+
+Grep final tras aplicar (debe devolver 0 hits en `src/`):
+
+```
+waitForAuthReady|isAuthDefinitivelyResolved|subscribeAuthResolved|
+useAuthResolved|InitialAuthPendingFallback|authResolvedOnce|
+resetAuthReady|auth-ready|auth-attacher-ready
+```
+
+Consumidores actuales y qué pasa con cada uno:
+
+| Referencia actual | Acción |
+|---|---|
+| `start.ts` → `attachSupabaseAuthReady` | Reemplazado por `attachSupabaseAuth` |
+| `AuthLoadingScreen.tsx` → `isAuthDefinitivelyResolved`, `subscribeAuthResolved` | Borrados |
+| `auth.tsx` → `useAuthResolved`, `AuthLoadingScreen` guard | Borrados |
+| `auth-routing.ts` → `waitForAuthReady` | Reemplazado por `authStore.ready` |
+| `auth-attacher-ready.ts` → `waitForAuthReady` | Archivo borrado |
+| `auth-ready.ts` → self | Archivo borrado |
+| `router.tsx` → `InitialAuthPendingFallback` | Borrado |
+| `_authenticated/route.tsx` → `waitForAuthReady` | Reemplazado por `context.authStore` |
+| `__root.tsx` → `resetAuthReady`, `AuthLoadingScreen` (pendingComponent) | Borrados; el store no necesita reset (los eventos siempre lo actualizan) |
+
+**Nota sobre `resetAuthReady`**: hoy se llama en el `onAuthStateChange` del root para "invalidar cache". Con el nuevo store no aplica: cualquier evento (SIGNED_IN/OUT/…) ya actualiza `state` directamente. `router.invalidate()` sigue disparándose para que TanStack re-corra beforeLoads con el nuevo estado.
+
+---
+
+## Efectos esperados
+
+- **Cold start / F5**: server SSR pinta splash (state=loading) → client hidrata splash (match, sin hydration mismatch) → supabase emite INITIAL_SESSION → provider transiciona → Outlet monta → beforeLoad del gate lee store sincrónicamente → destino final. **Un solo splash, transición directa.**
+- **Navegación interna**: `ready` ya resuelta, `getState()` sincrónico, sin splash.
+- **Sign out**: root listener limpia cache + invalidate; store transiciona a `signed-out`; gate redirige a `/auth`; AuthProvider ya no bloquea porque no está `loading`.
+- **Token viejo/inválido**: supabase emite INITIAL_SESSION con `session=null` → store va a `signed-out` → gate redirige. Sin quedarse en splash.
+
+¿Aplico así, o ajustas algo antes?

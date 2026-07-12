@@ -15,9 +15,7 @@ export const Route = createFileRoute("/")({
     ],
   }),
   beforeLoad: async () => {
-    // `/` no tiene UI propia: es un redirector puro basado en la sesión.
-    // - Con sesión: enviar a la landing según rol.
-    // - Sin sesión: enviar a /auth.
+    // Redirector puro basado en sesión.
     const landing = await resolveAuthLanding();
     throw redirect({ to: landing ?? "/auth" });
   },
