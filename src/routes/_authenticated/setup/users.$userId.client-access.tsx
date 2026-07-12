@@ -698,9 +698,9 @@ function ClientAccess() {
                               return (
                                 <div
                                   key={perm.label}
-                                  className="flex items-center justify-between gap-4 py-1.5"
+                                  className="flex items-center gap-4 py-1.5 pr-8 md:pr-16"
                                 >
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex flex-1 items-center gap-2">
                                     <Icon className="h-4 w-4 text-text-tertiary" />
                                     <span className="suma-body text-text-primary">{perm.label}</span>
                                   </div>
