@@ -250,11 +250,11 @@ export const createAgreement = createServerFn({ method: "POST" })
       {
         p_name: data.name,
         p_scope: data.scope,
-        p_unit_name: data.unit_name ?? null,
-        p_start_date: data.start_date ?? null,
-        p_end_date: data.end_date ?? null,
-        p_observations: data.observations ?? null,
-        p_group_id: groupId,
+        p_unit_name: (data.unit_name ?? null) as unknown as string,
+        p_start_date: (data.start_date ?? null) as unknown as string,
+        p_end_date: (data.end_date ?? null) as unknown as string,
+        p_observations: (data.observations ?? null) as unknown as string,
+        p_group_id: (groupId ?? null) as unknown as string,
         p_client_ids: companyIds,
       },
     );
