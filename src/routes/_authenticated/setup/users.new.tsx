@@ -142,11 +142,11 @@ function NewUser() {
           {credentials && (
             <div className="space-y-4 rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-sunken)] p-4">
               <div className="space-y-1">
-                <p className="suma-caption">Email</p>
+                <p className="suma-overline text-text-secondary">Email</p>
                 <p className="suma-body text-text-primary">{credentials.email}</p>
               </div>
               <div className="space-y-1">
-                <p className="suma-caption">Contraseña temporal</p>
+                <p className="suma-overline text-text-secondary">Contraseña temporal</p>
                 <p
                   className="text-text-primary"
                   style={{ font: "var(--fw-semibold) var(--body-md)/var(--body-md-lh) var(--font-mono)" }}
