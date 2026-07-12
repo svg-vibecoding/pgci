@@ -40,14 +40,9 @@ function AuthPage() {
       setError("No fue posible iniciar sesión. Verifica tus credenciales.");
       return;
     }
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role, status")
-      .eq("user_id", signIn.user.id)
-      .maybeSingle();
+    const landing = await getLandingForUserId(signIn.user.id);
     setLoading(false);
-    const isSuper = profile?.role === "super_admin" && profile?.status === "active";
-    navigate({ to: isSuper ? "/setup" : "/pgci" });
+    navigate({ to: landing });
   }
 
   return (
