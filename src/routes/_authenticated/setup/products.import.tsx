@@ -473,9 +473,9 @@ function ImportPim() {
             <AlertDialogHeader>
               <AlertDialogTitle>Confirmar importación PIM</AlertDialogTitle>
               <AlertDialogDescription asChild>
-                <div className="space-y-2 text-sm">
+                <div className="space-y-2 suma-body text-text-primary">
                   <p>Vas a actualizar el catálogo PIM por Código Jaivaná.</p>
-                  <p className="text-muted-foreground">
+                  <p className="text-text-secondary">
                     Los productos ausentes del archivo no se modificarán ni se inactivarán.
                   </p>
                   <p>
@@ -485,19 +485,19 @@ function ImportPim() {
                     <strong>{totals.rechazados}</strong> omitidos por error.
                   </p>
                   {diff.errors.length > 0 && (
-                    <p className="text-muted-foreground">
+                    <p className="text-text-secondary">
                       Se importarán las filas válidas y se omitirán las filas con error.
                     </p>
                   )}
                   {inactivations.length > 0 && (
-                    <p className="text-muted-foreground">
+                    <p className="text-text-secondary">
                       {inactivations.length} producto(s) pasarán a Inactivo. Si están
                       asociados a acuerdos, deberán quedar en revisión en el flujo
                       correspondiente.
                     </p>
                   )}
                   {clearedFields.length > 0 && (
-                    <p className="text-muted-foreground">
+                    <p className="text-text-secondary">
                       Algunos campos opcionales serán limpiados porque el archivo trae
                       valores vacíos ({clearedFields.length}).
                     </p>
