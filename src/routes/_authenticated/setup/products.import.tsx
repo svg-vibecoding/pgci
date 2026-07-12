@@ -383,7 +383,7 @@ function ImportPim() {
                       Inactivados ({inactivations.length})
                     </AccordionTrigger>
                     <AccordionContent>
-                      <p className="mb-2 text-sm text-muted-foreground">
+                      <p className="mb-2 suma-body text-text-secondary">
                         Estos productos pasarán a Inactivo. Si están asociados a productos
                         de acuerdo, deberán quedar en revisión en el flujo correspondiente.
                       </p>
@@ -405,7 +405,7 @@ function ImportPim() {
                       Campos limpiados ({clearedFields.length})
                     </AccordionTrigger>
                     <AccordionContent>
-                      <p className="mb-2 text-sm text-muted-foreground">
+                      <p className="mb-2 suma-body text-text-secondary">
                         Estos campos se limpiarán porque el archivo trae la columna vacía.
                       </p>
                       <DataTable
