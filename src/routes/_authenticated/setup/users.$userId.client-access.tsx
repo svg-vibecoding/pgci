@@ -508,25 +508,27 @@ function ClientAccess() {
       <Card>
         {/* Search + filter */}
         <div className="p-4">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar cliente…"
-              className="pl-9"
-            />
-          </div>
-          <div className="mt-3 flex items-center justify-between gap-4">
-            <label htmlFor="only-assigned-filter" className="suma-label text-text-primary cursor-pointer">
-              Ver solo asignados
-            </label>
-            <Switch
-              id="only-assigned-filter"
-              checked={assignedFilter === "assigned"}
-              onCheckedChange={(v) => setAssignedFilter(v ? "assigned" : "all")}
-              aria-label="Ver solo clientes asignados"
-            />
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar cliente…"
+                className="pl-9"
+              />
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <label htmlFor="only-assigned-filter" className="suma-caption text-text-tertiary cursor-pointer">
+                Ver asignados
+              </label>
+              <Switch
+                id="only-assigned-filter"
+                checked={assignedFilter === "assigned"}
+                onCheckedChange={(v) => setAssignedFilter(v ? "assigned" : "all")}
+                aria-label="Ver clientes asignados"
+              />
+            </div>
           </div>
           {(search.trim() !== "" || assignedFilter === "assigned") && (
             <p className="mt-2 suma-caption text-text-tertiary">
