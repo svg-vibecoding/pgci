@@ -614,7 +614,7 @@ function ClientAccess() {
               </div>
 
               <ul className="divide-y divide-border">
-                {filteredClients.map((c) => {
+                {pagedClients.map((c) => {
                   const st = stateMap.get(c.id) ?? DEFAULT_ACCESS_STATE;
                   const name = c.commercial_name?.trim() || c.legal_name || "—";
                   const parent = c.parent as
