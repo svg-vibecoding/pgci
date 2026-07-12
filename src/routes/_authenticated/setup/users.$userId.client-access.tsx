@@ -678,11 +678,16 @@ function ClientAccess() {
                           </div>
 
                         </div>
-                        <Switch
-                          checked={st.assigned}
-                          onCheckedChange={(v) => setAssigned(c.id, v)}
-                          aria-label={`Asignar ${name}`}
-                        />
+                        <div className="flex shrink-0 items-center gap-2">
+                          <span className="suma-caption text-text-tertiary">
+                            {st.assigned ? "Asignado" : "Asignar"}
+                          </span>
+                          <Switch
+                            checked={st.assigned}
+                            onCheckedChange={(v) => setAssigned(c.id, v)}
+                            aria-label={`Asignar ${name}`}
+                          />
+                        </div>
                       </div>
 
                       {st.assigned && (
