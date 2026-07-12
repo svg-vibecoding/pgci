@@ -230,7 +230,7 @@ function ProductsList() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3 md:flex-nowrap">
-        <div className="relative w-full md:w-1/2">
+        <div className="relative w-full">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Buscar por código, descripción o marca…"
