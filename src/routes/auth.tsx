@@ -46,7 +46,7 @@ function AuthPage() {
   return (
     <main className="grid min-h-screen grid-cols-1 lg:grid-cols-3">
       {/* Panel de marca */}
-      <section className="flex flex-col justify-center bg-[var(--surface-page)] px-8 py-12 sm:px-12 lg:col-span-2 lg:px-20 lg:py-16">
+      <section className="flex flex-col justify-center bg-[var(--surface-card)] px-8 py-12 sm:px-12 lg:col-span-2 lg:px-20 lg:py-16">
         <div className="max-w-3xl">
           <SumatecLogo className="mb-6 -ml-3 h-14 w-auto lg:-ml-4 lg:h-16" />
           <h1 className="suma-display-md text-text-primary lg:suma-display-lg">
