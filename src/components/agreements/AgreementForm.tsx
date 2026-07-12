@@ -88,8 +88,8 @@ function Req() {
 
 export function AgreementForm({
   initial,
-  clients: _clients,
-  clientsLoading: _clientsLoading,
+  clients,
+  clientsLoading = false,
   groups,
   groupsLoading,
   canCreateGroups = false,
