@@ -227,6 +227,54 @@ export function AgreementForm({
           {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
         </div>
 
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label>Alcance<Req /></Label>
+            <Select
+              value={v.scope}
+              onValueChange={(val) =>
+                setV({
+                  ...v,
+                  scope: val as "global" | "unit",
+                  unit_name: val === "global" ? "" : v.unit_name,
+                })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="global">Global (cobertura nacional)</SelectItem>
+                <SelectItem value="unit">Unidad (cobertura por regional)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="unit_name">
+              {v.scope === "unit" ? (
+                <>Nombre de la unidad<Req /></>
+              ) : (
+                "Cobertura"
+              )}
+            </Label>
+            {v.scope === "unit" ? (
+              <>
+                <Input
+                  id="unit_name"
+                  placeholder="Ej. Bogotá DC"
+                  value={v.unit_name}
+                  onChange={(e) => setV({ ...v, unit_name: e.target.value })}
+                />
+                {errors.unit_name && (
+                  <p className="text-sm text-destructive">{errors.unit_name}</p>
+                )}
+              </>
+            ) : (
+              <Input id="unit_name" value="Cobertura nacional" disabled readOnly />
+            )}
+          </div>
+        </div>
+
         <div className="space-y-3">
           <div>
             <h2 className="suma-h4">Vigencia</h2>
@@ -269,44 +317,6 @@ export function AgreementForm({
               )}
             </div>
           </div>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label>Alcance<Req /></Label>
-            <Select
-              value={v.scope}
-              onValueChange={(val) =>
-                setV({
-                  ...v,
-                  scope: val as "global" | "unit",
-                  unit_name: val === "global" ? "" : v.unit_name,
-                })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="global">Global (cobertura nacional)</SelectItem>
-                <SelectItem value="unit">Unidad (cobertura por regional)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          {v.scope === "unit" && (
-            <div className="space-y-2">
-              <Label htmlFor="unit_name">Nombre de la unidad<Req /></Label>
-              <Input
-                id="unit_name"
-                placeholder="Ej. Bogotá DC"
-                value={v.unit_name}
-                onChange={(e) => setV({ ...v, unit_name: e.target.value })}
-              />
-              {errors.unit_name && (
-                <p className="text-sm text-destructive">{errors.unit_name}</p>
-              )}
-            </div>
-          )}
         </div>
 
         <div className="space-y-2">
