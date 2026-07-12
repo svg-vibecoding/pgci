@@ -628,14 +628,7 @@ function ClientAccess() {
             </p>
           ) : (
             <div>
-              <div className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-border bg-background px-4 py-2.5">
-                <span className="suma-overline text-text-tertiary">
-                  Cliente
-                </span>
-                <span className="suma-overline text-text-tertiary">
-                  Asignar
-                </span>
-              </div>
+
 
               <ul className="divide-y divide-border">
                 {pagedClients.map((c) => {
