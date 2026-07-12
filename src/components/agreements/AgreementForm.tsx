@@ -168,7 +168,7 @@ export function AgreementForm({
   }
 
 
-  const allCompanies = activeClientsQ.data ?? [];
+  const allCompanies: AssignableClient[] = lockClient ? [] : clients;
   const companyById = useMemo(() => {
     const m = new Map<string, (typeof allCompanies)[number]>();
     for (const c of allCompanies) m.set(c.id, c);
