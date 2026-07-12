@@ -13,8 +13,8 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { resetAuthReady } from "@/integrations/supabase/auth-ready";
-import { AuthLoadingScreen } from "@/components/AuthLoadingScreen";
+import { AuthProvider } from "@/components/AuthProvider";
+import type { authStore } from "@/integrations/supabase/auth-store";
 
 function NotFoundComponent() {
   return (
@@ -76,7 +76,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   );
 }
 
-export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+export const Route = createRootRouteWithContext<{
+  queryClient: QueryClient;
+  authStore: typeof authStore;
+}>()({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -99,7 +102,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   }),
   shellComponent: RootShell,
   component: RootComponent,
-  pendingComponent: AuthLoadingScreen,
   notFoundComponent: NotFoundComponent,
   errorComponent: ErrorComponent,
 });
@@ -125,12 +127,7 @@ function RootComponent() {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      // Invalidar el cache de "auth ready" para que el próximo lector vea el
-      // estado actual (nueva sesión tras login, o ausencia tras logout).
-      resetAuthReady();
       if (event === "SIGNED_OUT") {
-        // Cancel in-flight queries before the 401 storm hits, then let the
-        // auth gate redirect. Don't refetch — the session is gone.
         await queryClient.cancelQueries();
         queryClient.clear();
         router.invalidate();
@@ -144,8 +141,9 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <AuthProvider>
+        <Outlet />
+      </AuthProvider>
       <Toaster />
     </QueryClientProvider>
   );

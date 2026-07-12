@@ -2,7 +2,7 @@
 // según su rol. La usan `/`, `/auth` y el post-login para no divergir.
 
 import { supabase } from "./client";
-import { waitForAuthReady } from "./auth-ready";
+import { authStore } from "./auth-store";
 
 export type AuthenticatedLanding = "/setup" | "/pgci";
 
@@ -19,13 +19,14 @@ export async function getLandingForUserId(
   return isSuper ? "/setup" : "/pgci";
 }
 
-// Decide destino esperando a que supabase-js termine de rehidratar.
+// Decide destino esperando a que el auth-store resuelva por primera vez.
 // - Sin sesión: null (el llamador decide, típicamente redirigir a /auth).
 // - Con sesión: "/setup" o "/pgci" según rol.
 export async function resolveAuthLanding(): Promise<
   AuthenticatedLanding | null
 > {
-  const session = await waitForAuthReady();
-  if (!session?.user) return null;
-  return getLandingForUserId(session.user.id);
+  await authStore.ready;
+  const s = authStore.getState();
+  if (s.status !== "signed-in") return null;
+  return getLandingForUserId(s.session.user.id);
 }
