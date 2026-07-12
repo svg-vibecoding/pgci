@@ -28,6 +28,62 @@ function hasStoredAuthToken(): boolean {
   return false;
 }
 
+// ============================================================
+// Estado "resolución definitiva de sesión"
+// ============================================================
+// `authDefinitivelyResolved` es TRUE solo cuando sabemos con CERTEZA cuál es
+// el estado real de sesión:
+//   - getSession() inmediato devolvió una sesión, o
+//   - no hay token guardado (definitivamente signed out), o
+//   - supabase emitió INITIAL_SESSION / SIGNED_IN / SIGNED_OUT / TOKEN_REFRESHED
+//     (con o sin sesión — un INITIAL_SESSION con session=null también es
+//     definitivo: significa que el token guardado era inválido).
+// El timeout puro NO cuenta como definitivo — es un falso negativo posible.
+let definitivelyResolved = false;
+const subscribers = new Set<() => void>();
+
+function markDefinitivelyResolved(): void {
+  if (definitivelyResolved) return;
+  definitivelyResolved = true;
+  for (const cb of subscribers) {
+    try {
+      cb();
+    } catch {
+      // no propagar errores de suscriptores
+    }
+  }
+}
+
+export function isAuthDefinitivelyResolved(): boolean {
+  return definitivelyResolved;
+}
+
+export function subscribeAuthResolved(cb: () => void): () => void {
+  subscribers.add(cb);
+  return () => {
+    subscribers.delete(cb);
+  };
+}
+
+// Suscripción global permanente: cualquier evento real de auth marca
+// definitivo, aunque llegue después del timeout o después de que
+// `waitForAuthReady` ya haya resuelto.
+if (typeof window !== "undefined") {
+  const { data } = supabase.auth.onAuthStateChange((event) => {
+    if (
+      event === "INITIAL_SESSION" ||
+      event === "SIGNED_IN" ||
+      event === "SIGNED_OUT" ||
+      event === "TOKEN_REFRESHED" ||
+      event === "USER_UPDATED"
+    ) {
+      markDefinitivelyResolved();
+    }
+  });
+  // Nunca desuscribimos: vive por toda la carga del bundle.
+  void data;
+}
+
 async function resolveOnce(timeoutMs: number): Promise<Session | null> {
   if (typeof window === "undefined") return null;
 
@@ -35,10 +91,16 @@ async function resolveOnce(timeoutMs: number): Promise<Session | null> {
   const initial = await supabase.auth.getSession().catch(() => ({
     data: { session: null },
   }));
-  if (initial.data.session) return initial.data.session;
+  if (initial.data.session) {
+    markDefinitivelyResolved();
+    return initial.data.session;
+  }
 
-  // Si no hay token guardado, no vale la pena esperar.
-  if (!hasStoredAuthToken()) return null;
+  // Si no hay token guardado, la ausencia de sesión ES definitiva.
+  if (!hasStoredAuthToken()) {
+    markDefinitivelyResolved();
+    return null;
+  }
 
   // 2) Esperar INITIAL_SESSION o el primer SIGNED_IN, con tope de timeout.
   const viaEvent = new Promise<Session | null>((resolve) => {
@@ -49,10 +111,12 @@ async function resolveOnce(timeoutMs: number): Promise<Session | null> {
         event === "TOKEN_REFRESHED"
       ) {
         data.subscription.unsubscribe();
+        // Cualquier evento real es definitivo, incluso con session=null
+        // (token guardado inválido → INITIAL_SESSION con null).
+        markDefinitivelyResolved();
         resolve(session ?? null);
       }
     });
-    // Cleanup por si el timeout gana la carrera.
     setTimeout(() => {
       data.subscription.unsubscribe();
     }, timeoutMs + 50);
@@ -69,30 +133,32 @@ async function resolveOnce(timeoutMs: number): Promise<Session | null> {
   const retry = await supabase.auth.getSession().catch(() => ({
     data: { session: null },
   }));
-  return retry.data.session ?? null;
+  if (retry.data.session) {
+    markDefinitivelyResolved();
+    return retry.data.session;
+  }
+  // Nota: NO marcamos definitivo aquí — si llegamos por timeout puro sin
+  // evento y sin sesión, la suscripción global permanente arriba lo marcará
+  // cuando (si) llegue el evento real.
+  return null;
 }
 
 export function waitForAuthReady(
   timeoutMs: number = DEFAULT_TIMEOUT_MS,
 ): Promise<Session | null> {
   if (!readyPromise) {
-    readyPromise = resolveOnce(timeoutMs).then((s) => {
-      authResolvedOnce = true;
-      return s;
-    });
+    readyPromise = resolveOnce(timeoutMs);
   }
   return readyPromise;
 }
 
-// Flag: ¿ya se resolvió la sesión al menos una vez en esta carga del bundle?
-// El splash de arranque en frío se muestra solo mientras esto es false.
-// La navegación interna con sesión ya resuelta NO lo re-dispara.
-export let authResolvedOnce = false;
-
 // Se llama tras signIn/signOut para que la próxima lectura vuelva a resolver
-// desde el estado actual del cliente. NO resetea `authResolvedOnce`: el
-// splash de arranque en frío es una sola vez por carga del bundle.
+// desde el estado actual del cliente. NO resetea `definitivelyResolved`: una
+// vez que sabemos, sabemos.
 export function resetAuthReady(): void {
   readyPromise = null;
 }
 
+// Compat: algunos módulos aún importan `authResolvedOnce`. Alias al flag
+// definitivo para no romper imports antiguos.
+export const authResolvedOnce = false;
