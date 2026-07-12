@@ -69,6 +69,7 @@ function ImportPim() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [finalSummary, setFinalSummary] = useState<FinalSummary | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
 
   const inactivations: Inactivation[] = useMemo(
