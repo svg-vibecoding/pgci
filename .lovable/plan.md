@@ -1,76 +1,43 @@
-# Filtro "Solo asignados" en Clientes y permisos
+## Diagnóstico: por qué te saca de sesión a mitad de uso
 
-Archivo: `src/routes/_authenticated/setup/users.$userId.client-access.tsx`
+Revisé el flujo de auth y encontré **tres puntos que, combinados, explican los cierres de sesión inesperados**:
 
-## 1. Estado nuevo
+### 1. `beforeLoad` en `_authenticated` llama a `supabase.auth.getUser()` en cada navegación
+`src/routes/_authenticated/route.tsx` hace una llamada de red a `/auth/v1/user` **cada vez que navegas a cualquier ruta protegida** (y también en cada preload por hover de un `<Link>`, porque `defaultPreloadStaleTime: 0` en `src/router.tsx`).
 
-Junto a `search`:
+- Si esa llamada falla por cualquier razón transitoria (red, 5xx momentáneo, timeout, token justo expirando antes de que el auto-refresh corra), el `beforeLoad` lanza `redirect({ to: "/auth" })` y quedas fuera.
+- En los logs de auth se ven ráfagas de `/user` seguidas — eso es este `beforeLoad` disparándose múltiples veces por interacción.
 
-```tsx
-const [assignedFilter, setAssignedFilter] = useState<"all" | "assigned">("all");
-```
+### 2. El listener global reacciona a `SIGNED_OUT` invalidando router
+En `src/routes/__root.tsx` (línea 123), `onAuthStateChange` invalida el router en `SIGNED_OUT`. Si Supabase falla al refrescar el token (por ejemplo, un refresh token rotado en otra pestaña, o una respuesta 400 del endpoint `/token?grant_type=refresh_token`), dispara `SIGNED_OUT` automáticamente → el `beforeLoad` corre de nuevo sin usuario → redirect a `/auth`. Síntoma exacto: "estaba trabajando y de golpe volví al login".
 
-Ampliar el `useEffect` de reset de paginación:
+### 3. `attachSupabaseAuth` lee `getSession()` en cada server function
+Cada llamada RPC (guardar cliente, toggles de asignación, etc.) pasa por `getSession()` client-side. En momentos donde el refresh está en curso, puede devolver una sesión vacía y el server responde `Unauthorized`. Eso no cierra sesión por sí solo, pero contribuye a la sensación de "algo se cae".
 
-```tsx
-useEffect(() => { setPage(1); }, [search, assignedFilter]);
-```
+---
 
-## 2. Lógica de filtrado
+## Plan de acción (sin tocar lógica de negocio)
 
-En el `useMemo` de `filteredClients` (línea 149), después del filtro por texto:
+**A. Bajar la presión sobre `/auth/v1/user`** — `src/routes/_authenticated/route.tsx`
+- Reemplazar `getUser()` por `getSession()` en `beforeLoad`. `getSession()` es local (lee de `localStorage`), no hace red, y es lo que Supabase recomienda para gates de UI. La validación real del token la hace igual el server en `requireSupabaseAuth`.
+- Solo redirigir a `/auth` cuando **no hay sesión** en absoluto, no cuando hay error de red.
 
-```tsx
-if (assignedFilter === "assigned") {
-  list = list.filter((c) => stateMap.get(c.id)?.assigned);
-}
-```
+**B. Endurecer el `onAuthStateChange`** — `src/routes/__root.tsx`
+- Mantener la invalidación en `SIGNED_IN` / `USER_UPDATED`.
+- En `SIGNED_OUT`: solo invalidar router (para que el gate haga su trabajo) y **cancelar queries en vuelo** antes, para evitar la tormenta de 401 que también dispara el listener.
+- Ignorar explícitamente `TOKEN_REFRESHED` e `INITIAL_SESSION` (ya se ignoran, mantener).
 
-Dependencias: agregar `assignedFilter` y `stateMap`.
+**C. Reducir preloads agresivos** — `src/router.tsx`
+- Subir `defaultPreloadStaleTime` a algo como `30_000` (30s) para que el hover sobre un `<Link>` no re-dispare `beforeLoad` una y otra vez. Esto reduce llamadas de auth y de datos sin cambiar comportamiento visible.
 
-Consecuencias automáticas:
-- `pagedClients` ya deriva de `filteredClients`, así que la paginación opera sobre el resultado filtrado.
-- Los toggles masivos ya operan sobre `filteredClients` → siguen respetando el ámbito visible (comportamiento esperado).
+**D. Verificación**
+- Después de aplicar, probar: navegar entre Setup → Usuarios → Cliente y permisos, guardar cambios, dejar la pestaña en segundo plano ~5 min y volver. No debería expulsar.
+- Revisar logs de auth: la ráfaga de `/user` debe desaparecer.
 
-## 3. Contador principal
+---
 
-"X de N clientes asignados" (header) NO cambia: sigue derivando de `stateMap` completo.
+### Fuera de alcance
+- No toco `signOut` de `AppShell`, ni la lógica de guardado, ni permisos, ni el switch "Ver asignados" recién hecho.
+- No cambio archivos auto-generados (`client.ts`, `auth-middleware.ts`, `auth-attacher.ts`).
 
-El contador secundario ("`{filteredClients.length} de {totalClients} clientes`", línea 517) se muestra también cuando `assignedFilter === "assigned"`, para dar feedback del subconjunto.
-
-## 4. Control UI — usar componentes del design system
-
-En lugar de botones sueltos con clases ad-hoc, reutilizar `SummaryToggle` de `@/components/sumatec` (ya importado en el archivo). Es el segmented control estándar del Sumatec Digital Design System y garantiza tipografía Montserrat, radios y estados consistentes con el resto de la vista (ya se usa en el header para "Resumen / Detalle").
-
-Ubicación: mismo contenedor flex que envuelve el `Input` de búsqueda (línea ~502-517), como segundo hijo — buscador a la izquierda (crece), segmented control a la derecha.
-
-```tsx
-<SummaryToggle
-  value={assignedFilter}
-  onChange={(v) => setAssignedFilter(v as "all" | "assigned")}
-  options={[
-    { value: "all", label: "Todos" },
-    { value: "assigned", label: "Solo asignados" },
-  ]}
-/>
-```
-
-(Si `SummaryToggle` no acepta `options` genéricos, se ajusta la firma mínima; NO se introducen clases de color hardcoded ni tipografía suelta — solo tokens y componentes del sistema.)
-
-## 5. Estado vacío
-
-En la rama de "sin resultados" (línea 601), diferenciar copy según contexto:
-
-- `assignedFilter === "assigned"` y `totalAssigned === 0`:
-  "Este usuario no tiene clientes asignados todavía."
-- `assignedFilter === "assigned"` con búsqueda y sin coincidencias:
-  "Ningún cliente asignado coincide con la búsqueda."
-- Resto: mensaje actual.
-
-Tipografía y espaciado del estado vacío heredados del contenedor actual (no se introducen clases nuevas).
-
-## Lo que NO se toca
-
-- Lógica de guardado, toggles masivos, permisos avanzados, queries, indentación de permisos, paginación (más allá del reset de página).
-- Contador principal "X de N clientes asignados".
-- Tokens de color ni tipografía: todo pasa por componentes del design system Sumatec.
+¿Apruebas para implementar?
