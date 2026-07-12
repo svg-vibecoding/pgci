@@ -387,7 +387,7 @@ export function AgreementForm({
 
             {/* Lista de clientes */}
             <div className="max-h-72 overflow-y-auto border-t border-border">
-              {activeClientsQ.isLoading ? (
+              {allCompaniesLoading ? (
                 <p className="py-6 text-center text-sm text-muted-foreground">
                   Cargando…
                 </p>
