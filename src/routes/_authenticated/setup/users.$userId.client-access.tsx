@@ -625,7 +625,11 @@ function ClientAccess() {
             </p>
           ) : filteredClients.length === 0 ? (
             <p className="py-8 text-center suma-body text-text-secondary">
-              Sin resultados para esa búsqueda.
+              {assignedFilter === "assigned" && assignedCount === 0
+                ? "Este usuario no tiene clientes asignados todavía."
+                : assignedFilter === "assigned"
+                  ? "Ningún cliente asignado coincide con la búsqueda."
+                  : "Sin resultados para esa búsqueda."}
             </p>
           ) : (
             <div>
