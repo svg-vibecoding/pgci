@@ -43,6 +43,13 @@ function ClientAccess() {
   const [saving, setSaving] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [page, setPage] = useState(1);
+
+  const PAGE_SIZE = 20;
+
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
 
   const profileQ = useQuery({
     queryKey: ["users", userId, "profile-min"],

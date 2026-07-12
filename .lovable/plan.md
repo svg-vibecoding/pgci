@@ -1,50 +1,42 @@
-## Nuevo token: `suma-label`
+# Ajustes UX — Clientes y permisos
 
-Agregar en `src/styles.css`, junto a los demás `@utility suma-*` (después de `suma-overline`, antes de `suma-metric`):
+Archivo único: `src/routes/_authenticated/setup/users.$userId.client-access.tsx`. No se toca lógica de guardado, contadores, toggles masivos, ni queries.
 
-```css
-/* Label de formulario. Montserrat semibold, 14px, sin uppercase. */
-@utility suma-label {
-  font: var(--fw-semibold) var(--subtitle-2) / var(--subtitle-2-lh) var(--font-ui);
-}
-```
+## 1. Paginación (20 por página)
 
-Características:
-- Fuente: `var(--font-ui)` → Montserrat.
-- Peso: `var(--fw-semibold)` → 600.
-- Tamaño: `var(--subtitle-2)` → 14px / 20px de line-height (encaja entre `suma-overline` 11px y `suma-subtitle` 16px, y coincide con el actual `text-sm`).
-- Sin `text-transform` ni `letter-spacing` extra → minúscula normal.
-- Sin `color` → lo hereda del contenedor (o lo fija quien lo use). Esto replica el look del texto "Super administrador" del `UserForm`, que es `suma-body ... font-semibold` y hereda color.
+- Nuevo estado local `page` (número, default 1) y constante `PAGE_SIZE = 20`.
+- Derivar `pagedClients` a partir de `filteredClients`:
+  - Si `search.trim() === ""`: paginar (`slice((page-1)*20, page*20)`).
+  - Si hay búsqueda: **también** paginar el resultado filtrado con la misma regla (así respetamos "el filtro manda" pero evitamos listas gigantes; los usuarios pueden llegar a las páginas siguientes de sus resultados). El buscador manda porque restringe primero el universo.
+- El `.map(...)` de la lista de clientes usa `pagedClients` en vez de `filteredClients`.
+- Al cambiar `search`, resetear `page = 1` (via `useEffect` sobre `search`).
+- Estado en curso: `stateMap` ya vive fuera del render de la lista y se indexa por `id`, así que cambiar de página **no pierde nada** — los switches ya activados en la página 1 siguen activos al volver. No se requieren cambios ahí.
+- Contadores (`assignedCount`, `summaryText`, `initialSummaryText`, "X de N clientes asignados") siguen calculándose sobre `stateMap` / `clientsQ.data` completo. No se tocan.
+- Toggles masivos siguen operando sobre `filteredClients` (todas las coincidencias del buscador, no solo la página visible). Mantiene el comportamiento actual documentado en el texto "Aplican a los clientes que coincidan con el buscador activo."
 
-## Cambio en `src/components/ui/label.tsx`
+### Control de paginación
 
-Reemplazar únicamente las clases tipográficas base del `cva`:
+Debajo de la `<ul>` de clientes, dentro del mismo card, renderizar un footer solo si `filteredClients.length > PAGE_SIZE`:
 
-- Antes: `"text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"`
-- Después: `"suma-label peer-disabled:cursor-not-allowed peer-disabled:opacity-70"`
+- Botones numerados 1..N (`Math.ceil(filteredClients.length / PAGE_SIZE)`).
+- Página activa: estilo primario; otras: `variant="ghost"` con `suma-caption`.
+- Si hay más de 7 páginas, colapsar con elipsis: `1 … prev current next … last`.
+- Aria-label por botón, `aria-current="page"` en la activa.
+- Layout: `flex items-center justify-center gap-1 border-t border-border px-4 py-3`.
 
-Se retiran `text-sm`, `font-medium` y `leading-none` (el line-height ya viene en `suma-label`). Se conservan intactas las clases de estado `peer-disabled:*`.
+## 2. Indentación jerárquica de permisos
 
-## Propagación
-Al ser el componente compartido shadcn `Label`, todos los formularios que lo usan reciben el cambio sin editar nada más:
-- `ClientForm.tsx` — Razón social, NIT, Tipo, Cliente padre, switch holding.
-- `UserForm.tsx` — Nombre completo, Email, Código ERP, Estado, Nueva contraseña.
-- Cualquier otro `<Label>` del proyecto.
+Hoy el bloque "Permisos avanzados" ya está indentado (`ml-12 border-l border-border pl-4`), pero los `<Switch>` internos usan `justify-between` que los empuja al mismo borde derecho que el switch de "Asignar cliente", lo cual crea el conflicto visual.
 
-El `<Label className="sr-only">` de `PermissionRow` no se ve afectado visualmente (sigue oculto por `sr-only`).
+Cambios en el `.map` de `perm` (líneas 682–701):
 
-## Qué NO se toca
-- Inputs, Selects, Switches.
-- Mensajes de error (`suma-caption text-destructive`) y helpers (`suma-caption text-text-tertiary`).
-- Marcador de obligatorio `*` en `text-primary` (heredará el nuevo tamaño/peso, consistente).
-- Diálogo de credenciales en `users.new.tsx` (usa `suma-overline` explícito → sin regresión).
-- El resto de tokens `suma-*`.
+- Reemplazar `justify-between` por un layout que deje los switches **antes** del borde derecho: cambiar el contenedor de cada fila a `flex items-center gap-4 py-1.5 pr-8 md:pr-12` (padding derecho suficiente para que los switches queden desplazados hacia el interior respecto al switch de asignar).
+- Dentro, `<div className="flex flex-1 items-center gap-2">` para el ícono + label (queda a la izquierda), y el `<Switch />` va después sin `justify-between` explícito — el `flex-1` del label empuja al switch, pero el `pr-*` del contenedor lo mantiene alejado del borde.
+- El switch de "Asignar cliente" (línea 650) NO se toca: sigue en el borde derecho gracias al `justify-between` de su fila padre.
+
+Resultado: los tres switches de permisos quedan visualmente indentados a la izquierda (más adentro), reforzando que son sub-acciones dentro del cliente ya asignado.
 
 ## Verificación
-1. Abrir `/setup/users/new`, `/setup/users/:id/edit`, `/setup/clients/new`, `/setup/clients/:id/edit`.
-2. Los labels ("Nombre completo", "Email", "Código de usuario ERP", "Estado", "Razón social", "NIT", "Tipo", etc.) deben verse en **Montserrat semibold 14px minúscula**, con el mismo look que "Super administrador" del `UserForm`.
-3. El `*` rojo aparece cuando corresponde.
 
-## Archivos a modificar
-- `src/styles.css` — añadir `@utility suma-label`.
-- `src/components/ui/label.tsx` — cambiar clases base del `cva`.
+- Preview manual con Playwright: 1) sin búsqueda → ver paginación; 2) navegar a página 2, activar un switch, volver a página 1, confirmar que el switch de página 2 sigue activo; 3) escribir en búsqueda → paginación se resetea a 1 y filtra; 4) asignar un cliente → verificar que los 3 switches de permisos quedan a la izquierda del switch de asignar.
+- Sin cambios en tipos ni en llamadas a Supabase.
