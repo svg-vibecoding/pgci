@@ -1262,6 +1262,19 @@ export type Database = {
         Args: { p_agreement_id: string; p_payload: Json }
         Returns: Json
       }
+      create_agreement_tx: {
+        Args: {
+          p_client_ids: string[]
+          p_end_date: string
+          p_group_id: string
+          p_name: string
+          p_observations: string
+          p_scope: string
+          p_start_date: string
+          p_unit_name: string
+        }
+        Returns: string
+      }
       exclude_agreement_position: {
         Args: { p_position_id: string; p_reason: string }
         Returns: undefined
