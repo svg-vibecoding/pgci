@@ -378,7 +378,7 @@ function UserDetail() {
               <Building2 className="mb-2 h-6 w-6 text-text-tertiary" />
               <p className="suma-body text-text-primary">Este usuario aún no tiene clientes asignados.</p>
               <p className="suma-caption text-text-tertiary">
-                Un super admin debe habilitar sus accesos para que pueda operar en la PGCI.
+                El administrador debe habilitar sus accesos para que pueda operar en la PGCI.
               </p>
               {isSuperAdmin && (
                 <Button asChild variant="outline" size="sm" className="mt-3">
