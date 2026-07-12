@@ -236,54 +236,30 @@ export const createAgreement = createServerFn({ method: "POST" })
       groupId = newGroup.id as string;
     }
 
-    // 3) Crear el acuerdo (group_id puede ser null).
-    const { data: row, error } = await context.supabase
-      .from("agreements")
-      .insert({
-        group_id: groupId,
-        name: data.name,
-        scope: data.scope,
-        unit_name: data.unit_name,
-        start_date: data.start_date,
-        end_date: data.end_date,
-        observations: data.observations,
-        created_by: context.userId,
-      })
-      .select("id")
-      .single();
-    if (error) throw new Error(`No se pudo crear el acuerdo: ${error.message}`);
-
-    // 4) Vincular empresas iniciales.
+    // 3) Resolver clientes iniciales.
     const companyIds = data.client_id
       ? [data.client_id]
       : data.company_ids ?? [];
-    for (const clientId of companyIds) {
-      await assertCanCreateForClient(context.supabase, clientId);
-      const { error: acErr } = await context.supabase
-        .from("agreement_companies")
-        .insert({ agreement_id: row.id, client_id: clientId, started_by: context.userId });
-      if (acErr && !acErr.message.toLowerCase().includes("duplicate")) {
-        throw new Error(
-          `Acuerdo creado pero no se pudo vincular el cliente: ${acErr.message}`,
-        );
-      }
+    if (companyIds.length === 0) {
+      throw new Error("Debes indicar al menos un cliente cubierto.");
     }
 
-    // 5) Registrar al creador como agreement_admin (idempotente).
-    const { error: memErr } = await context.supabase
-      .from("agreement_members")
-      .insert({
-        agreement_id: row.id,
-        user_id: context.userId,
-        role: "agreement_admin",
-        assigned_by: context.userId,
-      });
-    if (memErr && !memErr.message.toLowerCase().includes("duplicate")) {
-      throw new Error(
-        `Acuerdo creado pero no se pudo asignar admin: ${memErr.message}`,
-      );
-    }
-    return { agreement_id: row.id as string };
+    // 4) Crear acuerdo + vincular clientes + registrar admin (transaccional, SECURITY DEFINER).
+    const { data: newId, error } = await context.supabase.rpc(
+      "create_agreement_tx",
+      {
+        p_name: data.name,
+        p_scope: data.scope,
+        p_unit_name: data.unit_name ?? null,
+        p_start_date: data.start_date ?? null,
+        p_end_date: data.end_date ?? null,
+        p_observations: data.observations ?? null,
+        p_group_id: groupId,
+        p_client_ids: companyIds,
+      },
+    );
+    if (error) throw new Error(`No se pudo crear el acuerdo: ${error.message}`);
+    return { agreement_id: newId as string };
   });
 
 // Lista de agrupadores que el usuario puede seleccionar al crear acuerdos.
