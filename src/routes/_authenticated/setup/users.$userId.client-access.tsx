@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Card } from "@/components/ui/card";
 import { Badge, Chip, SummaryToggle } from "@/components/sumatec";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useIsSuperAdmin } from "@/hooks/use-profile";
 import { ArrowLeft, Check, ChevronDown, FileText, Layers, Search, Settings2, Shuffle } from "lucide-react";
 
