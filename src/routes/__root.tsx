@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { resetAuthReady } from "@/integrations/supabase/auth-ready";
+import { AuthLoadingScreen } from "@/components/AuthLoadingScreen";
 
 function NotFoundComponent() {
   return (
