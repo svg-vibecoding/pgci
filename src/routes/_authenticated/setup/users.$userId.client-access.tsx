@@ -722,6 +722,13 @@ function ClientAccess() {
               </ul>
             </div>
           )}
+          {filteredClients.length > PAGE_SIZE && (
+            <PaginationFooter
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onChange={setPage}
+            />
+          )}
         </div>
       </Card>
 
