@@ -28,7 +28,7 @@ export function InfoSection({
   return (
     <section>
       {title && (
-        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-foreground/70">
+        <h3 className="mb-3 suma-overline text-text-secondary">
           {title}
         </h3>
       )}
