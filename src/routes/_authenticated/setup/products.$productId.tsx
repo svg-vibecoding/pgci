@@ -139,7 +139,7 @@ function ProductDetail() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Información del producto</CardTitle>
+          <CardTitle className="suma-h4">Información del producto</CardTitle>
         </CardHeader>
         <CardContent>
           <InfoSection>

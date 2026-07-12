@@ -63,7 +63,7 @@ function GroupedSummary({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Agrupador</CardTitle>
+        <CardTitle className="suma-h4">Agrupador</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {isLoading || !data ? (
@@ -189,7 +189,7 @@ function UngroupedSection({
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Agrupador</CardTitle>
+          <CardTitle className="suma-h4">Agrupador</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
@@ -218,7 +218,7 @@ function UngroupedSection({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Agrupador</CardTitle>
+        <CardTitle className="suma-h4">Agrupador</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <AgreementGroupPicker

@@ -142,7 +142,7 @@ export function AgreementGroupMembersSection({
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle className="text-base">Miembros del agrupador</CardTitle>
+          <CardTitle className="suma-h4">Miembros del agrupador</CardTitle>
           <p className="mt-1 text-xs text-muted-foreground">
             Personas con rol en el agrupador: pueden renombrar, editar condiciones
             generales y gestionar los acuerdos del grupo.

@@ -197,7 +197,7 @@ function GroupDetail() {
       {/* Resumen — mismo card que "Información comercial / Posiciones en el acuerdo" */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">
+          <CardTitle className="suma-h4">
             Información comercial / Posiciones en el agrupador
           </CardTitle>
         </CardHeader>
@@ -218,7 +218,7 @@ function GroupDetail() {
       {/* Información general */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base">Información general</CardTitle>
+          <CardTitle className="suma-h4">Información general</CardTitle>
           {canAdmin && (
             <Button size="sm" variant="outline" onClick={() => setNotesOpen(true)}>
               <Pencil className="mr-1.5 h-4 w-4" /> Editar condiciones
@@ -268,7 +268,7 @@ function GroupDetail() {
         <Card id="agreements" className="scroll-mt-20">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="text-base">Acuerdos</CardTitle>
+              <CardTitle className="suma-h4">Acuerdos</CardTitle>
               <p className="mt-1 text-xs text-muted-foreground">
                 Acuerdos que pertenecen a este agrupador.
               </p>
@@ -456,7 +456,7 @@ function MembersByAgreementSection({ groupId }: { groupId: string }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Miembros por acuerdo</CardTitle>
+        <CardTitle className="suma-h4">Miembros por acuerdo</CardTitle>
         <p className="mt-1 text-xs text-muted-foreground">
           Personas con acceso a los acuerdos que agrupa este grupo.
         </p>

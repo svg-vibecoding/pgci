@@ -158,7 +158,7 @@ export function CommercialProfileView() {
       {/* Información personal */}
       <Card>
         <CardHeader>
-          <CardTitle className="suma-h3">Información personal</CardTitle>
+          <CardTitle className="suma-h4">Información personal</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-start gap-4">
@@ -195,7 +195,7 @@ export function CommercialProfileView() {
       {/* Clientes y accesos */}
       <Card>
         <CardHeader>
-          <CardTitle className="suma-h3">Clientes y accesos</CardTitle>
+          <CardTitle className="suma-h4">Clientes y accesos</CardTitle>
           <p className="suma-body text-text-secondary">
             Tu cartera de clientes y los acuerdos en los que participas, con los permisos vigentes en cada nivel.
           </p>

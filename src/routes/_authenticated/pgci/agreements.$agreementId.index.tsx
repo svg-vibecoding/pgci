@@ -210,7 +210,7 @@ function AgreementDetail() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Información general</CardTitle>
+          <CardTitle className="suma-h4">Información general</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -252,7 +252,7 @@ function AgreementDetail() {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base">Miembros del acuerdo</CardTitle>
+          <CardTitle className="suma-h4">Miembros del acuerdo</CardTitle>
           {canAdmin && (
             <Button size="sm" variant="outline" onClick={() => setAddOpen(true)}>
               <UserPlus className="mr-1.5 h-4 w-4" /> Agregar
