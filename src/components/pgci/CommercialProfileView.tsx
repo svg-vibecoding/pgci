@@ -196,7 +196,8 @@ export function CommercialProfileView() {
       <Card>
         <CardHeader>
           <CardTitle className="suma-h4">Clientes y accesos</CardTitle>
-          <p className="suma-body text-text-secondary">
+          <p className="mt-1 suma-body text-text-secondary">
+
             Tu cartera de clientes y los acuerdos en los que participas, con los permisos vigentes en cada nivel.
           </p>
         </CardHeader>
