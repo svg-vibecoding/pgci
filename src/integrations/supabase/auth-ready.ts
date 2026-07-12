@@ -76,13 +76,23 @@ export function waitForAuthReady(
   timeoutMs: number = DEFAULT_TIMEOUT_MS,
 ): Promise<Session | null> {
   if (!readyPromise) {
-    readyPromise = resolveOnce(timeoutMs);
+    readyPromise = resolveOnce(timeoutMs).then((s) => {
+      authResolvedOnce = true;
+      return s;
+    });
   }
   return readyPromise;
 }
 
+// Flag: ¿ya se resolvió la sesión al menos una vez en esta carga del bundle?
+// El splash de arranque en frío se muestra solo mientras esto es false.
+// La navegación interna con sesión ya resuelta NO lo re-dispara.
+export let authResolvedOnce = false;
+
 // Se llama tras signIn/signOut para que la próxima lectura vuelva a resolver
-// desde el estado actual del cliente.
+// desde el estado actual del cliente. NO resetea `authResolvedOnce`: el
+// splash de arranque en frío es una sola vez por carga del bundle.
 export function resetAuthReady(): void {
   readyPromise = null;
 }
+
