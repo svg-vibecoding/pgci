@@ -120,24 +120,8 @@ export function AgreementForm({
   const [companiesDetailOpen, setCompaniesDetailOpen] = useState(false);
   const [groupOpen, setGroupOpen] = useState(initial.group_mode !== "none");
 
-  const activeClientsQ = useQuery({
-    queryKey: ["clients", "picker-active-agreement-companies"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("clients")
-        .select("id, commercial_name, legal_name, tax_id, tax_id_type, type")
-        .eq("status", "active");
-      if (error) throw error;
-      return [...(data ?? [])].sort((a, b) =>
-        (a.commercial_name?.trim() || a.legal_name || "").localeCompare(
-          b.commercial_name?.trim() || b.legal_name || "",
-          "es",
-          { sensitivity: "base" },
-        ),
-      );
-    },
-    enabled: !lockClient,
-  });
+  const allCompaniesLoading = clientsLoading;
+
 
   async function handle(e: React.FormEvent) {
     e.preventDefault();
