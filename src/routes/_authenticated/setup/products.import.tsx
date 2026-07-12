@@ -307,15 +307,15 @@ function ImportPim() {
                             key={u.next.sku}
                             className="rounded-lg border border-border p-3"
                           >
-                            <p className="mb-2 text-sm font-medium">
+                            <p className="mb-2 suma-body font-medium text-text-primary">
                               <span className="font-mono">{u.next.sku}</span>{" "}
-                              <span className="text-muted-foreground">
+                              <span className="text-text-secondary">
                                 — {u.next.erp_description}
                               </span>
                             </p>
-                            <table className="w-full text-xs">
+                            <table className="w-full suma-caption">
                               <thead>
-                                <tr className="text-left text-muted-foreground">
+                                <tr className="text-left text-text-tertiary">
                                   <th className="py-1 pr-3">Campo</th>
                                   <th className="py-1 pr-3">Antes</th>
                                   <th className="py-1">Nuevo</th>
@@ -325,13 +325,13 @@ function ImportPim() {
                                 {u.changedFields.map((f) => (
                                   <tr key={f} className="border-t border-border/60">
                                     <td className="py-1 pr-3">{FIELD_LABELS[f]}</td>
-                                    <td className="py-1 pr-3 text-muted-foreground">
+                                    <td className="py-1 pr-3 text-text-tertiary">
                                       {formatFieldValue(
                                         f,
                                         (u.current as Record<string, unknown>)[f],
                                       )}
                                     </td>
-                                    <td className="py-1 font-medium">
+                                    <td className="py-1 font-medium text-text-primary">
                                       {formatFieldValue(
                                         f,
                                         (u.next as Record<string, unknown>)[f],
@@ -344,7 +344,7 @@ function ImportPim() {
                           </div>
                         ))}
                         {diff.toUpdate.length > 100 && (
-                          <p className="text-xs text-muted-foreground">
+                          <p className="suma-caption text-text-tertiary">
                             …y {diff.toUpdate.length - 100} más.
                           </p>
                         )}
@@ -352,6 +352,7 @@ function ImportPim() {
                     </AccordionContent>
                   </AccordionItem>
                 )}
+
 
                 {diff.unchanged.length > 0 && (
                   <AccordionItem value="unchanged">
