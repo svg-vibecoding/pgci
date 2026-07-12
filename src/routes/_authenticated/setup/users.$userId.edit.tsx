@@ -58,10 +58,10 @@ function EditUser() {
 
 
   if (profileQ.isLoading) {
-    return <p className="text-sm text-muted-foreground">Cargando…</p>;
+    return <p className="suma-body text-text-secondary">Cargando…</p>;
   }
   if (!profileQ.data) {
-    return <p className="text-sm text-muted-foreground">Usuario no encontrado.</p>;
+    return <p className="suma-body text-text-secondary">Usuario no encontrado.</p>;
   }
 
   const profile = profileQ.data;

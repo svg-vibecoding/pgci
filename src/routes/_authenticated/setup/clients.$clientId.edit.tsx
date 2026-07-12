@@ -54,8 +54,8 @@ function EditClient() {
     },
   });
 
-  if (isLoading) return <p className="text-sm text-muted-foreground">Cargando…</p>;
-  if (!data) return <p className="text-sm text-muted-foreground">No encontrado.</p>;
+  if (isLoading) return <p className="suma-body text-text-secondary">Cargando…</p>;
+  if (!data) return <p className="suma-body text-text-secondary">No encontrado.</p>;
 
   const initial: ClientFormValues = {
     ...emptyClient,

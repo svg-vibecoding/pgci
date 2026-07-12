@@ -16,9 +16,9 @@ export function CreateViewShell({
     <div className="space-y-6">
       {backLink}
       <header>
-        <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+        <h1 className="suma-h1 text-text-primary">{title}</h1>
         {description && (
-          <p className="text-sm text-muted-foreground">{description}</p>
+          <p className="mt-1 suma-body text-text-secondary">{description}</p>
         )}
       </header>
       <div className="mx-auto max-w-2xl">{children}</div>

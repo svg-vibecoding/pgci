@@ -53,8 +53,8 @@ function PermissionRow({
   return (
     <div className="flex items-start justify-between gap-4">
       <div className="space-y-1">
-        <p className="text-sm font-semibold">{label}</p>
-        <p className="text-xs text-muted-foreground">{helpText}</p>
+        <p className="suma-body text-text-primary font-semibold">{label}</p>
+        <p className="suma-caption text-text-tertiary">{helpText}</p>
       </div>
       <div className="flex items-center gap-2 pt-0.5">
         <Label htmlFor={id} className="sr-only">
@@ -121,7 +121,7 @@ export function UserForm({
     >
       {/* 1. Rol global */}
       <section className="space-y-2">
-        <h3 className="text-sm font-semibold">Rol del usuario</h3>
+        <h3 className="suma-h4 text-text-primary">Rol del usuario</h3>
         <div className="rounded-lg border border-border bg-card p-4">
           <PermissionRow
             id="super_admin"
@@ -150,7 +150,7 @@ export function UserForm({
               maxLength={120}
             />
             {errors.full_name && (
-              <p className="mt-1 text-xs text-destructive">{errors.full_name}</p>
+              <p className="mt-1 suma-caption text-destructive">{errors.full_name}</p>
             )}
           </div>
 
@@ -165,7 +165,7 @@ export function UserForm({
               onChange={(e) => set("email", e.target.value)}
               maxLength={255}
             />
-            {errors.email && <p className="mt-1 text-xs text-destructive">{errors.email}</p>}
+            {errors.email && <p className="mt-1 suma-caption text-destructive">{errors.email}</p>}
           </div>
 
           <div>
@@ -200,7 +200,7 @@ export function UserForm({
       {/* 3. Permisos de administración — solo para platform_user */}
       {!isSuper && (
         <section className="space-y-2">
-          <h3 className="text-sm font-semibold">Permisos de administración</h3>
+          <h3 className="suma-h4 text-text-primary">Permisos de administración</h3>
           <div className="rounded-lg border border-border bg-card p-4">
             <PermissionRow
               id="can_create_agreement_groups"
@@ -220,13 +220,13 @@ export function UserForm({
             <button
               type="button"
               onClick={() => setPasswordOpen(true)}
-              className="text-sm font-medium text-primary hover:text-primary/80 hover:underline"
+              className="suma-body font-medium text-primary hover:text-primary/80 hover:underline"
             >
               Asignar nueva contraseña
             </button>
           ) : (
             <div className="space-y-2 border-t border-border pt-4">
-              <h3 className="text-sm font-semibold">Contraseña</h3>
+              <h3 className="suma-h4 text-text-primary">Contraseña</h3>
               <div>
                 <Label htmlFor="new_password">Nueva contraseña temporal</Label>
                 <Input
@@ -239,7 +239,7 @@ export function UserForm({
                   autoComplete="off"
                 />
                 {errors.new_password && (
-                  <p className="mt-1 text-xs text-destructive">{errors.new_password}</p>
+                  <p className="mt-1 suma-caption text-destructive">{errors.new_password}</p>
                 )}
               </div>
               <button
@@ -248,7 +248,7 @@ export function UserForm({
                   setPasswordOpen(false);
                   set("new_password", "");
                 }}
-                className="text-sm text-muted-foreground hover:text-foreground hover:underline"
+                className="suma-caption text-text-tertiary hover:text-text-primary hover:underline"
               >
                 Cancelar
               </button>

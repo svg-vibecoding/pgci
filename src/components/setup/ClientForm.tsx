@@ -134,7 +134,7 @@ export function ClientForm({
           onChange={(e) => setV({ ...v, legal_name: e.target.value })}
         />
         {errors.legal_name && (
-          <p className="text-sm text-destructive">{errors.legal_name}</p>
+          <p className="suma-caption text-destructive">{errors.legal_name}</p>
         )}
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -173,7 +173,7 @@ export function ClientForm({
             }}
           />
           {errors.tax_id && (
-            <p className="text-sm text-destructive">{errors.tax_id}</p>
+            <p className="suma-caption text-destructive">{errors.tax_id}</p>
           )}
         </div>
       </div>
@@ -197,7 +197,7 @@ export function ClientForm({
               <SelectItem value="direct">Directo</SelectItem>
             </SelectContent>
           </Select>
-          {errors.type && <p className="text-sm text-destructive">{errors.type}</p>}
+          {errors.type && <p className="suma-caption text-destructive">{errors.type}</p>}
         </div>
         <div className="space-y-2">
           <Label>Estado<Req /></Label>
@@ -215,10 +215,10 @@ export function ClientForm({
         <div className="space-y-3 rounded-lg border border-border p-4">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <Label htmlFor="belongs_to_holding" className="text-sm font-medium">
+              <Label htmlFor="belongs_to_holding">
                 ¿Pertenece a un holding?
               </Label>
-              <p className="text-xs text-muted-foreground">
+              <p className="mt-1 suma-caption text-text-tertiary">
                 Relaciona este cliente con un holding registrado.
               </p>
             </div>
@@ -251,14 +251,14 @@ export function ClientForm({
                     </SelectItem>
                   ))}
                   {holdings && holdings.length === 0 && (
-                    <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                    <div className="px-2 py-1.5 suma-body text-text-tertiary">
                       No hay holdings activos disponibles.
                     </div>
                   )}
                 </SelectContent>
               </Select>
               {errors.parent_client_id && (
-                <p className="text-sm text-destructive">{errors.parent_client_id}</p>
+                <p className="suma-caption text-destructive">{errors.parent_client_id}</p>
               )}
             </div>
           )}
@@ -274,7 +274,7 @@ export function ClientForm({
           onChange={(e) => setV({ ...v, notes: e.target.value })}
         />
       </div>
-      {serverError && <p className="text-sm text-destructive">{serverError}</p>}
+      {serverError && <p className="suma-caption text-destructive">{serverError}</p>}
       <div className="flex items-center justify-end gap-2 border-t border-border pt-4">
         <Button type="button" variant="ghost" onClick={onCancel} disabled={submitting}>
           Cancelar
