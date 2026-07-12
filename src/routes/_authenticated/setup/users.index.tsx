@@ -176,7 +176,7 @@ function UsersList() {
         return (
           <div className="min-w-0">
             <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-              <span className="min-w-0 truncate font-ui text-[13px] font-semibold text-text-primary">
+              <span className="min-w-0 truncate text-[13px] font-semibold text-text-primary">
                 {u.full_name ?? "—"}
               </span>
               {isSuper && (
@@ -186,7 +186,7 @@ function UsersList() {
                 <StatusBadge status="warning" label="Alerta" title={issues.join(" · ")} />
               )}
             </div>
-            <div className="text-[12px] leading-[1.35] text-text-tertiary">
+            <div className="text-[13px] leading-[1.35] text-text-secondary">
               {u.email ?? "—"}
             </div>
           </div>
