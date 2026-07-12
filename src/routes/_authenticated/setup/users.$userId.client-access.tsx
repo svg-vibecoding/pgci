@@ -43,6 +43,13 @@ function ClientAccess() {
   const [saving, setSaving] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [page, setPage] = useState(1);
+
+  const PAGE_SIZE = 20;
+
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
 
   const profileQ = useQuery({
     queryKey: ["users", userId, "profile-min"],
@@ -155,6 +162,13 @@ function ClientAccess() {
       return nameA.localeCompare(nameB);
     });
   }, [clientsQ.data, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredClients.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pagedClients = useMemo(
+    () => filteredClients.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [filteredClients, currentPage],
+  );
 
   const visibleAllAssigned = useMemo(() => {
     if (filteredClients.length === 0) return false;
@@ -600,7 +614,7 @@ function ClientAccess() {
               </div>
 
               <ul className="divide-y divide-border">
-                {filteredClients.map((c) => {
+                {pagedClients.map((c) => {
                   const st = stateMap.get(c.id) ?? DEFAULT_ACCESS_STATE;
                   const name = c.commercial_name?.trim() || c.legal_name || "—";
                   const parent = c.parent as
@@ -684,9 +698,9 @@ function ClientAccess() {
                               return (
                                 <div
                                   key={perm.label}
-                                  className="flex items-center justify-between gap-4 py-1.5"
+                                  className="flex items-center gap-4 py-1.5 pr-8 md:pr-16"
                                 >
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex flex-1 items-center gap-2">
                                     <Icon className="h-4 w-4 text-text-tertiary" />
                                     <span className="suma-body text-text-primary">{perm.label}</span>
                                   </div>
@@ -707,6 +721,13 @@ function ClientAccess() {
                 })}
               </ul>
             </div>
+          )}
+          {filteredClients.length > PAGE_SIZE && (
+            <PaginationFooter
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onChange={setPage}
+            />
           )}
         </div>
       </Card>
@@ -761,5 +782,59 @@ function ClientAccess() {
         </div>
       </div>
     </div>
+  );
+}
+
+function PaginationFooter({
+  currentPage,
+  totalPages,
+  onChange,
+}: {
+  currentPage: number;
+  totalPages: number;
+  onChange: (page: number) => void;
+}) {
+  const pages: (number | "…")[] = [];
+  if (totalPages <= 7) {
+    for (let i = 1; i <= totalPages; i++) pages.push(i);
+  } else {
+    const add = (v: number | "…") => pages.push(v);
+    add(1);
+    const start = Math.max(2, currentPage - 1);
+    const end = Math.min(totalPages - 1, currentPage + 1);
+    if (start > 2) add("…");
+    for (let i = start; i <= end; i++) add(i);
+    if (end < totalPages - 1) add("…");
+    add(totalPages);
+  }
+  return (
+    <nav
+      className="flex items-center justify-center gap-1 border-t border-border px-4 py-3"
+      aria-label="Paginación de clientes"
+    >
+      {pages.map((p, i) =>
+        p === "…" ? (
+          <span key={`e-${i}`} className="px-2 suma-caption text-text-tertiary">
+            …
+          </span>
+        ) : (
+          <button
+            key={p}
+            type="button"
+            onClick={() => onChange(p)}
+            aria-current={p === currentPage ? "page" : undefined}
+            aria-label={`Página ${p}`}
+            className={cn(
+              "min-w-8 rounded-md px-2.5 py-1 suma-caption font-medium transition-colors",
+              p === currentPage
+                ? "bg-primary text-primary-foreground"
+                : "text-text-secondary hover:bg-muted",
+            )}
+          >
+            {p}
+          </button>
+        ),
+      )}
+    </nav>
   );
 }
