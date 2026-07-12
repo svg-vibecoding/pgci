@@ -90,6 +90,9 @@ function EditAgreement() {
       id: (agreement.group_client_id as string) ?? "",
       legal_name: agreement.group_client_legal_name ?? agreement.group_name ?? "",
       commercial_name: agreement.group_client_commercial_name ?? null,
+      tax_id: null,
+      tax_id_type: null,
+      type: null,
     },
   ];
 
