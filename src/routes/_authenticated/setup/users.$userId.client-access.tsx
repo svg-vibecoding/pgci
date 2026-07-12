@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Card } from "@/components/ui/card";
 import { Badge, Chip, SummaryToggle } from "@/components/sumatec";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useIsSuperAdmin } from "@/hooks/use-profile";
 import { ArrowLeft, Check, ChevronDown, FileText, Layers, Search, Settings2, Shuffle } from "lucide-react";
 
@@ -38,6 +39,7 @@ function ClientAccess() {
   const { isSuperAdmin, isLoading: loadingAuth } = useIsSuperAdmin();
 
   const [search, setSearch] = useState("");
+  const [assignedFilter, setAssignedFilter] = useState<"all" | "assigned">("all");
   const [stateMap, setStateMap] = useState<Map<string, AccessState>>(new Map());
   const [initialMap, setInitialMap] = useState<Map<string, AccessState>>(new Map());
   const [saving, setSaving] = useState(false);
@@ -49,7 +51,7 @@ function ClientAccess() {
 
   useEffect(() => {
     setPage(1);
-  }, [search]);
+  }, [search, assignedFilter]);
 
   const profileQ = useQuery({
     queryKey: ["users", userId, "profile-min"],
@@ -149,19 +151,22 @@ function ClientAccess() {
   const filteredClients = useMemo(() => {
     if (!clientsQ.data) return [];
     const q = search.trim().toLowerCase();
-    const list = q
+    let list = q
       ? clientsQ.data.filter((c) => {
           const name = (c.commercial_name || c.legal_name || "").toLowerCase();
           const legal = (c.legal_name || "").toLowerCase();
           return name.includes(q) || legal.includes(q);
         })
       : clientsQ.data;
+    if (assignedFilter === "assigned") {
+      list = list.filter((c) => stateMap.get(c.id)?.assigned);
+    }
     return [...list].sort((a, b) => {
       const nameA = (a.commercial_name || a.legal_name || "").toLowerCase();
       const nameB = (b.commercial_name || b.legal_name || "").toLowerCase();
       return nameA.localeCompare(nameB);
     });
-  }, [clientsQ.data, search]);
+  }, [clientsQ.data, search, assignedFilter, stateMap]);
 
   const totalPages = Math.max(1, Math.ceil(filteredClients.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -503,21 +508,41 @@ function ClientAccess() {
       <Card>
         {/* Search */}
         <div className="p-4">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar cliente…"
-              className="pl-9"
-            />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar cliente…"
+                className="pl-9"
+              />
+            </div>
+            <ToggleGroup
+              type="single"
+              value={assignedFilter}
+              onValueChange={(v) => {
+                if (v === "all" || v === "assigned") setAssignedFilter(v);
+              }}
+              variant="outline"
+              size="sm"
+              className="justify-start"
+            >
+              <ToggleGroupItem value="all" aria-label="Mostrar todos los clientes">
+                Todos
+              </ToggleGroupItem>
+              <ToggleGroupItem value="assigned" aria-label="Mostrar solo clientes asignados">
+                Solo asignados
+              </ToggleGroupItem>
+            </ToggleGroup>
           </div>
-          {search.trim() !== "" && (
+          {(search.trim() !== "" || assignedFilter === "assigned") && (
             <p className="mt-2 suma-caption text-text-tertiary">
               {filteredClients.length} de {totalClients} clientes
             </p>
           )}
         </div>
+
 
 
         {/* Bulk actions — collapsible */}
@@ -600,7 +625,11 @@ function ClientAccess() {
             </p>
           ) : filteredClients.length === 0 ? (
             <p className="py-8 text-center suma-body text-text-secondary">
-              Sin resultados para esa búsqueda.
+              {assignedFilter === "assigned" && assignedCount === 0
+                ? "Este usuario no tiene clientes asignados todavía."
+                : assignedFilter === "assigned"
+                  ? "Ningún cliente asignado coincide con la búsqueda."
+                  : "Sin resultados para esa búsqueda."}
             </p>
           ) : (
             <div>
