@@ -48,17 +48,17 @@ function AuthPage() {
       {/* Panel de marca */}
       <section className="flex flex-col justify-center bg-[var(--surface-page)] px-8 py-12 sm:px-12 lg:col-span-2 lg:px-20 lg:py-16">
         <div className="max-w-3xl">
-          <SumatecLogo className="mb-4 h-12 w-auto lg:h-14" />
+          <SumatecLogo className="mb-6 h-14 w-auto lg:h-16" />
           <h1 className="suma-display-md text-text-primary lg:suma-display-lg">
             La gestión comercial, convertida en{" "}
             <br />
             <span className="text-[var(--red-500)]">fuente de verdad.</span>
           </h1>
-          <p className="suma-subtitle mt-10 hidden font-normal sm:block">
-            <span className="text-text-secondary">
+          <p className="suma-subtitle mt-10 hidden sm:block">
+            <span className="text-text-secondary" style={{ fontWeight: 400 }}>
               La PGCI reúne solicitudes, acuerdos, equivalencias de productos, precios, vigencias y condiciones comerciales en un solo lugar:{" "}
             </span>
-            <span className="font-semibold text-text-primary">
+            <span className="text-text-primary" style={{ fontWeight: 700 }}>
               Información estructurada, disponible y con todo su historial.
             </span>
           </p>
