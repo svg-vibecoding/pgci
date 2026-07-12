@@ -160,7 +160,7 @@ export function AgreementCompaniesSection({
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle className="text-base">Clientes cubiertos</CardTitle>
+          <CardTitle className="suma-h4">Clientes cubiertos</CardTitle>
           <p className="mt-1 text-xs text-muted-foreground">
             Clientes que cubre este acuerdo y bajo los cuales se factura.
           </p>

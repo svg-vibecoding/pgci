@@ -219,7 +219,7 @@ function ImportPim() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">1. Sube el archivo</CardTitle>
+          <CardTitle className="suma-h4">1. Sube el archivo</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <Input type="file" accept=".csv,.xlsx,.xls" onChange={onFile} />
@@ -231,7 +231,7 @@ function ImportPim() {
         <>
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">2. Previsualización</CardTitle>
+              <CardTitle className="suma-h4">2. Previsualización</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
@@ -521,7 +521,7 @@ function ImportPim() {
       {finalSummary && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">
+            <CardTitle className="suma-h4">
               {finalSummary.status === "confirmed"
                 ? "Importación completada"
                 : "La importación no se pudo aplicar"}
