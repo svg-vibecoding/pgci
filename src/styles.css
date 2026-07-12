@@ -497,6 +497,10 @@
   text-transform: uppercase;
   color: var(--text-secondary);
 }
+/* Label de formulario. Montserrat semibold, 14px, sin uppercase. */
+@utility suma-label {
+  font: var(--fw-semibold) var(--subtitle-2) / var(--subtitle-2-lh) var(--font-ui);
+}
 /* Número grande de KPI/metric cards. Montserrat, mismo tamaño que H2. */
 @utility suma-metric {
   font: var(--fw-bold) var(--h2) / var(--h2-lh) var(--font-display);
