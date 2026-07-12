@@ -123,20 +123,22 @@ function ViewClient() {
     },
   });
 
-  if (isLoading) return <p className="text-sm text-muted-foreground">Cargando…</p>;
-  if (!data) return <p className="text-sm text-muted-foreground">No encontrado.</p>;
+  if (isLoading) return <p className="suma-body text-text-secondary">Cargando…</p>;
+  if (!data) return <p className="suma-body text-text-secondary">No encontrado.</p>;
 
   const displayName = data.commercial_name?.trim() || data.legal_name;
   const isHolding = data.type === "holding";
   const isActive = data.status === "active";
   const parentName = parent?.commercial_name?.trim() || parent?.legal_name;
 
+  const Dash = () => <span className="suma-caption text-text-tertiary">—</span>;
+
   return (
-    <div className="-mt-6 space-y-5">
+    <div className="-mt-6 space-y-6">
       {/* Volver */}
       <Link
         to="/setup/clients"
-        className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+        className="inline-flex items-center gap-1 suma-caption text-text-tertiary hover:text-text-primary"
       >
         <ArrowLeft className="h-3.5 w-3.5" /> Volver a clientes
       </Link>
@@ -144,8 +146,8 @@ function ViewClient() {
       {/* Encabezado */}
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">{displayName}</h1>
-          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+          <h1 className="suma-h2 text-text-primary">{displayName}</h1>
+          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 suma-body text-text-secondary">
             <Badge color={isHolding ? "accent" : "neutral"} variant="soft">
               {isHolding ? "Holding" : "Directo"}
             </Badge>
@@ -159,7 +161,7 @@ function ViewClient() {
                 <Link
                   to="/setup/clients/$clientId"
                   params={{ clientId: parent!.id }}
-                  className="font-medium text-foreground hover:underline"
+                  className="suma-body text-text-primary hover:underline"
                 >
                   {parentName}
                 </Link>
@@ -224,35 +226,66 @@ function ViewClient() {
       {/* Información del cliente */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Información del cliente</CardTitle>
+          <CardTitle className="suma-h3">Información del cliente</CardTitle>
         </CardHeader>
         <CardContent>
           <InfoSection>
-            <InfoField label="NIT">{data.tax_id || "—"}</InfoField>
-            <InfoField label="Razón social">{data.legal_name || "—"}</InfoField>
-            <InfoField label="Nombre comercial">{data.commercial_name?.trim() || "—"}</InfoField>
-            <InfoField label="Nombre ERP">{data.erp_name?.trim() || "—"}</InfoField>
-            <InfoField label="Tipo de cliente">{isHolding ? "Holding" : "Directo"}</InfoField>
-            <InfoField label="Estado">
-              <StatusBadge
-                status={isActive ? "active" : "neutral"}
-                label={isActive ? "Activo" : "Inactivo"}
-              />
-            </InfoField>
+            <div className="space-y-1 min-w-0">
+              <p className="suma-overline text-text-secondary">NIT</p>
+              <div className="suma-body text-text-primary break-words">
+                {data.tax_id || <Dash />}
+              </div>
+            </div>
+            <div className="space-y-1 min-w-0">
+              <p className="suma-overline text-text-secondary">Razón social</p>
+              <div className="suma-body text-text-primary break-words">
+                {data.legal_name || <Dash />}
+              </div>
+            </div>
+            <div className="space-y-1 min-w-0">
+              <p className="suma-overline text-text-secondary">Nombre comercial</p>
+              <div className="suma-body text-text-primary break-words">
+                {data.commercial_name?.trim() || <Dash />}
+              </div>
+            </div>
+            <div className="space-y-1 min-w-0">
+              <p className="suma-overline text-text-secondary">Nombre ERP</p>
+              <div className="suma-body text-text-primary break-words">
+                {data.erp_name?.trim() || <Dash />}
+              </div>
+            </div>
+            <div className="space-y-1 min-w-0">
+              <p className="suma-overline text-text-secondary">Tipo de cliente</p>
+              <div className="suma-body text-text-primary">
+                {isHolding ? "Holding" : "Directo"}
+              </div>
+            </div>
+            <div className="space-y-1 min-w-0">
+              <p className="suma-overline text-text-secondary">Estado</p>
+              <div className="suma-body text-text-primary">
+                <StatusBadge
+                  status={isActive ? "active" : "neutral"}
+                  label={isActive ? "Activo" : "Inactivo"}
+                />
+              </div>
+            </div>
             {data.type === "direct" && (
-              <InfoField label="Holding asociado">
-                {parentName ? (
-                  <Link
-                    to="/setup/clients/$clientId"
-                    params={{ clientId: parent!.id }}
-                    className="text-foreground hover:underline"
-                  >
-                    {parentName}
-                  </Link>
-                ) : (
-                  "—"
-                )}
-              </InfoField>
+              <div className="space-y-1 min-w-0">
+                <p className="suma-overline text-text-secondary">Holding asociado</p>
+                <div className="suma-body text-text-primary break-words">
+                  {parentName ? (
+                    <Link
+                      to="/setup/clients/$clientId"
+                      params={{ clientId: parent!.id }}
+                      className="suma-body text-text-primary hover:underline"
+                    >
+                      {parentName}
+                    </Link>
+                  ) : (
+                    <Dash />
+                  )}
+                </div>
+              </div>
             )}
           </InfoSection>
         </CardContent>
@@ -263,10 +296,10 @@ function ViewClient() {
       {data.notes?.trim() && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Notas internas</CardTitle>
+            <CardTitle className="suma-h3">Notas internas</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="whitespace-pre-wrap text-sm text-foreground">{data.notes}</p>
+            <p className="whitespace-pre-wrap suma-body text-text-primary">{data.notes}</p>
           </CardContent>
         </Card>
       )}
@@ -274,30 +307,32 @@ function ViewClient() {
       {/* Acuerdos asociados */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Acuerdos asociados</CardTitle>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <CardTitle className="suma-h3">Acuerdos asociados</CardTitle>
+          <p className="mt-1 suma-body text-text-secondary">
             Acuerdos comerciales registrados para este cliente.
           </p>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           {!agreements || agreements.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-md border border-dashed border-border py-8 text-center">
-              <FileText className="mb-2 h-6 w-6 text-muted-foreground" />
-              <p className="text-sm font-medium">Sin acuerdos asociados.</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Los acuerdos se crean desde el módulo de Acuerdos.
-              </p>
+              <FileText className="mb-2 h-6 w-6 text-text-tertiary" />
+              <div className="space-y-1">
+                <p className="suma-body text-text-primary">Sin acuerdos asociados.</p>
+                <p className="suma-caption text-text-tertiary">
+                  Los acuerdos se crean desde el módulo de Acuerdos.
+                </p>
+              </div>
             </div>
           ) : (
             <ul className="divide-y divide-border rounded-md border border-border">
               {agreements.map((a) => (
                 <li key={a.id} className="flex items-center justify-between gap-3 px-4 py-3">
-                  <div className="min-w-0">
-                    <p className="truncate font-mono text-xs text-muted-foreground">
+                  <div className="min-w-0 space-y-1">
+                    <p className="truncate font-mono text-xs text-text-secondary">
                       {a.id.slice(0, 8)}
                     </p>
                     {a.updated_at && (
-                      <p className="text-xs text-muted-foreground">
+                      <p className="suma-caption text-text-tertiary">
                         Actualizado {new Date(a.updated_at).toLocaleDateString()}
                       </p>
                     )}
@@ -312,18 +347,20 @@ function ViewClient() {
       {/* Usuarios asociados */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Usuarios asociados</CardTitle>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <CardTitle className="suma-h3">Usuarios asociados</CardTitle>
+          <p className="mt-1 suma-body text-text-secondary">
             Usuarios con acceso a este cliente. Se gestionan desde el módulo Usuarios.
           </p>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="flex flex-col items-center justify-center rounded-md border border-dashed border-border py-8 text-center">
-            <Users className="mb-2 h-6 w-6 text-muted-foreground" />
-            <p className="text-sm font-medium">Sin usuarios asociados aún.</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Disponible cuando se construya el módulo de Usuarios.
-            </p>
+            <Users className="mb-2 h-6 w-6 text-text-tertiary" />
+            <div className="space-y-1">
+              <p className="suma-body text-text-primary">Sin usuarios asociados aún.</p>
+              <p className="suma-caption text-text-tertiary">
+                Disponible cuando se construya el módulo de Usuarios.
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -332,19 +369,21 @@ function ViewClient() {
       {isHolding && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Empresas del cliente</CardTitle>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <CardTitle className="suma-h3">Empresas del cliente</CardTitle>
+            <p className="mt-1 suma-body text-text-secondary">
               Clientes directos asociados a este holding.
             </p>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             {!children || children.length === 0 ? (
               <div className="flex flex-col items-center justify-center rounded-md border border-dashed border-border py-8 text-center">
-                <Building2 className="mb-2 h-6 w-6 text-muted-foreground" />
-                <p className="text-sm font-medium">Aún no hay empresas asociadas.</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Registra clientes directos vinculados a este holding.
-                </p>
+                <Building2 className="mb-2 h-6 w-6 text-text-tertiary" />
+                <div className="space-y-1">
+                  <p className="suma-body text-text-primary">Aún no hay empresas asociadas.</p>
+                  <p className="suma-caption text-text-tertiary">
+                    Registra clientes directos vinculados a este holding.
+                  </p>
+                </div>
               </div>
             ) : (
               <div className="rounded-md border border-border">
@@ -372,7 +411,7 @@ function ViewClient() {
                               {name}
                             </Link>
                           </TableCell>
-                          <TableCell className="text-muted-foreground">{c.tax_id ?? "—"}</TableCell>
+                          <TableCell className="text-text-secondary">{c.tax_id ?? "—"}</TableCell>
                           <TableCell>
                             <StatusBadge
                               status={active ? "active" : "neutral"}
