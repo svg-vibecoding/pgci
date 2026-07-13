@@ -285,7 +285,7 @@ type TakenBlock = {
   sku: string | null;
   product_description: string | null;
   sale_price: number | null;
-  is_excluded: boolean;
+  position_status: "active" | "requires_review" | "draft" | "excluded";
   exclusion_reason: string | null;
   exclusion_date: string | null;
 };
@@ -419,7 +419,7 @@ function ClientCodeCard({
       sku: r.status.sku,
       product_description: r.status.product_description,
       sale_price: r.status.sale_price,
-      is_excluded: excluded,
+      position_status: r.status.position_status,
       exclusion_reason: excluded ? r.status.exclusion_reason : null,
       exclusion_date: excluded ? r.status.exclusion_date : null,
     });
@@ -525,17 +525,30 @@ function ClientCodeCard({
   );
 
   const takenAlert = takenBlock && (() => {
-    const excluded = takenBlock.is_excluded;
-    const containerCls = excluded
+    const ps = takenBlock.position_status;
+    const isExcluded = ps === "excluded";
+    const isInProgress = ps === "requires_review" || ps === "draft";
+    const containerCls = isExcluded
       ? "rounded-md border border-border bg-muted p-4 text-muted-foreground"
-      : "rounded-md border border-warning/40 bg-warning/10 p-4 text-[var(--status-warning-strong)]";
-    const dividerCls = excluded ? "border-border" : "border-warning/20";
-    const Icon = excluded ? Info : AlertTriangle;
-    const title = excluded
-      ? "Este código está vinculado a una posición excluida del acuerdo"
-      : "Este código ya está vinculado a una posición del acuerdo";
+      : isInProgress
+        ? "rounded-md border border-info/40 bg-info/10 p-4 text-[var(--status-info-strong)]"
+        : "rounded-md border border-warning/40 bg-warning/10 p-4 text-[var(--status-warning-strong)]";
+    const dividerCls = isExcluded
+      ? "border-border"
+      : isInProgress
+        ? "border-info/20"
+        : "border-warning/20";
+    const Icon = isExcluded || isInProgress ? Info : AlertTriangle;
+    const title =
+      ps === "excluded"
+        ? "Este código está vinculado a una posición excluida del acuerdo"
+        : ps === "requires_review"
+          ? "Este código está en una posición en revisión del acuerdo"
+          : ps === "draft"
+            ? "Este código está reservado por un registro en gestión del acuerdo"
+            : "Este código ya está vinculado a una posición del acuerdo";
     const exclusionDateLabel = (() => {
-      if (!excluded || !takenBlock.exclusion_date) return "EXCLUIDA";
+      if (!isExcluded || !takenBlock.exclusion_date) return "EXCLUIDA";
       const d = new Date(takenBlock.exclusion_date);
       if (Number.isNaN(d.getTime())) return "EXCLUIDA";
       const s = d.toLocaleDateString("es-CO", {
@@ -580,7 +593,7 @@ function ClientCodeCard({
             </p>
           </div>
 
-          {excluded && (
+          {isExcluded && (
             <>
               <hr className={dividerCls} />
 
@@ -602,44 +615,51 @@ function ClientCodeCard({
     );
   })();
 
-  const takenActions = takenBlock && !disabled && (
-    <div className="flex justify-end gap-2">
-      {takenBlock.is_excluded ? (
-        !initialLineId && (
-          <Button
-            type="button"
-            size="sm"
-            onClick={() =>
+  const takenActions = takenBlock && !disabled && (() => {
+    const ps = takenBlock.position_status;
+    const primary = !initialLineId
+      ? ps === "excluded"
+        ? {
+            label: "Reactivar esta posición",
+            onClick: () =>
               setReactivateTarget({
                 position_id: takenBlock.position_id,
                 sku: takenBlock.sku,
-              })
+              }),
+          }
+        : ps === "requires_review"
+          ? {
+              label: "Ir a esa posición",
+              onClick: () => onRequestSwitchToPosition(takenBlock.position_id),
             }
-          >
-            Reactivar esta posición
+          : ps === "draft"
+            ? {
+                label: "Ir a ese registro en gestión",
+                onClick: () => onRequestSwitchToPosition(takenBlock.position_id),
+              }
+            : {
+                label: "Editar esta posición",
+                onClick: () => onRequestSwitchToPosition(takenBlock.position_id),
+              }
+      : null;
+    return (
+      <div className="flex justify-end gap-2">
+        {primary && (
+          <Button type="button" size="sm" onClick={primary.onClick}>
+            {primary.label}
           </Button>
-        )
-      ) : (
-        !initialLineId && (
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => onRequestSwitchToPosition(takenBlock.position_id)}
-          >
-            Editar esta posición
-          </Button>
-        )
-      )}
-      <Button
-        type="button"
-        size="sm"
-        variant="outline"
-        onClick={() => setTakenBlock(null)}
-      >
-        Elegir otro código
-      </Button>
-    </div>
-  );
+        )}
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => setTakenBlock(null)}
+        >
+          Elegir otro código
+        </Button>
+      </div>
+    );
+  })();
 
 
 
@@ -884,9 +904,20 @@ function ClientCodeSearchList({
           );
         }
 
-        const isExcluded = posStatus === "excluded";
-        const badgeStatus = isExcluded ? "neutral" : "warning";
-        const badgeLabel = isExcluded ? "En posición excluida" : "En posición activa";
+        const badgeStatus: "neutral" | "warning" | "info" =
+          posStatus === "excluded"
+            ? "neutral"
+            : posStatus === "requires_review" || posStatus === "draft"
+              ? "info"
+              : "warning";
+        const badgeLabel =
+          posStatus === "excluded"
+            ? "Posición excluida"
+            : posStatus === "requires_review"
+              ? "Posición en revisión"
+              : posStatus === "draft"
+                ? "Registro en gestión"
+                : "Posición activa";
 
         return (
           <button

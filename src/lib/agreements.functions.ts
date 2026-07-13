@@ -779,7 +779,7 @@ export type ClientCodeSearchResult = {
     | {
         kind: "taken";
         position_id: string;
-        position_status: "active" | "excluded" | "requires_review";
+        position_status: "active" | "excluded" | "requires_review" | "draft";
         sku: string | null;
         product_description: string | null;
         sale_price: number | null;
@@ -891,7 +891,7 @@ export const searchClientCodes = createServerFn({ method: "POST" })
     const takenRows: Array<{
       cp_id: string;
       pos_id: string;
-      pos_status: "active" | "excluded" | "requires_review";
+      pos_status: "active" | "excluded" | "requires_review" | "draft";
       sku: string | null;
       product_description: string | null;
       sale_price: number | null;
@@ -905,10 +905,14 @@ export const searchClientCodes = createServerFn({ method: "POST" })
         products: { sku: string | null; erp_description: string | null } | null;
       } | null;
       if (!pos) continue;
-      const posStatus =
-        pos.status === "active" || pos.status === "excluded" || pos.status === "requires_review"
-          ? (pos.status as "active" | "excluded" | "requires_review")
-          : "active";
+      const posStatus: "active" | "excluded" | "requires_review" | "draft" =
+        pos.status === "excluded"
+          ? "excluded"
+          : pos.status === "requires_review"
+            ? "requires_review"
+            : pos.status === "draft"
+              ? "draft"
+              : "active";
       takenRows.push({
         cp_id: row.client_product_id as string,
         pos_id: pos.id,
