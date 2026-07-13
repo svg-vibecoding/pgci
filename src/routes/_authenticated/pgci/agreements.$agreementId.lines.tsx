@@ -69,6 +69,7 @@ import {
   type LineCode,
 } from "@/lib/agreements.functions";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
