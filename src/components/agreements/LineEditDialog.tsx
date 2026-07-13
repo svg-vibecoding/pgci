@@ -419,7 +419,7 @@ function ClientCodeCard({
       sku: r.status.sku,
       product_description: r.status.product_description,
       sale_price: r.status.sale_price,
-      is_excluded: excluded,
+      position_status: r.status.position_status,
       exclusion_reason: excluded ? r.status.exclusion_reason : null,
       exclusion_date: excluded ? r.status.exclusion_date : null,
     });
