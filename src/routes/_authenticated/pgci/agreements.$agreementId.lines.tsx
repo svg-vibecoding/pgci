@@ -1027,8 +1027,7 @@ function AgreementLinesPage() {
           return null;
         };
 
-        const columns: DataTableColumn<Line>[] = [
-          {
+        const clientColumn: DataTableColumn<Line> = {
             id: "client",
             header: (() => {
               if (visibleClients.length <= 1) {
