@@ -1265,7 +1265,7 @@ function AgreementLinesPage() {
               Excluir posición del acuerdo
             </AlertDialogTitle>
             <AlertDialogDescription className="suma-body text-text-secondary">
-              Sale del acuerdo y conserva su información comercial y sus códigos de cliente. Puedes reactivarla si vuelve a ser necesaria.
+              Sale del acuerdo conservando su información comercial y sus relaciones con códigos de cliente. Puedes reactivarla si vuelve a ser necesaria.
             </AlertDialogDescription>
           </AlertDialogHeader>
           {excludeTarget ? (
