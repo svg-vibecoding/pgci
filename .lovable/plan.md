@@ -1,33 +1,43 @@
-## Objetivo
+- Plan: switch "Ver cliente" para mostrar/ocultar la columna de cliente
 
-Que todo lo visible en el modal "Excluir posición del acuerdo" use tokens del Sumatec Digital Design System (Montserrat/Roboto por token, no clases ad-hoc), para que se lea igual que el resto de formularios PGCI.
+### Alcance
 
-Archivo único: `src/routes/_authenticated/pgci/agreements.$agreementId.lines.tsx` (bloque `AlertDialog` de exclusión, ~líneas 1253–1341).
+Solo UI en `src/routes/_authenticated/pgci/agreements.$agreementId.lines.tsx`. Sin cambios en datos, backend, ni en `DataTable`.
 
-## Auditoría actual → cambio
+### Cambios
 
-| Elemento | Hoy (ad-hoc) | DDS correcto |
-|---|---|---|
-| Título "Excluir posición del acuerdo" | `AlertDialogTitle` default | `suma-h4` + `text-text-primary` (mismo tratamiento que otros títulos de diálogo del sistema) |
-| Descripción bajo el título | `AlertDialogDescription` default | `suma-body` + `text-text-secondary` |
-| Rótulo "SUMATEC" (bloque producto) | `text-[11px] font-semibold uppercase tracking-wider text-muted-foreground` (fake overline) | `suma-overline` (Montserrat semibold, uppercase, tracking, secondary) — es el uso legítimo del token |
-| Línea SKU + descripción | `text-sm` + `font-mono` inline | Reemplazar el bloque completo por **`<IdentityCell code={sku} description={description} />`** (celda de identidad canónica del sistema) |
-| Rótulo por cliente (nombre del cliente en el listado de códigos) | mismo fake overline | `suma-overline` |
-| Código de cliente + descripción | `text-sm` + `font-mono` inline | `<IdentityCell code={client_code} description={description} />` |
-| Label "MOTIVO DE EXCLUSIÓN" | `text-[11px] font-semibold uppercase tracking-wider text-muted-foreground` sobre `<Label>` | `<Label className="suma-label">Motivo de exclusión</Label>` (Montserrat medium 14px, caja normal, primary — mismo tratamiento que "Correo"/"Contraseña" en `/auth` y que el resto de formularios PGCI) |
-| Textarea | default shadcn (ya usa tokens) | sin cambio |
-| Ayuda "Quedará registrado en la posición excluida." | `text-xs text-muted-foreground` ad-hoc | `suma-caption` (Roboto regular, caption size, secondary — el token oficial de ayuda de formulario) |
-| Botones "Cancelar" / "Excluir posición" | `AlertDialogCancel` / `AlertDialogAction` | sin cambio (ya heredan variantes Sumatec: outline y primary rojo) |
-| Separador `<hr>` entre bloques | `border-border` | sin cambio |
+1. **Estado local**
+  - Añadir `const [showClientCol, setShowClientCol] = useState(true)` en el componente de la vista de posiciones.
+  - Persistir opcionalmente en `localStorage` con clave `pgci.lines.showClientCol` para que la preferencia sobreviva a la navegación (misma vista, mismo usuario). Si prefieres sin persistencia, lo dejamos solo en memoria.
+2. **Toolbar (fila del buscador, ~línea 737)**
+  - A la derecha del input de búsqueda (antes del botón de códigos repetidos), añadir un bloque:
+    - `<Switch>` de shadcn + `<Label>` con texto **"Ver cliente"**.
+    - Tipografía tenue ya usada en la vista: `suma-body text-text-tertiary` (misma que usan los labels sutiles del toolbar y de las cards).
+    - `aria-label="Mostrar columna de cliente"`, `htmlFor` enlazado al Switch.
+  - Layout: `<div className="flex items-center gap-2 shrink-0">` para que no se rompa el wrap del toolbar en mobile.
+3. **Columnas (línea ~999)**
+  - La primera columna (selector de cliente) se construye condicionalmente:
+  - `clientColumn` conserva su `width` actual.
+  - `jaivanaColumn`: cuando `showClientCol` es `false`, no se toca su definición — al ser columna flexible (sin `width` fijo), `DataTable` reparte automáticamente el sobrante y Jaivaná toma el espacio libre. Si hoy Jaivaná tiene `width` fijo, en ese caso quitamos el width y le dejamos `flex: 1` para que absorba el ancho.
+4. **Interacción**
+  - Apagar el switch oculta la columna sin perder el cliente seleccionado internamente (el estado `only`/cliente activo sigue vivo; solo se oculta la UI).
+  - Encender el switch la vuelve a mostrar con el mismo cliente que tenía.
 
-## Racional de unicidad
+### Verificación
 
-- **Un solo label de formulario** en toda la app: `suma-label` (caja normal). Elimina la incoherencia de tener labels en MAYÚSCULAS solo en este modal.
-- **Un solo overline** para rótulos de sección/grupo dentro de tarjetas: `suma-overline`. Los rótulos "SUMATEC" y el nombre del cliente sí son rótulos de sección (no labels de campo editable), así que se quedan uppercase pero vía token.
-- **Un solo patrón "código + descripción"**: `IdentityCell` ya define la regla (código mono 12.5px semibold primary, descripción sans 13px regular secondary). Usarlo aquí elimina el `font-mono` suelto y el `text-muted-foreground` a mano.
-- **Un solo texto de ayuda bajo campo**: `suma-caption`.
+- Con switch ON: columna cliente visible, ancho igual al actual.
+- Con switch OFF: columna desaparece, Jaivaná ocupa el hueco, resto de columnas intactas.
+- Búsqueda, selección de filas, menú de acciones y modales siguen funcionando igual.
 
-## Alcance
+### Fuera de alcance
 
-- Solo tipografía y tokens en el modal de exclusión. No se toca lógica, estado, layout de la tarjeta gris, ni copy (excepto "MOTIVO DE EXCLUSIÓN" → "Motivo de exclusión" por la regla de `suma-label`).
-- No se tocan otros diálogos (publicar, editar). Si más adelante quieres, aplico el mismo barrido a `LineEditDialog.tsx:588` que tiene el mismo fake overline.
+- No se cambia la lógica del selector de cliente ni cómo se guardan códigos.
+- No se toca `DataTable`, ni otros componentes, ni SQL.
+- No se agrega el switch a otras vistas.
+
+### Preguntas rápidas
+
+1. ¿Persistimos la preferencia en `localStorage` (recomendado) o solo en memoria de la vista?
+2. Default al entrar: ¿**ON** (como hoy) u **OFF** (más limpio si mayormente no se usa)?
+
+Apruebo el plan. Respondo a tus preguntas. 1. Si, tu recomendación está bien. 2. Default Off. 
