@@ -230,13 +230,14 @@ export function LineViewDialog({
                 <Alert variant="warning">
                   <Ban className="h-4 w-4" />
                   <AlertDescription>
-                    <div className="text-sm font-semibold text-foreground">
+                    <div className="text-sm font-semibold">
                       Posición excluida
                     </div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-sm opacity-90">
                       {line.exclusion_reason ?? "Sin motivo registrado."}
                     </div>
                   </AlertDescription>
+
                 </Alert>
               )}
 
