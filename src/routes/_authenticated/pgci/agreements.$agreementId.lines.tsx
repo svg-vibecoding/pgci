@@ -772,6 +772,20 @@ function AgreementLinesPage() {
             </button>
           )}
         </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <Switch
+            id="toggle-client-col"
+            checked={showClientCol}
+            onCheckedChange={setShowClientCol}
+            aria-label="Mostrar columna de cliente"
+          />
+          <Label
+            htmlFor="toggle-client-col"
+            className="suma-body cursor-pointer text-text-tertiary"
+          >
+            Ver cliente
+          </Label>
+        </div>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
