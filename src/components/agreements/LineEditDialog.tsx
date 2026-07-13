@@ -615,44 +615,51 @@ function ClientCodeCard({
     );
   })();
 
-  const takenActions = takenBlock && !disabled && (
-    <div className="flex justify-end gap-2">
-      {takenBlock.is_excluded ? (
-        !initialLineId && (
-          <Button
-            type="button"
-            size="sm"
-            onClick={() =>
+  const takenActions = takenBlock && !disabled && (() => {
+    const ps = takenBlock.position_status;
+    const primary = !initialLineId
+      ? ps === "excluded"
+        ? {
+            label: "Reactivar esta posición",
+            onClick: () =>
               setReactivateTarget({
                 position_id: takenBlock.position_id,
                 sku: takenBlock.sku,
-              })
+              }),
+          }
+        : ps === "requires_review"
+          ? {
+              label: "Ir a esa posición",
+              onClick: () => onRequestSwitchToPosition(takenBlock.position_id),
             }
-          >
-            Reactivar esta posición
+          : ps === "draft"
+            ? {
+                label: "Ir a ese registro en gestión",
+                onClick: () => onRequestSwitchToPosition(takenBlock.position_id),
+              }
+            : {
+                label: "Editar esta posición",
+                onClick: () => onRequestSwitchToPosition(takenBlock.position_id),
+              }
+      : null;
+    return (
+      <div className="flex justify-end gap-2">
+        {primary && (
+          <Button type="button" size="sm" onClick={primary.onClick}>
+            {primary.label}
           </Button>
-        )
-      ) : (
-        !initialLineId && (
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => onRequestSwitchToPosition(takenBlock.position_id)}
-          >
-            Editar esta posición
-          </Button>
-        )
-      )}
-      <Button
-        type="button"
-        size="sm"
-        variant="outline"
-        onClick={() => setTakenBlock(null)}
-      >
-        Elegir otro código
-      </Button>
-    </div>
-  );
+        )}
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => setTakenBlock(null)}
+        >
+          Elegir otro código
+        </Button>
+      </div>
+    );
+  })();
 
 
 
