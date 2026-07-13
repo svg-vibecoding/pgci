@@ -285,7 +285,7 @@ type TakenBlock = {
   sku: string | null;
   product_description: string | null;
   sale_price: number | null;
-  is_excluded: boolean;
+  position_status: "active" | "requires_review" | "draft" | "excluded";
   exclusion_reason: string | null;
   exclusion_date: string | null;
 };
