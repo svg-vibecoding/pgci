@@ -1139,16 +1139,13 @@ function AgreementLinesPage() {
                       )}
                     </div>
                   )}
-                  {r.status === "excluded" && r.exclusion_reason && (
-                    <div className="text-[11.5px] text-text-tertiary line-clamp-2">
-                      {r.exclusion_reason}
-                    </div>
-                  )}
                 </div>
               );
             },
           },
         ];
+
+
 
         const rowActions = (r: Line): RowAction<Line>[] => {
           const isExcluded = r.status === "excluded";
