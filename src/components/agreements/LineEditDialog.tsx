@@ -904,9 +904,20 @@ function ClientCodeSearchList({
           );
         }
 
-        const isExcluded = posStatus === "excluded";
-        const badgeStatus = isExcluded ? "neutral" : "warning";
-        const badgeLabel = isExcluded ? "En posición excluida" : "En posición activa";
+        const badgeStatus: "neutral" | "warning" | "info" =
+          posStatus === "excluded"
+            ? "neutral"
+            : posStatus === "requires_review" || posStatus === "draft"
+              ? "info"
+              : "warning";
+        const badgeLabel =
+          posStatus === "excluded"
+            ? "Posición excluida"
+            : posStatus === "requires_review"
+              ? "Posición en revisión"
+              : posStatus === "draft"
+                ? "Registro en gestión"
+                : "Posición activa";
 
         return (
           <button
