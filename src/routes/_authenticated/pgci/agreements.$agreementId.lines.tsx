@@ -1261,26 +1261,21 @@ function AgreementLinesPage() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir posición del acuerdo</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="suma-h4 text-text-primary">
+              Excluir posición del acuerdo
+            </AlertDialogTitle>
+            <AlertDialogDescription className="suma-body text-text-secondary">
               Sale del acuerdo y conserva su información comercial y sus códigos de cliente. Puedes reactivarla si vuelve a ser necesaria.
             </AlertDialogDescription>
           </AlertDialogHeader>
           {excludeTarget ? (
             <div className="space-y-3 rounded-md border bg-muted/40 p-3">
               <div className="space-y-1">
-                <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  SUMATEC
-                </Label>
-                <div className="text-sm">
-                  <span className="font-mono">{excludeTarget.sku ?? "—"}</span>
-                  {excludeTarget.description ? (
-                    <>
-                      <span className="text-muted-foreground"> · </span>
-                      <span>{excludeTarget.description}</span>
-                    </>
-                  ) : null}
-                </div>
+                <Label className="suma-overline">SUMATEC</Label>
+                <IdentityCell
+                  code={excludeTarget.sku ?? "—"}
+                  description={excludeTarget.description ?? undefined}
+                />
               </div>
 
               {excludeTarget.codes.length > 0 && (
@@ -1289,18 +1284,13 @@ function AgreementLinesPage() {
                   <div className="space-y-3">
                     {excludeTarget.codes.map((c) => (
                       <div key={c.client_id} className="space-y-1">
-                        <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        <Label className="suma-overline">
                           {c.client_name?.trim() || "Cliente sin nombre"}
                         </Label>
-                        <div className="text-sm">
-                          <span className="font-mono">{c.client_code}</span>
-                          {c.description ? (
-                            <>
-                              <span className="text-muted-foreground"> · </span>
-                              <span>{c.description}</span>
-                            </>
-                          ) : null}
-                        </div>
+                        <IdentityCell
+                          code={c.client_code}
+                          description={c.description ?? undefined}
+                        />
                       </div>
                     ))}
                   </div>
@@ -1309,16 +1299,14 @@ function AgreementLinesPage() {
             </div>
           ) : null}
           <div className="space-y-1.5">
-            <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              MOTIVO DE EXCLUSIÓN
-            </Label>
+            <Label className="suma-label">Motivo de exclusión</Label>
             <Textarea
               rows={2}
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="Ej. Producto descontinuado por el cliente"
             />
-            <p className="text-xs text-muted-foreground">
+            <p className="suma-caption">
               Quedará registrado en la posición excluida.
             </p>
           </div>
