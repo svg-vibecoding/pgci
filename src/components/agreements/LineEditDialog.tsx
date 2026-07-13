@@ -525,17 +525,30 @@ function ClientCodeCard({
   );
 
   const takenAlert = takenBlock && (() => {
-    const excluded = takenBlock.is_excluded;
-    const containerCls = excluded
+    const ps = takenBlock.position_status;
+    const isExcluded = ps === "excluded";
+    const isInProgress = ps === "requires_review" || ps === "draft";
+    const containerCls = isExcluded
       ? "rounded-md border border-border bg-muted p-4 text-muted-foreground"
-      : "rounded-md border border-warning/40 bg-warning/10 p-4 text-[var(--status-warning-strong)]";
-    const dividerCls = excluded ? "border-border" : "border-warning/20";
-    const Icon = excluded ? Info : AlertTriangle;
-    const title = excluded
-      ? "Este código está vinculado a una posición excluida del acuerdo"
-      : "Este código ya está vinculado a una posición del acuerdo";
+      : isInProgress
+        ? "rounded-md border border-info/40 bg-info/10 p-4 text-[var(--status-info-strong)]"
+        : "rounded-md border border-warning/40 bg-warning/10 p-4 text-[var(--status-warning-strong)]";
+    const dividerCls = isExcluded
+      ? "border-border"
+      : isInProgress
+        ? "border-info/20"
+        : "border-warning/20";
+    const Icon = isExcluded || isInProgress ? Info : AlertTriangle;
+    const title =
+      ps === "excluded"
+        ? "Este código está vinculado a una posición excluida del acuerdo"
+        : ps === "requires_review"
+          ? "Este código está en una posición en revisión del acuerdo"
+          : ps === "draft"
+            ? "Este código está reservado por un registro en gestión del acuerdo"
+            : "Este código ya está vinculado a una posición del acuerdo";
     const exclusionDateLabel = (() => {
-      if (!excluded || !takenBlock.exclusion_date) return "EXCLUIDA";
+      if (!isExcluded || !takenBlock.exclusion_date) return "EXCLUIDA";
       const d = new Date(takenBlock.exclusion_date);
       if (Number.isNaN(d.getTime())) return "EXCLUIDA";
       const s = d.toLocaleDateString("es-CO", {
@@ -580,7 +593,7 @@ function ClientCodeCard({
             </p>
           </div>
 
-          {excluded && (
+          {isExcluded && (
             <>
               <hr className={dividerCls} />
 
