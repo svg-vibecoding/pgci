@@ -69,6 +69,7 @@ import {
   type LineCode,
 } from "@/lib/agreements.functions";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -247,6 +248,22 @@ function AgreementLinesPage() {
   const [reason, setReason] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [confirmPublishOpen, setConfirmPublishOpen] = useState(false);
+  const [showClientCol, setShowClientCol] = useState(false);
+  useEffect(() => {
+    try {
+      const v = window.localStorage.getItem("pgci.lines.showClientCol");
+      if (v === "1") setShowClientCol(true);
+      else if (v === "0") setShowClientCol(false);
+    } catch {}
+  }, []);
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        "pgci.lines.showClientCol",
+        showClientCol ? "1" : "0",
+      );
+    } catch {}
+  }, [showClientCol]);
 
   const invalidateAll = () => {
     qc.invalidateQueries({ queryKey: ["agreements", "lines", agreementId] });
@@ -755,6 +772,20 @@ function AgreementLinesPage() {
             </button>
           )}
         </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <Switch
+            id="toggle-client-col"
+            checked={showClientCol}
+            onCheckedChange={setShowClientCol}
+            aria-label="Mostrar columna de cliente"
+          />
+          <Label
+            htmlFor="toggle-client-col"
+            className="suma-body cursor-pointer text-text-tertiary"
+          >
+            Ver cliente
+          </Label>
+        </div>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -996,8 +1027,7 @@ function AgreementLinesPage() {
           return null;
         };
 
-        const columns: DataTableColumn<Line>[] = [
-          {
+        const clientColumn: DataTableColumn<Line> = {
             id: "client",
             header: (() => {
               if (visibleClients.length <= 1) {
@@ -1047,7 +1077,10 @@ function AgreementLinesPage() {
                 />
               );
             },
-          },
+          };
+
+        const columns: DataTableColumn<Line>[] = [
+          ...(showClientCol ? [clientColumn] : []),
           {
             id: "jaivana",
             header: "Jaivaná",
