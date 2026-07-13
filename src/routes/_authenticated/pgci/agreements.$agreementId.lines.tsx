@@ -1077,7 +1077,10 @@ function AgreementLinesPage() {
                 />
               );
             },
-          },
+          };
+
+        const columns: DataTableColumn<Line>[] = [
+          ...(showClientCol ? [clientColumn] : []),
           {
             id: "jaivana",
             header: "Jaivaná",
