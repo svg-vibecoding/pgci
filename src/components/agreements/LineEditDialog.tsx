@@ -70,6 +70,11 @@ import {
   type ClientCodeSearchResult,
 } from "@/lib/agreements.functions";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  PositionTakenPanel,
+  variantForPositionStatus,
+  type PositionTakenSection,
+} from "./PositionTakenPanel";
 
 export type LineEditClientCode = {
   client_id: string;
