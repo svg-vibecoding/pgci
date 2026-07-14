@@ -1718,8 +1718,7 @@ export function LineEditDialog({
                   {lookup.kind === "inactive" && (
                     <Alert variant="warning">
                       <AlertDescription>
-                        Producto inactivo en el catálogo. Esta posición quedará
-                        en "Revisar".
+                        Producto inactivo en el catálogo. Puedes asignarlo al acuerdo, la posición quedará en estado de gestión y no podrá activarse en el acuerdo.
                       </AlertDescription>
                     </Alert>
                   )}
