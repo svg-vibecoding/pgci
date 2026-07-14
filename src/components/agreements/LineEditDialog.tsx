@@ -1939,50 +1939,48 @@ export function LineEditDialog({
                                 sections={sections}
                               />
                               <div className="flex flex-wrap justify-end gap-2">
-                              {(() => null)()}
-                                  {isExcluded ? (
-                                    <Button
-                                      type="button"
-                                      size="sm"
-                                      onClick={() =>
-                                        onSwitchToPosition?.(pos.position_id)
-                                      }
-                                    >
-                                      Reactivar esa posición
-                                    </Button>
-                                  ) : (
-                                    <Button
-                                      type="button"
-                                      size="sm"
-                                      onClick={() =>
-                                        onSwitchToPosition?.(pos.position_id)
-                                      }
-                                    >
-                                      Ir a esa posición
-                                    </Button>
-                                  )}
-                                  {isCreatingLine && hasCode && !skuAckRequireNewCode && !skuHasCodelessPosition && (
-                                    <Button
-                                      type="button"
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => setSkuAckRequireNewCode(true)}
-                                    >
-                                      Registraré un nuevo código del cliente
-                                    </Button>
-                                  )}
-                                  {isCreatingLine && (!hasCode || isExcluded) && (
-                                    <Button
-                                      type="button"
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={clearSkuSelection}
-                                    >
-                                      Elegir otro SKU
-                                    </Button>
-                                  )}
-                                </div>
-                              )}
+                                {isExcluded ? (
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    onClick={() =>
+                                      onSwitchToPosition?.(pos.position_id)
+                                    }
+                                  >
+                                    Reactivar esa posición
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    onClick={() =>
+                                      onSwitchToPosition?.(pos.position_id)
+                                    }
+                                  >
+                                    Ir a esa posición
+                                  </Button>
+                                )}
+                                {isCreatingLine && hasCode && !skuAckRequireNewCode && !skuHasCodelessPosition && (
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setSkuAckRequireNewCode(true)}
+                                  >
+                                    Registraré un nuevo código del cliente
+                                  </Button>
+                                )}
+                                {isCreatingLine && (!hasCode || isExcluded) && (
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={clearSkuSelection}
+                                  >
+                                    Elegir otro SKU
+                                  </Button>
+                                )}
+                              </div>
                             </div>
                           );
                         })}
