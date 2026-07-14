@@ -2328,8 +2328,11 @@ export function LineEditDialog({
             </div>
           </div>
 
-          {/* Columna derecha — códigos por cliente */}
+          {/* Columna derecha — códigos por cliente. Se oculta mientras el SKU
+              esté en el acuerdo y el usuario no haya declarado intención. */}
+          {!skuBlocksForm && (
           <div className="min-h-0 overflow-y-auto bg-muted/20">
+
             <div className="p-6 space-y-4">
               <div className="flex items-center gap-2">
                 <div className="flex-1">
