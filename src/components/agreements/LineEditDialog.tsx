@@ -656,7 +656,13 @@ function ClientCodeCard({
     >
       <div className="flex items-center gap-2">
         {disabled && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
-        <div className="text-sm font-semibold text-foreground">{card.name}</div>
+        <div className="text-sm font-semibold text-foreground">
+          {card.name}
+          {required && <span className="ml-1 text-primary">*</span>}
+        </div>
+        {required && (
+          <span className="text-[11px] font-medium text-primary">Requerido</span>
+        )}
       </div>
 
       {mode === "search" && (
