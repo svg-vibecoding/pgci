@@ -2138,6 +2138,7 @@ export function LineEditDialog({
                       <Input
                         className={inputClass}
                         inputMode="decimal"
+                        disabled={skuBlocksForm}
                         value={v.sale_price}
                         onChange={(e) => setV({ ...v, sale_price: e.target.value })}
                         onBlur={(e) =>
@@ -2153,6 +2154,7 @@ export function LineEditDialog({
                       <Input
                         className={inputClass}
                         inputMode="decimal"
+                        disabled={skuBlocksForm}
                         value={v.par_price}
                         onChange={(e) => setV({ ...v, par_price: e.target.value })}
                         onBlur={(e) =>
@@ -2180,6 +2182,7 @@ export function LineEditDialog({
                             "[&::-webkit-calendar-picker-indicator]:cursor-pointer",
                           )}
                           type="date"
+                          disabled={skuBlocksForm}
                           value={v.start_date}
                           onChange={(e) => setV({ ...v, start_date: e.target.value })}
                         />
@@ -2201,6 +2204,7 @@ export function LineEditDialog({
                             "[&::-webkit-calendar-picker-indicator]:cursor-pointer",
                           )}
                           type="date"
+                          disabled={skuBlocksForm}
                           value={v.end_date}
                           onChange={(e) => setV({ ...v, end_date: e.target.value })}
                         />
@@ -2213,6 +2217,7 @@ export function LineEditDialog({
                     <Textarea
                       className={inputClass}
                       rows={2}
+                      disabled={skuBlocksForm}
                       value={v.observations}
                       onChange={(e) =>
                         setV({ ...v, observations: e.target.value })
