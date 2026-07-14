@@ -526,19 +526,7 @@ function ClientCodeCard({
 
   const takenAlert = takenBlock && (() => {
     const ps = takenBlock.position_status;
-    const isExcluded = ps === "excluded";
-    const isInProgress = ps === "requires_review" || ps === "draft";
-    const containerCls = isExcluded
-      ? "rounded-md border border-border bg-muted p-4 text-muted-foreground"
-      : isInProgress
-        ? "rounded-md border border-info/40 bg-info/10 p-4 text-[var(--status-info-strong)]"
-        : "rounded-md border border-warning/40 bg-warning/10 p-4 text-[var(--status-warning-strong)]";
-    const dividerCls = isExcluded
-      ? "border-border"
-      : isInProgress
-        ? "border-info/20"
-        : "border-warning/20";
-    const Icon = isExcluded || isInProgress ? Info : AlertTriangle;
+    const variant = variantForPositionStatus(ps);
     const title =
       ps === "excluded"
         ? "Este código está vinculado a una posición excluida del acuerdo"
@@ -548,7 +536,7 @@ function ClientCodeCard({
             ? "Este código está reservado por un registro en gestión del acuerdo"
             : "Este código ya está vinculado a una posición del acuerdo";
     const exclusionDateLabel = (() => {
-      if (!isExcluded || !takenBlock.exclusion_date) return "EXCLUIDA";
+      if (ps !== "excluded" || !takenBlock.exclusion_date) return "EXCLUIDA";
       const d = new Date(takenBlock.exclusion_date);
       if (Number.isNaN(d.getTime())) return "EXCLUIDA";
       const s = d.toLocaleDateString("es-CO", {
@@ -558,61 +546,47 @@ function ClientCodeCard({
       });
       return `EXCLUIDA EL ${s}`;
     })();
-    return (
-      <div className={containerCls}>
-        <div className="flex items-start gap-2">
-          <Icon className="mt-0.5 h-4 w-4 shrink-0" />
-          <p className="text-sm font-medium">{title}</p>
-        </div>
-
-        <div className="mt-2 space-y-2 pl-6">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide">
-              {card.name}
+    const sections: PositionTakenSection[] = [
+      {
+        label: card.name,
+        body: (
+          <>
+            <span className="font-mono">{takenBlock.client_code}</span>
+            {" "}· {takenBlock.client_description ?? "—"}
+          </>
+        ),
+      },
+      {
+        label: "SUMATEC",
+        body: (
+          <>
+            <span className="font-mono">{takenBlock.sku ?? "—"}</span>
+            {" "}· {takenBlock.product_description ?? "—"}
+            {takenBlock.sale_price != null && (
+              <span className="font-sans font-medium">
+                {" "}· {formatMoneyCOP(takenBlock.sale_price)}
+              </span>
+            )}
+          </>
+        ),
+      },
+    ];
+    if (ps === "excluded") {
+      sections.push({
+        label: "MOTIVO DE EXCLUSIÓN",
+        body: (
+          <div className="space-y-1.5">
+            <p className="text-sm text-muted-foreground">
+              {takenBlock.exclusion_reason ?? "—"}
             </p>
-            <p className="mt-0 text-sm">
-              <span className="font-mono">{takenBlock.client_code}</span>
-              {" "}· {takenBlock.client_description ?? "—"}
-            </p>
+            <span className="text-[11px] font-medium text-text-tertiary">
+              {exclusionDateLabel}
+            </span>
           </div>
-
-          <hr className={dividerCls} />
-
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide">
-              SUMATEC
-            </p>
-            <p className="mt-0 text-sm">
-              <span className="font-mono">{takenBlock.sku ?? "—"}</span>
-              {" "}· {takenBlock.product_description ?? "—"}
-              {takenBlock.sale_price != null && (
-                <span className="font-sans font-medium">
-                  {" "}· {formatMoneyCOP(takenBlock.sale_price)}
-                </span>
-              )}
-            </p>
-          </div>
-
-          {isExcluded && (
-            <>
-              <hr className={dividerCls} />
-
-              <div className="space-y-1.5">
-                <p className="text-xs font-semibold uppercase tracking-wide">
-                  MOTIVO DE EXCLUSIÓN
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {takenBlock.exclusion_reason ?? "—"}
-                </p>
-                <span className="text-[11px] font-medium text-text-tertiary">
-                  {exclusionDateLabel}
-                </span>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-    );
+        ),
+      });
+    }
+    return <PositionTakenPanel variant={variant} title={title} sections={sections} />;
   })();
 
   const takenActions = takenBlock && !disabled && (() => {
