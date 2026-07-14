@@ -239,6 +239,7 @@ function ClientCodeCards({
   onReactivated,
   onRequestSwitchToPosition,
   onCreatingIncompleteChange,
+  requiredForClientIds,
 }: {
   clients: ClientCard[];
   values: Map<string, ClientCodeEntry>;
@@ -249,6 +250,7 @@ function ClientCodeCards({
   onReactivated: () => void;
   onRequestSwitchToPosition: (positionId: string) => void;
   onCreatingIncompleteChange: (clientId: string, incomplete: boolean) => void;
+  requiredForClientIds?: Set<string>;
 }) {
   if (clients.length === 0) {
     return (
@@ -269,6 +271,7 @@ function ClientCodeCards({
             agreementId={agreementId}
             initialLineId={initialLineId}
             open={open}
+            required={requiredForClientIds?.has(c.id) ?? false}
             onChange={(next) => onChange(c.id, next)}
             onReactivated={onReactivated}
             onRequestSwitchToPosition={onRequestSwitchToPosition}
@@ -302,6 +305,7 @@ function ClientCodeCard({
   agreementId,
   initialLineId,
   open,
+  required = false,
   onChange,
   onReactivated,
   onRequestSwitchToPosition,
@@ -312,6 +316,7 @@ function ClientCodeCard({
   agreementId: string;
   initialLineId: string | null;
   open: boolean;
+  required?: boolean;
   onChange: (next: ClientCodeEntry) => void;
   onReactivated: () => void;
   onRequestSwitchToPosition: (positionId: string) => void;
@@ -651,7 +656,13 @@ function ClientCodeCard({
     >
       <div className="flex items-center gap-2">
         {disabled && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
-        <div className="text-sm font-semibold text-foreground">{card.name}</div>
+        <div className="text-sm font-semibold text-foreground">
+          {card.name}
+          {required && <span className="ml-1 text-primary">*</span>}
+        </div>
+        {required && (
+          <span className="text-[11px] font-medium text-primary">Requerido</span>
+        )}
       </div>
 
       {mode === "search" && (
@@ -1090,6 +1101,26 @@ export function LineEditDialog({
   // productos del cliente pasa a ser REQUERIDA para poder guardar.
   const requiresNewClientCode =
     isCreatingLine && !!skuInAgreement && skuAckRequireNewCode;
+
+  // Clientes que ya tienen código vigente en OTRA posición del SKU en el
+  // acuerdo. Solo ellos pueden "desempatar" con un código nuevo — un cliente
+  // distinto no distingue posiciones (spec §4.5).
+  const requiredCodeClientIds = useMemo(() => {
+    const s = new Set<string>();
+    if (!isCreatingLine || !skuInAgreement) return s;
+    for (const pos of skuInAgreement.positions) {
+      for (const c of pos.codes) s.add(c.client_id);
+    }
+    return s;
+  }, [isCreatingLine, skuInAgreement]);
+  const requiredClientNames = useMemo(() => {
+    if (requiredCodeClientIds.size === 0) return "";
+    const names: string[] = [];
+    for (const c of agreementClients ?? []) {
+      if (requiredCodeClientIds.has(c.id)) names.push(c.name?.trim() || "Sin nombre");
+    }
+    return names.sort((a, b) => a.localeCompare(b, "es", { sensitivity: "base" })).join(", ");
+  }, [requiredCodeClientIds, agreementClients]);
 
   // Mapa de permisos + tarjetas ordenadas.
   const permMap = useMemo(() => {
@@ -2240,16 +2271,15 @@ export function LineEditDialog({
                 <div className="flex-1">
                   <SectionHeader title="PRODUCTOS DEL CLIENTE" number="03" />
                 </div>
-                {requiresNewClientCode && (
-                  <span className="text-[11px] font-medium text-primary">
-                    * Requerido
-                  </span>
-                )}
               </div>
-              {requiresNewClientCode && (
+              {requiresNewClientCode && requiredClientNames && (
                 <p className="text-xs text-muted-foreground">
-                  Este SKU ya está en el acuerdo. Registra al menos un código de cliente
-                  que distinga esta nueva posición.
+                  Este SKU ya está en el acuerdo con código de{" "}
+                  <span className="font-medium text-foreground">
+                    {requiredClientNames}
+                  </span>
+                  . Para crear otra posición, {requiredClientNames} debe nombrarla
+                  con un código distinto.
                 </p>
               )}
               <ClientCodeCards
@@ -2258,6 +2288,7 @@ export function LineEditDialog({
                 agreementId={agreementId}
                 initialLineId={initial?.line_id ?? null}
                 open={open}
+                requiredForClientIds={requiredCodeClientIds}
                 onChange={(clientId, next) => {
                   setCodeEntries((prev) => {
                     const m = new Map(prev);
@@ -2354,11 +2385,19 @@ export function LineEditDialog({
                   );
                   return;
                 }
-                if (requiresNewClientCode && codeEntries.size === 0) {
-                  setSaveError(
-                    "Falta el código de cliente. Este SKU ya está en el acuerdo; esta posición necesita un código que la distinga.",
+                if (requiresNewClientCode) {
+                  // Debe haber al menos un código no vacío de UNO de los clientes
+                  // que ya tienen código en otra posición del SKU.
+                  const hasDesempate = Array.from(codeEntries.entries()).some(
+                    ([clientId, e]) =>
+                      requiredCodeClientIds.has(clientId) && e.code.trim() !== "",
                   );
-                  return;
+                  if (!hasDesempate) {
+                    setSaveError(
+                      `Falta el código de ${requiredClientNames}. Este SKU ya está en el acuerdo con un código de ${requiredClientNames}; para crear otra posición, ${requiredClientNames} debe nombrarla de otra forma.`,
+                    );
+                    return;
+                  }
                 }
                 setSaveError(null);
                 save.mutate();
