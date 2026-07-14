@@ -2299,7 +2299,7 @@ export function LineEditDialog({
                 id="publish-on-save"
                 checked={publishOnSave}
                 onCheckedChange={(c) => setPublishOnSave(c === true)}
-                disabled={!canPublishNow || save.isPending}
+                disabled={!canPublishNow || save.isPending || skuBlocksForm}
                 className="mt-0.5"
               />
               <span className="flex flex-col leading-tight">
@@ -2329,10 +2329,22 @@ export function LineEditDialog({
                   setSaveError("Selecciona un producto o deja el buscador vacío.");
                   return;
                 }
+                if (skuBlocksForm) {
+                  setSaveError(
+                    "Este SKU ya está en el acuerdo. Elige otro SKU o ve a la posición existente.",
+                  );
+                  return;
+                }
+                if (requiresNewClientCode && codeEntries.size === 0) {
+                  setSaveError(
+                    "Falta el código de cliente. Este SKU ya está en el acuerdo; esta posición necesita un código que la distinga.",
+                  );
+                  return;
+                }
                 setSaveError(null);
                 save.mutate();
               }}
-              disabled={save.isPending || hasCreatingIncomplete}
+              disabled={save.isPending || hasCreatingIncomplete || skuBlocksForm}
             >
               {save.isPending
                 ? "Guardando…"
