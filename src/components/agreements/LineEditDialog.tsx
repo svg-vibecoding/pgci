@@ -1091,6 +1091,26 @@ export function LineEditDialog({
   const requiresNewClientCode =
     isCreatingLine && !!skuInAgreement && skuAckRequireNewCode;
 
+  // Clientes que ya tienen código vigente en OTRA posición del SKU en el
+  // acuerdo. Solo ellos pueden "desempatar" con un código nuevo — un cliente
+  // distinto no distingue posiciones (spec §4.5).
+  const requiredCodeClientIds = useMemo(() => {
+    const s = new Set<string>();
+    if (!isCreatingLine || !skuInAgreement) return s;
+    for (const pos of skuInAgreement.positions) {
+      for (const c of pos.codes) s.add(c.client_id);
+    }
+    return s;
+  }, [isCreatingLine, skuInAgreement]);
+  const requiredClientNames = useMemo(() => {
+    if (requiredCodeClientIds.size === 0) return "";
+    const names: string[] = [];
+    for (const c of agreementClients ?? []) {
+      if (requiredCodeClientIds.has(c.id)) names.push(c.name?.trim() || "Sin nombre");
+    }
+    return names.sort((a, b) => a.localeCompare(b, "es", { sensitivity: "base" })).join(", ");
+  }, [requiredCodeClientIds, agreementClients]);
+
   // Mapa de permisos + tarjetas ordenadas.
   const permMap = useMemo(() => {
     const m = new Map<string, boolean>();
