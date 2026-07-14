@@ -305,6 +305,7 @@ function ClientCodeCard({
   agreementId,
   initialLineId,
   open,
+  required = false,
   onChange,
   onReactivated,
   onRequestSwitchToPosition,
@@ -315,6 +316,7 @@ function ClientCodeCard({
   agreementId: string;
   initialLineId: string | null;
   open: boolean;
+  required?: boolean;
   onChange: (next: ClientCodeEntry) => void;
   onReactivated: () => void;
   onRequestSwitchToPosition: (positionId: string) => void;
