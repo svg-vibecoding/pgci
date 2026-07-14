@@ -1682,9 +1682,20 @@ export function LineEditDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[minmax(0,55fr)_minmax(0,45fr)]">
+        <div
+          className={cn(
+            "flex-1 min-h-0 grid grid-cols-1",
+            !skuBlocksForm && "lg:grid-cols-[minmax(0,55fr)_minmax(0,45fr)]",
+          )}
+        >
           {/* Columna izquierda — la posición */}
-          <div className="min-h-0 overflow-y-auto bg-white border-r border-border">
+          <div
+            className={cn(
+              "min-h-0 overflow-y-auto bg-white",
+              !skuBlocksForm && "border-r border-border",
+            )}
+          >
+
             <div className="p-6 space-y-8">
               {/* Producto Jaivaná */}
               <section className="space-y-4">
@@ -1874,20 +1885,19 @@ export function LineEditDialog({
                     const hidden = positions.length - visible.length;
                     return (
                       <div className="space-y-3">
-                        <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 p-3 text-sm text-[var(--status-warning-strong)]">
-                          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                          <div className="space-y-0.5">
-                            <p className="font-medium">
-                              Este SKU ya está en el acuerdo
-                            </p>
-                            <p className="text-xs">
-                              Puedes asignar un SKU a diferentes posiciones del acuerdo,
-                              pero cada posición debe tener un código de cliente que la
-                              distinga.
-                            </p>
-                          </div>
-                        </div>
+                        <p className="text-sm font-semibold text-foreground">
+                          Este SKU ya está en el acuerdo
+                        </p>
 
+                        <div
+                          className={cn(
+                            "space-y-3",
+                            skuBlocksForm &&
+                              visible.length === 1 &&
+                              "lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(280px,340px)] lg:items-start lg:gap-4 lg:space-y-0",
+                          )}
+                        >
+                        <div className="space-y-3">
                         {visible.map((pos) => {
                           const variant = variantForPositionStatus(pos.position_status);
                           const title =
@@ -1969,64 +1979,44 @@ export function LineEditDialog({
                           const codedClientIds = new Set(
                             pos.codes.map((c) => c.client_id),
                           );
-                          const missingClients = isCreatingLine && hasCode && !isExcluded
-                            ? clientCards.filter((c) => !codedClientIds.has(c.id))
-                            : [];
+                          const hasMissingClient =
+                            isCreatingLine &&
+                            hasCode &&
+                            !isExcluded &&
+                            clientCards.some((c) => !codedClientIds.has(c.id));
+                          // Un solo CTA de edición por posición.
+                          const editLabel = isExcluded
+                            ? "Reactivar esa posición"
+                            : !hasCode
+                              ? "Ir a esa posición"
+                              : hasMissingClient
+                                ? "Agregar códigos de cliente a esa posición"
+                                : null;
+                          const showEditCta = isCreatingLine
+                            ? !skuAckRequireNewCode && editLabel !== null
+                            : true;
+                          const nonCreateLabel = isExcluded
+                            ? "Reactivar esa posición"
+                            : "Ir a esa posición";
                           return (
-                            <div key={pos.position_id} className="space-y-2">
+                            <div key={pos.position_id} className="space-y-1">
                               <PositionTakenPanel
                                 variant={variant}
                                 title={title}
                                 sections={sections}
                               />
-                              {isCreatingLine && !skuAckRequireNewCode && (
-                                <div className="flex flex-wrap justify-end gap-2">
-                                  {isExcluded && (
-                                    <Button
-                                      type="button"
-                                      size="sm"
-                                      onClick={() =>
-                                        onSwitchToPosition?.(pos.position_id)
-                                      }
-                                    >
-                                      Reactivar esa posición
-                                    </Button>
-                                  )}
-                                  {!hasCode && !isExcluded && (
-                                    <Button
-                                      type="button"
-                                      size="sm"
-                                      onClick={() =>
-                                        onSwitchToPosition?.(pos.position_id)
-                                      }
-                                    >
-                                      Ir a esa posición
-                                    </Button>
-                                  )}
-                                  {missingClients.map((c) => (
-                                    <Button
-                                      key={c.id}
-                                      type="button"
-                                      size="sm"
-                                      onClick={() =>
-                                        onSwitchToPosition?.(pos.position_id)
-                                      }
-                                    >
-                                      Agregar el código de {c.name} a esa posición
-                                    </Button>
-                                  ))}
-                                </div>
-                              )}
-                              {!isCreatingLine && (
-                                <div className="flex flex-wrap justify-end gap-2">
+                              {showEditCta && (
+                                <div className="flex justify-end">
                                   <Button
                                     type="button"
                                     size="sm"
+                                    variant="link"
+                                    className="h-auto px-0 text-muted-foreground hover:text-foreground"
                                     onClick={() =>
                                       onSwitchToPosition?.(pos.position_id)
                                     }
                                   >
-                                    {isExcluded ? "Reactivar esa posición" : "Ir a esa posición"}
+                                    {isCreatingLine ? editLabel : nonCreateLabel}
                                   </Button>
                                 </div>
                               )}
@@ -2046,34 +2036,52 @@ export function LineEditDialog({
                             </Button>
                           </div>
                         )}
+                        </div>
 
-                        {isCreatingLine && !skuAckRequireNewCode && (
-                          <div className="rounded-md border border-border bg-surface-card p-4 space-y-3">
+                        {isCreatingLine && !skuAckRequireNewCode && (() => {
+                          const codelessPos = skuInAgreement.positions.find(
+                            (p) => p.codes.length === 0,
+                          );
+                          const primaryIsGoToCodeless = !!codelessPos;
+                          return (
+                          <div className="rounded-md border border-border bg-surface-card p-4 space-y-3 lg:self-start">
                             <p className="text-sm font-semibold text-foreground">
                               ¿Qué quieres hacer?
                             </p>
-                            <div className="flex flex-col gap-2">
-                              {!skuHasCodelessPosition && (
+                            <div className="flex flex-col gap-3">
+                              {primaryIsGoToCodeless ? (
                                 <div className="space-y-1">
                                   <Button
                                     type="button"
-                                    size="sm"
-                                    variant="outline"
+                                    className="w-full justify-start"
+                                    onClick={() =>
+                                      onSwitchToPosition?.(codelessPos!.position_id)
+                                    }
+                                  >
+                                    Ir a esa posición
+                                  </Button>
+                                  <p className="text-xs text-muted-foreground pl-1">
+                                    Esa posición ocupa el SKU sin código; complétala allí antes de crear otra.
+                                  </p>
+                                </div>
+                              ) : (
+                                <div className="space-y-1">
+                                  <Button
+                                    type="button"
                                     className="w-full justify-start"
                                     onClick={() => setSkuAckRequireNewCode(true)}
                                   >
                                     Crear otra posición de este SKU
                                   </Button>
-                                  {requiredClientNames && (
-                                    <p className="text-xs text-muted-foreground pl-1">
-                                      {requiredClientNames} debe nombrarla con un código distinto.
-                                    </p>
-                                  )}
+                                  <p className="text-xs text-muted-foreground pl-1">
+                                    {requiredClientNames
+                                      ? `${requiredClientNames} debe nombrarla con un código distinto.`
+                                      : "Cada posición debe tener un código de cliente que la distinga."}
+                                  </p>
                                 </div>
                               )}
                               <Button
                                 type="button"
-                                size="sm"
                                 variant="outline"
                                 className="w-full justify-start"
                                 onClick={clearSkuSelection}
@@ -2082,8 +2090,11 @@ export function LineEditDialog({
                               </Button>
                             </div>
                           </div>
-                        )}
+                          );
+                        })()}
+                        </div>
                       </div>
+
                     );
                   })()}
 
@@ -2317,8 +2328,11 @@ export function LineEditDialog({
             </div>
           </div>
 
-          {/* Columna derecha — códigos por cliente */}
+          {/* Columna derecha — códigos por cliente. Se oculta mientras el SKU
+              esté en el acuerdo y el usuario no haya declarado intención. */}
+          {!skuBlocksForm && (
           <div className="min-h-0 overflow-y-auto bg-muted/20">
+
             <div className="p-6 space-y-4">
               <div className="flex items-center gap-2">
                 <div className="flex-1">
@@ -2385,7 +2399,9 @@ export function LineEditDialog({
 
             </div>
           </div>
+          )}
         </div>
+
 
         <div className="px-6 py-4 border-t border-border bg-muted/30 shrink-0 flex flex-col sm:flex-row sm:items-center gap-3">
           {saveError && (
