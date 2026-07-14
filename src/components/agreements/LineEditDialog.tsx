@@ -1233,7 +1233,9 @@ export function LineEditDialog({
     setSearchLoading(true);
     const t = setTimeout(async () => {
       try {
-        const res = await searchFn({ data: { query: q, offset: 0, limit: PAGE_SIZE } });
+        const res = await searchFn({
+          data: { query: q, offset: 0, limit: PAGE_SIZE, agreement_id: agreementId },
+        });
         if (seq !== searchSeq.current) return;
         setSearchResults(res.rows);
         setSearchHasMore(res.hasMore);
@@ -1247,7 +1249,7 @@ export function LineEditDialog({
       }
     }, 250);
     return () => clearTimeout(t);
-  }, [searchQuery, searchOpen, searchFn]);
+  }, [searchQuery, searchOpen, searchFn, agreementId]);
 
   const loadMoreResults = async () => {
     const q = searchQuery.trim();
@@ -1256,7 +1258,12 @@ export function LineEditDialog({
     setSearchLoadingMore(true);
     try {
       const res = await searchFn({
-        data: { query: q, offset: searchResults.length, limit: PAGE_SIZE },
+        data: {
+          query: q,
+          offset: searchResults.length,
+          limit: PAGE_SIZE,
+          agreement_id: agreementId,
+        },
       });
       if (seq !== searchSeq.current) return;
       setSearchResults((prev) => [...prev, ...res.rows]);
@@ -1281,7 +1288,37 @@ export function LineEditDialog({
     setSearchQuery("");
     setSearchResults([]);
     setSearchHasMore(false);
+    // Estado del SKU respecto al acuerdo — solo aplica al crear.
+    // En edición mantenemos el flujo previo (panel de vinculación de precios).
+    setSkuAckRequireNewCode(false);
+    setSkuPositionsExpanded(false);
+    if (
+      isCreatingLine &&
+      p.agreement_status.kind === "in_agreement" &&
+      p.agreement_status.positions.length > 0
+    ) {
+      setSkuInAgreement({
+        sku: p.sku,
+        productDescription: p.erp_description,
+        positions: p.agreement_status.positions,
+      });
+    } else {
+      setSkuInAgreement(null);
+    }
     void runConflict(p.sku, p.id);
+  };
+
+  const clearSkuSelection = () => {
+    setV((prev) => ({ ...prev, sku: "" }));
+    setProductMeta(null);
+    setProductId(null);
+    setLookup({ kind: "empty" });
+    setSkuInAgreement(null);
+    setSkuAckRequireNewCode(false);
+    setSkuPositionsExpanded(false);
+    setNConflict({ kind: "idle", lines: [] });
+    setIsLinked(false);
+    setSaveError(null);
   };
 
   const hasProduct = !!productId;
