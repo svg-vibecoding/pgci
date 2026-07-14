@@ -1148,7 +1148,11 @@ export function LineEditDialog({
       });
       setNConflict({ kind: "found", lines: sorted });
       setNExpanded(true);
-      if (linked && !initial?.line_id) {
+      // Auto-prefill de precio vinculado: solo aplica en edición.
+      // En creación, la vinculación de precios no se ofrece (el panel se
+      // oculta cuando !initial?.line_id) y prefill'ear un precio de otra
+      // posición prometía un vínculo que aún no existía.
+      if (linked && initial?.line_id) {
         const linkedPrice = sorted.find((l) => l.current_price != null)?.current_price;
         if (linkedPrice != null) {
           setV((prev) =>
