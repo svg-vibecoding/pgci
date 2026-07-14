@@ -1029,12 +1029,29 @@ export function LineEditDialog({
 
 
   // Buscador de productos (combobox)
+  type SkuAgreementPosition = {
+    position_id: string;
+    position_status: "active" | "requires_review" | "draft" | "excluded";
+    sale_price: number | null;
+    codes: Array<{
+      client_id: string;
+      client_name: string | null;
+      client_code: string;
+      description: string | null;
+    }>;
+    exclusion_reason: string | null;
+    exclusion_date: string | null;
+  };
+  type SkuAgreementStatus =
+    | { kind: "free" }
+    | { kind: "in_agreement"; positions: SkuAgreementPosition[] };
   type ProductResult = {
     id: string;
     sku: string;
     erp_description: string | null;
     commercial_brand: string | null;
     status: "active" | "inactive";
+    agreement_status: SkuAgreementStatus;
   };
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -1042,9 +1059,37 @@ export function LineEditDialog({
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchLoadingMore, setSearchLoadingMore] = useState(false);
   const [searchHasMore, setSearchHasMore] = useState(false);
+  // Panel "este SKU ya está en el acuerdo" al seleccionar del buscador.
+  const [skuInAgreement, setSkuInAgreement] = useState<{
+    sku: string;
+    productDescription: string | null;
+    positions: SkuAgreementPosition[];
+  } | null>(null);
+  // El usuario acepta que registrará un código nuevo → sale del bloqueo cuando
+  // todas las posiciones existentes YA tienen código. Reset al cambiar SKU.
+  const [skuAckRequireNewCode, setSkuAckRequireNewCode] = useState(false);
+  const [skuPositionsExpanded, setSkuPositionsExpanded] = useState(false);
   const conflictSeq = useRef(0);
   const searchSeq = useRef(0);
   const PAGE_SIZE = 20;
+
+  const isCreatingLine = !initial?.line_id;
+  // Alguna posición existente sin códigos ocupa el SKU sola: bloqueo duro.
+  const skuHasCodelessPosition = !!skuInAgreement?.positions.some(
+    (p) => p.codes.length === 0,
+  );
+  // El SKU está en el acuerdo (nueva posición). Solo bloquea el formulario
+  // hasta que:
+  //  - todas las existentes tienen código → user pulsa "Registraré nuevo código"
+  //  - o hay una codeless → siempre bloqueado (salida: elegir otro SKU / ir).
+  const skuBlocksForm =
+    isCreatingLine &&
+    !!skuInAgreement &&
+    (skuHasCodelessPosition || !skuAckRequireNewCode);
+  // Cuando el usuario aceptó "Registraré nuevo código", la sección de
+  // productos del cliente pasa a ser REQUERIDA para poder guardar.
+  const requiresNewClientCode =
+    isCreatingLine && !!skuInAgreement && skuAckRequireNewCode;
 
   // Mapa de permisos + tarjetas ordenadas.
   const permMap = useMemo(() => {
