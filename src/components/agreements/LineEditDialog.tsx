@@ -2232,7 +2232,22 @@ export function LineEditDialog({
           {/* Columna derecha — códigos por cliente */}
           <div className="min-h-0 overflow-y-auto bg-muted/20">
             <div className="p-6 space-y-4">
-              <SectionHeader title="PRODUCTOS DEL CLIENTE" number="03" />
+              <div className="flex items-center gap-2">
+                <div className="flex-1">
+                  <SectionHeader title="PRODUCTOS DEL CLIENTE" number="03" />
+                </div>
+                {requiresNewClientCode && (
+                  <span className="text-[11px] font-medium text-primary">
+                    * Requerido
+                  </span>
+                )}
+              </div>
+              {requiresNewClientCode && (
+                <p className="text-xs text-muted-foreground">
+                  Este SKU ya está en el acuerdo. Registra al menos un código de cliente
+                  que distinga esta nueva posición.
+                </p>
+              )}
               <ClientCodeCards
                 clients={clientCards}
                 values={codeEntries}
