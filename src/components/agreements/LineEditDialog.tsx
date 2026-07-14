@@ -70,6 +70,11 @@ import {
   type ClientCodeSearchResult,
 } from "@/lib/agreements.functions";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  PositionTakenPanel,
+  variantForPositionStatus,
+  type PositionTakenSection,
+} from "./PositionTakenPanel";
 
 export type LineEditClientCode = {
   client_id: string;
@@ -526,19 +531,7 @@ function ClientCodeCard({
 
   const takenAlert = takenBlock && (() => {
     const ps = takenBlock.position_status;
-    const isExcluded = ps === "excluded";
-    const isInProgress = ps === "requires_review" || ps === "draft";
-    const containerCls = isExcluded
-      ? "rounded-md border border-border bg-muted p-4 text-muted-foreground"
-      : isInProgress
-        ? "rounded-md border border-info/40 bg-info/10 p-4 text-[var(--status-info-strong)]"
-        : "rounded-md border border-warning/40 bg-warning/10 p-4 text-[var(--status-warning-strong)]";
-    const dividerCls = isExcluded
-      ? "border-border"
-      : isInProgress
-        ? "border-info/20"
-        : "border-warning/20";
-    const Icon = isExcluded || isInProgress ? Info : AlertTriangle;
+    const variant = variantForPositionStatus(ps);
     const title =
       ps === "excluded"
         ? "Este código está vinculado a una posición excluida del acuerdo"
@@ -548,7 +541,7 @@ function ClientCodeCard({
             ? "Este código está reservado por un registro en gestión del acuerdo"
             : "Este código ya está vinculado a una posición del acuerdo";
     const exclusionDateLabel = (() => {
-      if (!isExcluded || !takenBlock.exclusion_date) return "EXCLUIDA";
+      if (ps !== "excluded" || !takenBlock.exclusion_date) return "EXCLUIDA";
       const d = new Date(takenBlock.exclusion_date);
       if (Number.isNaN(d.getTime())) return "EXCLUIDA";
       const s = d.toLocaleDateString("es-CO", {
@@ -558,61 +551,47 @@ function ClientCodeCard({
       });
       return `EXCLUIDA EL ${s}`;
     })();
-    return (
-      <div className={containerCls}>
-        <div className="flex items-start gap-2">
-          <Icon className="mt-0.5 h-4 w-4 shrink-0" />
-          <p className="text-sm font-medium">{title}</p>
-        </div>
-
-        <div className="mt-2 space-y-2 pl-6">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide">
-              {card.name}
+    const sections: PositionTakenSection[] = [
+      {
+        label: card.name,
+        body: (
+          <>
+            <span className="font-mono">{takenBlock.client_code}</span>
+            {" "}· {takenBlock.client_description ?? "—"}
+          </>
+        ),
+      },
+      {
+        label: "SUMATEC",
+        body: (
+          <>
+            <span className="font-mono">{takenBlock.sku ?? "—"}</span>
+            {" "}· {takenBlock.product_description ?? "—"}
+            {takenBlock.sale_price != null && (
+              <span className="font-sans font-medium">
+                {" "}· {formatMoneyCOP(takenBlock.sale_price)}
+              </span>
+            )}
+          </>
+        ),
+      },
+    ];
+    if (ps === "excluded") {
+      sections.push({
+        label: "MOTIVO DE EXCLUSIÓN",
+        body: (
+          <div className="space-y-1.5">
+            <p className="text-sm text-muted-foreground">
+              {takenBlock.exclusion_reason ?? "—"}
             </p>
-            <p className="mt-0 text-sm">
-              <span className="font-mono">{takenBlock.client_code}</span>
-              {" "}· {takenBlock.client_description ?? "—"}
-            </p>
+            <span className="text-[11px] font-medium text-text-tertiary">
+              {exclusionDateLabel}
+            </span>
           </div>
-
-          <hr className={dividerCls} />
-
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide">
-              SUMATEC
-            </p>
-            <p className="mt-0 text-sm">
-              <span className="font-mono">{takenBlock.sku ?? "—"}</span>
-              {" "}· {takenBlock.product_description ?? "—"}
-              {takenBlock.sale_price != null && (
-                <span className="font-sans font-medium">
-                  {" "}· {formatMoneyCOP(takenBlock.sale_price)}
-                </span>
-              )}
-            </p>
-          </div>
-
-          {isExcluded && (
-            <>
-              <hr className={dividerCls} />
-
-              <div className="space-y-1.5">
-                <p className="text-xs font-semibold uppercase tracking-wide">
-                  MOTIVO DE EXCLUSIÓN
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {takenBlock.exclusion_reason ?? "—"}
-                </p>
-                <span className="text-[11px] font-medium text-text-tertiary">
-                  {exclusionDateLabel}
-                </span>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-    );
+        ),
+      });
+    }
+    return <PositionTakenPanel variant={variant} title={title} sections={sections} />;
   })();
 
   const takenActions = takenBlock && !disabled && (() => {
@@ -1050,12 +1029,29 @@ export function LineEditDialog({
 
 
   // Buscador de productos (combobox)
+  type SkuAgreementPosition = {
+    position_id: string;
+    position_status: "active" | "requires_review" | "draft" | "excluded";
+    sale_price: number | null;
+    codes: Array<{
+      client_id: string;
+      client_name: string | null;
+      client_code: string;
+      description: string | null;
+    }>;
+    exclusion_reason: string | null;
+    exclusion_date: string | null;
+  };
+  type SkuAgreementStatus =
+    | { kind: "free" }
+    | { kind: "in_agreement"; positions: SkuAgreementPosition[] };
   type ProductResult = {
     id: string;
     sku: string;
     erp_description: string | null;
     commercial_brand: string | null;
     status: "active" | "inactive";
+    agreement_status: SkuAgreementStatus;
   };
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -1063,9 +1059,37 @@ export function LineEditDialog({
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchLoadingMore, setSearchLoadingMore] = useState(false);
   const [searchHasMore, setSearchHasMore] = useState(false);
+  // Panel "este SKU ya está en el acuerdo" al seleccionar del buscador.
+  const [skuInAgreement, setSkuInAgreement] = useState<{
+    sku: string;
+    productDescription: string | null;
+    positions: SkuAgreementPosition[];
+  } | null>(null);
+  // El usuario acepta que registrará un código nuevo → sale del bloqueo cuando
+  // todas las posiciones existentes YA tienen código. Reset al cambiar SKU.
+  const [skuAckRequireNewCode, setSkuAckRequireNewCode] = useState(false);
+  const [skuPositionsExpanded, setSkuPositionsExpanded] = useState(false);
   const conflictSeq = useRef(0);
   const searchSeq = useRef(0);
   const PAGE_SIZE = 20;
+
+  const isCreatingLine = !initial?.line_id;
+  // Alguna posición existente sin códigos ocupa el SKU sola: bloqueo duro.
+  const skuHasCodelessPosition = !!skuInAgreement?.positions.some(
+    (p) => p.codes.length === 0,
+  );
+  // El SKU está en el acuerdo (nueva posición). Solo bloquea el formulario
+  // hasta que:
+  //  - todas las existentes tienen código → user pulsa "Registraré nuevo código"
+  //  - o hay una codeless → siempre bloqueado (salida: elegir otro SKU / ir).
+  const skuBlocksForm =
+    isCreatingLine &&
+    !!skuInAgreement &&
+    (skuHasCodelessPosition || !skuAckRequireNewCode);
+  // Cuando el usuario aceptó "Registraré nuevo código", la sección de
+  // productos del cliente pasa a ser REQUERIDA para poder guardar.
+  const requiresNewClientCode =
+    isCreatingLine && !!skuInAgreement && skuAckRequireNewCode;
 
   // Mapa de permisos + tarjetas ordenadas.
   const permMap = useMemo(() => {
@@ -1124,7 +1148,11 @@ export function LineEditDialog({
       });
       setNConflict({ kind: "found", lines: sorted });
       setNExpanded(true);
-      if (linked && !initial?.line_id) {
+      // Auto-prefill de precio vinculado: solo aplica en edición.
+      // En creación, la vinculación de precios no se ofrece (el panel se
+      // oculta cuando !initial?.line_id) y prefill'ear un precio de otra
+      // posición prometía un vínculo que aún no existía.
+      if (linked && initial?.line_id) {
         const linkedPrice = sorted.find((l) => l.current_price != null)?.current_price;
         if (linkedPrice != null) {
           setV((prev) =>
@@ -1189,6 +1217,9 @@ export function LineEditDialog({
     setSearchQuery("");
     setSearchResults([]);
     setSearchHasMore(false);
+    setSkuInAgreement(null);
+    setSkuAckRequireNewCode(false);
+    setSkuPositionsExpanded(false);
     if (initial?.line_id && next.sku.trim()) {
       void prefillFromSku(next.sku);
     }
@@ -1209,7 +1240,9 @@ export function LineEditDialog({
     setSearchLoading(true);
     const t = setTimeout(async () => {
       try {
-        const res = await searchFn({ data: { query: q, offset: 0, limit: PAGE_SIZE } });
+        const res = await searchFn({
+          data: { query: q, offset: 0, limit: PAGE_SIZE, agreement_id: agreementId },
+        });
         if (seq !== searchSeq.current) return;
         setSearchResults(res.rows);
         setSearchHasMore(res.hasMore);
@@ -1223,7 +1256,7 @@ export function LineEditDialog({
       }
     }, 250);
     return () => clearTimeout(t);
-  }, [searchQuery, searchOpen, searchFn]);
+  }, [searchQuery, searchOpen, searchFn, agreementId]);
 
   const loadMoreResults = async () => {
     const q = searchQuery.trim();
@@ -1232,7 +1265,12 @@ export function LineEditDialog({
     setSearchLoadingMore(true);
     try {
       const res = await searchFn({
-        data: { query: q, offset: searchResults.length, limit: PAGE_SIZE },
+        data: {
+          query: q,
+          offset: searchResults.length,
+          limit: PAGE_SIZE,
+          agreement_id: agreementId,
+        },
       });
       if (seq !== searchSeq.current) return;
       setSearchResults((prev) => [...prev, ...res.rows]);
@@ -1257,7 +1295,37 @@ export function LineEditDialog({
     setSearchQuery("");
     setSearchResults([]);
     setSearchHasMore(false);
+    // Estado del SKU respecto al acuerdo — solo aplica al crear.
+    // En edición mantenemos el flujo previo (panel de vinculación de precios).
+    setSkuAckRequireNewCode(false);
+    setSkuPositionsExpanded(false);
+    if (
+      isCreatingLine &&
+      p.agreement_status.kind === "in_agreement" &&
+      p.agreement_status.positions.length > 0
+    ) {
+      setSkuInAgreement({
+        sku: p.sku,
+        productDescription: p.erp_description,
+        positions: p.agreement_status.positions,
+      });
+    } else {
+      setSkuInAgreement(null);
+    }
     void runConflict(p.sku, p.id);
+  };
+
+  const clearSkuSelection = () => {
+    setV((prev) => ({ ...prev, sku: "" }));
+    setProductMeta(null);
+    setProductId(null);
+    setLookup({ kind: "empty" });
+    setSkuInAgreement(null);
+    setSkuAckRequireNewCode(false);
+    setSkuPositionsExpanded(false);
+    setNConflict({ kind: "idle", lines: [] });
+    setIsLinked(false);
+    setSaveError(null);
   };
 
   const hasProduct = !!productId;
@@ -1635,31 +1703,67 @@ export function LineEditDialog({
                         </p>
                       ) : (
                         <div className="max-h-72 overflow-y-auto py-1">
-                          {searchResults.map((p) => (
-                            <button
-                              key={p.id}
-                              type="button"
-                              onClick={() => onSelectProduct(p)}
-                              className="flex w-full flex-col gap-0.5 px-3 py-2 text-left hover:bg-muted focus:bg-muted focus:outline-none"
-                            >
-                              <span className="font-mono text-sm font-medium text-foreground">
-                                {p.sku}
-                              </span>
-                              <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-                                <span className="truncate">
-                                  {p.erp_description ?? "—"}
+                          {searchResults.map((p) => {
+                            const firstPos =
+                              p.agreement_status.kind === "in_agreement"
+                                ? p.agreement_status.positions[0]
+                                : null;
+                            const agLabel = !firstPos
+                              ? null
+                              : firstPos.position_status === "active"
+                                ? "En acuerdo · Activa"
+                                : firstPos.position_status === "requires_review"
+                                  ? "En acuerdo · En revisión"
+                                  : firstPos.position_status === "draft"
+                                    ? "En acuerdo · En gestión"
+                                    : "En acuerdo · Excluida";
+                            const agStatus:
+                              | "active"
+                              | "warning"
+                              | "info"
+                              | "neutral" = !firstPos
+                              ? "neutral"
+                              : firstPos.position_status === "active"
+                                ? "warning"
+                                : firstPos.position_status === "excluded"
+                                  ? "neutral"
+                                  : "info";
+                            return (
+                              <button
+                                key={p.id}
+                                type="button"
+                                onClick={() => onSelectProduct(p)}
+                                className="flex w-full flex-col gap-0.5 px-3 py-2 text-left hover:bg-muted focus:bg-muted focus:outline-none"
+                              >
+                                <span className="font-mono text-sm font-medium text-foreground">
+                                  {p.sku}
                                 </span>
-                                <span aria-hidden>·</span>
-                                <span>{p.commercial_brand ?? "—"}</span>
-                                <span aria-hidden>·</span>
-                                <StatusBadge
-                                  size="sm"
-                                  status={p.status === "active" ? "active" : "neutral"}
-                                  label={p.status === "active" ? "Activo" : "Inactivo"}
-                                />
-                              </span>
-                            </button>
-                          ))}
+                                <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                                  <span className="truncate">
+                                    {p.erp_description ?? "—"}
+                                  </span>
+                                  <span aria-hidden>·</span>
+                                  <span>{p.commercial_brand ?? "—"}</span>
+                                  <span aria-hidden>·</span>
+                                  <StatusBadge
+                                    size="sm"
+                                    status={p.status === "active" ? "active" : "neutral"}
+                                    label={p.status === "active" ? "Activo" : "Inactivo"}
+                                  />
+                                  {agLabel && (
+                                    <>
+                                      <span aria-hidden>·</span>
+                                      <StatusBadge
+                                        size="sm"
+                                        status={agStatus}
+                                        label={agLabel}
+                                      />
+                                    </>
+                                  )}
+                                </span>
+                              </button>
+                            );
+                          })}
                           {searchHasMore && (
                             <div className="border-t border-border p-2">
                               <button
@@ -1732,7 +1836,176 @@ export function LineEditDialog({
                       </AlertDescription>
                     </Alert>
                   )}
-                  {nConflict.kind === "found" && (
+
+                  {skuInAgreement && (() => {
+                    const positions = skuInAgreement.positions;
+                    const visible = skuPositionsExpanded ? positions : positions.slice(0, 3);
+                    const hidden = positions.length - visible.length;
+                    return (
+                      <div className="space-y-3">
+                        <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 p-3 text-sm text-[var(--status-warning-strong)]">
+                          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                          <div className="space-y-0.5">
+                            <p className="font-medium">
+                              Este SKU ya está en el acuerdo
+                            </p>
+                            <p className="text-xs">
+                              Puedes asignar un SKU a diferentes posiciones del acuerdo,
+                              pero cada posición debe tener un código de cliente que la
+                              distinga.
+                            </p>
+                          </div>
+                        </div>
+
+                        {visible.map((pos) => {
+                          const variant = variantForPositionStatus(pos.position_status);
+                          const title =
+                            pos.position_status === "excluded"
+                              ? "Posición excluida"
+                              : pos.position_status === "requires_review"
+                                ? "Posición en revisión"
+                                : pos.position_status === "draft"
+                                  ? "Registro en gestión"
+                                  : "Posición activa";
+                          const sections: PositionTakenSection[] = [
+                            {
+                              label: "SUMATEC",
+                              body: (
+                                <>
+                                  <span className="font-mono">
+                                    {skuInAgreement.sku}
+                                  </span>
+                                  {" "}· {skuInAgreement.productDescription ?? "—"}
+                                  {pos.sale_price != null && (
+                                    <span className="font-sans font-medium">
+                                      {" "}· {formatMoneyCOP(pos.sale_price)}
+                                    </span>
+                                  )}
+                                </>
+                              ),
+                            },
+                          ];
+                          if (pos.codes.length === 0) {
+                            sections.push({
+                              label: "SIN CÓDIGO DE CLIENTE",
+                              body: (
+                                <span className="text-muted-foreground">
+                                  Esta posición ocupa el SKU sin código que la distinga.
+                                </span>
+                              ),
+                            });
+                          } else {
+                            for (const c of pos.codes) {
+                              sections.push({
+                                label: c.client_name ?? "CLIENTE",
+                                body: (
+                                  <>
+                                    <span className="font-mono">{c.client_code}</span>
+                                    {" "}· {c.description ?? "—"}
+                                  </>
+                                ),
+                              });
+                            }
+                          }
+                          if (pos.position_status === "excluded") {
+                            const dateLabel = (() => {
+                              if (!pos.exclusion_date) return "EXCLUIDA";
+                              const d = new Date(pos.exclusion_date);
+                              if (Number.isNaN(d.getTime())) return "EXCLUIDA";
+                              const s = d.toLocaleDateString("es-CO", {
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric",
+                              });
+                              return `EXCLUIDA EL ${s}`;
+                            })();
+                            sections.push({
+                              label: "MOTIVO DE EXCLUSIÓN",
+                              body: (
+                                <div className="space-y-1.5">
+                                  <p className="text-sm text-muted-foreground">
+                                    {pos.exclusion_reason ?? "—"}
+                                  </p>
+                                  <span className="text-[11px] font-medium text-text-tertiary">
+                                    {dateLabel}
+                                  </span>
+                                </div>
+                              ),
+                            });
+                          }
+                          const hasCode = pos.codes.length > 0;
+                          const isExcluded = pos.position_status === "excluded";
+                          return (
+                            <div key={pos.position_id} className="space-y-2">
+                              <PositionTakenPanel
+                                variant={variant}
+                                title={title}
+                                sections={sections}
+                              />
+                              <div className="flex flex-wrap justify-end gap-2">
+                                {isExcluded ? (
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    onClick={() =>
+                                      onSwitchToPosition?.(pos.position_id)
+                                    }
+                                  >
+                                    Reactivar esa posición
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    onClick={() =>
+                                      onSwitchToPosition?.(pos.position_id)
+                                    }
+                                  >
+                                    Ir a esa posición
+                                  </Button>
+                                )}
+                                {isCreatingLine && hasCode && !skuAckRequireNewCode && !skuHasCodelessPosition && (
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setSkuAckRequireNewCode(true)}
+                                  >
+                                    Registraré un nuevo código del cliente
+                                  </Button>
+                                )}
+                                {isCreatingLine && (!hasCode || isExcluded) && (
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={clearSkuSelection}
+                                  >
+                                    Elegir otro SKU
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+
+                        {hidden > 0 && (
+                          <div className="flex justify-center">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="link"
+                              onClick={() => setSkuPositionsExpanded(true)}
+                            >
+                              Ver {hidden} {hidden === 1 ? "posición más" : "posiciones más"}
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {nConflict.kind === "found" && !isCreatingLine && (
                     <Alert variant="warning" className="p-0 overflow-hidden">
                       <Collapsible open={nExpanded} onOpenChange={setNExpanded}>
                         <CollapsibleTrigger asChild>
@@ -1869,6 +2142,7 @@ export function LineEditDialog({
                       <Input
                         className={inputClass}
                         inputMode="decimal"
+                        disabled={skuBlocksForm}
                         value={v.sale_price}
                         onChange={(e) => setV({ ...v, sale_price: e.target.value })}
                         onBlur={(e) =>
@@ -1884,6 +2158,7 @@ export function LineEditDialog({
                       <Input
                         className={inputClass}
                         inputMode="decimal"
+                        disabled={skuBlocksForm}
                         value={v.par_price}
                         onChange={(e) => setV({ ...v, par_price: e.target.value })}
                         onBlur={(e) =>
@@ -1911,6 +2186,7 @@ export function LineEditDialog({
                             "[&::-webkit-calendar-picker-indicator]:cursor-pointer",
                           )}
                           type="date"
+                          disabled={skuBlocksForm}
                           value={v.start_date}
                           onChange={(e) => setV({ ...v, start_date: e.target.value })}
                         />
@@ -1932,6 +2208,7 @@ export function LineEditDialog({
                             "[&::-webkit-calendar-picker-indicator]:cursor-pointer",
                           )}
                           type="date"
+                          disabled={skuBlocksForm}
                           value={v.end_date}
                           onChange={(e) => setV({ ...v, end_date: e.target.value })}
                         />
@@ -1944,6 +2221,7 @@ export function LineEditDialog({
                     <Textarea
                       className={inputClass}
                       rows={2}
+                      disabled={skuBlocksForm}
                       value={v.observations}
                       onChange={(e) =>
                         setV({ ...v, observations: e.target.value })
@@ -1958,7 +2236,22 @@ export function LineEditDialog({
           {/* Columna derecha — códigos por cliente */}
           <div className="min-h-0 overflow-y-auto bg-muted/20">
             <div className="p-6 space-y-4">
-              <SectionHeader title="PRODUCTOS DEL CLIENTE" number="03" />
+              <div className="flex items-center gap-2">
+                <div className="flex-1">
+                  <SectionHeader title="PRODUCTOS DEL CLIENTE" number="03" />
+                </div>
+                {requiresNewClientCode && (
+                  <span className="text-[11px] font-medium text-primary">
+                    * Requerido
+                  </span>
+                )}
+              </div>
+              {requiresNewClientCode && (
+                <p className="text-xs text-muted-foreground">
+                  Este SKU ya está en el acuerdo. Registra al menos un código de cliente
+                  que distinga esta nueva posición.
+                </p>
+              )}
               <ClientCodeCards
                 clients={clientCards}
                 values={codeEntries}
@@ -2025,7 +2318,7 @@ export function LineEditDialog({
                 id="publish-on-save"
                 checked={publishOnSave}
                 onCheckedChange={(c) => setPublishOnSave(c === true)}
-                disabled={!canPublishNow || save.isPending}
+                disabled={!canPublishNow || save.isPending || skuBlocksForm}
                 className="mt-0.5"
               />
               <span className="flex flex-col leading-tight">
@@ -2055,10 +2348,22 @@ export function LineEditDialog({
                   setSaveError("Selecciona un producto o deja el buscador vacío.");
                   return;
                 }
+                if (skuBlocksForm) {
+                  setSaveError(
+                    "Este SKU ya está en el acuerdo. Elige otro SKU o ve a la posición existente.",
+                  );
+                  return;
+                }
+                if (requiresNewClientCode && codeEntries.size === 0) {
+                  setSaveError(
+                    "Falta el código de cliente. Este SKU ya está en el acuerdo; esta posición necesita un código que la distinga.",
+                  );
+                  return;
+                }
                 setSaveError(null);
                 save.mutate();
               }}
-              disabled={save.isPending || hasCreatingIncomplete}
+              disabled={save.isPending || hasCreatingIncomplete || skuBlocksForm}
             >
               {save.isPending
                 ? "Guardando…"
