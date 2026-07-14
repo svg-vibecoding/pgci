@@ -539,6 +539,7 @@ function AgreementLinesPage() {
   const isPublishable = (r: Line): boolean => {
     if (r.status !== "draft" && r.status !== "requires_review") return false;
     if (!r.product_id) return false;
+    if ((r.products?.status ?? null) !== "active") return false;
     const sale = typeof r.sale_price === "number" ? r.sale_price : null;
     if (sale == null || sale <= 0) return false;
     if (!r.start_date) return false;
@@ -547,6 +548,7 @@ function AgreementLinesPage() {
       (agreement?.end_date as string | null) ?? null,
     );
   };
+
 
   const publishableInView = useMemo<string[]>(
     () =>
