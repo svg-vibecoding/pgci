@@ -2391,7 +2391,7 @@ export function LineEditDialog({
           {saveError && (
             <p className="text-xs text-destructive sm:mr-auto">{saveError}</p>
           )}
-          {canOfferPublish && !saveError && (
+          {canOfferPublish && !saveError && !skuBlocksForm && (
             <label
               className={cn(
                 "flex items-start gap-2 sm:mr-auto",
