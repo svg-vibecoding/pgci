@@ -2313,6 +2313,7 @@ export function LineEditDialog({
                   </div>
                 </div>
               </section>
+              )}
             </div>
           </div>
 
