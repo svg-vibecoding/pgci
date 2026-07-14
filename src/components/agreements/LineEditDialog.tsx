@@ -2271,16 +2271,15 @@ export function LineEditDialog({
                 <div className="flex-1">
                   <SectionHeader title="PRODUCTOS DEL CLIENTE" number="03" />
                 </div>
-                {requiresNewClientCode && (
-                  <span className="text-[11px] font-medium text-primary">
-                    * Requerido
-                  </span>
-                )}
               </div>
-              {requiresNewClientCode && (
+              {requiresNewClientCode && requiredClientNames && (
                 <p className="text-xs text-muted-foreground">
-                  Este SKU ya está en el acuerdo. Registra al menos un código de cliente
-                  que distinga esta nueva posición.
+                  Este SKU ya está en el acuerdo con código de{" "}
+                  <span className="font-medium text-foreground">
+                    {requiredClientNames}
+                  </span>
+                  . Para crear otra posición, {requiredClientNames} debe nombrarla
+                  con un código distinto.
                 </p>
               )}
               <ClientCodeCards
@@ -2289,6 +2288,7 @@ export function LineEditDialog({
                 agreementId={agreementId}
                 initialLineId={initial?.line_id ?? null}
                 open={open}
+                requiredForClientIds={requiredCodeClientIds}
                 onChange={(clientId, next) => {
                   setCodeEntries((prev) => {
                     const m = new Map(prev);
