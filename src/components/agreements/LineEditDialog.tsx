@@ -1682,9 +1682,20 @@ export function LineEditDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[minmax(0,55fr)_minmax(0,45fr)]">
+        <div
+          className={cn(
+            "flex-1 min-h-0 grid grid-cols-1",
+            !skuBlocksForm && "lg:grid-cols-[minmax(0,55fr)_minmax(0,45fr)]",
+          )}
+        >
           {/* Columna izquierda — la posición */}
-          <div className="min-h-0 overflow-y-auto bg-white border-r border-border">
+          <div
+            className={cn(
+              "min-h-0 overflow-y-auto bg-white",
+              !skuBlocksForm && "border-r border-border",
+            )}
+          >
+
             <div className="p-6 space-y-8">
               {/* Producto Jaivaná */}
               <section className="space-y-4">
