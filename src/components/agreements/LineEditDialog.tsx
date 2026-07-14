@@ -1699,31 +1699,67 @@ export function LineEditDialog({
                         </p>
                       ) : (
                         <div className="max-h-72 overflow-y-auto py-1">
-                          {searchResults.map((p) => (
-                            <button
-                              key={p.id}
-                              type="button"
-                              onClick={() => onSelectProduct(p)}
-                              className="flex w-full flex-col gap-0.5 px-3 py-2 text-left hover:bg-muted focus:bg-muted focus:outline-none"
-                            >
-                              <span className="font-mono text-sm font-medium text-foreground">
-                                {p.sku}
-                              </span>
-                              <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-                                <span className="truncate">
-                                  {p.erp_description ?? "—"}
+                          {searchResults.map((p) => {
+                            const inAg = p.agreement_status.kind === "in_agreement";
+                            const firstPos = inAg
+                              ? p.agreement_status.positions[0]
+                              : null;
+                            const agLabel = !firstPos
+                              ? null
+                              : firstPos.position_status === "active"
+                                ? "En acuerdo · Activa"
+                                : firstPos.position_status === "requires_review"
+                                  ? "En acuerdo · En revisión"
+                                  : firstPos.position_status === "draft"
+                                    ? "En acuerdo · En gestión"
+                                    : "En acuerdo · Excluida";
+                            const agStatus:
+                              | "active"
+                              | "warning"
+                              | "info"
+                              | "neutral" = !firstPos
+                              ? "neutral"
+                              : firstPos.position_status === "active"
+                                ? "warning"
+                                : firstPos.position_status === "excluded"
+                                  ? "neutral"
+                                  : "info";
+                            return (
+                              <button
+                                key={p.id}
+                                type="button"
+                                onClick={() => onSelectProduct(p)}
+                                className="flex w-full flex-col gap-0.5 px-3 py-2 text-left hover:bg-muted focus:bg-muted focus:outline-none"
+                              >
+                                <span className="font-mono text-sm font-medium text-foreground">
+                                  {p.sku}
                                 </span>
-                                <span aria-hidden>·</span>
-                                <span>{p.commercial_brand ?? "—"}</span>
-                                <span aria-hidden>·</span>
-                                <StatusBadge
-                                  size="sm"
-                                  status={p.status === "active" ? "active" : "neutral"}
-                                  label={p.status === "active" ? "Activo" : "Inactivo"}
-                                />
-                              </span>
-                            </button>
-                          ))}
+                                <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                                  <span className="truncate">
+                                    {p.erp_description ?? "—"}
+                                  </span>
+                                  <span aria-hidden>·</span>
+                                  <span>{p.commercial_brand ?? "—"}</span>
+                                  <span aria-hidden>·</span>
+                                  <StatusBadge
+                                    size="sm"
+                                    status={p.status === "active" ? "active" : "neutral"}
+                                    label={p.status === "active" ? "Activo" : "Inactivo"}
+                                  />
+                                  {agLabel && (
+                                    <>
+                                      <span aria-hidden>·</span>
+                                      <StatusBadge
+                                        size="sm"
+                                        status={agStatus}
+                                        label={agLabel}
+                                      />
+                                    </>
+                                  )}
+                                </span>
+                              </button>
+                            );
+                          })}
                           {searchHasMore && (
                             <div className="border-t border-border p-2">
                               <button
