@@ -1938,8 +1938,8 @@ export function LineEditDialog({
                                 title={title}
                                 sections={sections}
                               />
-                              {!disabled && (
-                                <div className="flex flex-wrap justify-end gap-2">
+                              <div className="flex flex-wrap justify-end gap-2">
+                              {(() => null)()}
                                   {isExcluded ? (
                                     <Button
                                       type="button"
