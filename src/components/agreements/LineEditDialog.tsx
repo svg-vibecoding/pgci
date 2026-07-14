@@ -239,6 +239,7 @@ function ClientCodeCards({
   onReactivated,
   onRequestSwitchToPosition,
   onCreatingIncompleteChange,
+  requiredForClientIds,
 }: {
   clients: ClientCard[];
   values: Map<string, ClientCodeEntry>;
@@ -249,6 +250,7 @@ function ClientCodeCards({
   onReactivated: () => void;
   onRequestSwitchToPosition: (positionId: string) => void;
   onCreatingIncompleteChange: (clientId: string, incomplete: boolean) => void;
+  requiredForClientIds?: Set<string>;
 }) {
   if (clients.length === 0) {
     return (
@@ -269,6 +271,7 @@ function ClientCodeCards({
             agreementId={agreementId}
             initialLineId={initialLineId}
             open={open}
+            required={requiredForClientIds?.has(c.id) ?? false}
             onChange={(next) => onChange(c.id, next)}
             onReactivated={onReactivated}
             onRequestSwitchToPosition={onRequestSwitchToPosition}
