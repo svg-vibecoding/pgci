@@ -2385,11 +2385,19 @@ export function LineEditDialog({
                   );
                   return;
                 }
-                if (requiresNewClientCode && codeEntries.size === 0) {
-                  setSaveError(
-                    "Falta el código de cliente. Este SKU ya está en el acuerdo; esta posición necesita un código que la distinga.",
+                if (requiresNewClientCode) {
+                  // Debe haber al menos un código no vacío de UNO de los clientes
+                  // que ya tienen código en otra posición del SKU.
+                  const hasDesempate = Array.from(codeEntries.entries()).some(
+                    ([clientId, e]) =>
+                      requiredCodeClientIds.has(clientId) && e.code.trim() !== "",
                   );
-                  return;
+                  if (!hasDesempate) {
+                    setSaveError(
+                      `Falta el código de ${requiredClientNames}. Este SKU ya está en el acuerdo con un código de ${requiredClientNames}; para crear otra posición, ${requiredClientNames} debe nombrarla de otra forma.`,
+                    );
+                    return;
+                  }
                 }
                 setSaveError(null);
                 save.mutate();
