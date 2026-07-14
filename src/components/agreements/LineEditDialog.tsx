@@ -1832,7 +1832,178 @@ export function LineEditDialog({
                       </AlertDescription>
                     </Alert>
                   )}
-                  {nConflict.kind === "found" && (
+
+                  {skuInAgreement && (() => {
+                    const positions = skuInAgreement.positions;
+                    const visible = skuPositionsExpanded ? positions : positions.slice(0, 3);
+                    const hidden = positions.length - visible.length;
+                    return (
+                      <div className="space-y-3">
+                        <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 p-3 text-sm text-[var(--status-warning-strong)]">
+                          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                          <div className="space-y-0.5">
+                            <p className="font-medium">
+                              Este SKU ya está en el acuerdo
+                            </p>
+                            <p className="text-xs">
+                              Puedes asignar un SKU a diferentes posiciones del acuerdo,
+                              pero cada posición debe tener un código de cliente que la
+                              distinga.
+                            </p>
+                          </div>
+                        </div>
+
+                        {visible.map((pos) => {
+                          const variant = variantForPositionStatus(pos.position_status);
+                          const title =
+                            pos.position_status === "excluded"
+                              ? "Posición excluida"
+                              : pos.position_status === "requires_review"
+                                ? "Posición en revisión"
+                                : pos.position_status === "draft"
+                                  ? "Registro en gestión"
+                                  : "Posición activa";
+                          const sections: PositionTakenSection[] = [
+                            {
+                              label: "SUMATEC",
+                              body: (
+                                <>
+                                  <span className="font-mono">
+                                    {skuInAgreement.sku}
+                                  </span>
+                                  {" "}· {skuInAgreement.productDescription ?? "—"}
+                                  {pos.sale_price != null && (
+                                    <span className="font-sans font-medium">
+                                      {" "}· {formatMoneyCOP(pos.sale_price)}
+                                    </span>
+                                  )}
+                                </>
+                              ),
+                            },
+                          ];
+                          if (pos.codes.length === 0) {
+                            sections.push({
+                              label: "SIN CÓDIGO DE CLIENTE",
+                              body: (
+                                <span className="text-muted-foreground">
+                                  Esta posición ocupa el SKU sin código que la distinga.
+                                </span>
+                              ),
+                            });
+                          } else {
+                            for (const c of pos.codes) {
+                              sections.push({
+                                label: c.client_name ?? "CLIENTE",
+                                body: (
+                                  <>
+                                    <span className="font-mono">{c.client_code}</span>
+                                    {" "}· {c.description ?? "—"}
+                                  </>
+                                ),
+                              });
+                            }
+                          }
+                          if (pos.position_status === "excluded") {
+                            const dateLabel = (() => {
+                              if (!pos.exclusion_date) return "EXCLUIDA";
+                              const d = new Date(pos.exclusion_date);
+                              if (Number.isNaN(d.getTime())) return "EXCLUIDA";
+                              const s = d.toLocaleDateString("es-CO", {
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric",
+                              });
+                              return `EXCLUIDA EL ${s}`;
+                            })();
+                            sections.push({
+                              label: "MOTIVO DE EXCLUSIÓN",
+                              body: (
+                                <div className="space-y-1.5">
+                                  <p className="text-sm text-muted-foreground">
+                                    {pos.exclusion_reason ?? "—"}
+                                  </p>
+                                  <span className="text-[11px] font-medium text-text-tertiary">
+                                    {dateLabel}
+                                  </span>
+                                </div>
+                              ),
+                            });
+                          }
+                          const hasCode = pos.codes.length > 0;
+                          const isExcluded = pos.position_status === "excluded";
+                          return (
+                            <div key={pos.position_id} className="space-y-2">
+                              <PositionTakenPanel
+                                variant={variant}
+                                title={title}
+                                sections={sections}
+                              />
+                              {!disabled && (
+                                <div className="flex flex-wrap justify-end gap-2">
+                                  {isExcluded ? (
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      onClick={() =>
+                                        onSwitchToPosition?.(pos.position_id)
+                                      }
+                                    >
+                                      Reactivar esa posición
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      onClick={() =>
+                                        onSwitchToPosition?.(pos.position_id)
+                                      }
+                                    >
+                                      Ir a esa posición
+                                    </Button>
+                                  )}
+                                  {isCreatingLine && hasCode && !skuAckRequireNewCode && !skuHasCodelessPosition && (
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => setSkuAckRequireNewCode(true)}
+                                    >
+                                      Registraré un nuevo código del cliente
+                                    </Button>
+                                  )}
+                                  {isCreatingLine && (!hasCode || isExcluded) && (
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={clearSkuSelection}
+                                    >
+                                      Elegir otro SKU
+                                    </Button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+
+                        {hidden > 0 && (
+                          <div className="flex justify-center">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="link"
+                              onClick={() => setSkuPositionsExpanded(true)}
+                            >
+                              Ver {hidden} {hidden === 1 ? "posición más" : "posiciones más"}
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {nConflict.kind === "found" && !isCreatingLine && (
                     <Alert variant="warning" className="p-0 overflow-hidden">
                       <Collapsible open={nExpanded} onOpenChange={setNExpanded}>
                         <CollapsibleTrigger asChild>
