@@ -1701,9 +1701,10 @@ export function LineEditDialog({
                         <div className="max-h-72 overflow-y-auto py-1">
                           {searchResults.map((p) => {
                             const inAg = p.agreement_status.kind === "in_agreement";
-                            const firstPos = inAg
-                              ? p.agreement_status.positions[0]
-                              : null;
+                            const firstPos =
+                              p.agreement_status.kind === "in_agreement"
+                                ? p.agreement_status.positions[0]
+                                : null;
                             const agLabel = !firstPos
                               ? null
                               : firstPos.position_status === "active"
