@@ -1213,6 +1213,9 @@ export function LineEditDialog({
     setSearchQuery("");
     setSearchResults([]);
     setSearchHasMore(false);
+    setSkuInAgreement(null);
+    setSkuAckRequireNewCode(false);
+    setSkuPositionsExpanded(false);
     if (initial?.line_id && next.sku.trim()) {
       void prefillFromSku(next.sku);
     }
