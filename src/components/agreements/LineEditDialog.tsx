@@ -2399,7 +2399,9 @@ export function LineEditDialog({
 
             </div>
           </div>
+          )}
         </div>
+
 
         <div className="px-6 py-4 border-t border-border bg-muted/30 shrink-0 flex flex-col sm:flex-row sm:items-center gap-3">
           {saveError && (
