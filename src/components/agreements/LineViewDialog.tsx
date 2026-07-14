@@ -25,7 +25,7 @@ import { formatMoneyCOP } from "@/lib/format";
 export type LineViewData = {
   id: string;
   kind: "position" | "transit";
-  status: "active" | "requires_review" | "excluded" | "pending";
+  status: "active" | "requires_review" | "excluded" | "pending" | "draft";
   sku: string | null;
   erp_description: string | null;
   commercial_brand: string | null;
@@ -154,12 +154,13 @@ function vigInfo(
 
 const STATUS_LABEL: Record<
   LineViewData["status"],
-  { label: string; status: "active" | "danger" | "neutral" | "warning" }
+  { label: string; status: "active" | "danger" | "neutral" | "warning" | "pending" }
 > = {
   active: { label: "Activa", status: "active" },
   requires_review: { label: "Requiere revisión", status: "danger" },
   excluded: { label: "Excluida", status: "neutral" },
   pending: { label: "Pendiente", status: "warning" },
+  draft: { label: "En gestión", status: "pending" },
 };
 
 export function LineViewDialog({
