@@ -1,43 +1,39 @@
-- Plan: switch "Ver cliente" para mostrar/ocultar la columna de cliente
+## Diagnóstico
 
-### Alcance
+Al crear una posición con "Publicar en acuerdo al guardar" marcado, el paso de publicación **no se ejecuta**. La posición queda en `draft` sin toast de error, sin rastro.
 
-Solo UI en `src/routes/_authenticated/pgci/agreements.$agreementId.lines.tsx`. Sin cambios en datos, backend, ni en `DataTable`.
+Causa raíz — desalineación entre el retorno del RPC y el tipo TS:
 
-### Cambios
+- `create_agreement_line` (Postgres) devuelve `jsonb_build_object('position_id', v_line_id)` — clave `position_id`.
+- `CreateAgreementLineResult` en `src/lib/agreements.functions.ts:559` declara `{ line_id, kind }`. No hay runtime check.
+- `LineEditDialog.tsx:1519` lee `(saveRes as { line_id? }).line_id` → `undefined` → `targetId = null`.
+- El guard de `LineEditDialog.tsx:1527` (`publishOnSave && canPublishNow && targetId && !saveBlocked`) es falso porque `targetId` es null → **`publishFn` nunca se llama**. Silencioso: no hay toast de fallo porque el flujo cree que no había que publicar.
 
-1. **Estado local**
-  - Añadir `const [showClientCol, setShowClientCol] = useState(true)` en el componente de la vista de posiciones.
-  - Persistir opcionalmente en `localStorage` con clave `pgci.lines.showClientCol` para que la preferencia sobreviva a la navegación (misma vista, mismo usuario). Si prefieres sin persistencia, lo dejamos solo en memoria.
-2. **Toolbar (fila del buscador, ~línea 737)**
-  - A la derecha del input de búsqueda (antes del botón de códigos repetidos), añadir un bloque:
-    - `<Switch>` de shadcn + `<Label>` con texto **"Ver cliente"**.
-    - Tipografía tenue ya usada en la vista: `suma-body text-text-tertiary` (misma que usan los labels sutiles del toolbar y de las cards).
-    - `aria-label="Mostrar columna de cliente"`, `htmlFor` enlazado al Switch.
-  - Layout: `<div className="flex items-center gap-2 shrink-0">` para que no se rompa el wrap del toolbar en mobile.
-3. **Columnas (línea ~999)**
-  - La primera columna (selector de cliente) se construye condicionalmente:
-  - `clientColumn` conserva su `width` actual.
-  - `jaivanaColumn`: cuando `showClientCol` es `false`, no se toca su definición — al ser columna flexible (sin `width` fijo), `DataTable` reparte automáticamente el sobrante y Jaivaná toma el espacio libre. Si hoy Jaivaná tiene `width` fijo, en ese caso quitamos el width y le dejamos `flex: 1` para que absorba el ancho.
-4. **Interacción**
-  - Apagar el switch oculta la columna sin perder el cliente seleccionado internamente (el estado `only`/cliente activo sigue vivo; solo se oculta la UI).
-  - Encender el switch la vuelve a mostrar con el mismo cliente que tenía.
+En edición no ocurre porque `targetId = initial!.line_id!` (viene del prop, no del retorno del RPC).
 
-### Verificación
+La validación cliente (`canPublishNow`) y el RPC `publish_positions` son correctos. No hay que tocar reglas ni backend.
 
-- Con switch ON: columna cliente visible, ancho igual al actual.
-- Con switch OFF: columna desaparece, Jaivaná ocupa el hueco, resto de columnas intactas.
-- Búsqueda, selección de filas, menú de acciones y modales siguen funcionando igual.
+## Cambios
 
-### Fuera de alcance
+**1. `src/lib/agreements.functions.ts` — alinear tipo al contrato real del RPC**
 
-- No se cambia la lógica del selector de cliente ni cómo se guardan códigos.
-- No se toca `DataTable`, ni otros componentes, ni SQL.
-- No se agrega el switch a otras vistas.
+- `CreateAgreementLineResult`: cambiar `line_id: string` por `position_id: string`. Quitar `kind` (el RPC no lo devuelve; `kind` es un discriminador de UI que no aplica al crear posiciones — todas nacen `position`).
 
-### Preguntas rápidas
+**2. `src/components/agreements/LineEditDialog.tsx` — leer la clave correcta**
 
-1. ¿Persistimos la preferencia en `localStorage` (recomendado) o solo en memoria de la vista?
-2. Default al entrar: ¿**ON** (como hoy) u **OFF** (más limpio si mayormente no se usa)?
+- Línea 1519: `targetId = (saveRes as { position_id?: string } | null)?.position_id ?? null`.
+- Línea 1565 (`r?.kind === "transit"` en la rama create de `isPending`): al crear no hay `transit`; la posición nace `draft`. Sustituir por `isPending = isCreate ? false : (!!r?.transit_id && !isPromotion)`. El toast "pendiente" en creación ya no aplica (cuando falta algo, la publicación falla y cae al toast de `publishFailed`; cuando el usuario no marcó publicar, cae al toast "Registro creado en gestión" existente).
 
-Apruebo el plan. Respondo a tus preguntas. 1. Si, tu recomendación está bien. 2. Default Off. 
+Ningún otro consumidor de `CreateAgreementLineResult` lee `line_id`/`kind` — verificado con búsqueda antes de escribir el parche.
+
+## Validación
+
+Reproducir el caso en preview:
+- SKU válido activo, precio > 0, fechas vigentes, marcar "Publicar al guardar" → se espera toast "Posición creada y publicada" y estado `active` en la lista.
+- Igual pero con precio 0 → checkbox se desactiva solo (`canPublishNow=false`), botón dice "Guardar", cae a `draft` (comportamiento actual, correcto).
+- Igual pero con SKU inactivo → checkbox activo (validación cliente no lo detecta), publish RPC devuelve `not_publishable` con `reason=sku_inactive` → toast "No se pudo publicar: sku_inactive". Posición queda `requires_review` según trigger. Este flanco existe hoy y sigue igual — fuera de alcance ampliar la validación cliente por estado de SKU salvo que lo pidas.
+
+## Fuera de alcance
+
+- RPC `publish_positions`, `create_agreement_line`, triggers de estado, RN-MATCH-01, guardián de identidad, buscador de SKU, modelo de estados.
+- Añadir validación cliente de `status` de producto (el catálogo ya trae `status` en el lookup — se puede sumar en otra iteración si lo pides explícitamente).

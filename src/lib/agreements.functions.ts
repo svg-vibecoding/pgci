@@ -557,8 +557,7 @@ export type BlockReason = {
 };
 
 export type CreateAgreementLineResult = {
-  line_id: string;
-  kind: "position" | "transit";
+  position_id: string;
 };
 
 export type UpdateAgreementLineResult = {
