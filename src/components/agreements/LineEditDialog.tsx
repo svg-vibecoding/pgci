@@ -1515,8 +1515,8 @@ export function LineEditDialog({
             observations: txt(v.observations) ?? undefined,
           },
         });
-        // create_agreement_line devuelve { line_id, kind }
-        targetId = (saveRes as { line_id?: string } | null)?.line_id ?? null;
+        // create_agreement_line devuelve { position_id }
+        targetId = (saveRes as { position_id?: string } | null)?.position_id ?? null;
       }
 
       // Encadenado publicar-al-guardar. Se salta si el guardado quedó bloqueado
@@ -1562,7 +1562,7 @@ export function LineEditDialog({
       const isCreate = !isEdit;
       const isPromotion = r?.promoted === true;
       const isPending = isCreate
-        ? r?.kind === "transit"
+        ? false
         : !!r?.transit_id && !isPromotion;
       // Con publicación exitosa el toast principal es "publicada".
       const publishedOk =
