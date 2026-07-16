@@ -733,6 +733,7 @@ export const lookupProductBySku = createServerFn({ method: "POST" })
 export type ProductAgreementPosition = {
   position_id: string;
   position_status: "active" | "excluded" | "requires_review" | "draft";
+  published_at: string | null;
   sale_price: number | null;
   codes: Array<{
     client_id: string;
