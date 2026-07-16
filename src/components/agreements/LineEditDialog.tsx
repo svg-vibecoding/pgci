@@ -1460,6 +1460,41 @@ export function LineEditDialog({
     return s;
   }, [undistinguishedSiblings]);
 
+  // canRemoveClientIds: para cada cliente con código en esta posición, simular
+  // la lista sin ese cliente y aplicar la regla par a par de
+  // position_has_sku_conflict. Si tras quitarlo alguna hermana publicada queda
+  // sin distinguirse contra mí, no se puede quitar (rompería el desempate).
+  // "Editar" no pasa por acá — reemplazar sigue permitido.
+  const canRemoveClientIds = useMemo<Set<string>>(() => {
+    const out = new Set<string>();
+    if (!productId || !skuInAgreement) {
+      for (const [cid, e] of codeEntries) {
+        if (e && e.code && e.code.trim() !== "") out.add(cid);
+      }
+      return out;
+    }
+    const publishedSiblings = skuInAgreement.positions.filter(
+      (p) => p.published_at != null,
+    );
+    const myClientsWithCode = new Set<string>();
+    for (const [cid, e] of codeEntries) {
+      if (e && e.code && e.code.trim() !== "") myClientsWithCode.add(cid);
+    }
+    for (const cid of myClientsWithCode) {
+      const simulated = new Set(myClientsWithCode);
+      simulated.delete(cid);
+      const stillDistinguished = publishedSiblings.every((p) => {
+        for (const c of p.codes) {
+          if (simulated.has(c.client_id)) return true;
+        }
+        return false;
+      });
+      if (stillDistinguished) out.add(cid);
+    }
+    return out;
+  }, [productId, skuInAgreement, codeEntries]);
+
+
   // isPublishableDraft(values): completa (SKU, precio, fecha inicio) y vigente
   // (fecha efectiva de fin no vencida). Usa las fechas efectivas del acuerdo
   // cuando la posición no las trae, coincidiendo con publish_positions RPC.
