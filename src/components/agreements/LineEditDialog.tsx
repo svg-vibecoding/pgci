@@ -2429,7 +2429,7 @@ export function LineEditDialog({
                 setSaveError(null);
                 save.mutate();
               }}
-              disabled={save.isPending || hasCreatingIncomplete || skuBlocksForm}
+              disabled={save.isPending || hasCreatingIncomplete}
             >
               {save.isPending
                 ? "Guardando…"
