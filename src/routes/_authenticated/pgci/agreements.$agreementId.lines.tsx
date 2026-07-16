@@ -1140,8 +1140,8 @@ function AgreementLinesPage() {
           {
             id: "status",
             header: "Estado",
-            width: 130,
-            wrap: false,
+            width: 170,
+            wrap: true,
             cell: (r) => {
               const covers = coversTodayOf(
                 (r.end_date as string | null) ?? null,
