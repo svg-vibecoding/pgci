@@ -29,6 +29,7 @@ export function RowActionsMenu<T>({ row, actions, ariaLabel }: Props<T>) {
           <DropdownMenuItem
             key={i}
             disabled={a.disabled}
+            title={a.title}
             onSelect={() => {
               a.onSelect(row);
             }}
