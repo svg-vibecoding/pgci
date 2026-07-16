@@ -287,6 +287,7 @@ function ClientCodeCards({
             onCreatingIncompleteChange={(incomplete) =>
               onCreatingIncompleteChange(c.id, incomplete)
             }
+            isCreate={isCreate}
           />
         );
       })}
