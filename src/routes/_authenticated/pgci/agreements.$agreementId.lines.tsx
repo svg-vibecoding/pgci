@@ -749,7 +749,6 @@ function AgreementLinesPage() {
     { key: "active", label: "Posiciones activas", value: num(agreement.lines_active) },
     { key: "requires_review", label: "Requieren revisión", value: num(agreement.lines_review) },
     { key: "draft", label: "En gestión", value: num(agreement.lines_draft) },
-    { key: "expired", label: "Vencidas", value: num(agreement.lines_expired) },
     { key: "excluded", label: "Excluidas", value: num(agreement.lines_excluded) },
   ];
   const totalCount = summaryCards.reduce((s, c) => s + c.value, 0);
