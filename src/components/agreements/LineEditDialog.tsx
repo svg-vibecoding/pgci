@@ -830,25 +830,66 @@ function ClientCodeCard({
           )}
           {takenAlert}
           {takenActions}
-          <div className="space-y-1.5">
-            <FieldLabel>Código</FieldLabel>
-            <Input
-              value={entry.code}
-              disabled={disabled}
-              readOnly
-              tabIndex={-1}
-              className={cn("font-mono", readonlyClass)}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <FieldLabel required>Descripción del producto</FieldLabel>
-            <Input
-              value={entry.description}
-              disabled={disabled}
-              className={disabled ? readonlyClass : ""}
-              onChange={(e) => onChange({ ...entry, description: e.target.value })}
-            />
-          </div>
+          {isCreate ? (
+            <>
+              <div className="space-y-1.5">
+                <FieldLabel>Código</FieldLabel>
+                <Input
+                  value={entry.code}
+                  disabled={disabled}
+                  readOnly
+                  tabIndex={-1}
+                  className={cn("font-mono", readonlyClass)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <FieldLabel required>Descripción del producto</FieldLabel>
+                <Input
+                  value={entry.description}
+                  disabled={disabled}
+                  className={disabled ? readonlyClass : ""}
+                  onChange={(e) => onChange({ ...entry, description: e.target.value })}
+                />
+              </div>
+            </>
+          ) : (
+            <div className="space-y-1">
+              <div className="font-mono text-base font-semibold text-foreground">
+                {entry.code || "—"}
+              </div>
+              {!showDescriptionEdit && (
+                <div className="text-sm text-foreground">
+                  {entry.description?.trim() ? entry.description : "—"}
+                </div>
+              )}
+              {showDescriptionEdit && (
+                <div className="space-y-1.5 pt-2">
+                  <FieldLabel required>Descripción del producto</FieldLabel>
+                  <Input
+                    value={entry.description}
+                    disabled={disabled}
+                    className={disabled ? readonlyClass : ""}
+                    onChange={(e) => onChange({ ...entry, description: e.target.value })}
+                  />
+                  {!disabled && (
+                    <div className="flex justify-end">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          onChange({ ...entry, description: originalDescription ?? "" });
+                          setShowDescriptionEdit(false);
+                        }}
+                      >
+                        Descartar
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
           {descriptionChanged && !disabled && (
             <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-[var(--status-warning-strong)]">
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--status-warning-strong)]" />
