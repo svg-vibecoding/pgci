@@ -1453,6 +1453,8 @@ function AgreementLinesPage() {
                         const busy = linkingProductId === g.product_id;
                         const price = g.prices[0];
                         const canLink = g.state === "repeated" && price != null;
+                        const linkDisabledReason =
+                          "Vinculación de precios temporalmente deshabilitada mientras se estabiliza el modelo de posiciones.";
                         return (
                           <SkuGroupCard
                             key={g.product_id}
@@ -1463,19 +1465,17 @@ function AgreementLinesPage() {
                             onAction={() => {
                               if (g.state === "conflict") {
                                 openEditForLine(g.position_ids[0]);
-                              } else if (canLink) {
-                                linkMut.mutate({ product_id: g.product_id, price });
                               }
+                              // Vinculación deshabilitada — no-op para 'repeated'.
                             }}
                             actionLabel={
                               g.state === "conflict"
                                 ? "Revisar"
-                                : busy
-                                  ? "Vinculando…"
-                                  : "Vincular"
+                                : "Vincular"
                             }
                             actionType={g.state === "conflict" ? "review" : "link"}
-                            actionDisabled={g.state === "repeated" && (busy || !canLink)}
+                            actionDisabled={g.state === "repeated" || (g.state !== "conflict" && (busy || !canLink))}
+                            actionTitle={g.state === "repeated" ? linkDisabledReason : undefined}
                             fmtMoney={fmtMoney}
                           />
                         );
