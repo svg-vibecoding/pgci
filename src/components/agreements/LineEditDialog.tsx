@@ -690,7 +690,7 @@ function ClientCodeCard({
         <>
           {searchBlock(searchPlaceholder)}
           <div className="space-y-1.5">
-            <FieldLabel>CÓDIGO</FieldLabel>
+            <FieldLabel required>Código</FieldLabel>
             <Input
               value={entry.code}
               disabled={disabled}
@@ -699,7 +699,7 @@ function ClientCodeCard({
             />
           </div>
           <div className="space-y-1.5">
-            <FieldLabel>DESCRIPCIÓN DEL PRODUCTO</FieldLabel>
+            <FieldLabel required>Descripción del producto</FieldLabel>
             <Input
               value={entry.description}
               disabled={disabled}
