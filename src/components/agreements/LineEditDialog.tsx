@@ -1448,6 +1448,21 @@ export function LineEditDialog({
     return myClientIds.every((cid) => siblingClientIds.has(cid));
   }, [isEdit, productId, skuInAgreement, codeEntries]);
 
+  // requiredClientIds: en creación, si el SKU ya tiene posiciones PUBLICADAS
+  // en el acuerdo, marcar como "* Requerido" a los clientes que ya nombran
+  // ese SKU. Basta un código de CUALQUIERA de esos clientes para desempatar
+  // (RN-MATCH-01). El `*` es aviso — no bloquea el guardado (D-05).
+  const requiredClientIds = useMemo<Set<string>>(() => {
+    if (isEdit) return new Set();
+    if (!productId || !skuInAgreement) return new Set();
+    const s = new Set<string>();
+    for (const p of skuInAgreement.positions) {
+      if (p.published_at == null) continue;
+      for (const c of p.codes) s.add(c.client_id);
+    }
+    return s;
+  }, [isEdit, productId, skuInAgreement]);
+
   // isPublishableDraft(values): completa (SKU, precio, fecha inicio) y vigente
   // (fecha efectiva de fin no vencida). Usa las fechas efectivas del acuerdo
   // cuando la posición no las trae, coincidiendo con publish_positions RPC.
