@@ -1020,7 +1020,23 @@ function AgreementLinesPage() {
       {(activeCard !== "all" || q.trim() || skuConflictOnly) && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <p className="suma-body text-text-secondary">
-            {`${filtered.length} de ${totalCount} ${totalCount === 1 ? "posición" : "posiciones"}`}
+            {(() => {
+              const term = q.trim().toLowerCase();
+              const visibleCount =
+                activeCard === "archived"
+                  ? (archivedRows ?? []).filter(
+                      (r) =>
+                        !term ||
+                        [
+                          r.sku ?? "",
+                          r.product_description ?? "",
+                          r.product_brand ?? "",
+                          r.archive_reason,
+                        ].some((s) => s.toLowerCase().includes(term)),
+                    ).length
+                  : filtered.length;
+              return `${visibleCount} de ${totalCount} ${totalCount === 1 ? "posición" : "posiciones"}`;
+            })()}
           </p>
           <div className="flex flex-wrap gap-2">
             {activeCard !== "all" && (
