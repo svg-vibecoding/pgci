@@ -801,6 +801,18 @@ function ClientCodeCard({
       {mode === "edit" && (
         <>
           {showCodeSearch && searchBlock(searchPlaceholder)}
+          {showCodeSearch && card.can_manage && !takenBlock && (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={handleCreateNew}
+                className="inline-flex items-center gap-1 text-xs font-medium text-info hover:text-info-strong focus:outline-none focus:underline"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Crear producto en el catálogo de {card.name}
+              </button>
+            </div>
+          )}
           {takenAlert}
           {takenActions}
           <div className="space-y-1.5">
@@ -832,42 +844,9 @@ function ClientCodeCard({
               </span>
             </div>
           )}
-          {!disabled && (
-            <div className="flex justify-end">
-              <button
-                type="button"
-                disabled={!canRemove}
-                onClick={() => {
-                  onRemove();
-                  setMode("search");
-                  setOriginalDescription(null);
-                  setIsNew(false);
-                  setQuery("");
-                  setResults([]);
-                  setExpandedId(null);
-                  setPopoverOpen(false);
-                  setTakenBlock(null);
-                  setShowCodeSearch(false);
-                }}
-                title={
-                  canRemove
-                    ? undefined
-                    : "Este código distingue esta posición de otra del mismo SKU. Puedes editarlo, pero no quitarlo."
-                }
-                className={cn(
-                  "text-xs font-medium focus:outline-none focus:underline",
-                  canRemove
-                    ? "text-destructive hover:underline"
-                    : "text-destructive/40 cursor-not-allowed",
-                )}
-              >
-                Quitar relación
-              </button>
-            </div>
-          )}
-
         </>
       )}
+
 
 
       {disabled && (
