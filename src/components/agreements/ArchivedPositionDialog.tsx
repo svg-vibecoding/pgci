@@ -285,18 +285,24 @@ export function ArchivedPositionDialog({ open, onOpenChange, archivedId }: Props
 
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <DialogTitle className="suma-h3 text-text-primary font-mono">
-                      {data.position.sku ?? "—"}
-                    </DialogTitle>
+                    <div className="flex flex-wrap items-baseline gap-x-2">
+                      <DialogTitle className="suma-h3 text-text-primary font-mono">
+                        {data.position.sku ?? "—"}
+                      </DialogTitle>
+                      {data.position.product_brand && (
+                        <>
+                          <span className="suma-overline text-text-tertiary">·</span>
+                          <span className="suma-overline text-text-tertiary">
+                            {data.position.product_brand}
+                          </span>
+                        </>
+                      )}
+                    </div>
                     <DialogDescription className="text-text-secondary mt-0.5">
                       {data.position.product_description ?? " "}
                     </DialogDescription>
-                    {data.position.product_brand && (
-                      <div className="mt-1 suma-overline text-text-tertiary">
-                        {data.position.product_brand}
-                      </div>
-                    )}
                   </div>
+
                   <StatusBadge
                     status={
                       data.position.original_status === "active"
