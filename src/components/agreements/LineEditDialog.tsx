@@ -2171,7 +2171,25 @@ export function LineEditDialog({
                   )}
 
 
-                  {hasProduct && (
+                  {hasProduct && isEdit && (
+                    <div className="space-y-1">
+                      <div className="flex items-baseline gap-3 flex-wrap">
+                        <span className="font-mono text-base font-semibold text-foreground">
+                          {v.sku || "—"}
+                        </span>
+                        {productMeta?.commercial_brand && (
+                          <span className="text-xs text-muted-foreground uppercase tracking-wide">
+                            {productMeta.commercial_brand}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-sm text-foreground">
+                        {productMeta?.erp_description ?? "—"}
+                      </div>
+                    </div>
+                  )}
+
+                  {hasProduct && !isEdit && (
                     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                       <div className="space-y-1.5">
                         <FieldLabel>Código Jaivaná</FieldLabel>
