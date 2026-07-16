@@ -30,6 +30,8 @@ export type StatusBadgeProps = Omit<HTMLAttributes<HTMLSpanElement>, "color"> & 
   size?: "sm" | "md";
   /** Muestra el icono junto a la etiqueta (default: true). */
   withIcon?: boolean;
+  /** Sobrescribe el icono por defecto del estado. */
+  icon?: LucideIcon;
 };
 
 const STATUS_CONFIG: Record<
