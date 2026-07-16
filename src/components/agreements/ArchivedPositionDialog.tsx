@@ -585,6 +585,43 @@ export function ArchivedPositionDialog({ open, onOpenChange, archivedId }: Props
                         Contexto del acuerdo al archivarse
                       </div>
 
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-baseline gap-x-2">
+                            <span className="suma-h3 text-text-primary">
+                              {ctx.agreement.name}
+                            </span>
+                            <span className="suma-overline text-text-tertiary">·</span>
+                            <span className="suma-overline text-text-tertiary">
+                              {ctx.agreement.scope === "unit"
+                                ? `Unidad · ${ctx.agreement.unit_name ?? "—"}`
+                                : "Global"}
+                            </span>
+                          </div>
+                          <div className="text-text-secondary mt-0.5 text-[13px]">
+                            Vigencia {fmtDate(ctx.agreement.start_date)} → {fmtDate(ctx.agreement.end_date)}
+                          </div>
+                        </div>
+
+                        <StatusBadge
+                          status={
+                            ctx.agreement.status === "active"
+                              ? "active"
+                              : ctx.agreement.status === "draft"
+                                ? "neutral"
+                                : "danger"
+                          }
+                          label={
+                            ctx.agreement.status === "active"
+                              ? "Activo"
+                              : ctx.agreement.status === "draft"
+                                ? "En gestión"
+                                : ctx.agreement.status
+                          }
+                        />
+                      </div>
+
+
                       <div>
                         <div className="suma-overline text-text-tertiary mb-1.5 flex items-center gap-1">
                           <Building2 className="h-3 w-3" />
