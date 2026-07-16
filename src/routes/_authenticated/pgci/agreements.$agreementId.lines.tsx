@@ -1182,7 +1182,11 @@ function AgreementLinesPage() {
               return (
                 <div className="flex flex-col items-start gap-1">
                   {showStatusBadge && (
-                    <StatusBadge status={meta!.status} label={meta!.label} />
+                    <StatusBadge
+                      status={meta!.status}
+                      label={meta!.label}
+                      icon={badgeKey === "draft" ? Pencil : undefined}
+                    />
                   )}
                   {readyToPublish && (
                     <StatusBadge status="active" label="OK para publicar" />

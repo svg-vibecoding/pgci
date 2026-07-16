@@ -30,6 +30,8 @@ export type StatusBadgeProps = Omit<HTMLAttributes<HTMLSpanElement>, "color"> & 
   size?: "sm" | "md";
   /** Muestra el icono junto a la etiqueta (default: true). */
   withIcon?: boolean;
+  /** Sobrescribe el icono por defecto del estado. */
+  icon?: LucideIcon;
 };
 
 const STATUS_CONFIG: Record<
@@ -56,12 +58,13 @@ export function StatusBadge({
   label,
   size = "md",
   withIcon = true,
+  icon,
   style,
   ...rest
 }: StatusBadgeProps) {
   const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.neutral;
   const text = label !== undefined ? label : cfg.label;
-  const Icon = cfg.icon;
+  const Icon = icon ?? cfg.icon;
   const sm = size === "sm";
 
   const badgeStyle: CSSProperties = {
