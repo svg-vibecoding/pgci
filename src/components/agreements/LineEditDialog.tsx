@@ -1643,8 +1643,33 @@ export function LineEditDialog({
     return missing;
   };
 
+  // R-09: si cambia el SKU en una posición publicada, exigimos que el usuario
+  // declare la naturaleza del cambio (cambio real vs corrección) antes de
+  // guardar. La etiqueta y la nota se propagan al patch de la RPC, que las
+  // escribe en el cierre del tramo de precio y en los códigos que cierra.
+  const isSkuChangeOnPublished = useMemo(() => {
+    if (!isEdit) return false;
+    if (!initial?.status || initial.status === "draft") return false;
+    if (!productId) return false;
+    const before = (initial?.sku ?? "").trim();
+    const after = v.sku.trim();
+    return before !== "" && after !== "" && before !== after;
+  }, [isEdit, initial?.status, initial?.sku, v.sku, productId]);
+
+  type SkuChangeChoice = { kind: "sku_changed" | "sku_corrected"; note?: string };
+  const [skuChangePrompt, setSkuChangePrompt] = useState<{
+    open: boolean;
+    kind: "sku_changed" | "sku_corrected" | null;
+    note: string;
+  }>({ open: false, kind: null, note: "" });
+
+  useEffect(() => {
+    // Reset del prompt al cerrar el diálogo o cambiar de posición editada.
+    if (!open) setSkuChangePrompt({ open: false, kind: null, note: "" });
+  }, [open, initial?.line_id]);
+
   const save = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (choice: SkuChangeChoice | undefined = undefined) => {
       const num = (s: string) => {
         const n = parsePriceInput(s);
         return n == null ? undefined : n;
@@ -1674,6 +1699,10 @@ export function LineEditDialog({
               start_date: txt(v.start_date) ?? undefined,
               end_date: txt(v.end_date) ?? undefined,
               observations: txt(v.observations) ?? undefined,
+              // R-09: la RPC valida obligatoriedad. Solo se envían si el
+              // usuario declaró el motivo del cambio de SKU.
+              sku_change_kind: choice?.kind,
+              sku_change_note: choice?.note,
             },
             confirm_n_conflict: true,
           },
@@ -2576,7 +2605,11 @@ export function LineEditDialog({
                   return;
                 }
                 setSaveError(null);
-                save.mutate();
+                if (isSkuChangeOnPublished) {
+                  setSkuChangePrompt({ open: true, kind: null, note: "" });
+                  return;
+                }
+                save.mutate(undefined);
               }}
               disabled={save.isPending || hasCreatingIncomplete}
             >
@@ -2593,6 +2626,128 @@ export function LineEditDialog({
 
 
       </DialogContent>
+
+      {/* R-09 · AlertDialog: motivo del cambio de SKU en posición publicada. */}
+      <AlertDialog
+        open={skuChangePrompt.open}
+        onOpenChange={(o) =>
+          setSkuChangePrompt((p) => ({ ...p, open: o }))
+        }
+      >
+        <AlertDialogContent className="max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Por qué cambia el SKU?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta decisión define cómo se lee la historia comercial de la
+              posición. No cambia lo que se guarda; cambia lo que significa.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="space-y-3 py-2">
+            <label
+              className={cn(
+                "flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors",
+                skuChangePrompt.kind === "sku_changed"
+                  ? "border-primary bg-primary/5"
+                  : "border-border hover:bg-muted/40",
+              )}
+            >
+              <input
+                type="radio"
+                name="sku-change-kind"
+                className="mt-1"
+                checked={skuChangePrompt.kind === "sku_changed"}
+                onChange={() =>
+                  setSkuChangePrompt((p) => ({ ...p, kind: "sku_changed" }))
+                }
+              />
+              <span className="flex flex-col gap-1">
+                <span className="suma-body font-medium text-text-primary">
+                  Cambio real
+                </span>
+                <span className="suma-caption text-text-tertiary">
+                  El producto pactado cambió. El precio anterior fue un precio
+                  real de {(initial?.sku ?? "").trim() || "el SKU anterior"}.
+                </span>
+              </span>
+            </label>
+
+            <label
+              className={cn(
+                "flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors",
+                skuChangePrompt.kind === "sku_corrected"
+                  ? "border-primary bg-primary/5"
+                  : "border-border hover:bg-muted/40",
+              )}
+            >
+              <input
+                type="radio"
+                name="sku-change-kind"
+                className="mt-1"
+                checked={skuChangePrompt.kind === "sku_corrected"}
+                onChange={() =>
+                  setSkuChangePrompt((p) => ({ ...p, kind: "sku_corrected" }))
+                }
+              />
+              <span className="flex flex-col gap-1 w-full">
+                <span className="suma-body font-medium text-text-primary">
+                  Corrección
+                </span>
+                <span className="suma-caption text-text-tertiary">
+                  El SKU estaba mal escrito. El precio anterior no era de
+                  {" "}
+                  {(initial?.sku ?? "").trim() || "ese SKU"}.
+                </span>
+                {skuChangePrompt.kind === "sku_corrected" && (
+                  <Textarea
+                    className="mt-2"
+                    rows={3}
+                    maxLength={500}
+                    placeholder="¿Por qué se corrigió? (obligatorio)"
+                    value={skuChangePrompt.note}
+                    onChange={(e) =>
+                      setSkuChangePrompt((p) => ({ ...p, note: e.target.value }))
+                    }
+                  />
+                )}
+              </span>
+            </label>
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={
+                !skuChangePrompt.kind ||
+                (skuChangePrompt.kind === "sku_corrected" &&
+                  skuChangePrompt.note.trim().length === 0)
+              }
+              onClick={(e) => {
+                e.preventDefault();
+                if (!skuChangePrompt.kind) return;
+                if (
+                  skuChangePrompt.kind === "sku_corrected" &&
+                  skuChangePrompt.note.trim().length === 0
+                )
+                  return;
+                const choice: SkuChangeChoice = {
+                  kind: skuChangePrompt.kind,
+                  note:
+                    skuChangePrompt.kind === "sku_corrected"
+                      ? skuChangePrompt.note.trim()
+                      : undefined,
+                };
+                setSkuChangePrompt({ open: false, kind: null, note: "" });
+                save.mutate(choice);
+              }}
+            >
+              Confirmar y guardar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+
 
       {/* AlertDialog: perderás cambios sin guardar al editar otra posición */}
       <AlertDialog

@@ -388,6 +388,7 @@ export type Database = {
           ended_by: string | null
           ended_reason: string | null
           id: string
+          sku_change_kind: string | null
           started_by: string | null
           valid_from: string
           valid_until: string | null
@@ -401,6 +402,7 @@ export type Database = {
           ended_by?: string | null
           ended_reason?: string | null
           id?: string
+          sku_change_kind?: string | null
           started_by?: string | null
           valid_from?: string
           valid_until?: string | null
@@ -414,6 +416,7 @@ export type Database = {
           ended_by?: string | null
           ended_reason?: string | null
           id?: string
+          sku_change_kind?: string | null
           started_by?: string | null
           valid_from?: string
           valid_until?: string | null
@@ -510,9 +513,12 @@ export type Database = {
           end_date: string | null
           id: string
           position_id: string
+          product_id: string | null
           recorded_at: string
           recorded_by: string | null
           sale_price: number
+          sku_change_kind: string | null
+          sku_change_note: string | null
           start_date: string | null
         }
         Insert: {
@@ -520,9 +526,12 @@ export type Database = {
           end_date?: string | null
           id?: string
           position_id: string
+          product_id?: string | null
           recorded_at?: string
           recorded_by?: string | null
           sale_price: number
+          sku_change_kind?: string | null
+          sku_change_note?: string | null
           start_date?: string | null
         }
         Update: {
@@ -530,9 +539,12 @@ export type Database = {
           end_date?: string | null
           id?: string
           position_id?: string
+          product_id?: string | null
           recorded_at?: string
           recorded_by?: string | null
           sale_price?: number
+          sku_change_kind?: string | null
+          sku_change_note?: string | null
           start_date?: string | null
         }
         Relationships: [
@@ -541,6 +553,13 @@ export type Database = {
             columns: ["position_id"]
             isOneToOne: false
             referencedRelation: "agreement_positions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreement_position_price_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]

@@ -612,6 +612,8 @@ export const updateAgreementLine = createServerFn({ method: "POST" })
     });
     if (error) {
       if (error.code === "42501") throw new Error("No tienes permisos sobre este acuerdo");
+      // R-09: la RPC exige etiqueta y (si corrección) nota cuando cambia el SKU.
+      if (error.code === "22023") throw new Error(error.message);
       throw new Error(`No se pudo actualizar la línea: ${error.message}`);
     }
     return rpcRes as unknown as UpdateAgreementLineResult;
