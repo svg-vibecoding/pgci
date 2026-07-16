@@ -703,7 +703,7 @@ function ClientCodeCard({
       {mode === "search" && (
         <>
           {searchBlock(searchPlaceholder)}
-          {isCreate && card.can_manage && !takenBlock && (
+          {card.can_manage && !takenBlock && (
             <div className="flex justify-end">
               <button
                 type="button"
