@@ -105,6 +105,13 @@ export type LineEditValues = {
   start_date: string;
   end_date: string;
   observations: string;
+  // Datos del producto ya conocidos por la lista. Se usan solo como semilla
+  // en el modal de edición para evitar el parpadeo mientras `lookupProductBySku`
+  // refresca en segundo plano. Nunca se envían al backend.
+  erp_description?: string | null;
+  commercial_brand?: string | null;
+  product_status?: string | null;
+  product_updated_at?: string | null;
 };
 
 const empty: LineEditValues = {
