@@ -1930,17 +1930,9 @@ export function LineEditDialog({
                           // Un solo CTA de edición por posición.
                           const editLabel = isExcluded
                             ? "Reactivar esa posición"
-                            : !hasCode
-                              ? "Ir a esa posición"
-                              : hasMissingClient
-                                ? "Agregar códigos de cliente a esa posición"
-                                : null;
-                          const showEditCta = isCreatingLine
-                            ? !skuAckRequireNewCode && editLabel !== null
-                            : true;
-                          const nonCreateLabel = isExcluded
-                            ? "Reactivar esa posición"
                             : "Ir a esa posición";
+                          const showEditCta = true;
+
                           return (
                             <div key={pos.position_id} className="space-y-1">
                               <PositionTakenPanel
