@@ -182,6 +182,11 @@ export const transitDeleteSchema = z.object({
   transit_id: z.string().uuid(),
 });
 
+export const lineDeleteSchema = z.object({
+  line_id: z.string().uuid(),
+});
+
+
 export const lineExcludeSchema = z.object({
   line_id: z.string().uuid(),
   reason: z
