@@ -352,15 +352,16 @@ export function ArchivedPositionDialog({ open, onOpenChange, archivedId }: Props
 
             {/* Línea de tiempo — la historia */}
             <div className="px-6 py-5">
-              <div className="mb-3 flex items-center gap-2">
-                <History className="h-4 w-4 text-text-tertiary" />
-                <h3 className="suma-label text-text-primary">
+              <div className="mb-4 flex items-center gap-2">
+                <History className="h-5 w-5 text-text-primary" />
+                <h3 className="suma-h4 text-text-primary tracking-tight">
                   Línea de tiempo
                 </h3>
                 <span className="text-[12px] text-text-tertiary">
                   ({timeline.length} eventos)
                 </span>
               </div>
+
 
               <ol className="relative ml-3 border-l border-border">
                 {timeline.map((e) => (
