@@ -1185,27 +1185,7 @@ function AgreementLinesPage() {
                     <StatusBadge status={meta!.status} label={meta!.label} />
                   )}
                   {readyToPublish && (
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 4,
-                        height: 20,
-                        padding: "0 8px",
-                        fontFamily: "var(--font-ui)",
-                        fontWeight: "var(--fw-bold)",
-                        fontSize: 11,
-                        lineHeight: 1,
-                        letterSpacing: "0.02em",
-                        whiteSpace: "nowrap",
-                        color: "var(--success-strong)",
-                        background: "transparent",
-                        border: "1px solid var(--success-strong)",
-                        borderRadius: "var(--radius-pill)",
-                      }}
-                    >
-                      OK para publicar
-                    </span>
+                    <StatusBadge status="active" label="OK para publicar" />
                   )}
                   {reasonTokens.length > 0 && (
                     <div className="flex flex-wrap gap-1">
