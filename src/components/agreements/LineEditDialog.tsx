@@ -1507,11 +1507,10 @@ export function LineEditDialog({
     const tokens: string[] = [];
     if (!productId || v.sku.trim() === "") tokens.push("no_sku");
     if (productId && lookup.kind === "inactive") tokens.push("sku_inactive");
-    // sku_conflict: en creación lo detectamos localmente; en edición lo
-    // heredamos del backend porque depende de las contrapartes.
-    const backendHasConflict =
-      isEdit && (initial?.pending_reason ?? "").split(",").map((t) => t.trim()).includes("sku_conflict");
-    if (wouldConflictOnPublish || backendHasConflict) tokens.push("sku_conflict");
+    // sku_conflict: calculado en cliente sobre agreement_status (publicadas
+    // del acuerdo, excluyendo la propia). Se limpia dinámicamente cuando el
+    // usuario agrega un código de un cliente que desempata.
+    if (wouldConflictOnPublish) tokens.push("sku_conflict");
     const sale = parsePriceInput(v.sale_price);
     if (sale == null || sale <= 0) tokens.push("no_price");
     const effStart = v.start_date.trim() || agreementStartDate || "";
