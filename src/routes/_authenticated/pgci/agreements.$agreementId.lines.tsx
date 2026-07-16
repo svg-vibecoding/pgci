@@ -2028,3 +2028,118 @@ function SkuGroupCard({
     </li>
   );
 }
+
+function ArchivedTable({
+  rows,
+  loading,
+  searchTerm,
+  onOpenDetail,
+}: {
+  rows: ArchivedPositionRow[];
+  loading: boolean;
+  searchTerm: string;
+  onOpenDetail: (id: string) => void;
+}) {
+  const filtered = useMemo(() => {
+    if (!searchTerm) return rows;
+    return rows.filter((r) =>
+      [r.sku ?? "", r.product_description ?? "", r.product_brand ?? "", r.archive_reason]
+        .some((s) => s.toLowerCase().includes(searchTerm)),
+    );
+  }, [rows, searchTerm]);
+
+  const fmtArchivedAt = (iso: string): string => {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return iso;
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    return `${dd}/${mm}/${d.getFullYear()}`;
+  };
+
+  const columns: DataTableColumn<ArchivedPositionRow>[] = [
+    {
+      id: "jaivana",
+      header: "Jaivaná",
+      cell: (r) => (
+        <span className="text-text-tertiary">
+          <IdentityCell
+            code={<span className="text-text-tertiary">{r.sku ?? "—"}</span>}
+            description={
+              <span className="text-text-tertiary">
+                {r.product_description ?? "—"}
+              </span>
+            }
+          />
+        </span>
+      ),
+    },
+    {
+      id: "brand",
+      header: "Marca",
+      width: 140,
+      cell: (r) => (
+        <span className="text-text-tertiary">{r.product_brand ?? "—"}</span>
+      ),
+    },
+    {
+      id: "price",
+      header: "Precio",
+      width: 110,
+      numeric: true,
+      wrap: false,
+      cell: (r) => (
+        <span className="text-text-tertiary">{formatMoneyCOP(r.sale_price)}</span>
+      ),
+    },
+    {
+      id: "archived_at",
+      header: "Archivado",
+      width: 130,
+      wrap: false,
+      cell: (r) => (
+        <div className="text-text-tertiary">
+          <div className="tabular-nums">{fmtArchivedAt(r.archived_at)}</div>
+          {r.archived_by_name && (
+            <div className="text-[11.5px]">{r.archived_by_name}</div>
+          )}
+        </div>
+      ),
+    },
+    {
+      id: "reason",
+      header: "Motivo",
+      cell: (r) => (
+        <span
+          className="line-clamp-2 text-text-tertiary"
+          title={r.archive_reason}
+        >
+          {r.archive_reason}
+        </span>
+      ),
+    },
+  ];
+
+  return (
+    <DataTable<ArchivedPositionRow>
+      data={filtered}
+      columns={columns}
+      getRowId={(r) => r.id}
+      loading={loading}
+      onRowClick={(r) => onOpenDetail(r.id)}
+      rowActions={(r) => [
+        {
+          label: "Ver detalle",
+          icon: <Eye className="h-4 w-4" />,
+          onSelect: () => onOpenDetail(r.id),
+        },
+      ]}
+      empty={{
+        icon: <Archive className="h-5 w-5" />,
+        title: "Sin posiciones archivadas",
+        description:
+          "Cuando archives una posición, quedará aquí como una foto inmutable.",
+      }}
+    />
+  );
+}
+
