@@ -678,14 +678,25 @@ function ClientCodeCard({
         disabled ? "bg-muted/50" : "bg-surface-card",
       )}
     >
-      <div className="flex items-center gap-2">
-        {disabled && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
-        <div className="text-sm font-semibold text-foreground">
-          {card.name}
-          {required && <span className="ml-1 text-primary">*</span>}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          {disabled && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
+          <div className="text-sm font-semibold text-foreground">
+            {card.name}
+            {required && <span className="ml-1 text-primary">*</span>}
+          </div>
+          {required && (
+            <span className="text-[11px] font-medium text-primary">Requerido</span>
+          )}
         </div>
-        {required && (
-          <span className="text-[11px] font-medium text-primary">Requerido</span>
+        {mode === "edit" && !disabled && !showCodeSearch && (
+          <button
+            type="button"
+            onClick={() => setShowCodeSearch(true)}
+            className="text-xs font-medium text-info hover:text-info-strong focus:outline-none focus:underline"
+          >
+            Cambiar código
+          </button>
         )}
       </div>
 
