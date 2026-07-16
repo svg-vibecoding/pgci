@@ -1043,6 +1043,7 @@ export function LineEditDialog({
   type SkuAgreementPosition = {
     position_id: string;
     position_status: "active" | "requires_review" | "draft" | "excluded";
+    published_at: string | null;
     sale_price: number | null;
     codes: Array<{
       client_id: string;
