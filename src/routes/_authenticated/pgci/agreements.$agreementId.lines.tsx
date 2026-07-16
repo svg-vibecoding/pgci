@@ -8,6 +8,7 @@ import {
   Search,
   Pencil,
   Ban,
+  Trash2,
   RotateCcw,
   Download,
   Upload,
