@@ -323,6 +323,7 @@ function ClientCodeCard({
   onReactivated,
   onRequestSwitchToPosition,
   onCreatingIncompleteChange,
+  isCreate = false,
 }: {
   card: ClientCard;
   entry: ClientCodeEntry;
@@ -336,6 +337,7 @@ function ClientCodeCard({
   onReactivated: () => void;
   onRequestSwitchToPosition: (positionId: string) => void;
   onCreatingIncompleteChange: (incomplete: boolean) => void;
+  isCreate?: boolean;
 }) {
 
   const disabled = !card.can_manage;
