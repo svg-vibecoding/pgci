@@ -370,13 +370,13 @@ export function ArchivedPositionDialog({ open, onOpenChange, archivedId }: Props
               <TabsList className="bg-transparent p-0 h-auto gap-1">
                 <TabsTrigger
                   value="position"
-                  className="data-[state=active]:bg-muted data-[state=active]:text-text-primary data-[state=active]:shadow-none rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary px-3 py-2 text-[13px]"
+                  className="bg-transparent data-[state=active]:bg-transparent data-[state=active]:text-text-primary data-[state=active]:shadow-none rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary px-3 py-2 text-[13px]"
                 >
                   La posición
                 </TabsTrigger>
                 <TabsTrigger
                   value="agreement"
-                  className="data-[state=active]:bg-muted data-[state=active]:text-text-primary data-[state=active]:shadow-none rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary px-3 py-2 text-[13px]"
+                  className="bg-transparent data-[state=active]:bg-transparent data-[state=active]:text-text-primary data-[state=active]:shadow-none rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary px-3 py-2 text-[13px]"
                 >
                   El acuerdo
                 </TabsTrigger>
