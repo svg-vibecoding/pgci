@@ -1125,6 +1125,7 @@ export function LineEditDialog({
     erp_description: string | null;
     commercial_brand: string | null;
     status: "active" | "inactive";
+    updated_at: string | null;
     agreement_status: SkuAgreementStatus;
   };
   const [searchOpen, setSearchOpen] = useState(false);
