@@ -2202,9 +2202,8 @@ export function LineEditDialog({
                     />
                   </div>
                 </div>
-              </section>
-              )}
-            </div>
+                </section>
+
           </div>
 
           {/* Columna derecha — códigos por cliente. Se oculta mientras el SKU
