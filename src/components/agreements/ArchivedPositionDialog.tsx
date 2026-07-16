@@ -1,25 +1,26 @@
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Archive,
+  Ban,
   Calendar,
-  Clock,
-  DollarSign,
-  FileText,
+  CircleDollarSign,
   History,
   Layers,
   Package,
-  Ban,
-  User,
+  PlayCircle,
+  StopCircle,
+  Tag,
+  Undo2,
 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Badge as SumaBadge, StatusBadge, IdentityCell } from "@/components/sumatec";
+import { Badge as SumaBadge, StatusBadge } from "@/components/sumatec";
 import { getArchivedPositionDetail } from "@/lib/agreements.functions";
 import { formatMoneyCOP } from "@/lib/format";
 
@@ -28,6 +29,8 @@ type Props = {
   onOpenChange: (open: boolean) => void;
   archivedId: string | null;
 };
+
+type Detail = Awaited<ReturnType<typeof getArchivedPositionDetail>>;
 
 function fmtDate(iso: string | null): string {
   if (!iso) return "—";
@@ -55,6 +58,186 @@ const STATUS_LABEL: Record<string, string> = {
   draft: "En gestión",
 };
 
+type TimelineEvent = {
+  key: string;
+  at: string;
+  kind:
+    | "price"
+    | "code_open"
+    | "code_close"
+    | "exclusion_start"
+    | "exclusion_end"
+    | "archived";
+  title: React.ReactNode;
+  body?: React.ReactNode;
+  meta?: React.ReactNode;
+};
+
+function buildTimeline(data: Detail): TimelineEvent[] {
+  const evts: TimelineEvent[] = [];
+
+  for (const h of data.price_history) {
+    evts.push({
+      key: `price:${h.id}`,
+      at: h.recorded_at,
+      kind: "price",
+      title: (
+        <>
+          Precio{" "}
+          <span className="font-mono font-semibold">
+            {formatMoneyCOP(h.sale_price)}
+          </span>
+        </>
+      ),
+      body: (
+        <span className="text-text-tertiary">
+          Vigencia {fmtDate(h.start_date)} → {fmtDate(h.end_date)}
+          {h.change_reason ? ` · ${h.change_reason}` : ""}
+        </span>
+      ),
+      meta: h.recorded_by_name ?? null,
+    });
+  }
+
+  for (const c of data.codes) {
+    evts.push({
+      key: `code_open:${c.id}`,
+      at: c.valid_from,
+      kind: "code_open",
+      title: (
+        <>
+          Se abrió código{" "}
+          <span className="font-mono font-semibold">{c.client_code ?? "—"}</span>
+          {c.client_name ? (
+            <span className="text-text-secondary"> · {c.client_name}</span>
+          ) : null}
+        </>
+      ),
+      body: c.code_description ? (
+        <span className="text-text-tertiary">{c.code_description}</span>
+      ) : null,
+    });
+    if (c.valid_until) {
+      evts.push({
+        key: `code_close:${c.id}`,
+        at: c.valid_until,
+        kind: "code_close",
+        title: (
+          <>
+            Se cerró código{" "}
+            <span className="font-mono font-semibold">
+              {c.client_code ?? "—"}
+            </span>
+            {c.client_name ? (
+              <span className="text-text-secondary"> · {c.client_name}</span>
+            ) : null}
+          </>
+        ),
+        body: c.ended_reason ? (
+          <span className="text-text-tertiary">{c.ended_reason}</span>
+        ) : null,
+      });
+    }
+  }
+
+  for (const ex of data.exclusions) {
+    evts.push({
+      key: `ex_start:${ex.id}`,
+      at: ex.valid_from,
+      kind: "exclusion_start",
+      title: <>Se excluyó la posición</>,
+      body: ex.exclusion_reason ? (
+        <span className="text-text-tertiary">{ex.exclusion_reason}</span>
+      ) : null,
+      meta: ex.started_by_name ?? null,
+    });
+    if (ex.valid_until) {
+      evts.push({
+        key: `ex_end:${ex.id}`,
+        at: ex.valid_until,
+        kind: "exclusion_end",
+        title: <>Se reactivó la posición</>,
+        body: ex.ended_reason ? (
+          <span className="text-text-tertiary">{ex.ended_reason}</span>
+        ) : null,
+        meta: ex.ended_by_name ?? null,
+      });
+    }
+  }
+
+  evts.push({
+    key: "archived",
+    at: data.position.archived_at,
+    kind: "archived",
+    title: <span className="font-semibold">Se archivó la posición</span>,
+    body: (
+      <span className="whitespace-pre-wrap text-text-primary">
+        {data.position.archive_reason}
+      </span>
+    ),
+    meta: data.position.archived_by_name ?? null,
+  });
+
+  evts.sort((a, b) => {
+    const ta = new Date(a.at).getTime();
+    const tb = new Date(b.at).getTime();
+    if (ta !== tb) return ta - tb;
+    // archivado siempre al final si empata
+    if (a.kind === "archived") return 1;
+    if (b.kind === "archived") return -1;
+    return 0;
+  });
+
+  return evts;
+}
+
+function EventIcon({ kind }: { kind: TimelineEvent["kind"] }) {
+  const base =
+    "flex h-7 w-7 items-center justify-center rounded-full border bg-card";
+  switch (kind) {
+    case "price":
+      return (
+        <span className={`${base} border-border text-text-secondary`}>
+          <CircleDollarSign className="h-3.5 w-3.5" />
+        </span>
+      );
+    case "code_open":
+      return (
+        <span
+          className={`${base} border-emerald-200 text-emerald-700 bg-emerald-50`}
+        >
+          <PlayCircle className="h-3.5 w-3.5" />
+        </span>
+      );
+    case "code_close":
+      return (
+        <span className={`${base} border-border text-text-tertiary`}>
+          <StopCircle className="h-3.5 w-3.5" />
+        </span>
+      );
+    case "exclusion_start":
+      return (
+        <span className={`${base} border-amber-200 text-amber-700 bg-amber-50`}>
+          <Ban className="h-3.5 w-3.5" />
+        </span>
+      );
+    case "exclusion_end":
+      return (
+        <span
+          className={`${base} border-emerald-200 text-emerald-700 bg-emerald-50`}
+        >
+          <Undo2 className="h-3.5 w-3.5" />
+        </span>
+      );
+    case "archived":
+      return (
+        <span className={`${base} border-border text-text-primary bg-muted`}>
+          <Archive className="h-3.5 w-3.5" />
+        </span>
+      );
+  }
+}
+
 export function ArchivedPositionDialog({ open, onOpenChange, archivedId }: Props) {
   const detailFn = useServerFn(getArchivedPositionDetail);
   const { data, isLoading, error } = useQuery({
@@ -63,23 +246,22 @@ export function ArchivedPositionDialog({ open, onOpenChange, archivedId }: Props
     enabled: !!archivedId && open,
   });
 
+  const timeline = useMemo(() => (data ? buildTimeline(data) : []), [data]);
+  const openCodes = useMemo(
+    () => (data ? data.codes.filter((c) => !c.valid_until) : []),
+    [data],
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto p-0">
-        <DialogHeader className="border-b border-border bg-muted/30 px-6 py-4">
-          <div className="flex items-center gap-2">
-            <Archive className="h-4 w-4 text-text-tertiary" />
-            <span className="suma-overline text-text-tertiary">
-              Posición archivada · foto inmutable
-            </span>
-          </div>
-          <DialogTitle className="suma-h3 text-text-primary mt-1">
-            {data?.position.sku ?? "—"}
-          </DialogTitle>
-          <DialogDescription className="text-text-secondary">
-            {data?.position.product_description ?? " "}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-w-3xl w-[calc(100vw-2rem)] h-[92vh] p-0 gap-0 overflow-hidden flex flex-col">
+        {/* Barra superior: contexto */}
+        <div className="flex items-center gap-2 border-b border-border bg-muted/40 px-6 py-2.5 pr-12">
+          <Archive className="h-3.5 w-3.5 text-text-tertiary" />
+          <span className="suma-overline text-text-tertiary">
+            Posición archivada · foto inmutable
+          </span>
+        </div>
 
         {isLoading && (
           <div className="p-6 text-sm text-text-tertiary">Cargando foto…</div>
@@ -91,260 +273,168 @@ export function ArchivedPositionDialog({ open, onOpenChange, archivedId }: Props
         )}
 
         {data && (
-          <div className="space-y-6 p-6">
-            {/* Acto de archivar — testimonio */}
-            <section className="rounded-lg border border-border bg-surface-sunken/40 p-4">
-              <div className="mb-2 flex items-center gap-2">
-                <Archive className="h-4 w-4 text-text-tertiary" />
-                <h3 className="suma-label text-text-primary">Se archivó</h3>
-              </div>
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                <Field
-                  icon={<Clock className="h-3.5 w-3.5" />}
-                  label="Cuándo"
-                  value={fmtDateTime(data.position.archived_at)}
-                />
-                <Field
-                  icon={<User className="h-3.5 w-3.5" />}
-                  label="Por"
-                  value={data.position.archived_by_name ?? "—"}
-                />
-                <Field
-                  icon={<History className="h-3.5 w-3.5" />}
-                  label="Estado al archivar"
-                  value={
-                    <StatusBadge
-                      status={
-                        data.position.original_status === "active"
-                          ? "active"
-                          : data.position.original_status === "excluded"
-                            ? "neutral"
-                            : "danger"
-                      }
-                      label={
-                        STATUS_LABEL[data.position.original_status] ??
-                        data.position.original_status
-                      }
-                    />
-                  }
-                />
-              </div>
-              <div className="mt-3">
-                <div className="suma-overline text-text-tertiary">Motivo</div>
-                <p className="mt-1 whitespace-pre-wrap text-[14px] leading-relaxed text-text-primary">
-                  {data.position.archive_reason}
-                </p>
-              </div>
-            </section>
+          <div className="flex-1 overflow-y-auto">
+            {/* Ancla — el sujeto de la historia (sticky) */}
+            <div className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+              <div className="px-6 py-4 space-y-3">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <DialogTitle className="suma-h3 text-text-primary font-mono">
+                      {data.position.sku ?? "—"}
+                    </DialogTitle>
+                    <DialogDescription className="text-text-secondary mt-0.5">
+                      {data.position.product_description ?? " "}
+                    </DialogDescription>
+                    {data.position.product_brand && (
+                      <div className="mt-1 suma-overline text-text-tertiary">
+                        {data.position.product_brand}
+                      </div>
+                    )}
+                  </div>
+                  <StatusBadge
+                    status={
+                      data.position.original_status === "active"
+                        ? "active"
+                        : data.position.original_status === "excluded"
+                          ? "neutral"
+                          : "danger"
+                    }
+                    label={
+                      STATUS_LABEL[data.position.original_status] ??
+                      data.position.original_status
+                    }
+                  />
+                </div>
 
-            {/* Producto congelado */}
-            <section>
-              <SectionHeader icon={<Package className="h-4 w-4" />}>
-                Producto (congelado)
-              </SectionHeader>
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                <Field label="SKU Jaivaná" value={data.position.sku ?? "—"} mono />
-                <Field label="Marca" value={data.position.product_brand ?? "—"} />
-                <Field
-                  className="md:col-span-2"
-                  label="Descripción"
-                  value={data.position.product_description ?? "—"}
-                />
-              </div>
-            </section>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 md:grid-cols-4">
+                  <Stat label="Precio" value={formatMoneyCOP(data.position.sale_price)} />
+                  <Stat label="Par" value={formatMoneyCOP(data.position.par_price)} />
+                  <Stat label="Desde" value={fmtDate(data.position.start_date)} />
+                  <Stat label="Hasta" value={fmtDate(data.position.end_date)} />
+                </div>
 
-            {/* Estado comercial de la foto */}
-            <section>
-              <SectionHeader icon={<DollarSign className="h-4 w-4" />}>
-                Precio y vigencia al archivar
-              </SectionHeader>
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                <Field label="Precio" value={formatMoneyCOP(data.position.sale_price)} />
-                <Field label="Par" value={formatMoneyCOP(data.position.par_price)} />
-                <Field label="Desde" value={fmtDate(data.position.start_date)} />
-                <Field label="Hasta" value={fmtDate(data.position.end_date)} />
+                <div>
+                  <div className="suma-overline text-text-tertiary mb-1 flex items-center gap-1">
+                    <Layers className="h-3 w-3" />
+                    Códigos vigentes al archivar ({openCodes.length})
+                  </div>
+                  {openCodes.length === 0 ? (
+                    <span className="text-[13px] text-text-tertiary">
+                      Ninguno.
+                    </span>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {openCodes.map((c) => (
+                        <span
+                          key={c.id}
+                          className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface-sunken/60 px-2 py-0.5 text-[12px]"
+                        >
+                          <Tag className="h-3 w-3 text-text-tertiary" />
+                          <span className="text-text-tertiary">
+                            {c.client_name ?? "—"}
+                          </span>
+                          <span className="font-mono font-medium text-text-primary">
+                            {c.client_code ?? "—"}
+                          </span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
+            </div>
+
+            {/* Línea de tiempo — la historia */}
+            <div className="px-6 py-5">
+              <div className="mb-3 flex items-center gap-2">
+                <History className="h-4 w-4 text-text-tertiary" />
+                <h3 className="suma-label text-text-primary">
+                  Línea de tiempo
+                </h3>
+                <span className="text-[12px] text-text-tertiary">
+                  ({timeline.length} eventos)
+                </span>
+              </div>
+
+              <ol className="relative ml-3 border-l border-border">
+                {timeline.map((e) => (
+                  <li key={e.key} className="relative pl-6 pb-5 last:pb-1">
+                    <span className="absolute -left-[15px] top-0">
+                      <EventIcon kind={e.kind} />
+                    </span>
+                    <div className="text-[12px] text-text-tertiary">
+                      {fmtDateTime(e.at)}
+                      {e.meta ? ` · ${e.meta}` : ""}
+                    </div>
+                    <div className="mt-0.5 text-[14px] text-text-primary">
+                      {e.title}
+                    </div>
+                    {e.body && (
+                      <div className="mt-0.5 text-[13px]">{e.body}</div>
+                    )}
+                  </li>
+                ))}
+              </ol>
+
               {data.position.observations && (
-                <div className="mt-3">
-                  <div className="suma-overline text-text-tertiary">Observaciones</div>
-                  <p className="mt-1 whitespace-pre-wrap text-[13px] text-text-secondary">
+                <section className="mt-4 rounded-md border border-border bg-surface-sunken/40 p-3">
+                  <div className="suma-overline text-text-tertiary mb-1">
+                    Observaciones al archivar
+                  </div>
+                  <p className="whitespace-pre-wrap text-[13px] text-text-secondary">
                     {data.position.observations}
                   </p>
-                </div>
+                </section>
               )}
-            </section>
 
-            {/* Códigos de cliente — la historia */}
-            <section>
-              <SectionHeader icon={<Layers className="h-4 w-4" />}>
-                Códigos por cliente ({data.codes.length})
-              </SectionHeader>
-              {data.codes.length === 0 ? (
-                <p className="text-sm text-text-tertiary">Sin códigos registrados.</p>
-              ) : (
-                <ul className="space-y-2">
-                  {data.codes.map((c) => {
-                    const closed = !!c.valid_until;
-                    return (
+              {data.alternatives.length > 0 && (
+                <section className="mt-5">
+                  <div className="mb-2 flex items-center gap-2">
+                    <Package className="h-4 w-4 text-text-tertiary" />
+                    <h3 className="suma-label text-text-primary">
+                      Alternativas ({data.alternatives.length})
+                    </h3>
+                  </div>
+                  <ul className="space-y-1.5">
+                    {data.alternatives.map((a) => (
                       <li
-                        key={c.id}
-                        className="rounded-md border border-border bg-card p-3"
+                        key={a.id}
+                        className="rounded-md border border-border bg-card p-2.5 text-[13px]"
                       >
-                        <div className="flex flex-wrap items-start justify-between gap-2">
-                          <div className="min-w-0 flex-1">
-                            <div className="suma-overline text-text-tertiary">
-                              {c.client_name ?? "Cliente sin nombre"}
-                            </div>
-                            <IdentityCell
-                              code={c.client_code ?? "—"}
-                              description={c.code_description ?? undefined}
-                            />
-                          </div>
-                          <SumaBadge
-                            color={closed ? "neutral" : "success"}
-                            variant="soft"
-                          >
-                            {closed ? "Cerrado" : "Vigente al archivar"}
-                          </SumaBadge>
+                        <div className="flex items-baseline gap-2">
+                          <span className="font-mono font-semibold">
+                            {a.sku ?? "—"}
+                          </span>
+                          <span className="text-text-secondary">
+                            {a.product_description ?? "—"}
+                          </span>
                         </div>
-                        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-text-tertiary">
-                          <span>
-                            <Calendar className="mr-1 inline h-3 w-3" />
-                            Desde {fmtDateTime(c.valid_from)}
-                          </span>
-                          <span>
-                            <Calendar className="mr-1 inline h-3 w-3" />
-                            Hasta {closed ? fmtDateTime(c.valid_until) : "—"}
-                          </span>
-                          {c.ended_reason && (
-                            <span className="text-text-secondary">
-                              · {c.ended_reason}
-                            </span>
-                          )}
+                        <div className="text-[12px] text-text-tertiary">
+                          {a.product_brand ?? "—"}
+                          {a.notes ? ` · ${a.notes}` : ""}
                         </div>
                       </li>
-                    );
-                  })}
-                </ul>
+                    ))}
+                  </ul>
+                </section>
               )}
-            </section>
 
-            {/* Historial de precios */}
-            <section>
-              <SectionHeader icon={<History className="h-4 w-4" />}>
-                Historial de precios ({data.price_history.length})
-              </SectionHeader>
-              {data.price_history.length === 0 ? (
-                <p className="text-sm text-text-tertiary">Sin historial.</p>
-              ) : (
-                <ul className="space-y-1.5">
-                  {data.price_history.map((h) => (
-                    <li
-                      key={h.id}
-                      className="flex flex-wrap items-baseline justify-between gap-2 rounded-md border border-border bg-card px-3 py-2 text-[13px]"
-                    >
-                      <div className="flex items-baseline gap-3">
-                        <span className="font-mono font-semibold text-text-primary">
-                          {formatMoneyCOP(h.sale_price)}
-                        </span>
-                        <span className="text-text-tertiary">
-                          {fmtDate(h.start_date)} → {fmtDate(h.end_date)}
-                        </span>
-                        {h.change_reason && (
-                          <SumaBadge color="neutral" variant="soft">
-                            {h.change_reason}
-                          </SumaBadge>
-                        )}
-                      </div>
-                      <span className="text-[11.5px] text-text-tertiary">
-                        {fmtDateTime(h.recorded_at)}
-                        {h.recorded_by_name ? ` · ${h.recorded_by_name}` : ""}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-
-            {/* Exclusiones */}
-            {data.exclusions.length > 0 && (
-              <section>
-                <SectionHeader icon={<Ban className="h-4 w-4" />}>
-                  Períodos de exclusión ({data.exclusions.length})
-                </SectionHeader>
-                <ul className="space-y-2">
-                  {data.exclusions.map((ex) => (
-                    <li
-                      key={ex.id}
-                      className="rounded-md border border-border bg-card p-3 text-[13px]"
-                    >
-                      <div className="flex flex-wrap items-baseline justify-between gap-2">
-                        <span className="text-text-primary">
-                          {ex.exclusion_reason ?? "—"}
-                        </span>
-                        <span className="text-text-tertiary text-[12px]">
-                          {fmtDateTime(ex.valid_from)}
-                          {" → "}
-                          {ex.valid_until ? fmtDateTime(ex.valid_until) : "vigente"}
-                        </span>
-                      </div>
-                      {(ex.started_by_name || ex.ended_by_name || ex.ended_reason) && (
-                        <div className="mt-1 text-[12px] text-text-tertiary">
-                          {ex.started_by_name && (
-                            <span>Excluida por {ex.started_by_name}</span>
-                          )}
-                          {ex.ended_by_name && (
-                            <span> · reactivada por {ex.ended_by_name}</span>
-                          )}
-                          {ex.ended_reason && <span> · {ex.ended_reason}</span>}
-                        </div>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-
-            {/* Alternativas */}
-            {data.alternatives.length > 0 && (
-              <section>
-                <SectionHeader icon={<Package className="h-4 w-4" />}>
-                  Alternativas ({data.alternatives.length})
-                </SectionHeader>
-                <ul className="space-y-2">
-                  {data.alternatives.map((a) => (
-                    <li
-                      key={a.id}
-                      className="rounded-md border border-border bg-card p-3"
-                    >
-                      <IdentityCell
-                        code={a.sku ?? "—"}
-                        description={a.product_description ?? "—"}
-                      />
-                      <div className="mt-1 text-[12px] text-text-tertiary">
-                        {a.product_brand ?? "—"}
-                        {a.notes ? ` · ${a.notes}` : ""}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-
-            {/* Metadatos de origen */}
-            <section className="border-t border-border pt-4">
-              <div className="grid grid-cols-1 gap-3 text-[12px] text-text-tertiary md:grid-cols-2">
-                <div>
-                  <FileText className="mr-1 inline h-3 w-3" />
-                  Creada originalmente el {fmtDateTime(data.position.original_created_at)}
-                </div>
-                <div>
-                  <FileText className="mr-1 inline h-3 w-3" />
-                  Publicada originalmente el{" "}
-                  {fmtDateTime(data.position.original_published_at)}
-                </div>
+              <div className="mt-6 flex flex-wrap gap-x-4 gap-y-1 border-t border-border pt-3 text-[11.5px] text-text-tertiary">
+                <span>
+                  <Calendar className="mr-1 inline h-3 w-3" />
+                  Creada el {fmtDateTime(data.position.original_created_at)}
+                </span>
+                <span>
+                  <Calendar className="mr-1 inline h-3 w-3" />
+                  Publicada el {fmtDateTime(data.position.original_published_at)}
+                </span>
+                {data.position.par_price != null && (
+                  <SumaBadge color="neutral" variant="soft">
+                    Con precio par
+                  </SumaBadge>
+                )}
               </div>
-            </section>
+            </div>
           </div>
         )}
       </DialogContent>
@@ -352,43 +442,11 @@ export function ArchivedPositionDialog({ open, onOpenChange, archivedId }: Props
   );
 }
 
-function SectionHeader({
-  icon,
-  children,
-}: {
-  icon: React.ReactNode;
-  children: React.ReactNode;
-}) {
+function Stat({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="mb-2 flex items-center gap-2 border-b border-border pb-1.5">
-      <span className="text-text-tertiary">{icon}</span>
-      <h3 className="suma-label text-text-primary">{children}</h3>
-    </div>
-  );
-}
-
-function Field({
-  label,
-  value,
-  icon,
-  mono,
-  className,
-}: {
-  label: string;
-  value: React.ReactNode;
-  icon?: React.ReactNode;
-  mono?: boolean;
-  className?: string;
-}) {
-  return (
-    <div className={className}>
-      <div className="suma-overline text-text-tertiary flex items-center gap-1">
-        {icon}
-        {label}
-      </div>
-      <div
-        className={`mt-0.5 text-[14px] text-text-primary ${mono ? "font-mono" : ""}`}
-      >
+    <div>
+      <div className="suma-overline text-text-tertiary">{label}</div>
+      <div className="mt-0.5 text-[14px] text-text-primary tabular-nums">
         {value}
       </div>
     </div>
