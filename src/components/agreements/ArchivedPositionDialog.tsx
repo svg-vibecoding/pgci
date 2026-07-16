@@ -60,7 +60,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 type TimelineEvent = {
   key: string;
-  at: string;
+  at: string | null;
   kind:
     | "price"
     | "code_open"
