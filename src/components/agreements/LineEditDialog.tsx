@@ -2101,8 +2101,6 @@ export function LineEditDialog({
                 </div>
               </section>
 
-              {/* Condiciones comerciales — se oculta mientras el usuario no declare intención (skuBlocksForm) */}
-              {!skuBlocksForm && (
               <section className="space-y-4">
                 <SectionHeader title="Condiciones comerciales" number="02" />
                 {agreementDatesLabel && (
