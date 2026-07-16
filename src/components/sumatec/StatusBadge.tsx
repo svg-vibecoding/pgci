@@ -91,7 +91,7 @@ export function StatusBadge({
   return (
     <span style={badgeStyle} {...rest}>
       {withIcon && (
-        <Icon size={sm ? 11 : 12} strokeWidth={2.5} aria-hidden="true" />
+        <Icon size={12} strokeWidth={2} aria-hidden="true" />
       )}
       {text}
     </span>
