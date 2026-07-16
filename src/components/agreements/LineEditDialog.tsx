@@ -366,6 +366,9 @@ function ClientCodeCard({
   >(null);
   const [reactivatePending, setReactivatePending] = useState(false);
   const [takenBlock, setTakenBlock] = useState<TakenBlock | null>(null);
+  // En modo "edit" el buscador arranca oculto — cambiar el código es una
+  // acción explícita disparada por "Cambiar código".
+  const [showCodeSearch, setShowCodeSearch] = useState(false);
   const seq = useRef(0);
 
   // Resync por cambio de posición (o al abrir/cerrar). Se hace durante render
@@ -385,6 +388,7 @@ function ClientCodeCard({
       setExpandedId(null);
       setPopoverOpen(false);
       setTakenBlock(null);
+      setShowCodeSearch(false);
     }
   }
 
@@ -432,6 +436,7 @@ function ClientCodeCard({
     setIsNew(false);
     setMode("edit");
     setPopoverOpen(false);
+    setShowCodeSearch(false);
     setQuery("");
     setResults([]);
     setExpandedId(null);
@@ -673,14 +678,25 @@ function ClientCodeCard({
         disabled ? "bg-muted/50" : "bg-surface-card",
       )}
     >
-      <div className="flex items-center gap-2">
-        {disabled && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
-        <div className="text-sm font-semibold text-foreground">
-          {card.name}
-          {required && <span className="ml-1 text-primary">*</span>}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          {disabled && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
+          <div className="text-sm font-semibold text-foreground">
+            {card.name}
+            {required && <span className="ml-1 text-primary">*</span>}
+          </div>
+          {required && (
+            <span className="text-[11px] font-medium text-primary">Requerido</span>
+          )}
         </div>
-        {required && (
-          <span className="text-[11px] font-medium text-primary">Requerido</span>
+        {mode === "edit" && !disabled && !showCodeSearch && (
+          <button
+            type="button"
+            onClick={() => setShowCodeSearch(true)}
+            className="text-xs font-medium text-info hover:text-info-strong focus:outline-none focus:underline"
+          >
+            Cambiar código
+          </button>
         )}
       </div>
 
@@ -760,7 +776,7 @@ function ClientCodeCard({
 
       {mode === "edit" && (
         <>
-          {searchBlock(searchPlaceholder)}
+          {showCodeSearch && searchBlock(searchPlaceholder)}
           {takenAlert}
           {takenActions}
           <div className="space-y-1.5">
@@ -794,10 +810,8 @@ function ClientCodeCard({
           )}
           {!disabled && (
             <div className="flex justify-end">
-              <Button
+              <button
                 type="button"
-                size="sm"
-                variant="outline"
                 disabled={!canRemove}
                 onClick={() => {
                   onRemove();
@@ -809,16 +823,22 @@ function ClientCodeCard({
                   setExpandedId(null);
                   setPopoverOpen(false);
                   setTakenBlock(null);
+                  setShowCodeSearch(false);
                 }}
                 title={
                   canRemove
                     ? undefined
                     : "Este código distingue esta posición de otra del mismo SKU. Puedes editarlo, pero no quitarlo."
                 }
-                className="text-destructive hover:text-destructive"
+                className={cn(
+                  "text-xs font-medium focus:outline-none focus:underline",
+                  canRemove
+                    ? "text-destructive hover:underline"
+                    : "text-destructive/40 cursor-not-allowed",
+                )}
               >
                 Quitar relación
-              </Button>
+              </button>
             </div>
           )}
 
@@ -1400,6 +1420,10 @@ export function LineEditDialog({
     setSearchQuery("");
     setSearchResults([]);
     setSearchHasMore(false);
+    // En edición, tras elegir el nuevo SKU cerramos el buscador — el producto
+    // vigente se muestra en los campos readonly. El usuario puede reabrir con
+    // "Cambiar SKU" si necesita otro cambio.
+    if (initial?.line_id) setShowSkuSearch(false);
     // Estado del SKU respecto al acuerdo — solo aplica al crear.
     // En edición mantenemos el flujo previo (panel de vinculación de precios).
     setSkuPositionsExpanded(false);
@@ -1682,9 +1706,23 @@ export function LineEditDialog({
     note: string;
   }>({ open: false, kind: null, note: "" });
 
+  // Nuevo flujo R-09: la intención del cambio de SKU se declara ANTES de
+  // elegir el nuevo, no al guardar. Cuando el usuario pulsa "Cambiar SKU" en
+  // una posición publicada, se abre skuChangePrompt; al confirmar se guarda la
+  // intención en skuChangeIntent y se despliega el buscador. Al guardar, si
+  // hay intent se envía directo a la RPC sin volver a preguntar.
+  const [skuChangeIntent, setSkuChangeIntent] = useState<SkuChangeChoice | null>(null);
+  // Visibilidad del buscador de SKU en modo edición. En creación siempre se
+  // ve; en edición solo cuando el usuario decide cambiar el SKU.
+  const [showSkuSearch, setShowSkuSearch] = useState<boolean>(!initial?.line_id);
+
   useEffect(() => {
     // Reset del prompt al cerrar el diálogo o cambiar de posición editada.
-    if (!open) setSkuChangePrompt({ open: false, kind: null, note: "" });
+    if (!open) {
+      setSkuChangePrompt({ open: false, kind: null, note: "" });
+      setSkuChangeIntent(null);
+    }
+    setShowSkuSearch(!initial?.line_id);
   }, [open, initial?.line_id]);
 
   const save = useMutation({
@@ -1925,10 +1963,32 @@ export function LineEditDialog({
                   </p>
                 )}
                 <div className="rounded-lg border border-input bg-muted/40 p-4 space-y-3">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-between gap-2">
                     <div className="text-sm font-semibold text-foreground">SUMATEC</div>
+                    {isEdit && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          // Draft: sin diálogo, solo abre el buscador (no hay
+                          // historia comercial que etiquetar).
+                          // Publicada (published_at is not null): pedimos la
+                          // razón antes de abrir el buscador.
+                          const isPublished =
+                            !!initial?.status && initial.status !== "draft";
+                          if (isPublished) {
+                            setSkuChangePrompt({ open: true, kind: null, note: "" });
+                          } else {
+                            setShowSkuSearch(true);
+                          }
+                        }}
+                        className="text-xs font-medium text-info hover:text-info-strong focus:outline-none focus:underline"
+                      >
+                        Cambiar SKU
+                      </button>
+                    )}
                   </div>
 
+                  {(!isEdit || showSkuSearch) && (
                   <Popover open={searchOpen} onOpenChange={setSearchOpen}>
                     <PopoverTrigger asChild>
                       <div className="relative">
@@ -2049,6 +2109,17 @@ export function LineEditDialog({
                       )}
                     </PopoverContent>
                   </Popover>
+                  )}
+
+                  {isEdit && showSkuSearch && skuChangeIntent && (
+                    <div className="flex justify-end">
+                      <span className="text-xs text-muted-foreground/70">
+                        {skuChangeIntent.kind === "sku_changed"
+                          ? "Cambio real"
+                          : "Corrección"}
+                      </span>
+                    </div>
+                  )}
 
                   {!isEdit && !hasProduct && (
                     <div className="flex justify-end">
@@ -2659,11 +2730,14 @@ export function LineEditDialog({
                   return;
                 }
                 setSaveError(null);
-                if (isSkuChangeOnPublished) {
+                if (isSkuChangeOnPublished && !skuChangeIntent) {
+                  // Salvaguarda: en el flujo normal el intent se declara al
+                  // pulsar "Cambiar SKU". Si por algún motivo llega hasta aquí
+                  // sin intent, pedimos la razón antes de guardar.
                   setSkuChangePrompt({ open: true, kind: null, note: "" });
                   return;
                 }
-                save.mutate(undefined);
+                save.mutate(skuChangeIntent ?? undefined);
               }}
               disabled={save.isPending || hasCreatingIncomplete}
             >
@@ -2792,10 +2866,14 @@ export function LineEditDialog({
                       : undefined,
                 };
                 setSkuChangePrompt({ open: false, kind: null, note: "" });
-                save.mutate(choice);
+                // Declaramos la intención y abrimos el buscador. El guardado
+                // se ejecuta cuando el usuario elija el nuevo SKU y pulse
+                // "Guardar" — sin volver a preguntar.
+                setSkuChangeIntent(choice);
+                setShowSkuSearch(true);
               }}
             >
-              Confirmar y guardar
+              Continuar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
