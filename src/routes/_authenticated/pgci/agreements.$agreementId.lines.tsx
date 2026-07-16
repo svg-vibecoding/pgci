@@ -446,6 +446,7 @@ function AgreementLinesPage() {
       line_id: r.id as string,
       kind: "position",
       status: r.status as LineEditValues["status"],
+      pending_reason: r.pending_reason ?? null,
       sku: r.products?.sku ?? "",
       // Estado completo declarativo: preserva todos los códigos de otros clientes.
       client_codes: (r.codes ?? []).map((c) => ({
@@ -1462,19 +1463,16 @@ function AgreementLinesPage() {
                             onAction={() => {
                               if (g.state === "conflict") {
                                 openEditForLine(g.position_ids[0]);
-                              } else if (canLink) {
-                                linkMut.mutate({ product_id: g.product_id, price });
                               }
+                              // Vinculación deshabilitada — no-op para 'repeated'.
                             }}
                             actionLabel={
                               g.state === "conflict"
                                 ? "Revisar"
-                                : busy
-                                  ? "Vinculando…"
-                                  : "Vincular"
+                                : "Vincular"
                             }
                             actionType={g.state === "conflict" ? "review" : "link"}
-                            actionDisabled={g.state === "repeated" && (busy || !canLink)}
+                            actionDisabled={g.state === "repeated" || (g.state !== "conflict" && (busy || !canLink))}
                             fmtMoney={fmtMoney}
                           />
                         );
