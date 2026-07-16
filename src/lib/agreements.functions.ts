@@ -414,6 +414,7 @@ export type AgreementLineRow = {
   end_date: string | null;
   observations: string | null;
   status: "active" | "requires_review" | "excluded" | "draft" | "archived";
+  pending_reason: string | null;
 
   exclusion_reason: string | null;
   created_at: string;
