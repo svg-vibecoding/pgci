@@ -1184,6 +1184,42 @@ export function LineEditDialog({
         kind: res.status === "active" ? "active" : "inactive",
         catalogUpdatedAt: res.catalog_updated_at,
       });
+      // En edición también necesitamos las OTRAS posiciones del mismo SKU en
+      // el acuerdo (para las fichas y el bloque de conflicto). Reusamos
+      // searchProducts filtrado por agreement_id y descartamos la propia.
+      try {
+        const s = await searchFn({
+          data: {
+            query: trimmed,
+            offset: 0,
+            limit: 5,
+            agreement_id: agreementId,
+          },
+        });
+        const match = s.rows.find((r) => r.sku === trimmed);
+        if (match) {
+          setProductId(match.id);
+          if (match.agreement_status.kind === "in_agreement") {
+            const own = initial?.line_id ?? null;
+            const others = match.agreement_status.positions.filter(
+              (p) => p.position_id !== own,
+            );
+            if (others.length > 0) {
+              setSkuInAgreement({
+                sku: match.sku,
+                productDescription: match.erp_description,
+                positions: others,
+              });
+            } else {
+              setSkuInAgreement(null);
+            }
+          } else {
+            setSkuInAgreement(null);
+          }
+        }
+      } catch (e) {
+        console.error("prefill searchProducts failed", e);
+      }
     } catch (e) {
       console.error("lookupProductBySku failed", e);
     }
@@ -1916,14 +1952,44 @@ export function LineEditDialog({
                     const positions = skuInAgreement.positions;
                     const visible = skuPositionsExpanded ? positions : positions.slice(0, 3);
                     const hidden = positions.length - visible.length;
+                    const hasSkuConflict =
+                      isEdit &&
+                      (initial?.pending_reason ?? "")
+                        .split(",")
+                        .map((t) => t.trim())
+                        .includes("sku_conflict");
+                    const ownHasCode = Array.from(codeEntries.values()).some(
+                      (e) => e.code && e.code.trim() !== "",
+                    );
                     return (
                       <div className="space-y-3">
                         <p className="text-sm font-semibold text-foreground">
-                          Este SKU ya está en el acuerdo
+                          {isEdit
+                            ? `Esta posición comparte SKU con ${positions.length} ${positions.length === 1 ? "posición" : "posiciones"} más del acuerdo`
+                            : "Este SKU ya está en el acuerdo"}
                         </p>
+
+                        {hasSkuConflict && (
+                          <Alert variant="warning">
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertDescription>
+                              <p className="font-semibold">
+                                {ownHasCode
+                                  ? "Esta posición y otra del mismo SKU no logran distinguirse por código de cliente."
+                                  : "Esta posición no tiene un código de cliente que la distinga."}
+                              </p>
+                              <p className="mt-1 text-sm">
+                                {ownHasCode
+                                  ? "Otra(s) posición(es) del mismo SKU comparten el mismo cliente sin un código distinto, o no tienen código. Para que ambas puedan estar activas, cada una necesita un código propio de un cliente que las diferencie."
+                                  : "Otra(s) posición(es) del mismo SKU están en la misma situación. Para que puedan estar activas, cada una necesita el código con que un cliente identifica este producto — y deben ser códigos distintos del mismo cliente."}
+                              </p>
+                            </AlertDescription>
+                          </Alert>
+                        )}
 
                         <div className="space-y-3">
                         <div className="space-y-3">
+
 
                         {visible.map((pos) => {
                           const variant = variantForPositionStatus(pos.position_status);
@@ -2063,7 +2129,7 @@ export function LineEditDialog({
                     );
                   })()}
 
-                  {nConflict.kind === "found" && !isCreatingLine && (
+                  {false && nConflict.kind === "found" && !isCreatingLine && (
                     <Alert variant="warning" className="p-0 overflow-hidden">
                       <Collapsible open={nExpanded} onOpenChange={setNExpanded}>
                         <CollapsibleTrigger asChild>
