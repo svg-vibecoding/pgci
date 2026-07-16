@@ -8,6 +8,7 @@ import {
   Search,
   Pencil,
   Ban,
+  Trash2,
   RotateCcw,
   Download,
   Upload,
@@ -61,6 +62,7 @@ import {
   getAgreementContext,
   listAgreementLines,
   excludeAgreementLine,
+  deleteAgreementLine,
   reactivateAgreementLine,
   listAgreementSkuGroups,
   listAgreementCompanies,
@@ -282,6 +284,7 @@ function AgreementLinesPage() {
   const ctxFn = useServerFn(getAgreementContext);
   const linesFn = useServerFn(listAgreementLines);
   const excludeFn = useServerFn(excludeAgreementLine);
+  const deleteFn = useServerFn(deleteAgreementLine);
   const reactivateFn = useServerFn(reactivateAgreementLine);
   
   const skuGroupsFn = useServerFn(listAgreementSkuGroups);
@@ -354,6 +357,11 @@ function AgreementLinesPage() {
     description: string | null;
     codes: LineCode[];
   } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: string;
+    sku: string | null;
+    description: string | null;
+  } | null>(null);
   const [reason, setReason] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [confirmPublishOpen, setConfirmPublishOpen] = useState(false);
@@ -397,6 +405,16 @@ function AgreementLinesPage() {
     onSuccess: () => {
       toast.success("Posición reactivada");
       invalidateAll();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const deletePosition = useMutation({
+    mutationFn: (lineId: string) => deleteFn({ data: { line_id: lineId } }),
+    onSuccess: () => {
+      toast.success("Posición eliminada");
+      invalidateAll();
+      setDeleteTarget(null);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -1333,23 +1351,38 @@ function AgreementLinesPage() {
                 onSelect: () => reactivate.mutate(r.id as string),
               });
             } else {
+              const isDraft = r.status === "draft";
               actions.push({
                 label: "Editar",
                 icon: <Pencil className="h-4 w-4" />,
                 onSelect: () => openEditForLine(r.id as string),
               });
-              actions.push({
-                label: "Excluir",
-                icon: <Ban className="h-4 w-4" />,
-                destructive: true,
-                onSelect: () =>
-                  setExcludeTarget({
-                    id: r.id as string,
-                    sku: r.products?.sku ?? null,
-                    description: r.products?.erp_description ?? null,
-                    codes: r.codes ?? [],
-                  }),
-              });
+              if (isDraft) {
+                actions.push({
+                  label: "Eliminar",
+                  icon: <Trash2 className="h-4 w-4" />,
+                  destructive: true,
+                  onSelect: () =>
+                    setDeleteTarget({
+                      id: r.id as string,
+                      sku: r.products?.sku ?? null,
+                      description: r.products?.erp_description ?? null,
+                    }),
+                });
+              } else {
+                actions.push({
+                  label: "Excluir",
+                  icon: <Ban className="h-4 w-4" />,
+                  destructive: true,
+                  onSelect: () =>
+                    setExcludeTarget({
+                      id: r.id as string,
+                      sku: r.products?.sku ?? null,
+                      description: r.products?.erp_description ?? null,
+                      codes: r.codes ?? [],
+                    }),
+                });
+              }
             }
           }
           return actions;
@@ -1494,6 +1527,45 @@ function AgreementLinesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => {
+          if (!o && !deletePosition.isPending) setDeleteTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar posición en gestión</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se eliminará este registro en gestión. Los códigos de cliente que
+              hayas creado se conservan en el catálogo.
+              {deleteTarget?.sku ? (
+                <span className="mt-2 block text-text-primary">
+                  SKU: <strong>{deleteTarget.sku}</strong>
+                  {deleteTarget.description ? ` — ${deleteTarget.description}` : ""}
+                </span>
+              ) : null}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletePosition.isPending}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deleteTarget) deletePosition.mutate(deleteTarget.id);
+              }}
+              disabled={deletePosition.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+
 
       <AlertDialog
         open={confirmPublishOpen}

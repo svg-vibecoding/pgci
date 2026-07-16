@@ -12,6 +12,7 @@ import {
   importCommitSchema,
   importPreviewSchema,
   lineCreateSchema,
+  lineDeleteSchema,
   lineExcludeSchema,
   linePatchSchema,
   lineReactivateSchema,
@@ -631,6 +632,20 @@ export const excludeAgreementLine = createServerFn({ method: "POST" })
     const { error } = await context.supabase.rpc("exclude_agreement_position", {
       p_position_id: data.line_id,
       p_reason: data.reason ?? "",
+    });
+    if (error) {
+      if (error.code === "42501") throw new Error("No tienes permisos sobre este acuerdo");
+      throw new Error(error.message);
+    }
+    return { ok: true };
+  });
+
+export const deleteAgreementLine = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => lineDeleteSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.rpc("delete_agreement_position", {
+      p_position_id: data.line_id,
     });
     if (error) {
       if (error.code === "42501") throw new Error("No tienes permisos sobre este acuerdo");
