@@ -1913,7 +1913,7 @@ export function LineEditDialog({
               <section className="space-y-4">
                 <SectionHeader title="INFORMACIÓN DE SUMATEC" number="01" />
                 {!isEdit && (
-                  <p className="text-xs text-muted-foreground leading-relaxed">
+                  <p className="text-xs text-muted-foreground leading-relaxed min-h-[5rem]">
                     Una posición es la identidad de lo acordado: un producto de
                     Sumatec, su precio y su vigencia en el acuerdo. Para
                     activarla necesita los tres, pero puedes crearla sin ellos —
@@ -2519,10 +2519,10 @@ export function LineEditDialog({
                 </div>
               </div>
               {!isEdit && (
-                <p className="text-xs text-muted-foreground leading-relaxed">
+                <p className="text-xs text-muted-foreground leading-relaxed min-h-[5rem]">
                   Puedes relacionar la posición con el código que cada cliente
                   usa para identificar este producto. Búscalo en su catálogo o
-                  créalo si no existe.{"\n\n"}
+                  créalo si no existe.
                 </p>
               )}
               <ClientCodeCards
