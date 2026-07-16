@@ -686,6 +686,18 @@ function ClientCodeCard({
       {mode === "search" && (
         <>
           {searchBlock(searchPlaceholder)}
+          {isCreate && card.can_manage && !takenBlock && (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={handleCreateNew}
+                className="inline-flex items-center gap-1 text-xs font-medium text-info hover:text-info-strong focus:outline-none focus:underline"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Crear producto en el catálogo de {card.name}
+              </button>
+            </div>
+          )}
           {takenAlert}
           {takenActions}
         </>
