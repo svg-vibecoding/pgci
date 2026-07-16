@@ -811,7 +811,7 @@ export const searchProducts = createServerFn({ method: "POST" })
     const to = data.offset + data.limit - 1;
     const { data: rows, error } = await context.supabase
       .from("products")
-      .select("id, sku, erp_description, commercial_brand, status")
+      .select("id, sku, erp_description, commercial_brand, status, updated_at")
       .or(
         `sku.ilike.${pattern},erp_description.ilike.${pattern},commercial_brand.ilike.${pattern}`,
       )
