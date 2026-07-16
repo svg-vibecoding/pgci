@@ -1333,6 +1333,10 @@ export type Database = {
         Args: { p_agr_end: string; p_pos_end: string; p_status: string }
         Returns: boolean
       }
+      position_has_sku_conflict: {
+        Args: { p_position_id: string }
+        Returns: boolean
+      }
       publish_positions: { Args: { p_position_ids: string[] }; Returns: Json }
       reactivate_agreement_position: {
         Args: { p_position_id: string; p_reason?: string }
