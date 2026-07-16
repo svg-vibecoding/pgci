@@ -1120,7 +1120,7 @@ function AgreementLinesPage() {
           rows={archivedRows ?? []}
           loading={loadingArchived}
           searchTerm={q.trim().toLowerCase()}
-          onOpenDetail={(id) => setArchivedViewId(id)}
+          onOpenDetail={(id: string) => setArchivedViewId(id)}
         />
       ) : (() => {
         const skuGroupBadge = (r: Line) => {
