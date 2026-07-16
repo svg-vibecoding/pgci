@@ -736,7 +736,7 @@ export const lookupProductBySku = createServerFn({ method: "POST" })
     const [productRes, latestRes] = await Promise.all([
       context.supabase
         .from("products")
-        .select("id, sku, erp_description, commercial_brand, status")
+        .select("id, sku, erp_description, commercial_brand, status, updated_at")
         .eq("sku", data.sku)
         .maybeSingle(),
       context.supabase
@@ -760,6 +760,7 @@ export const lookupProductBySku = createServerFn({ method: "POST" })
       status: (p.status as string) === "active" ? ("active" as const) : ("inactive" as const),
       erp_description: (p.erp_description as string | null) ?? null,
       commercial_brand: (p.commercial_brand as string | null) ?? null,
+      product_updated_at: (p.updated_at as string | null) ?? null,
       catalog_updated_at,
     };
   });
