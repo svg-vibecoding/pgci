@@ -776,8 +776,28 @@ function ClientCodeCard({
               </span>
             </div>
           )}
+          {!disabled && (
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={!canRemove}
+                onClick={onRemove}
+                title={
+                  canRemove
+                    ? undefined
+                    : "Este código distingue esta posición de otra del mismo SKU. Puedes editarlo, pero no quitarlo."
+                }
+                className="text-destructive hover:text-destructive"
+              >
+                Quitar relación
+              </Button>
+            </div>
+          )}
         </>
       )}
+
 
       {disabled && (
         <p className="text-xs text-muted-foreground">
