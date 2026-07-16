@@ -2211,7 +2211,6 @@ export function LineEditDialog({
 
           {/* Columna derecha — códigos por cliente. Se oculta mientras el SKU
               esté en el acuerdo y el usuario no haya declarado intención. */}
-          {!skuBlocksForm && (
           <div className="min-h-0 overflow-y-auto bg-muted/20">
 
             <div className="p-6 space-y-4">
@@ -2220,23 +2219,12 @@ export function LineEditDialog({
                   <SectionHeader title="PRODUCTOS DEL CLIENTE" number="03" />
                 </div>
               </div>
-              {requiresNewClientCode && requiredClientNames && (
-                <p className="text-xs text-muted-foreground">
-                  Este SKU ya está en el acuerdo con código de{" "}
-                  <span className="font-medium text-foreground">
-                    {requiredClientNames}
-                  </span>
-                  . Para crear otra posición, {requiredClientNames} debe nombrarla
-                  con un código distinto.
-                </p>
-              )}
               <ClientCodeCards
                 clients={clientCards}
                 values={codeEntries}
                 agreementId={agreementId}
                 initialLineId={initial?.line_id ?? null}
                 open={open}
-                requiredForClientIds={requiredCodeClientIds}
                 onChange={(clientId, next) => {
                   setCodeEntries((prev) => {
                     const m = new Map(prev);
