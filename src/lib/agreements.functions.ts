@@ -926,6 +926,7 @@ export const searchProducts = createServerFn({ method: "POST" })
         const entry: ProductAgreementPosition = {
           position_id: p.id as string,
           position_status: posStatus,
+          published_at: (p.published_at as string | null) ?? null,
           sale_price: (p.sale_price as number | null) ?? null,
           codes: codesByPos.get(p.id as string) ?? [],
           exclusion_reason: excl?.reason ?? null,
