@@ -366,6 +366,9 @@ function ClientCodeCard({
   >(null);
   const [reactivatePending, setReactivatePending] = useState(false);
   const [takenBlock, setTakenBlock] = useState<TakenBlock | null>(null);
+  // En modo "edit" el buscador arranca oculto — cambiar el código es una
+  // acción explícita disparada por "Cambiar código".
+  const [showCodeSearch, setShowCodeSearch] = useState(false);
   const seq = useRef(0);
 
   // Resync por cambio de posición (o al abrir/cerrar). Se hace durante render
