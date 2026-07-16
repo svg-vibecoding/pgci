@@ -642,8 +642,7 @@ function AgreementLinesPage() {
           if (r.status !== "draft") return false;
           break;
         case "expired":
-          if (r.status !== "active" || covers) return false;
-          break;
+          return false;
         case "excluded":
           if (r.status !== "excluded") return false;
           break;
