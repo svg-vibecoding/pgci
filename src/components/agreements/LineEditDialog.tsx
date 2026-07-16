@@ -690,14 +690,37 @@ function ClientCodeCard({
             <span className="text-[11px] font-medium text-primary">Requerido</span>
           )}
         </div>
-        {mode === "edit" && !disabled && !showCodeSearch && (
-          <button
-            type="button"
-            onClick={() => setShowCodeSearch(true)}
-            className="text-xs font-medium text-info hover:text-info-strong focus:outline-none focus:underline"
-          >
-            Cambiar código
-          </button>
+        {mode === "edit" && !disabled && (
+          <RowActionsMenu
+            row={{}}
+            ariaLabel={`Acciones del código de ${card.name}`}
+            actions={[
+              {
+                label: "Cambiar código",
+                onSelect: () => setShowCodeSearch(true),
+              },
+              {
+                label: "Quitar relación",
+                destructive: true,
+                disabled: !canRemove,
+                title: canRemove
+                  ? undefined
+                  : "Este código distingue esta posición de otra del mismo SKU. Puedes editarlo, pero no quitarlo.",
+                onSelect: () => {
+                  onRemove();
+                  setMode("search");
+                  setOriginalDescription(null);
+                  setIsNew(false);
+                  setQuery("");
+                  setResults([]);
+                  setExpandedId(null);
+                  setPopoverOpen(false);
+                  setTakenBlock(null);
+                  setShowCodeSearch(false);
+                },
+              },
+            ]}
+          />
         )}
       </div>
 
