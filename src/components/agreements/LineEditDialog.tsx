@@ -1973,60 +1973,6 @@ export function LineEditDialog({
                         )}
                         </div>
 
-                        {isCreatingLine && !skuAckRequireNewCode && (() => {
-                          const codelessPos = skuInAgreement.positions.find(
-                            (p) => p.codes.length === 0,
-                          );
-                          const primaryIsGoToCodeless = !!codelessPos;
-                          return (
-                          <div className="rounded-md border border-border bg-surface-card p-4 space-y-3 lg:self-start">
-                            <p className="text-sm font-semibold text-foreground">
-                              ¿Qué quieres hacer?
-                            </p>
-                            <div className="flex flex-col gap-3">
-                              {primaryIsGoToCodeless ? (
-                                <div className="space-y-1">
-                                  <Button
-                                    type="button"
-                                    className="w-full justify-start"
-                                    onClick={() =>
-                                      onSwitchToPosition?.(codelessPos!.position_id)
-                                    }
-                                  >
-                                    Ir a esa posición
-                                  </Button>
-                                  <p className="text-xs text-muted-foreground pl-1">
-                                    Esa posición ocupa el SKU sin código; complétala allí antes de crear otra.
-                                  </p>
-                                </div>
-                              ) : (
-                                <div className="space-y-1">
-                                  <Button
-                                    type="button"
-                                    className="w-full justify-start"
-                                    onClick={() => setSkuAckRequireNewCode(true)}
-                                  >
-                                    Crear otra posición de este SKU
-                                  </Button>
-                                  <p className="text-xs text-muted-foreground pl-1">
-                                    {requiredClientNames
-                                      ? `${requiredClientNames} debe nombrarla con un código distinto.`
-                                      : "Cada posición debe tener un código de cliente que la distinga."}
-                                  </p>
-                                </div>
-                              )}
-                              <Button
-                                type="button"
-                                variant="outline"
-                                className="w-full justify-start"
-                                onClick={clearSkuSelection}
-                              >
-                                Elegir otro SKU
-                              </Button>
-                            </div>
-                          </div>
-                          );
-                        })()}
                         </div>
                       </div>
 
