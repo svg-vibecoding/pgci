@@ -243,6 +243,7 @@ function ClientCodeCards({
   onCreatingIncompleteChange,
   requiredForClientIds,
   canRemoveClientIds,
+  isCreate = false,
 }: {
   clients: ClientCard[];
   values: Map<string, ClientCodeEntry>;
@@ -256,6 +257,7 @@ function ClientCodeCards({
   onCreatingIncompleteChange: (clientId: string, incomplete: boolean) => void;
   requiredForClientIds?: Set<string>;
   canRemoveClientIds?: Set<string>;
+  isCreate?: boolean;
 }) {
   if (clients.length === 0) {
     return (
@@ -285,6 +287,7 @@ function ClientCodeCards({
             onCreatingIncompleteChange={(incomplete) =>
               onCreatingIncompleteChange(c.id, incomplete)
             }
+            isCreate={isCreate}
           />
         );
       })}
@@ -320,6 +323,7 @@ function ClientCodeCard({
   onReactivated,
   onRequestSwitchToPosition,
   onCreatingIncompleteChange,
+  isCreate = false,
 }: {
   card: ClientCard;
   entry: ClientCodeEntry;
@@ -333,6 +337,7 @@ function ClientCodeCard({
   onReactivated: () => void;
   onRequestSwitchToPosition: (positionId: string) => void;
   onCreatingIncompleteChange: (incomplete: boolean) => void;
+  isCreate?: boolean;
 }) {
 
   const disabled = !card.can_manage;
@@ -681,6 +686,18 @@ function ClientCodeCard({
       {mode === "search" && (
         <>
           {searchBlock(searchPlaceholder)}
+          {isCreate && card.can_manage && !takenBlock && (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={handleCreateNew}
+                className="inline-flex items-center gap-1 text-xs font-medium text-info hover:text-info-strong focus:outline-none focus:underline"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Crear producto en el catálogo de {card.name}
+              </button>
+            </div>
+          )}
           {takenAlert}
           {takenActions}
         </>
@@ -1895,6 +1912,14 @@ export function LineEditDialog({
               {/* Producto Jaivaná */}
               <section className="space-y-4">
                 <SectionHeader title="INFORMACIÓN DE SUMATEC" number="01" />
+                {!isEdit && (
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Una posición es la identidad de lo acordado: un producto de
+                    Sumatec, su precio y su vigencia en el acuerdo. Para
+                    activarla necesita los tres, pero puedes crearla sin ellos —
+                    quedará en gestión mientras los defines.
+                  </p>
+                )}
                 <div className="rounded-lg border border-input bg-muted/40 p-4 space-y-3">
                   <div className="flex items-center gap-2">
                     <div className="text-sm font-semibold text-foreground">SUMATEC</div>
@@ -2493,6 +2518,13 @@ export function LineEditDialog({
                   <SectionHeader title="PRODUCTOS DEL CLIENTE" number="03" />
                 </div>
               </div>
+              {!isEdit && (
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Puedes relacionar la posición con el código que cada cliente
+                  usa para identificar este producto. Búscalo en su catálogo o
+                  créalo si no existe.
+                </p>
+              )}
               <ClientCodeCards
                 clients={clientCards}
                 values={codeEntries}
@@ -2501,6 +2533,7 @@ export function LineEditDialog({
                 open={open}
                 requiredForClientIds={requiredClientIds}
                 canRemoveClientIds={canRemoveClientIds}
+                isCreate={!isEdit}
                 onChange={(clientId, next) => {
                   setCodeEntries((prev) => {
                     const m = new Map(prev);
