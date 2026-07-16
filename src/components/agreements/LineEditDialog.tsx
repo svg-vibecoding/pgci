@@ -42,6 +42,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { StatusBadge } from "@/components/sumatec/StatusBadge";
+import { RowActionsMenu } from "@/components/sumatec";
 
 import {
   Table,
@@ -689,14 +690,37 @@ function ClientCodeCard({
             <span className="text-[11px] font-medium text-primary">Requerido</span>
           )}
         </div>
-        {mode === "edit" && !disabled && !showCodeSearch && (
-          <button
-            type="button"
-            onClick={() => setShowCodeSearch(true)}
-            className="text-xs font-medium text-info hover:text-info-strong focus:outline-none focus:underline"
-          >
-            Cambiar código
-          </button>
+        {mode === "edit" && !disabled && (
+          <RowActionsMenu
+            row={{}}
+            ariaLabel={`Acciones del código de ${card.name}`}
+            actions={[
+              {
+                label: "Cambiar código",
+                onSelect: () => setShowCodeSearch(true),
+              },
+              {
+                label: "Quitar relación",
+                destructive: true,
+                disabled: !canRemove,
+                title: canRemove
+                  ? undefined
+                  : "Este código distingue esta posición de otra del mismo SKU. Puedes editarlo, pero no quitarlo.",
+                onSelect: () => {
+                  onRemove();
+                  setMode("search");
+                  setOriginalDescription(null);
+                  setIsNew(false);
+                  setQuery("");
+                  setResults([]);
+                  setExpandedId(null);
+                  setPopoverOpen(false);
+                  setTakenBlock(null);
+                  setShowCodeSearch(false);
+                },
+              },
+            ]}
+          />
         )}
       </div>
 
@@ -777,6 +801,18 @@ function ClientCodeCard({
       {mode === "edit" && (
         <>
           {showCodeSearch && searchBlock(searchPlaceholder)}
+          {showCodeSearch && card.can_manage && !takenBlock && (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={handleCreateNew}
+                className="inline-flex items-center gap-1 text-xs font-medium text-info hover:text-info-strong focus:outline-none focus:underline"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Crear producto en el catálogo de {card.name}
+              </button>
+            </div>
+          )}
           {takenAlert}
           {takenActions}
           <div className="space-y-1.5">
@@ -808,42 +844,9 @@ function ClientCodeCard({
               </span>
             </div>
           )}
-          {!disabled && (
-            <div className="flex justify-end">
-              <button
-                type="button"
-                disabled={!canRemove}
-                onClick={() => {
-                  onRemove();
-                  setMode("search");
-                  setOriginalDescription(null);
-                  setIsNew(false);
-                  setQuery("");
-                  setResults([]);
-                  setExpandedId(null);
-                  setPopoverOpen(false);
-                  setTakenBlock(null);
-                  setShowCodeSearch(false);
-                }}
-                title={
-                  canRemove
-                    ? undefined
-                    : "Este código distingue esta posición de otra del mismo SKU. Puedes editarlo, pero no quitarlo."
-                }
-                className={cn(
-                  "text-xs font-medium focus:outline-none focus:underline",
-                  canRemove
-                    ? "text-destructive hover:underline"
-                    : "text-destructive/40 cursor-not-allowed",
-                )}
-              >
-                Quitar relación
-              </button>
-            </div>
-          )}
-
         </>
       )}
+
 
 
       {disabled && (
@@ -1966,27 +1969,30 @@ export function LineEditDialog({
                   <div className="flex items-center justify-between gap-2">
                     <div className="text-sm font-semibold text-foreground">SUMATEC</div>
                     {isEdit && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          // Draft: sin diálogo, solo abre el buscador (no hay
-                          // historia comercial que etiquetar).
-                          // Publicada (published_at is not null): pedimos la
-                          // razón antes de abrir el buscador.
-                          const isPublished =
-                            !!initial?.status && initial.status !== "draft";
-                          if (isPublished) {
-                            setSkuChangePrompt({ open: true, kind: null, note: "" });
-                          } else {
-                            setShowSkuSearch(true);
-                          }
-                        }}
-                        className="text-xs font-medium text-info hover:text-info-strong focus:outline-none focus:underline"
-                      >
-                        Cambiar SKU
-                      </button>
+                      <RowActionsMenu
+                        row={{}}
+                        ariaLabel="Acciones del SKU Sumatec"
+                        actions={[
+                          {
+                            label: "Cambiar SKU",
+                            onSelect: () => {
+                              // Draft: sin diálogo, solo abre el buscador (no hay
+                              // historia comercial que etiquetar).
+                              // Publicada: pedimos la razón antes de abrir el buscador.
+                              const isPublished =
+                                !!initial?.status && initial.status !== "draft";
+                              if (isPublished) {
+                                setSkuChangePrompt({ open: true, kind: null, note: "" });
+                              } else {
+                                setShowSkuSearch(true);
+                              }
+                            },
+                          },
+                        ]}
+                      />
                     )}
                   </div>
+
 
                   {(!isEdit || showSkuSearch) && (
                   <Popover open={searchOpen} onOpenChange={setSearchOpen}>

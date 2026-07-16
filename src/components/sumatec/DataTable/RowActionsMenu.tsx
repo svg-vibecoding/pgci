@@ -29,14 +29,24 @@ export function RowActionsMenu<T>({ row, actions, ariaLabel }: Props<T>) {
           <DropdownMenuItem
             key={i}
             disabled={a.disabled}
-            onSelect={() => {
+            title={a.title}
+            onSelect={(e) => {
+              if (a.disabled) {
+                e.preventDefault();
+                return;
+              }
               a.onSelect(row);
             }}
-            className={
+            className={[
               a.destructive
                 ? "text-destructive focus:bg-destructive/10 focus:text-destructive"
-                : ""
-            }
+                : "",
+              // Cuando hay title y está deshabilitada, mantenemos pointer-events
+              // para que el tooltip nativo se muestre en hover.
+              a.disabled && a.title ? "data-[disabled]:pointer-events-auto" : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
           >
             {a.icon ? <span className="mr-2 inline-flex">{a.icon}</span> : null}
             {a.label}
