@@ -1489,7 +1489,11 @@ export function LineEditDialog({
     setSaveError(null);
   };
 
-  const hasProduct = !!productId;
+  // En edición, el producto existe desde la semilla (productMeta hidratado
+  // en el useLayoutEffect de apertura). productId se llena después con
+  // prefillFromSku para las operaciones de link/unlink, pero la tarjeta
+  // debe mostrarse expandida desde el primer frame para evitar el salto.
+  const hasProduct = !!productId || (isEdit && !!productMeta);
 
   const agreementDatesLabel = useMemo(() => {
     if (v.start_date.trim() !== "" || v.end_date.trim() !== "") return null;
