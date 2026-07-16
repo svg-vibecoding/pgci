@@ -2915,3 +2915,214 @@ export const listAssignableUsersForAgreementGroup = createServerFn({
     }[];
   });
 
+// ---------------------------------------------------------------------------
+// Posiciones archivadas — la foto (§5.6). Solo lectura.
+// ---------------------------------------------------------------------------
+
+export type ArchivedPositionRow = {
+  id: string;
+  agreement_id: string;
+  sku: string | null;
+  product_description: string | null;
+  product_brand: string | null;
+  sale_price: number | null;
+  par_price: number | null;
+  start_date: string | null;
+  end_date: string | null;
+  observations: string | null;
+  original_status: string;
+  archived_at: string;
+  archived_by: string | null;
+  archive_reason: string;
+  original_created_at: string | null;
+  original_published_at: string | null;
+  original_position_id: string;
+  archived_by_name: string | null;
+};
+
+const agreementIdInput = z.object({ agreement_id: z.string().uuid() });
+
+async function resolveUserNames(
+  supabase: import("@supabase/supabase-js").SupabaseClient,
+  userIds: string[],
+): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+  if (userIds.length === 0) return map;
+  const { data } = await supabase
+    .from("profiles")
+    .select("user_id, full_name, email")
+    .in("user_id", userIds);
+  for (const p of (data ?? []) as {
+    user_id: string;
+    full_name: string | null;
+    email: string | null;
+  }[]) {
+    const label = (p.full_name?.trim() || p.email?.trim() || "").trim();
+    if (label) map.set(p.user_id, label);
+  }
+  return map;
+}
+
+export const listArchivedPositions = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => agreementIdInput.parse(d))
+  .handler(async ({ data, context }): Promise<ArchivedPositionRow[]> => {
+    const { data: rows, error } = await context.supabase
+      .from("archived_positions")
+      .select("*")
+      .eq("agreement_id", data.agreement_id)
+      .order("archived_at", { ascending: false });
+    if (error) throw new Error(`No se pudieron cargar archivadas: ${error.message}`);
+    const list = (rows ?? []) as Omit<ArchivedPositionRow, "archived_by_name">[];
+    const userIds = Array.from(
+      new Set(list.map((r) => r.archived_by).filter((v): v is string => !!v)),
+    );
+    const names = await resolveUserNames(context.supabase, userIds);
+    return list.map((r) => ({
+      ...r,
+      archived_by_name: r.archived_by ? names.get(r.archived_by) ?? null : null,
+    }));
+  });
+
+export type ArchivedPositionDetail = {
+  position: ArchivedPositionRow;
+  codes: {
+    id: string;
+    client_id: string | null;
+    client_name: string | null;
+    client_code: string | null;
+    code_description: string | null;
+    valid_from: string | null;
+    valid_until: string | null;
+    ended_reason: string | null;
+  }[];
+  price_history: {
+    id: string;
+    sale_price: number | null;
+    start_date: string | null;
+    end_date: string | null;
+    change_reason: string | null;
+    recorded_at: string | null;
+    recorded_by: string | null;
+    recorded_by_name: string | null;
+  }[];
+  exclusions: {
+    id: string;
+    exclusion_reason: string | null;
+    valid_from: string | null;
+    valid_until: string | null;
+    started_by: string | null;
+    started_by_name: string | null;
+    ended_by: string | null;
+    ended_by_name: string | null;
+    ended_reason: string | null;
+  }[];
+  alternatives: {
+    id: string;
+    product_id: string | null;
+    sku: string | null;
+    product_description: string | null;
+    product_brand: string | null;
+    notes: string | null;
+    original_created_at: string | null;
+    original_created_by: string | null;
+    original_created_by_name: string | null;
+  }[];
+};
+
+export const getArchivedPositionDetail = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ archived_id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<ArchivedPositionDetail> => {
+    const { data: position, error: pErr } = await context.supabase
+      .from("archived_positions")
+      .select("*")
+      .eq("id", data.archived_id)
+      .maybeSingle();
+    if (pErr) throw new Error(pErr.message);
+    if (!position) throw new Error("Posición archivada no encontrada");
+
+    const [codesRes, priceRes, exclRes, altRes] = await Promise.all([
+      context.supabase
+        .from("archived_position_codes")
+        .select("*")
+        .eq("archived_position_id", data.archived_id)
+        .order("valid_from", { ascending: true }),
+      context.supabase
+        .from("archived_position_price_history")
+        .select("*")
+        .eq("archived_position_id", data.archived_id)
+        .order("recorded_at", { ascending: true }),
+      context.supabase
+        .from("archived_position_exclusions")
+        .select("*")
+        .eq("archived_position_id", data.archived_id)
+        .order("valid_from", { ascending: true }),
+      context.supabase
+        .from("archived_position_alternatives")
+        .select("*")
+        .eq("archived_position_id", data.archived_id)
+        .order("original_created_at", { ascending: true }),
+    ]);
+    for (const r of [codesRes, priceRes, exclRes, altRes]) {
+      if (r.error) throw new Error(r.error.message);
+    }
+
+    const codes = (codesRes.data ?? []) as ArchivedPositionDetail["codes"];
+    const price_history_raw = (priceRes.data ?? []) as Omit<
+      ArchivedPositionDetail["price_history"][number],
+      "recorded_by_name"
+    >[];
+    const exclusions_raw = (exclRes.data ?? []) as Omit<
+      ArchivedPositionDetail["exclusions"][number],
+      "started_by_name" | "ended_by_name"
+    >[];
+    const alternatives_raw = (altRes.data ?? []) as Omit<
+      ArchivedPositionDetail["alternatives"][number],
+      "original_created_by_name"
+    >[];
+
+    const userIds = new Set<string>();
+    if (position.archived_by) userIds.add(position.archived_by);
+    for (const r of price_history_raw) if (r.recorded_by) userIds.add(r.recorded_by);
+    for (const r of exclusions_raw) {
+      if (r.started_by) userIds.add(r.started_by);
+      if (r.ended_by) userIds.add(r.ended_by);
+    }
+    for (const r of alternatives_raw)
+      if (r.original_created_by) userIds.add(r.original_created_by);
+
+    const names = await resolveUserNames(
+      context.supabase,
+      Array.from(userIds),
+    );
+
+    return {
+      position: {
+        ...(position as Omit<ArchivedPositionRow, "archived_by_name">),
+        archived_by_name: position.archived_by
+          ? names.get(position.archived_by) ?? null
+          : null,
+      },
+      codes,
+      price_history: price_history_raw.map((r) => ({
+        ...r,
+        recorded_by_name: r.recorded_by ? names.get(r.recorded_by) ?? null : null,
+      })),
+      exclusions: exclusions_raw.map((r) => ({
+        ...r,
+        started_by_name: r.started_by ? names.get(r.started_by) ?? null : null,
+        ended_by_name: r.ended_by ? names.get(r.ended_by) ?? null : null,
+      })),
+      alternatives: alternatives_raw.map((r) => ({
+        ...r,
+        original_created_by_name: r.original_created_by
+          ? names.get(r.original_created_by) ?? null
+          : null,
+      })),
+    };
+  });
+
+

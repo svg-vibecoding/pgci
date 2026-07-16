@@ -72,9 +72,13 @@ import {
   linkSkuPrice,
   unlinkSkuPrice,
   publishAgreementPositions,
+  listArchivedPositions,
   type LineCode,
+  type ArchivedPositionRow,
 } from "@/lib/agreements.functions";
+import { ArchivedPositionDialog } from "@/components/agreements/ArchivedPositionDialog";
 import { Checkbox } from "@/components/ui/checkbox";
+
 import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
@@ -117,7 +121,9 @@ type LineCardKey =
   | "requires_review"
   | "draft"
   | "expired"
-  | "excluded";
+  | "excluded"
+  | "archived";
+
 
 const STATUS_META: Record<
   Exclude<LineCardKey, "all">,
@@ -128,6 +134,8 @@ const STATUS_META: Record<
   draft: { label: "En gestión", status: "neutral" },
   expired: { label: "Vencida", status: "danger" },
   excluded: { label: "Excluida", status: "neutral" },
+  archived: { label: "Archivada", status: "neutral" },
+
 };
 
 function parseLocalDate(iso: string | null): Date | null {
@@ -289,13 +297,15 @@ function AgreementLinesPage() {
   const deleteFn = useServerFn(deleteAgreementLine);
   const archiveFn = useServerFn(archiveAgreementLine);
   const reactivateFn = useServerFn(reactivateAgreementLine);
-  
+  const archivedListFn = useServerFn(listArchivedPositions);
+
   const skuGroupsFn = useServerFn(listAgreementSkuGroups);
   const linkFn = useServerFn(linkSkuPrice);
   const unlinkFn = useServerFn(unlinkSkuPrice);
   const publishFn = useServerFn(publishAgreementPositions);
   const companiesFn = useServerFn(listAgreementCompanies);
   const catalogPermsFn = useServerFn(listClientCatalogPermissions);
+
 
   const { data: agreement, isLoading: loadingAgreement } = useQuery({
     queryKey: ["agreements", "detail", agreementId],
@@ -308,6 +318,10 @@ function AgreementLinesPage() {
   const { data: lines, isLoading: loadingLines } = useQuery({
     queryKey: ["agreements", "lines", agreementId],
     queryFn: () => linesFn({ data: { agreement_id: agreementId } }),
+  });
+  const { data: archivedRows, isLoading: loadingArchived } = useQuery({
+    queryKey: ["agreements", "archived", agreementId],
+    queryFn: () => archivedListFn({ data: { agreement_id: agreementId } }),
   });
   const { data: skuGroups } = useQuery({
     queryKey: ["agreements", "sku-groups", agreementId],
@@ -376,6 +390,7 @@ function AgreementLinesPage() {
   const [reason, setReason] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [confirmPublishOpen, setConfirmPublishOpen] = useState(false);
+  const [archivedViewId, setArchivedViewId] = useState<string | null>(null);
   const [showClientCol, setShowClientCol] = useState(false);
   useEffect(() => {
     try {
@@ -397,6 +412,7 @@ function AgreementLinesPage() {
     qc.invalidateQueries({ queryKey: ["agreements", "lines", agreementId] });
     qc.invalidateQueries({ queryKey: ["agreements", "detail", agreementId] });
     qc.invalidateQueries({ queryKey: ["agreements", "sku-groups", agreementId] });
+    qc.invalidateQueries({ queryKey: ["agreements", "archived", agreementId] });
   };
 
   const exclude = useMutation({
@@ -773,6 +789,7 @@ function AgreementLinesPage() {
     { key: "requires_review", label: "Requieren revisión", value: num(agreement.lines_review) },
     { key: "draft", label: "En gestión", value: num(agreement.lines_draft) },
     { key: "excluded", label: "Excluidas", value: num(agreement.lines_excluded) },
+    { key: "archived", label: "Archivadas", value: archivedRows?.length ?? 0 },
   ];
   const totalCount = summaryCards.reduce((s, c) => s + c.value, 0);
 
@@ -1003,7 +1020,23 @@ function AgreementLinesPage() {
       {(activeCard !== "all" || q.trim() || skuConflictOnly) && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <p className="suma-body text-text-secondary">
-            {`${filtered.length} de ${totalCount} ${totalCount === 1 ? "posición" : "posiciones"}`}
+            {(() => {
+              const term = q.trim().toLowerCase();
+              const visibleCount =
+                activeCard === "archived"
+                  ? (archivedRows ?? []).filter(
+                      (r) =>
+                        !term ||
+                        [
+                          r.sku ?? "",
+                          r.product_description ?? "",
+                          r.product_brand ?? "",
+                          r.archive_reason,
+                        ].some((s) => s.toLowerCase().includes(term)),
+                    ).length
+                  : filtered.length;
+              return `${visibleCount} de ${totalCount} ${totalCount === 1 ? "posición" : "posiciones"}`;
+            })()}
           </p>
           <div className="flex flex-wrap gap-2">
             {activeCard !== "all" && (
@@ -1098,7 +1131,14 @@ function AgreementLinesPage() {
         </div>
       )}
 
-      {(() => {
+      {activeCard === "archived" ? (
+        <ArchivedTable
+          rows={archivedRows ?? []}
+          loading={loadingArchived}
+          searchTerm={q.trim().toLowerCase()}
+          onOpenDetail={(id: string) => setArchivedViewId(id)}
+        />
+      ) : (() => {
         const skuGroupBadge = (r: Line) => {
           const g = groupByPositionId.get(r.id as string);
           if (!g) return null;
@@ -1484,6 +1524,14 @@ function AgreementLinesPage() {
         agreementEndDate={agreement.end_date as string | null | undefined}
         canEdit={canAdmin}
         onEdit={(lineId) => openEditForLine(lineId)}
+      />
+
+      <ArchivedPositionDialog
+        open={!!archivedViewId}
+        onOpenChange={(o) => {
+          if (!o) setArchivedViewId(null);
+        }}
+        archivedId={archivedViewId}
       />
 
 
@@ -1996,3 +2044,122 @@ function SkuGroupCard({
     </li>
   );
 }
+
+function ArchivedTable({
+  rows,
+  loading,
+  searchTerm,
+  onOpenDetail,
+}: {
+  rows: ArchivedPositionRow[];
+  loading: boolean;
+  searchTerm: string;
+  onOpenDetail: (id: string) => void;
+}) {
+  const filtered = useMemo(() => {
+    if (!searchTerm) return rows;
+    return rows.filter((r) =>
+      [r.sku ?? "", r.product_description ?? "", r.product_brand ?? "", r.archive_reason]
+        .some((s) => s.toLowerCase().includes(searchTerm)),
+    );
+  }, [rows, searchTerm]);
+
+  const fmtArchivedAt = (iso: string): string => {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return iso;
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    return `${dd}/${mm}/${d.getFullYear()}`;
+  };
+
+  const columns: DataTableColumn<ArchivedPositionRow>[] = [
+    {
+      id: "jaivana",
+      header: "Jaivaná",
+      cell: (r) => (
+        <div className="min-w-0">
+          <div
+            className="truncate font-mono text-[12.5px] font-semibold text-text-tertiary"
+            title={r.sku ?? undefined}
+          >
+            {r.sku ?? "—"}
+          </div>
+          <div
+            className="line-clamp-2 text-[13px] leading-[1.35] text-text-tertiary"
+            title={r.product_description ?? undefined}
+          >
+            {r.product_description ?? "—"}
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "brand",
+      header: "Marca",
+      width: 140,
+      cell: (r) => (
+        <span className="text-text-tertiary">{r.product_brand ?? "—"}</span>
+      ),
+    },
+    {
+      id: "price",
+      header: "Precio",
+      width: 110,
+      numeric: true,
+      wrap: false,
+      cell: (r) => (
+        <span className="text-text-tertiary">{formatMoneyCOP(r.sale_price)}</span>
+      ),
+    },
+    {
+      id: "archived_at",
+      header: "Archivado",
+      width: 130,
+      wrap: false,
+      cell: (r) => (
+        <div className="text-text-tertiary">
+          <div className="tabular-nums">{fmtArchivedAt(r.archived_at)}</div>
+          {r.archived_by_name && (
+            <div className="text-[11.5px]">{r.archived_by_name}</div>
+          )}
+        </div>
+      ),
+    },
+    {
+      id: "reason",
+      header: "Motivo",
+      cell: (r) => (
+        <span
+          className="line-clamp-2 text-text-tertiary"
+          title={r.archive_reason}
+        >
+          {r.archive_reason}
+        </span>
+      ),
+    },
+  ];
+
+  return (
+    <DataTable<ArchivedPositionRow>
+      data={filtered}
+      columns={columns}
+      getRowId={(r) => r.id}
+      loading={loading}
+      onRowClick={(r) => onOpenDetail(r.id)}
+      rowActions={(r) => [
+        {
+          label: "Ver detalle",
+          icon: <Eye className="h-4 w-4" />,
+          onSelect: () => onOpenDetail(r.id),
+        },
+      ]}
+      empty={{
+        icon: <Archive className="h-5 w-5" />,
+        title: "Sin posiciones archivadas",
+        description:
+          "Cuando archives una posición, quedará aquí como una foto inmutable.",
+      }}
+    />
+  );
+}
+
