@@ -1643,6 +1643,31 @@ export function LineEditDialog({
     return missing;
   };
 
+  // R-09: si cambia el SKU en una posición publicada, exigimos que el usuario
+  // declare la naturaleza del cambio (cambio real vs corrección) antes de
+  // guardar. La etiqueta y la nota se propagan al patch de la RPC, que las
+  // escribe en el cierre del tramo de precio y en los códigos que cierra.
+  const isSkuChangeOnPublished = useMemo(() => {
+    if (!isEdit) return false;
+    if (!initial?.status || initial.status === "draft") return false;
+    if (!productId) return false;
+    const before = (initial?.sku ?? "").trim();
+    const after = v.sku.trim();
+    return before !== "" && after !== "" && before !== after;
+  }, [isEdit, initial?.status, initial?.sku, v.sku, productId]);
+
+  type SkuChangeChoice = { kind: "sku_changed" | "sku_corrected"; note?: string };
+  const [skuChangePrompt, setSkuChangePrompt] = useState<{
+    open: boolean;
+    kind: "sku_changed" | "sku_corrected" | null;
+    note: string;
+  }>({ open: false, kind: null, note: "" });
+
+  useEffect(() => {
+    // Reset del prompt al cerrar el diálogo o cambiar de posición editada.
+    if (!open) setSkuChangePrompt({ open: false, kind: null, note: "" });
+  }, [open, initial?.line_id]);
+
   const save = useMutation({
     mutationFn: async () => {
       const num = (s: string) => {
