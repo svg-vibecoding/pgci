@@ -1076,51 +1076,12 @@ export function LineEditDialog({
     productDescription: string | null;
     positions: SkuAgreementPosition[];
   } | null>(null);
-  // El usuario acepta que registrará un código nuevo → sale del bloqueo cuando
-  // todas las posiciones existentes YA tienen código. Reset al cambiar SKU.
-  const [skuAckRequireNewCode, setSkuAckRequireNewCode] = useState(false);
   const [skuPositionsExpanded, setSkuPositionsExpanded] = useState(false);
   const conflictSeq = useRef(0);
   const searchSeq = useRef(0);
   const PAGE_SIZE = 20;
 
   const isCreatingLine = !initial?.line_id;
-  // Alguna posición existente sin códigos ocupa el SKU sola: bloqueo duro.
-  const skuHasCodelessPosition = !!skuInAgreement?.positions.some(
-    (p) => p.codes.length === 0,
-  );
-  // El SKU está en el acuerdo (nueva posición). Solo bloquea el formulario
-  // hasta que:
-  //  - todas las existentes tienen código → user pulsa "Registraré nuevo código"
-  //  - o hay una codeless → siempre bloqueado (salida: elegir otro SKU / ir).
-  const skuBlocksForm =
-    isCreatingLine &&
-    !!skuInAgreement &&
-    (skuHasCodelessPosition || !skuAckRequireNewCode);
-  // Cuando el usuario aceptó "Registraré nuevo código", la sección de
-  // productos del cliente pasa a ser REQUERIDA para poder guardar.
-  const requiresNewClientCode =
-    isCreatingLine && !!skuInAgreement && skuAckRequireNewCode;
-
-  // Clientes que ya tienen código vigente en OTRA posición del SKU en el
-  // acuerdo. Solo ellos pueden "desempatar" con un código nuevo — un cliente
-  // distinto no distingue posiciones (spec §4.5).
-  const requiredCodeClientIds = useMemo(() => {
-    const s = new Set<string>();
-    if (!isCreatingLine || !skuInAgreement) return s;
-    for (const pos of skuInAgreement.positions) {
-      for (const c of pos.codes) s.add(c.client_id);
-    }
-    return s;
-  }, [isCreatingLine, skuInAgreement]);
-  const requiredClientNames = useMemo(() => {
-    if (requiredCodeClientIds.size === 0) return "";
-    const names: string[] = [];
-    for (const c of agreementClients ?? []) {
-      if (requiredCodeClientIds.has(c.id)) names.push(c.name?.trim() || "Sin nombre");
-    }
-    return names.sort((a, b) => a.localeCompare(b, "es", { sensitivity: "base" })).join(", ");
-  }, [requiredCodeClientIds, agreementClients]);
 
   // Mapa de permisos + tarjetas ordenadas.
   const permMap = useMemo(() => {
@@ -1249,7 +1210,6 @@ export function LineEditDialog({
     setSearchResults([]);
     setSearchHasMore(false);
     setSkuInAgreement(null);
-    setSkuAckRequireNewCode(false);
     setSkuPositionsExpanded(false);
     if (initial?.line_id && next.sku.trim()) {
       void prefillFromSku(next.sku);
@@ -1328,7 +1288,6 @@ export function LineEditDialog({
     setSearchHasMore(false);
     // Estado del SKU respecto al acuerdo — solo aplica al crear.
     // En edición mantenemos el flujo previo (panel de vinculación de precios).
-    setSkuAckRequireNewCode(false);
     setSkuPositionsExpanded(false);
     if (
       isCreatingLine &&
@@ -1352,7 +1311,6 @@ export function LineEditDialog({
     setProductId(null);
     setLookup({ kind: "empty" });
     setSkuInAgreement(null);
-    setSkuAckRequireNewCode(false);
     setSkuPositionsExpanded(false);
     setNConflict({ kind: "idle", lines: [] });
     setIsLinked(false);
@@ -1682,19 +1640,10 @@ export function LineEditDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div
-          className={cn(
-            "flex-1 min-h-0 grid grid-cols-1",
-            !skuBlocksForm && "lg:grid-cols-[minmax(0,55fr)_minmax(0,45fr)]",
-          )}
-        >
+        <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[minmax(0,55fr)_minmax(0,45fr)]">
           {/* Columna izquierda — la posición */}
-          <div
-            className={cn(
-              "min-h-0 overflow-y-auto bg-white",
-              !skuBlocksForm && "border-r border-border",
-            )}
-          >
+          <div className="min-h-0 overflow-y-auto bg-white border-r border-border">
+
 
             <div className="p-6 space-y-8">
               {/* Producto Jaivaná */}
@@ -1889,15 +1838,9 @@ export function LineEditDialog({
                           Este SKU ya está en el acuerdo
                         </p>
 
-                        <div
-                          className={cn(
-                            "space-y-3",
-                            skuBlocksForm &&
-                              visible.length === 1 &&
-                              "lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(280px,340px)] lg:items-start lg:gap-4 lg:space-y-0",
-                          )}
-                        >
                         <div className="space-y-3">
+                        <div className="space-y-3">
+
                         {visible.map((pos) => {
                           const variant = variantForPositionStatus(pos.position_status);
                           const title =
@@ -1987,17 +1930,9 @@ export function LineEditDialog({
                           // Un solo CTA de edición por posición.
                           const editLabel = isExcluded
                             ? "Reactivar esa posición"
-                            : !hasCode
-                              ? "Ir a esa posición"
-                              : hasMissingClient
-                                ? "Agregar códigos de cliente a esa posición"
-                                : null;
-                          const showEditCta = isCreatingLine
-                            ? !skuAckRequireNewCode && editLabel !== null
-                            : true;
-                          const nonCreateLabel = isExcluded
-                            ? "Reactivar esa posición"
                             : "Ir a esa posición";
+                          const showEditCta = true;
+
                           return (
                             <div key={pos.position_id} className="space-y-1">
                               <PositionTakenPanel
@@ -2016,7 +1951,7 @@ export function LineEditDialog({
                                       onSwitchToPosition?.(pos.position_id)
                                     }
                                   >
-                                    {isCreatingLine ? editLabel : nonCreateLabel}
+                                    {editLabel}
                                   </Button>
                                 </div>
                               )}
@@ -2038,60 +1973,6 @@ export function LineEditDialog({
                         )}
                         </div>
 
-                        {isCreatingLine && !skuAckRequireNewCode && (() => {
-                          const codelessPos = skuInAgreement.positions.find(
-                            (p) => p.codes.length === 0,
-                          );
-                          const primaryIsGoToCodeless = !!codelessPos;
-                          return (
-                          <div className="rounded-md border border-border bg-surface-card p-4 space-y-3 lg:self-start">
-                            <p className="text-sm font-semibold text-foreground">
-                              ¿Qué quieres hacer?
-                            </p>
-                            <div className="flex flex-col gap-3">
-                              {primaryIsGoToCodeless ? (
-                                <div className="space-y-1">
-                                  <Button
-                                    type="button"
-                                    className="w-full justify-start"
-                                    onClick={() =>
-                                      onSwitchToPosition?.(codelessPos!.position_id)
-                                    }
-                                  >
-                                    Ir a esa posición
-                                  </Button>
-                                  <p className="text-xs text-muted-foreground pl-1">
-                                    Esa posición ocupa el SKU sin código; complétala allí antes de crear otra.
-                                  </p>
-                                </div>
-                              ) : (
-                                <div className="space-y-1">
-                                  <Button
-                                    type="button"
-                                    className="w-full justify-start"
-                                    onClick={() => setSkuAckRequireNewCode(true)}
-                                  >
-                                    Crear otra posición de este SKU
-                                  </Button>
-                                  <p className="text-xs text-muted-foreground pl-1">
-                                    {requiredClientNames
-                                      ? `${requiredClientNames} debe nombrarla con un código distinto.`
-                                      : "Cada posición debe tener un código de cliente que la distinga."}
-                                  </p>
-                                </div>
-                              )}
-                              <Button
-                                type="button"
-                                variant="outline"
-                                className="w-full justify-start"
-                                onClick={clearSkuSelection}
-                              >
-                                Elegir otro SKU
-                              </Button>
-                            </div>
-                          </div>
-                          );
-                        })()}
                         </div>
                       </div>
 
@@ -2220,8 +2101,6 @@ export function LineEditDialog({
                 </div>
               </section>
 
-              {/* Condiciones comerciales — se oculta mientras el usuario no declare intención (skuBlocksForm) */}
-              {!skuBlocksForm && (
               <section className="space-y-4">
                 <SectionHeader title="Condiciones comerciales" number="02" />
                 {agreementDatesLabel && (
@@ -2236,7 +2115,7 @@ export function LineEditDialog({
                       <Input
                         className={inputClass}
                         inputMode="decimal"
-                        disabled={skuBlocksForm}
+                       
                         value={v.sale_price}
                         onChange={(e) => setV({ ...v, sale_price: e.target.value })}
                         onBlur={(e) =>
@@ -2252,7 +2131,7 @@ export function LineEditDialog({
                       <Input
                         className={inputClass}
                         inputMode="decimal"
-                        disabled={skuBlocksForm}
+                       
                         value={v.par_price}
                         onChange={(e) => setV({ ...v, par_price: e.target.value })}
                         onBlur={(e) =>
@@ -2280,7 +2159,7 @@ export function LineEditDialog({
                             "[&::-webkit-calendar-picker-indicator]:cursor-pointer",
                           )}
                           type="date"
-                          disabled={skuBlocksForm}
+                         
                           value={v.start_date}
                           onChange={(e) => setV({ ...v, start_date: e.target.value })}
                         />
@@ -2302,7 +2181,7 @@ export function LineEditDialog({
                             "[&::-webkit-calendar-picker-indicator]:cursor-pointer",
                           )}
                           type="date"
-                          disabled={skuBlocksForm}
+                         
                           value={v.end_date}
                           onChange={(e) => setV({ ...v, end_date: e.target.value })}
                         />
@@ -2315,7 +2194,7 @@ export function LineEditDialog({
                     <Textarea
                       className={inputClass}
                       rows={2}
-                      disabled={skuBlocksForm}
+                     
                       value={v.observations}
                       onChange={(e) =>
                         setV({ ...v, observations: e.target.value })
@@ -2323,14 +2202,13 @@ export function LineEditDialog({
                     />
                   </div>
                 </div>
-              </section>
-              )}
+                </section>
             </div>
           </div>
 
+
           {/* Columna derecha — códigos por cliente. Se oculta mientras el SKU
               esté en el acuerdo y el usuario no haya declarado intención. */}
-          {!skuBlocksForm && (
           <div className="min-h-0 overflow-y-auto bg-muted/20">
 
             <div className="p-6 space-y-4">
@@ -2339,23 +2217,12 @@ export function LineEditDialog({
                   <SectionHeader title="PRODUCTOS DEL CLIENTE" number="03" />
                 </div>
               </div>
-              {requiresNewClientCode && requiredClientNames && (
-                <p className="text-xs text-muted-foreground">
-                  Este SKU ya está en el acuerdo con código de{" "}
-                  <span className="font-medium text-foreground">
-                    {requiredClientNames}
-                  </span>
-                  . Para crear otra posición, {requiredClientNames} debe nombrarla
-                  con un código distinto.
-                </p>
-              )}
               <ClientCodeCards
                 clients={clientCards}
                 values={codeEntries}
                 agreementId={agreementId}
                 initialLineId={initial?.line_id ?? null}
                 open={open}
-                requiredForClientIds={requiredCodeClientIds}
                 onChange={(clientId, next) => {
                   setCodeEntries((prev) => {
                     const m = new Map(prev);
@@ -2399,7 +2266,6 @@ export function LineEditDialog({
 
             </div>
           </div>
-          )}
         </div>
 
 
@@ -2407,7 +2273,7 @@ export function LineEditDialog({
           {saveError && (
             <p className="text-xs text-destructive sm:mr-auto">{saveError}</p>
           )}
-          {canOfferPublish && !saveError && !skuBlocksForm && (
+          {canOfferPublish && !saveError && (
             <label
               className={cn(
                 "flex items-start gap-2 sm:mr-auto",
@@ -2418,7 +2284,7 @@ export function LineEditDialog({
                 id="publish-on-save"
                 checked={publishOnSave}
                 onCheckedChange={(c) => setPublishOnSave(c === true)}
-                disabled={!canPublishNow || save.isPending || skuBlocksForm}
+                disabled={!canPublishNow || save.isPending}
                 className="mt-0.5"
               />
               <span className="flex flex-col leading-tight">
@@ -2448,30 +2314,10 @@ export function LineEditDialog({
                   setSaveError("Selecciona un producto o deja el buscador vacío.");
                   return;
                 }
-                if (skuBlocksForm) {
-                  setSaveError(
-                    "Este SKU ya está en el acuerdo. Elige otro SKU o ve a la posición existente.",
-                  );
-                  return;
-                }
-                if (requiresNewClientCode) {
-                  // Debe haber al menos un código no vacío de UNO de los clientes
-                  // que ya tienen código en otra posición del SKU.
-                  const hasDesempate = Array.from(codeEntries.entries()).some(
-                    ([clientId, e]) =>
-                      requiredCodeClientIds.has(clientId) && e.code.trim() !== "",
-                  );
-                  if (!hasDesempate) {
-                    setSaveError(
-                      `Falta el código de ${requiredClientNames}. Este SKU ya está en el acuerdo con un código de ${requiredClientNames}; para crear otra posición, ${requiredClientNames} debe nombrarla de otra forma.`,
-                    );
-                    return;
-                  }
-                }
                 setSaveError(null);
                 save.mutate();
               }}
-              disabled={save.isPending || hasCreatingIncomplete || skuBlocksForm}
+              disabled={save.isPending || hasCreatingIncomplete}
             >
               {save.isPending
                 ? "Guardando…"

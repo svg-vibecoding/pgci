@@ -414,6 +414,7 @@ export type AgreementLineRow = {
   end_date: string | null;
   observations: string | null;
   status: "active" | "requires_review" | "excluded" | "draft" | "archived";
+  pending_reason: string | null;
 
   exclusion_reason: string | null;
   created_at: string;
@@ -439,7 +440,7 @@ export const listAgreementLines = createServerFn({ method: "GET" })
     const positionsRes = await context.supabase
       .from("agreement_positions")
       .select(
-        "id, agreement_id, product_id, sale_price, par_price, start_date, end_date, observations, status, created_at, updated_at, products:product_id(sku, erp_description, commercial_brand, status)",
+        "id, agreement_id, product_id, sale_price, par_price, start_date, end_date, observations, status, pending_reason, created_at, updated_at, products:product_id(sku, erp_description, commercial_brand, status)",
       )
       .eq("agreement_id", data.agreement_id)
       .order("created_at", { ascending: false });
@@ -533,6 +534,7 @@ export const listAgreementLines = createServerFn({ method: "GET" })
       end_date: (r.end_date as string | null) ?? null,
       observations: (r.observations as string | null) ?? null,
       status: r.status as AgreementLineRow["status"],
+      pending_reason: (r.pending_reason as string | null) ?? null,
       exclusion_reason: exclusionByPos.get(r.id as string) ?? null,
       created_at: r.created_at as string,
       updated_at: r.updated_at as string,

@@ -536,10 +536,16 @@ function AgreementLinesPage() {
 
   // Publicables en la vista filtrada actual. Un checkbox por fila se habilita
   // solo si isPublishable(row) — todos los ids en publishableInView pasan el gate.
+  const hasReasonToken = (r: Line, token: string): boolean => {
+    const raw = (r.pending_reason ?? "").trim();
+    if (!raw) return false;
+    return raw.split(",").map((t) => t.trim()).includes(token);
+  };
   const isPublishable = (r: Line): boolean => {
     if (r.status !== "draft" && r.status !== "requires_review") return false;
     if (!r.product_id) return false;
     if ((r.products?.status ?? null) !== "active") return false;
+    if (hasReasonToken(r, "sku_conflict")) return false;
     const sale = typeof r.sale_price === "number" ? r.sale_price : null;
     if (sale == null || sale <= 0) return false;
     if (!r.start_date) return false;
@@ -1158,12 +1164,18 @@ function AgreementLinesPage() {
               return (
                 <div className="flex flex-col items-start gap-1">
                   {meta && <StatusBadge status={meta.status} label={meta.label} />}
-                  {r.status === "requires_review" && (
+                  {(r.status === "requires_review" || r.status === "draft") && (
                     <div className="flex flex-wrap gap-1">
                       {r.product_id && r.products?.status !== "active" && (
                         <Badge color="error" variant="soft">
                           <XCircle className="h-3 w-3" />
                           SKU inactivo
+                        </Badge>
+                      )}
+                      {hasReasonToken(r, "sku_conflict") && (
+                        <Badge color="error" variant="soft">
+                          <XCircle className="h-3 w-3" />
+                          En conflicto
                         </Badge>
                       )}
                       {vig.color === "error" && (

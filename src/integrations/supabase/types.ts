@@ -1338,6 +1338,10 @@ export type Database = {
         Args: { p_position_id: string; p_reason?: string }
         Returns: undefined
       }
+      recalc_sku_conflict: {
+        Args: { p_agreement_id: string; p_product_id: string }
+        Returns: undefined
+      }
       update_agreement_line: {
         Args: {
           p_confirm_n_conflict?: boolean
