@@ -3340,6 +3340,15 @@ export const getArchivedPositionAgreementContext = createServerFn({ method: "GET
     events.sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0));
 
     return {
+      agreement: {
+        id: agrRes.data.id as string,
+        name: agrRes.data.name as string,
+        scope: agrRes.data.scope as string,
+        unit_name: (agrRes.data.unit_name as string | null) ?? null,
+        status: agrRes.data.status as string,
+        start_date: (agrRes.data.start_date as string | null) ?? null,
+        end_date: (agrRes.data.end_date as string | null) ?? null,
+      },
       window: { from: pos.original_created_at as string | null, to: archivedAt },
       covered_clients,
       active_members,
