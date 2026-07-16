@@ -1341,8 +1341,32 @@ export function LineEditDialog({
     setV(next);
     // codeEntries se hidrata sincrónicamente durante render (arriba) para
     // evitar la carrera con ClientCodeCard al cambiar de posición.
-    setProductMeta(null);
-    setLookup({ kind: next.sku.trim() ? "idle" : "empty" });
+    // Hidratar productMeta/lookup desde `initial` cuando la lista ya trae
+    // los datos del producto (edición). Evita el parpadeo de inputs vacíos
+    // mientras `prefillFromSku` refresca en segundo plano.
+    const seededProduct =
+      initial?.line_id &&
+      (initial.erp_description !== undefined ||
+        initial.commercial_brand !== undefined ||
+        initial.product_status !== undefined);
+    if (seededProduct) {
+      setProductMeta({
+        erp_description: initial!.erp_description ?? null,
+        commercial_brand: initial!.commercial_brand ?? null,
+        updated_at: initial!.product_updated_at ?? null,
+      });
+      setLookup({
+        kind:
+          initial!.product_status === "active"
+            ? "active"
+            : initial!.product_status
+              ? "inactive"
+              : "idle",
+      });
+    } else {
+      setProductMeta(null);
+      setLookup({ kind: next.sku.trim() ? "idle" : "empty" });
+    }
     setNConflict({ kind: "idle", lines: [] });
     setIsLinked(false);
     setProductId(null);
