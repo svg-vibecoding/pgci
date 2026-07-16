@@ -93,6 +93,9 @@ export type LineEditValues = {
   // decidir si mostrar el checkbox "Publicar en acuerdo al guardar".
   // Al crear, la posición nace 'draft' y el checkbox siempre aparece.
   status?: "active" | "requires_review" | "excluded" | "draft" | "archived";
+  // Tokens de pending_reason del backend (fuente única de verdad).
+  // Solo se pasa en edición; en creación se deriva del formulario.
+  pending_reason?: string | null;
   sku: string;
   // Lista COMPLETA declarativa de códigos por cliente. Lo ausente se cierra.
   client_codes: LineEditClientCode[];
