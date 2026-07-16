@@ -729,6 +729,207 @@ export type Database = {
           },
         ]
       }
+      archived_position_codes: {
+        Row: {
+          archived_position_id: string
+          client_code: string | null
+          client_id: string | null
+          client_name: string | null
+          code_description: string | null
+          ended_reason: string | null
+          id: string
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          archived_position_id: string
+          client_code?: string | null
+          client_id?: string | null
+          client_name?: string | null
+          code_description?: string | null
+          ended_reason?: string | null
+          id?: string
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          archived_position_id?: string
+          client_code?: string | null
+          client_id?: string | null
+          client_name?: string | null
+          code_description?: string | null
+          ended_reason?: string | null
+          id?: string
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "archived_position_codes_archived_position_id_fkey"
+            columns: ["archived_position_id"]
+            isOneToOne: false
+            referencedRelation: "archived_positions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      archived_position_exclusions: {
+        Row: {
+          archived_position_id: string
+          ended_by: string | null
+          ended_reason: string | null
+          exclusion_reason: string | null
+          id: string
+          started_by: string | null
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          archived_position_id: string
+          ended_by?: string | null
+          ended_reason?: string | null
+          exclusion_reason?: string | null
+          id?: string
+          started_by?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          archived_position_id?: string
+          ended_by?: string | null
+          ended_reason?: string | null
+          exclusion_reason?: string | null
+          id?: string
+          started_by?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "archived_position_exclusions_archived_position_id_fkey"
+            columns: ["archived_position_id"]
+            isOneToOne: false
+            referencedRelation: "archived_positions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      archived_position_price_history: {
+        Row: {
+          archived_position_id: string
+          change_reason: string | null
+          end_date: string | null
+          id: string
+          recorded_at: string | null
+          recorded_by: string | null
+          sale_price: number | null
+          start_date: string | null
+        }
+        Insert: {
+          archived_position_id: string
+          change_reason?: string | null
+          end_date?: string | null
+          id?: string
+          recorded_at?: string | null
+          recorded_by?: string | null
+          sale_price?: number | null
+          start_date?: string | null
+        }
+        Update: {
+          archived_position_id?: string
+          change_reason?: string | null
+          end_date?: string | null
+          id?: string
+          recorded_at?: string | null
+          recorded_by?: string | null
+          sale_price?: number | null
+          start_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "archived_position_price_history_archived_position_id_fkey"
+            columns: ["archived_position_id"]
+            isOneToOne: false
+            referencedRelation: "archived_positions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      archived_positions: {
+        Row: {
+          agreement_id: string
+          archive_reason: string
+          archived_at: string
+          archived_by: string | null
+          end_date: string | null
+          id: string
+          observations: string | null
+          original_created_at: string | null
+          original_position_id: string
+          original_published_at: string | null
+          original_status: string
+          par_price: number | null
+          product_brand: string | null
+          product_description: string | null
+          sale_price: number | null
+          sku: string | null
+          start_date: string | null
+        }
+        Insert: {
+          agreement_id: string
+          archive_reason: string
+          archived_at?: string
+          archived_by?: string | null
+          end_date?: string | null
+          id?: string
+          observations?: string | null
+          original_created_at?: string | null
+          original_position_id: string
+          original_published_at?: string | null
+          original_status: string
+          par_price?: number | null
+          product_brand?: string | null
+          product_description?: string | null
+          sale_price?: number | null
+          sku?: string | null
+          start_date?: string | null
+        }
+        Update: {
+          agreement_id?: string
+          archive_reason?: string
+          archived_at?: string
+          archived_by?: string | null
+          end_date?: string | null
+          id?: string
+          observations?: string | null
+          original_created_at?: string | null
+          original_position_id?: string
+          original_published_at?: string | null
+          original_status?: string
+          par_price?: number | null
+          product_brand?: string | null
+          product_description?: string | null
+          sale_price?: number | null
+          sku?: string | null
+          start_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "archived_positions_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "agreements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "archived_positions_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "agreements_with_counts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_companies: {
         Row: {
           client_id: string | null
