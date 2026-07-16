@@ -1966,27 +1966,30 @@ export function LineEditDialog({
                   <div className="flex items-center justify-between gap-2">
                     <div className="text-sm font-semibold text-foreground">SUMATEC</div>
                     {isEdit && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          // Draft: sin diálogo, solo abre el buscador (no hay
-                          // historia comercial que etiquetar).
-                          // Publicada (published_at is not null): pedimos la
-                          // razón antes de abrir el buscador.
-                          const isPublished =
-                            !!initial?.status && initial.status !== "draft";
-                          if (isPublished) {
-                            setSkuChangePrompt({ open: true, kind: null, note: "" });
-                          } else {
-                            setShowSkuSearch(true);
-                          }
-                        }}
-                        className="text-xs font-medium text-info hover:text-info-strong focus:outline-none focus:underline"
-                      >
-                        Cambiar SKU
-                      </button>
+                      <RowActionsMenu
+                        row={{}}
+                        ariaLabel="Acciones del SKU Sumatec"
+                        actions={[
+                          {
+                            label: "Cambiar SKU",
+                            onSelect: () => {
+                              // Draft: sin diálogo, solo abre el buscador (no hay
+                              // historia comercial que etiquetar).
+                              // Publicada: pedimos la razón antes de abrir el buscador.
+                              const isPublished =
+                                !!initial?.status && initial.status !== "draft";
+                              if (isPublished) {
+                                setSkuChangePrompt({ open: true, kind: null, note: "" });
+                              } else {
+                                setShowSkuSearch(true);
+                              }
+                            },
+                          },
+                        ]}
+                      />
                     )}
                   </div>
+
 
                   {(!isEdit || showSkuSearch) && (
                   <Popover open={searchOpen} onOpenChange={setSearchOpen}>
