@@ -283,6 +283,7 @@ function AgreementLinesPage() {
   const ctxFn = useServerFn(getAgreementContext);
   const linesFn = useServerFn(listAgreementLines);
   const excludeFn = useServerFn(excludeAgreementLine);
+  const deleteFn = useServerFn(deleteAgreementLine);
   const reactivateFn = useServerFn(reactivateAgreementLine);
   
   const skuGroupsFn = useServerFn(listAgreementSkuGroups);
