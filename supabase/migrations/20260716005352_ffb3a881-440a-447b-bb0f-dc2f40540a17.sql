@@ -1,0 +1,2 @@
+DROP TRIGGER IF EXISTS check_position_identity_without_codes_trigger ON public.agreement_positions;
+DROP FUNCTION IF EXISTS public.check_position_identity_without_codes();
