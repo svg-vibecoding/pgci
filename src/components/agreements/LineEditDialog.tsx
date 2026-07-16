@@ -436,6 +436,7 @@ function ClientCodeCard({
     setIsNew(false);
     setMode("edit");
     setPopoverOpen(false);
+    setShowCodeSearch(false);
     setQuery("");
     setResults([]);
     setExpandedId(null);
