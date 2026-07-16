@@ -316,7 +316,9 @@ function ClientCodeCard({
   initialLineId,
   open,
   required = false,
+  canRemove = true,
   onChange,
+  onRemove,
   onReactivated,
   onRequestSwitchToPosition,
   onCreatingIncompleteChange,
@@ -327,11 +329,14 @@ function ClientCodeCard({
   initialLineId: string | null;
   open: boolean;
   required?: boolean;
+  canRemove?: boolean;
   onChange: (next: ClientCodeEntry) => void;
+  onRemove: () => void;
   onReactivated: () => void;
   onRequestSwitchToPosition: (positionId: string) => void;
   onCreatingIncompleteChange: (incomplete: boolean) => void;
 }) {
+
   const disabled = !card.can_manage;
   const readonlyClass = "bg-muted/50 cursor-not-allowed";
 
