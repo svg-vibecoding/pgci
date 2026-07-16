@@ -1604,6 +1604,93 @@ function AgreementLinesPage() {
         </AlertDialogContent>
       </AlertDialog>
 
+      <AlertDialog
+        open={!!archiveTarget}
+        onOpenChange={(o) => {
+          if (!o && !archivePosition.isPending) {
+            setArchiveTarget(null);
+            setArchiveReason("");
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="suma-h4 text-text-primary">
+              Archivar posición
+            </AlertDialogTitle>
+            <AlertDialogDescription className="suma-body text-text-secondary">
+              Archivar es irreversible. La posición saldrá del acuerdo vivo y
+              quedará como una foto de lo que fue. Sus códigos de cliente
+              quedarán libres.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {archiveTarget ? (
+            <div className="space-y-3 rounded-md border bg-muted/40 p-3">
+              <div className="space-y-1">
+                <Label className="suma-overline">SUMATEC</Label>
+                <IdentityCell
+                  code={archiveTarget.sku ?? "—"}
+                  description={archiveTarget.description ?? undefined}
+                />
+              </div>
+              {archiveTarget.codes.length > 0 && (
+                <>
+                  <hr className="border-border" />
+                  <div className="space-y-3">
+                    {archiveTarget.codes.map((c) => (
+                      <div key={c.client_id} className="space-y-1">
+                        <Label className="suma-overline">
+                          {c.client_name?.trim() || "Cliente sin nombre"}
+                        </Label>
+                        <IdentityCell
+                          code={c.client_code}
+                          description={c.description ?? undefined}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          ) : null}
+          <div className="space-y-1.5">
+            <Label className="suma-label">
+              Motivo de archivo <span className="text-primary">*</span>
+            </Label>
+            <Textarea
+              rows={2}
+              value={archiveReason}
+              onChange={(e) => setArchiveReason(e.target.value)}
+              placeholder="Ej. Registro creado por error"
+            />
+            <p className="suma-caption">
+              Quedará escrito en la foto archivada. No podrás editarlo después.
+            </p>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={archivePosition.isPending}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                if (archiveTarget)
+                  archivePosition.mutate({
+                    line_id: archiveTarget.id,
+                    reason: archiveReason.trim(),
+                  });
+              }}
+              disabled={archivePosition.isPending || !archiveReason.trim()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Archivar posición
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+
+
 
 
       <AlertDialog
