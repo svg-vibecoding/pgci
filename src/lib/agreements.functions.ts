@@ -1233,6 +1233,14 @@ export const linkSkuPrice = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => skuLinkWithPriceSchema.parse(d))
   .handler(async ({ data, context }) => {
+    // R-09 style: puerta cerrada, cuerpo conservado.
+    // La vinculación de precios queda deshabilitada mientras se estabiliza
+    // el modelo de posiciones (grupos + miembros para subconjuntos del mismo SKU).
+    // Ver PGCI_03.21.00 §5.3.
+    throw new Error(
+      "La vinculación de precios está temporalmente deshabilitada mientras se estabiliza el modelo de posiciones. Ver PGCI_03.21.00 §5.3.",
+    );
+    // eslint-disable-next-line no-unreachable
     await assertCanAdmin(context.supabase, data.agreement_id);
     const { error: insErr } = await context.supabase
       .from("agreement_sku_links")
@@ -1253,6 +1261,7 @@ export const linkSkuPrice = createServerFn({ method: "POST" })
     if (error) throw new Error(`Vínculo creado pero no se pudo aplicar el precio: ${error.message}`);
     return { linked: true as const, updated: count ?? 0 };
   });
+
 
 export const unlinkSkuPrice = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
