@@ -1374,12 +1374,36 @@ export function LineEditDialog({
 
   const [publishOnSave, setPublishOnSave] = useState(false);
 
+  // wouldConflictOnPublish: en creación, si el SKU ya tiene posiciones
+  // PUBLICADAS (published_at != null) en el acuerdo y la nueva no trae un
+  // código con client_id que la distinga → publicar sería rechazado por
+  // el backend con sku_conflict. Mismo criterio que recalc_sku_conflict.
+  const wouldConflictOnPublish = useMemo(() => {
+    if (isEdit) return false;
+    if (!productId || !skuInAgreement) return false;
+    const publishedSiblings = skuInAgreement.positions.filter(
+      (p) => p.published_at != null,
+    );
+    if (publishedSiblings.length === 0) return false;
+    const siblingClientIds = new Set<string>();
+    for (const p of publishedSiblings) {
+      for (const c of p.codes) siblingClientIds.add(c.client_id);
+    }
+    const myClientIds: string[] = [];
+    for (const [clientId, entry] of codeEntries) {
+      if (entry.code && entry.code.trim() !== "") myClientIds.push(clientId);
+    }
+    if (myClientIds.length === 0) return true;
+    return myClientIds.every((cid) => siblingClientIds.has(cid));
+  }, [isEdit, productId, skuInAgreement, codeEntries]);
+
   // isPublishableDraft(values): completa (SKU, precio, fecha inicio) y vigente
   // (fecha efectiva de fin no vencida). Usa las fechas efectivas del acuerdo
   // cuando la posición no las trae, coincidiendo con publish_positions RPC.
   const canPublishNow = useMemo(() => {
     if (!canOfferPublish) return false;
     if (!productId) return false;
+    if (wouldConflictOnPublish) return false;
     const sale = parsePriceInput(v.sale_price);
     if (sale == null || sale <= 0) return false;
     const effStart = v.start_date.trim() || agreementStartDate || "";
@@ -1396,6 +1420,7 @@ export function LineEditDialog({
   }, [
     canOfferPublish,
     productId,
+    wouldConflictOnPublish,
     v.sale_price,
     v.start_date,
     v.end_date,
