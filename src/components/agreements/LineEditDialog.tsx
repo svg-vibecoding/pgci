@@ -2089,6 +2089,17 @@ export function LineEditDialog({
                       )}
                     </PopoverContent>
                   </Popover>
+                  )}
+
+                  {isEdit && showSkuSearch && skuChangeIntent && (
+                    <div className="flex justify-end">
+                      <span className="text-xs text-muted-foreground/70">
+                        {skuChangeIntent.kind === "sku_changed"
+                          ? "Cambio real"
+                          : "Corrección"}
+                      </span>
+                    </div>
+                  )}
 
                   {!isEdit && !hasProduct && (
                     <div className="flex justify-end">
