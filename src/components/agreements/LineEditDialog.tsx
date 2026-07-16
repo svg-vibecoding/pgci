@@ -1534,8 +1534,6 @@ export function LineEditDialog({
     v.start_date,
     v.end_date,
     lookup.kind,
-    isEdit,
-    initial?.pending_reason,
     wouldConflictOnPublish,
     agreementStartDate,
     agreementEndDate,
