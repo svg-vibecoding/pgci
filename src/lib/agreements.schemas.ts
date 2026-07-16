@@ -201,6 +201,11 @@ export const lineReactivateSchema = z.object({
   line_id: z.string().uuid(),
 });
 
+export const lineArchiveSchema = z.object({
+  line_id: z.string().uuid(),
+  reason: z.string().trim().min(1, "Archivar exige un motivo.").max(500),
+});
+
 export const nConflictDetectSchema = z.object({
   agreement_id: z.string().uuid(),
   sku: z.string().trim().min(1),
