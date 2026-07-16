@@ -1164,12 +1164,18 @@ function AgreementLinesPage() {
               return (
                 <div className="flex flex-col items-start gap-1">
                   {meta && <StatusBadge status={meta.status} label={meta.label} />}
-                  {r.status === "requires_review" && (
+                  {(r.status === "requires_review" || r.status === "draft") && (
                     <div className="flex flex-wrap gap-1">
                       {r.product_id && r.products?.status !== "active" && (
                         <Badge color="error" variant="soft">
                           <XCircle className="h-3 w-3" />
                           SKU inactivo
+                        </Badge>
+                      )}
+                      {hasReasonToken(r, "sku_conflict") && (
+                        <Badge color="error" variant="soft">
+                          <XCircle className="h-3 w-3" />
+                          En conflicto
                         </Badge>
                       )}
                       {vig.color === "error" && (
