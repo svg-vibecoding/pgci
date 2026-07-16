@@ -1204,7 +1204,7 @@ function AgreementLinesPage() {
                         borderRadius: "var(--radius-pill)",
                       }}
                     >
-                      Lista para publicar
+                      OK para publicar
                     </span>
                   )}
                   {reasonTokens.length > 0 && (
