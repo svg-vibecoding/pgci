@@ -243,6 +243,7 @@ function ClientCodeCards({
   onCreatingIncompleteChange,
   requiredForClientIds,
   canRemoveClientIds,
+  isCreate = false,
 }: {
   clients: ClientCard[];
   values: Map<string, ClientCodeEntry>;
@@ -256,6 +257,7 @@ function ClientCodeCards({
   onCreatingIncompleteChange: (clientId: string, incomplete: boolean) => void;
   requiredForClientIds?: Set<string>;
   canRemoveClientIds?: Set<string>;
+  isCreate?: boolean;
 }) {
   if (clients.length === 0) {
     return (
