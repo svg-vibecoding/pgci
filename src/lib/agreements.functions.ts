@@ -990,6 +990,7 @@ export const searchProducts = createServerFn({ method: "POST" })
         erp_description: (r.erp_description as string | null) ?? null,
         commercial_brand: (r.commercial_brand as string | null) ?? null,
         status: (r.status as string) === "active" ? ("active" as const) : ("inactive" as const),
+        updated_at: (r.updated_at as string | null) ?? null,
         agreement_status: statusByProduct.get(r.id as string) ?? ({ kind: "free" } as const),
       })),
       hasMore: (rows?.length ?? 0) === data.limit,
