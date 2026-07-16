@@ -2268,7 +2268,6 @@ export function LineEditDialog({
 
             </div>
           </div>
-          )}
         </div>
 
 
