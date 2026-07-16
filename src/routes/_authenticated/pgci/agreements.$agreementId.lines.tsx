@@ -72,9 +72,13 @@ import {
   linkSkuPrice,
   unlinkSkuPrice,
   publishAgreementPositions,
+  listArchivedPositions,
   type LineCode,
+  type ArchivedPositionRow,
 } from "@/lib/agreements.functions";
+import { ArchivedPositionDialog } from "@/components/agreements/ArchivedPositionDialog";
 import { Checkbox } from "@/components/ui/checkbox";
+
 import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
@@ -117,7 +121,9 @@ type LineCardKey =
   | "requires_review"
   | "draft"
   | "expired"
-  | "excluded";
+  | "excluded"
+  | "archived";
+
 
 const STATUS_META: Record<
   Exclude<LineCardKey, "all">,
@@ -128,6 +134,8 @@ const STATUS_META: Record<
   draft: { label: "En gestión", status: "neutral" },
   expired: { label: "Vencida", status: "danger" },
   excluded: { label: "Excluida", status: "neutral" },
+  archived: { label: "Archivada", status: "neutral" },
+
 };
 
 function parseLocalDate(iso: string | null): Date | null {
@@ -289,13 +297,15 @@ function AgreementLinesPage() {
   const deleteFn = useServerFn(deleteAgreementLine);
   const archiveFn = useServerFn(archiveAgreementLine);
   const reactivateFn = useServerFn(reactivateAgreementLine);
-  
+  const archivedListFn = useServerFn(listArchivedPositions);
+
   const skuGroupsFn = useServerFn(listAgreementSkuGroups);
   const linkFn = useServerFn(linkSkuPrice);
   const unlinkFn = useServerFn(unlinkSkuPrice);
   const publishFn = useServerFn(publishAgreementPositions);
   const companiesFn = useServerFn(listAgreementCompanies);
   const catalogPermsFn = useServerFn(listClientCatalogPermissions);
+
 
   const { data: agreement, isLoading: loadingAgreement } = useQuery({
     queryKey: ["agreements", "detail", agreementId],
@@ -308,6 +318,10 @@ function AgreementLinesPage() {
   const { data: lines, isLoading: loadingLines } = useQuery({
     queryKey: ["agreements", "lines", agreementId],
     queryFn: () => linesFn({ data: { agreement_id: agreementId } }),
+  });
+  const { data: archivedRows, isLoading: loadingArchived } = useQuery({
+    queryKey: ["agreements", "archived", agreementId],
+    queryFn: () => archivedListFn({ data: { agreement_id: agreementId } }),
   });
   const { data: skuGroups } = useQuery({
     queryKey: ["agreements", "sku-groups", agreementId],
@@ -376,6 +390,7 @@ function AgreementLinesPage() {
   const [reason, setReason] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [confirmPublishOpen, setConfirmPublishOpen] = useState(false);
+  const [archivedViewId, setArchivedViewId] = useState<string | null>(null);
   const [showClientCol, setShowClientCol] = useState(false);
   useEffect(() => {
     try {
@@ -397,6 +412,7 @@ function AgreementLinesPage() {
     qc.invalidateQueries({ queryKey: ["agreements", "lines", agreementId] });
     qc.invalidateQueries({ queryKey: ["agreements", "detail", agreementId] });
     qc.invalidateQueries({ queryKey: ["agreements", "sku-groups", agreementId] });
+    qc.invalidateQueries({ queryKey: ["agreements", "archived", agreementId] });
   };
 
   const exclude = useMutation({
@@ -773,6 +789,7 @@ function AgreementLinesPage() {
     { key: "requires_review", label: "Requieren revisión", value: num(agreement.lines_review) },
     { key: "draft", label: "En gestión", value: num(agreement.lines_draft) },
     { key: "excluded", label: "Excluidas", value: num(agreement.lines_excluded) },
+    { key: "archived", label: "Archivadas", value: archivedRows?.length ?? 0 },
   ];
   const totalCount = summaryCards.reduce((s, c) => s + c.value, 0);
 
@@ -1098,7 +1115,14 @@ function AgreementLinesPage() {
         </div>
       )}
 
-      {(() => {
+      {activeCard === "archived" ? (
+        <ArchivedTable
+          rows={archivedRows ?? []}
+          loading={loadingArchived}
+          searchTerm={q.trim().toLowerCase()}
+          onOpenDetail={(id) => setArchivedViewId(id)}
+        />
+      ) : (() => {
         const skuGroupBadge = (r: Line) => {
           const g = groupByPositionId.get(r.id as string);
           if (!g) return null;
@@ -1484,6 +1508,14 @@ function AgreementLinesPage() {
         agreementEndDate={agreement.end_date as string | null | undefined}
         canEdit={canAdmin}
         onEdit={(lineId) => openEditForLine(lineId)}
+      />
+
+      <ArchivedPositionDialog
+        open={!!archivedViewId}
+        onOpenChange={(o) => {
+          if (!o) setArchivedViewId(null);
+        }}
+        archivedId={archivedViewId}
       />
 
 
