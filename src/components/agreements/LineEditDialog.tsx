@@ -2098,6 +2098,9 @@ export function LineEditDialog({
                     <div className="flex justify-end">
                       <span className="text-xs font-medium text-muted-foreground/60">
                         PIM Sumatec
+                        {fmtCatalogDate(productMeta?.updated_at)
+                          ? `: ${fmtCatalogDate(productMeta?.updated_at)}`
+                          : ""}
                       </span>
                     </div>
                   )}
