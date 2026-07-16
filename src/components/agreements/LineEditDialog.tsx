@@ -1431,11 +1431,66 @@ export function LineEditDialog({
     agreementEndDate,
   ]);
 
+  // Tokens de pending_reason en la posición editada, calculados desde el
+  // formulario con el mismo orden y semántica del predicado del backend
+  // (compute_position_pending_reason). En edición conservamos sku_conflict
+  // del initial: solo el backend puede desempatarlo con las contrapartes.
+  const pendingReasonTokens = useMemo<string[]>(() => {
+    const tokens: string[] = [];
+    if (!productId || v.sku.trim() === "") tokens.push("no_sku");
+    if (productId && lookup.kind === "inactive") tokens.push("sku_inactive");
+    // sku_conflict: en creación lo detectamos localmente; en edición lo
+    // heredamos del backend porque depende de las contrapartes.
+    const backendHasConflict =
+      isEdit && (initial?.pending_reason ?? "").split(",").map((t) => t.trim()).includes("sku_conflict");
+    if (wouldConflictOnPublish || backendHasConflict) tokens.push("sku_conflict");
+    const sale = parsePriceInput(v.sale_price);
+    if (sale == null || sale <= 0) tokens.push("no_price");
+    const effStart = v.start_date.trim() || agreementStartDate || "";
+    const effEnd = v.end_date.trim() || agreementEndDate || "";
+    if (!effStart || !effEnd) {
+      tokens.push("no_dates");
+    } else {
+      const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(effEnd);
+      if (m) {
+        const end = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        if (end.getTime() < today.getTime()) tokens.push("expired");
+      }
+    }
+    return tokens;
+  }, [
+    productId,
+    v.sku,
+    v.sale_price,
+    v.start_date,
+    v.end_date,
+    lookup.kind,
+    isEdit,
+    initial?.pending_reason,
+    wouldConflictOnPublish,
+    agreementStartDate,
+    agreementEndDate,
+  ]);
+
+  const PENDING_LABELS: Record<string, string> = {
+    no_sku: "Sin SKU",
+    no_price: "Sin precio",
+    no_dates: "Sin vigencia",
+    expired: "Vigencia vencida",
+    sku_inactive: "SKU inactivo",
+    sku_conflict: "En conflicto",
+  };
+
+  const hasPendingTokens = pendingReasonTokens.length > 0;
+  const effectiveCanPublishNow = canPublishNow && !hasPendingTokens;
+
   // Si la validación deja de cumplirse (p.ej. el usuario borra el precio),
   // desmarcar publishOnSave para que el label del botón vuelva a "Guardar".
   useEffect(() => {
-    if (!canPublishNow && publishOnSave) setPublishOnSave(false);
-  }, [canPublishNow, publishOnSave]);
+    if (!effectiveCanPublishNow && publishOnSave) setPublishOnSave(false);
+  }, [effectiveCanPublishNow, publishOnSave]);
 
   // Resetear publishOnSave al abrir/cerrar el modal o al cambiar de posición.
   useEffect(() => {
