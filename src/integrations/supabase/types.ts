@@ -1288,6 +1288,10 @@ export type Database = {
         }
         Returns: string
       }
+      delete_agreement_position: {
+        Args: { p_position_id: string }
+        Returns: undefined
+      }
       exclude_agreement_position: {
         Args: { p_position_id: string; p_reason: string }
         Returns: undefined
