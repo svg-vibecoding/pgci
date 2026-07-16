@@ -1453,8 +1453,6 @@ function AgreementLinesPage() {
                         const busy = linkingProductId === g.product_id;
                         const price = g.prices[0];
                         const canLink = g.state === "repeated" && price != null;
-                        const linkDisabledReason =
-                          "Vinculación de precios temporalmente deshabilitada mientras se estabiliza el modelo de posiciones.";
                         return (
                           <SkuGroupCard
                             key={g.product_id}
