@@ -641,9 +641,6 @@ function AgreementLinesPage() {
         case "draft":
           if (r.status !== "draft") return false;
           break;
-        case "expired":
-          if (r.status !== "active" || covers) return false;
-          break;
         case "excluded":
           if (r.status !== "excluded") return false;
           break;
@@ -752,7 +749,6 @@ function AgreementLinesPage() {
     { key: "active", label: "Posiciones activas", value: num(agreement.lines_active) },
     { key: "requires_review", label: "Requieren revisión", value: num(agreement.lines_review) },
     { key: "draft", label: "En gestión", value: num(agreement.lines_draft) },
-    { key: "expired", label: "Vencidas", value: num(agreement.lines_expired) },
     { key: "excluded", label: "Excluidas", value: num(agreement.lines_excluded) },
   ];
   const totalCount = summaryCards.reduce((s, c) => s + c.value, 0);
