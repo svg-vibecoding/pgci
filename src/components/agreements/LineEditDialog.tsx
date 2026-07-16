@@ -1076,51 +1076,12 @@ export function LineEditDialog({
     productDescription: string | null;
     positions: SkuAgreementPosition[];
   } | null>(null);
-  // El usuario acepta que registrará un código nuevo → sale del bloqueo cuando
-  // todas las posiciones existentes YA tienen código. Reset al cambiar SKU.
-  const [skuAckRequireNewCode, setSkuAckRequireNewCode] = useState(false);
   const [skuPositionsExpanded, setSkuPositionsExpanded] = useState(false);
   const conflictSeq = useRef(0);
   const searchSeq = useRef(0);
   const PAGE_SIZE = 20;
 
   const isCreatingLine = !initial?.line_id;
-  // Alguna posición existente sin códigos ocupa el SKU sola: bloqueo duro.
-  const skuHasCodelessPosition = !!skuInAgreement?.positions.some(
-    (p) => p.codes.length === 0,
-  );
-  // El SKU está en el acuerdo (nueva posición). Solo bloquea el formulario
-  // hasta que:
-  //  - todas las existentes tienen código → user pulsa "Registraré nuevo código"
-  //  - o hay una codeless → siempre bloqueado (salida: elegir otro SKU / ir).
-  const skuBlocksForm =
-    isCreatingLine &&
-    !!skuInAgreement &&
-    (skuHasCodelessPosition || !skuAckRequireNewCode);
-  // Cuando el usuario aceptó "Registraré nuevo código", la sección de
-  // productos del cliente pasa a ser REQUERIDA para poder guardar.
-  const requiresNewClientCode =
-    isCreatingLine && !!skuInAgreement && skuAckRequireNewCode;
-
-  // Clientes que ya tienen código vigente en OTRA posición del SKU en el
-  // acuerdo. Solo ellos pueden "desempatar" con un código nuevo — un cliente
-  // distinto no distingue posiciones (spec §4.5).
-  const requiredCodeClientIds = useMemo(() => {
-    const s = new Set<string>();
-    if (!isCreatingLine || !skuInAgreement) return s;
-    for (const pos of skuInAgreement.positions) {
-      for (const c of pos.codes) s.add(c.client_id);
-    }
-    return s;
-  }, [isCreatingLine, skuInAgreement]);
-  const requiredClientNames = useMemo(() => {
-    if (requiredCodeClientIds.size === 0) return "";
-    const names: string[] = [];
-    for (const c of agreementClients ?? []) {
-      if (requiredCodeClientIds.has(c.id)) names.push(c.name?.trim() || "Sin nombre");
-    }
-    return names.sort((a, b) => a.localeCompare(b, "es", { sensitivity: "base" })).join(", ");
-  }, [requiredCodeClientIds, agreementClients]);
 
   // Mapa de permisos + tarjetas ordenadas.
   const permMap = useMemo(() => {
