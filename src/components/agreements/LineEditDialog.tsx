@@ -42,6 +42,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { StatusBadge } from "@/components/sumatec/StatusBadge";
+import { RowActionsMenu } from "@/components/sumatec";
 
 import {
   Table,
