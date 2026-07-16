@@ -129,6 +129,7 @@ type LookupKind =
 type ProductMeta = {
   erp_description: string | null;
   commercial_brand: string | null;
+  updated_at: string | null;
 };
 
 function fmtCatalogDate(iso: string | null | undefined): string | null {
