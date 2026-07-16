@@ -1912,6 +1912,14 @@ export function LineEditDialog({
               {/* Producto Jaivaná */}
               <section className="space-y-4">
                 <SectionHeader title="INFORMACIÓN DE SUMATEC" number="01" />
+                {!isEdit && (
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Una posición es la identidad de lo acordado: un producto de
+                    Sumatec, su precio y su vigencia en el acuerdo. Para
+                    activarla necesita los tres, pero puedes crearla sin ellos —
+                    quedará en gestión mientras los defines.
+                  </p>
+                )}
                 <div className="rounded-lg border border-input bg-muted/40 p-4 space-y-3">
                   <div className="flex items-center gap-2">
                     <div className="text-sm font-semibold text-foreground">SUMATEC</div>
