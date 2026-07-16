@@ -2843,10 +2843,14 @@ export function LineEditDialog({
                       : undefined,
                 };
                 setSkuChangePrompt({ open: false, kind: null, note: "" });
-                save.mutate(choice);
+                // Declaramos la intención y abrimos el buscador. El guardado
+                // se ejecuta cuando el usuario elija el nuevo SKU y pulse
+                // "Guardar" — sin volver a preguntar.
+                setSkuChangeIntent(choice);
+                setShowSkuSearch(true);
               }}
             >
-              Confirmar y guardar
+              Continuar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
