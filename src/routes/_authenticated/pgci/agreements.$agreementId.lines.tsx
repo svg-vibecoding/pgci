@@ -1236,15 +1236,16 @@ function AgreementLinesPage() {
           {
             id: "vigencia",
             header: "Vigencia",
-            width: 120,
+            width: 140,
             wrap: false,
-            cell: (r) => {
-              const vig = vigenciaBadge(
-                r.end_date ?? null,
-                (agreement.end_date as string | null) ?? null,
-              );
-              return <Badge color={vig.color}>{vig.label}</Badge>;
-            },
+            cell: (r) => (
+              <VigenciaCell
+                lineStart={(r.start_date as string | null) ?? null}
+                lineEnd={(r.end_date as string | null) ?? null}
+                agreementStart={(agreement.start_date as string | null) ?? null}
+                agreementEnd={(agreement.end_date as string | null) ?? null}
+              />
+            ),
           },
           {
             id: "status",
