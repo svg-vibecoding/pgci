@@ -776,7 +776,7 @@ function ClientCodeCard({
 
       {mode === "edit" && (
         <>
-          {searchBlock(searchPlaceholder)}
+          {showCodeSearch && searchBlock(searchPlaceholder)}
           {takenAlert}
           {takenActions}
           <div className="space-y-1.5">
@@ -810,10 +810,8 @@ function ClientCodeCard({
           )}
           {!disabled && (
             <div className="flex justify-end">
-              <Button
+              <button
                 type="button"
-                size="sm"
-                variant="outline"
                 disabled={!canRemove}
                 onClick={() => {
                   onRemove();
@@ -825,16 +823,22 @@ function ClientCodeCard({
                   setExpandedId(null);
                   setPopoverOpen(false);
                   setTakenBlock(null);
+                  setShowCodeSearch(false);
                 }}
                 title={
                   canRemove
                     ? undefined
                     : "Este código distingue esta posición de otra del mismo SKU. Puedes editarlo, pero no quitarlo."
                 }
-                className="text-destructive hover:text-destructive"
+                className={cn(
+                  "text-xs font-medium focus:outline-none focus:underline",
+                  canRemove
+                    ? "text-destructive hover:underline"
+                    : "text-destructive/40 cursor-not-allowed",
+                )}
               >
                 Quitar relación
-              </Button>
+              </button>
             </div>
           )}
 
