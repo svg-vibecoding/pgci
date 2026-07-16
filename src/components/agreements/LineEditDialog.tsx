@@ -1201,9 +1201,21 @@ export function LineEditDialog({
           setProductId(match.id);
           if (match.agreement_status.kind === "in_agreement") {
             const own = initial?.line_id ?? null;
-            const others = match.agreement_status.positions.filter(
-              (p) => p.position_id !== own,
-            );
+            // Regla de fichas en EDICIÓN (decidida con Sergio):
+            // - Editando una posición PUBLICADA (status !== 'draft', que en el
+            //   backend equivale a published_at != null): solo se muestran las
+            //   OTRAS publicadas. Los drafts no compiten y no la degradan, así
+            //   que incluirlos sería ruido que sugiere una causa incorrecta.
+            // - Editando un DRAFT: se muestran TODAS las demás (publicadas y
+            //   otros drafts). El draft necesita el panorama completo porque
+            //   choca contra publicadas y otros drafts podrían publicarse antes.
+            // En ambos casos se excluye la propia posición.
+            const editingPublished = !!initial?.status && initial.status !== "draft";
+            const others = match.agreement_status.positions.filter((p) => {
+              if (p.position_id === own) return false;
+              if (editingPublished) return p.published_at != null;
+              return true;
+            });
             if (others.length > 0) {
               setSkuInAgreement({
                 sku: match.sku,
