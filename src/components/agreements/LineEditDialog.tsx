@@ -2046,7 +2046,7 @@ export function LineEditDialog({
                     </PopoverContent>
                   </Popover>
 
-                  {!isEdit && (
+                  {!isEdit && !hasProduct && (
                     <div className="flex justify-end">
                       <span className="text-xs font-medium text-muted-foreground/60">
                         PIM Sumatec
@@ -2087,6 +2087,14 @@ export function LineEditDialog({
                           className={readonlyClass}
                         />
                       </div>
+                    </div>
+                  )}
+
+                  {!isEdit && hasProduct && (
+                    <div className="flex justify-end">
+                      <span className="text-xs font-medium text-muted-foreground/60">
+                        PIM Sumatec
+                      </span>
                     </div>
                   )}
 
