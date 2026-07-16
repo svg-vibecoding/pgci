@@ -236,6 +236,7 @@ function ClientCodeCards({
   clients,
   values,
   onChange,
+  onRemove,
   agreementId,
   initialLineId,
   open,
@@ -243,10 +244,12 @@ function ClientCodeCards({
   onRequestSwitchToPosition,
   onCreatingIncompleteChange,
   requiredForClientIds,
+  canRemoveClientIds,
 }: {
   clients: ClientCard[];
   values: Map<string, ClientCodeEntry>;
   onChange: (clientId: string, next: ClientCodeEntry) => void;
+  onRemove: (clientId: string) => void;
   agreementId: string;
   initialLineId: string | null;
   open: boolean;
@@ -254,6 +257,7 @@ function ClientCodeCards({
   onRequestSwitchToPosition: (positionId: string) => void;
   onCreatingIncompleteChange: (clientId: string, incomplete: boolean) => void;
   requiredForClientIds?: Set<string>;
+  canRemoveClientIds?: Set<string>;
 }) {
   if (clients.length === 0) {
     return (
@@ -275,7 +279,9 @@ function ClientCodeCards({
             initialLineId={initialLineId}
             open={open}
             required={requiredForClientIds?.has(c.id) ?? false}
+            canRemove={canRemoveClientIds?.has(c.id) ?? true}
             onChange={(next) => onChange(c.id, next)}
+            onRemove={() => onRemove(c.id)}
             onReactivated={onReactivated}
             onRequestSwitchToPosition={onRequestSwitchToPosition}
             onCreatingIncompleteChange={(incomplete) =>
@@ -287,6 +293,7 @@ function ClientCodeCards({
     </div>
   );
 }
+
 
 
 type TakenBlock = {
