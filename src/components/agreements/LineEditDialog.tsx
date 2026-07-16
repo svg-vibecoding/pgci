@@ -2361,25 +2361,23 @@ export function LineEditDialog({
             <label
               className={cn(
                 "flex items-start gap-2 sm:mr-auto",
-                canPublishNow ? "" : "opacity-70",
+                effectiveCanPublishNow ? "" : "opacity-70",
               )}
             >
               <Checkbox
                 id="publish-on-save"
                 checked={publishOnSave}
                 onCheckedChange={(c) => setPublishOnSave(c === true)}
-                disabled={!canPublishNow || save.isPending}
+                disabled={!effectiveCanPublishNow || save.isPending}
                 className="mt-0.5"
               />
               <span className="flex flex-col leading-tight">
                 <span className="suma-body text-text-primary font-medium">Publicar en acuerdo al guardar</span>
                 <span className="suma-caption text-text-tertiary">
-                  {canPublishNow
-                    ? isEdit
+                  {hasPendingTokens
+                    ? `Pendiente: ${pendingReasonTokens.map((t) => PENDING_LABELS[t] ?? t).join(" · ")}.`
+                    : effectiveCanPublishNow
                       ? "La posición cumple con los datos requeridos para activarse en el acuerdo."
-                      : "La posición cumple con los datos requeridos para activarse en el acuerdo."
-                    : wouldConflictOnPublish
-                      ? "Esta posición quedará en conflicto y no podrá publicarse."
                       : "Completa producto, precio y fechas vigentes para habilitar."}
                 </span>
               </span>
