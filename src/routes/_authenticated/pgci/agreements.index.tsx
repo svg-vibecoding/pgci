@@ -465,7 +465,7 @@ function AgreementsList() {
             rowActions={rowActions}
             onRowClick={(a) =>
               navigate({
-                to: "/pgci/agreements/$agreementId",
+                to: "/pgci/agreements/$agreementId/lines",
                 params: { agreementId: a.id as string },
               })
             }
