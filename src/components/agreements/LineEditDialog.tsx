@@ -1566,7 +1566,7 @@ export function LineEditDialog({
       const saveBlocked =
         !!(saveRes as { blocked?: boolean } | null)?.blocked;
       let publishRes: Awaited<ReturnType<typeof publishFn>> | null = null;
-      if (publishOnSave && canPublishNow && targetId && !saveBlocked) {
+      if (publishOnSave && effectiveCanPublishNow && targetId && !saveBlocked) {
         publishRes = await publishFn({ data: { ids: [targetId] } });
       }
       return { saveRes, publishRes };
