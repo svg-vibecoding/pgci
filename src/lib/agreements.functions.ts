@@ -1232,7 +1232,7 @@ export const isSkuLinked = createServerFn({ method: "POST" })
 export const linkSkuPrice = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => skuLinkWithPriceSchema.parse(d))
-  .handler(async ({ data: _data, context: _context }) => {
+  .handler(async ({ data: _data, context: _context }): Promise<{ linked: true; updated: number }> => {
     // R-09 style: puerta cerrada, cuerpo conservado (comentado).
     // La vinculación de precios queda deshabilitada mientras se estabiliza
     // el modelo de posiciones (grupos + miembros para subconjuntos del mismo SKU).
