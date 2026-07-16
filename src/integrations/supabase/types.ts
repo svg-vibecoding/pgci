@@ -1258,6 +1258,19 @@ export type Database = {
         Args: { p_agreement_id: string; p_payload: Json }
         Returns: Json
       }
+      compute_position_pending_reason:
+        | { Args: { p_position_id: string }; Returns: string }
+        | {
+            Args: {
+              p_agreement_id: string
+              p_end_date: string
+              p_position_id: string
+              p_product_id: string
+              p_sale_price: number
+              p_start_date: string
+            }
+            Returns: string
+          }
       create_agreement_line: {
         Args: { p_agreement_id: string; p_payload: Json }
         Returns: Json
