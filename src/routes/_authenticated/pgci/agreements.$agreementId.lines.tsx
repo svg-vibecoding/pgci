@@ -409,6 +409,16 @@ function AgreementLinesPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const deletePosition = useMutation({
+    mutationFn: (lineId: string) => deleteFn({ data: { line_id: lineId } }),
+    onSuccess: () => {
+      toast.success("Posición eliminada");
+      invalidateAll();
+      setDeleteTarget(null);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   type Line = NonNullable<typeof lines>[number] & {
     products?: {
