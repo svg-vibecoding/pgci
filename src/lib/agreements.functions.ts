@@ -12,6 +12,7 @@ import {
   importCommitSchema,
   importPreviewSchema,
   lineCreateSchema,
+  lineDeleteSchema,
   lineExcludeSchema,
   linePatchSchema,
   lineReactivateSchema,
