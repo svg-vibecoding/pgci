@@ -219,7 +219,7 @@ function VigenciaCell({
 
   const color =
     tone === "expired"
-      ? "var(--danger-strong)"
+      ? "var(--error-strong)"
       : tone === "warning"
         ? "var(--warning-strong)"
         : "var(--text-primary)";
