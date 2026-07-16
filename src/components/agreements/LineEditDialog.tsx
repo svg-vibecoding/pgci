@@ -1682,9 +1682,23 @@ export function LineEditDialog({
     note: string;
   }>({ open: false, kind: null, note: "" });
 
+  // Nuevo flujo R-09: la intención del cambio de SKU se declara ANTES de
+  // elegir el nuevo, no al guardar. Cuando el usuario pulsa "Cambiar SKU" en
+  // una posición publicada, se abre skuChangePrompt; al confirmar se guarda la
+  // intención en skuChangeIntent y se despliega el buscador. Al guardar, si
+  // hay intent se envía directo a la RPC sin volver a preguntar.
+  const [skuChangeIntent, setSkuChangeIntent] = useState<SkuChangeChoice | null>(null);
+  // Visibilidad del buscador de SKU en modo edición. En creación siempre se
+  // ve; en edición solo cuando el usuario decide cambiar el SKU.
+  const [showSkuSearch, setShowSkuSearch] = useState<boolean>(!initial?.line_id);
+
   useEffect(() => {
     // Reset del prompt al cerrar el diálogo o cambiar de posición editada.
-    if (!open) setSkuChangePrompt({ open: false, kind: null, note: "" });
+    if (!open) {
+      setSkuChangePrompt({ open: false, kind: null, note: "" });
+      setSkuChangeIntent(null);
+    }
+    setShowSkuSearch(!initial?.line_id);
   }, [open, initial?.line_id]);
 
   const save = useMutation({
