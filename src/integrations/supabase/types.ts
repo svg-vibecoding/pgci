@@ -1479,6 +1479,10 @@ export type Database = {
         Args: { p_agreement_id: string; p_codes: Json; p_position_id?: string }
         Returns: Json
       }
+      archive_agreement_position: {
+        Args: { p_position_id: string; p_reason: string }
+        Returns: string
+      }
       can_access_agreement: {
         Args: { p_agreement_id: string }
         Returns: boolean

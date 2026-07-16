@@ -11,6 +11,7 @@ import {
   companyRemoveSchema,
   importCommitSchema,
   importPreviewSchema,
+  lineArchiveSchema,
   lineCreateSchema,
   lineDeleteSchema,
   lineExcludeSchema,
@@ -653,6 +654,22 @@ export const deleteAgreementLine = createServerFn({ method: "POST" })
     }
     return { ok: true };
   });
+
+export const archiveAgreementLine = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => lineArchiveSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.rpc("archive_agreement_position", {
+      p_position_id: data.line_id,
+      p_reason: data.reason,
+    });
+    if (error) {
+      if (error.code === "42501") throw new Error("No tienes permisos sobre este acuerdo");
+      throw new Error(error.message);
+    }
+    return { ok: true };
+  });
+
 
 export const reactivateAgreementLine = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
