@@ -1879,7 +1879,7 @@ export function LineEditDialog({
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const readonlyClass = "bg-muted/50 cursor-not-allowed";
+  const readonlyClass = "bg-muted/70 border-transparent shadow-none cursor-not-allowed focus-visible:ring-0 focus-visible:ring-offset-0";
   const inputClass = "";
   const catalogDateLabel = fmtCatalogDate(lookup.catalogUpdatedAt ?? null);
   const titleKind = isEdit
