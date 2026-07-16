@@ -1400,6 +1400,10 @@ export function LineEditDialog({
     setSearchQuery("");
     setSearchResults([]);
     setSearchHasMore(false);
+    // En edición, tras elegir el nuevo SKU cerramos el buscador — el producto
+    // vigente se muestra en los campos readonly. El usuario puede reabrir con
+    // "Cambiar SKU" si necesita otro cambio.
+    if (initial?.line_id) setShowSkuSearch(false);
     // Estado del SKU respecto al acuerdo — solo aplica al crear.
     // En edición mantenemos el flujo previo (panel de vinculación de precios).
     setSkuPositionsExpanded(false);
