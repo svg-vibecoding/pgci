@@ -536,10 +536,16 @@ function AgreementLinesPage() {
 
   // Publicables en la vista filtrada actual. Un checkbox por fila se habilita
   // solo si isPublishable(row) — todos los ids en publishableInView pasan el gate.
+  const hasReasonToken = (r: Line, token: string): boolean => {
+    const raw = (r.pending_reason ?? "").trim();
+    if (!raw) return false;
+    return raw.split(",").map((t) => t.trim()).includes(token);
+  };
   const isPublishable = (r: Line): boolean => {
     if (r.status !== "draft" && r.status !== "requires_review") return false;
     if (!r.product_id) return false;
     if ((r.products?.status ?? null) !== "active") return false;
+    if (hasReasonToken(r, "sku_conflict")) return false;
     const sale = typeof r.sale_price === "number" ? r.sale_price : null;
     if (sale == null || sale <= 0) return false;
     if (!r.start_date) return false;
