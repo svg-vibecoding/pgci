@@ -2159,16 +2159,16 @@ export function LineEditDialog({
                                     size="sm"
                                     variant="outline"
                                     className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-                                    disabled={linkMut.isPending || !productId}
+                                    disabled
+                                    title="Vinculación de precios temporalmente deshabilitada mientras se estabiliza el modelo de posiciones."
                                     onClick={() => linkMut.mutate()}
                                   >
-                                    {linkMut.isPending ? (
-                                      <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                                    ) : (
-                                      <Link className="mr-2 h-3.5 w-3.5" />
-                                    )}
+                                    <Link className="mr-2 h-3.5 w-3.5" />
                                     Vincular
                                   </Button>
+                                  <p className="text-xs text-muted-foreground">
+                                    Vinculación de precios temporalmente deshabilitada mientras se estabiliza el modelo de posiciones.
+                                  </p>
                                   {linkError && (
                                     <p className="text-xs font-medium text-destructive">
                                       {linkError}
