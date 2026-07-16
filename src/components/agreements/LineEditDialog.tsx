@@ -377,6 +377,8 @@ function ClientCodeCard({
   // En modo "edit" el buscador arranca oculto — cambiar el código es una
   // acción explícita disparada por "Cambiar código".
   const [showCodeSearch, setShowCodeSearch] = useState(false);
+  // "Editar producto": revela el input de descripción bajo demanda desde el menú.
+  const [showDescriptionEdit, setShowDescriptionEdit] = useState(false);
   const seq = useRef(0);
 
   // Resync por cambio de posición (o al abrir/cerrar). Se hace durante render
