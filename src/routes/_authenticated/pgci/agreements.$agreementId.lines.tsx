@@ -22,6 +22,7 @@ import {
   Send,
   AlertTriangle,
   AlertCircle,
+  Archive,
 } from "lucide-react";
 import { AgreementBreadcrumb } from "@/components/agreements/AgreementBreadcrumb";
 import { AgreementHeader } from "@/components/agreements/AgreementHeader";
