@@ -1425,12 +1425,12 @@ export function LineEditDialog({
 
   const [publishOnSave, setPublishOnSave] = useState(false);
 
-  // wouldConflictOnPublish: en creación, si el SKU ya tiene posiciones
-  // PUBLICADAS (published_at != null) en el acuerdo y la nueva no trae un
-  // código con client_id que la distinga → publicar sería rechazado por
-  // el backend con sku_conflict. Mismo criterio que recalc_sku_conflict.
+  // wouldConflictOnPublish: si el SKU tiene posiciones PUBLICADAS del acuerdo
+  // (excluyendo la propia en edición) y NINGUNO de sus clientes distintivos
+  // tiene un código en el formulario → publicar sería rechazado por el backend
+  // con sku_conflict. Mismo criterio que recalc_sku_conflict. Aplica igual en
+  // creación y edición: quien está en conflicto es quien más necesita el aviso.
   const wouldConflictOnPublish = useMemo(() => {
-    if (isEdit) return false;
     if (!productId || !skuInAgreement) return false;
     const publishedSiblings = skuInAgreement.positions.filter(
       (p) => p.published_at != null,
@@ -1440,28 +1440,33 @@ export function LineEditDialog({
     for (const p of publishedSiblings) {
       for (const c of p.codes) siblingClientIds.add(c.client_id);
     }
-    const myClientIds: string[] = [];
-    for (const [clientId, entry] of codeEntries) {
-      if (entry.code && entry.code.trim() !== "") myClientIds.push(clientId);
+    if (siblingClientIds.size === 0) return true;
+    for (const cid of siblingClientIds) {
+      const e = codeEntries.get(cid);
+      if (e && e.code && e.code.trim() !== "") return false;
     }
-    if (myClientIds.length === 0) return true;
-    return myClientIds.every((cid) => siblingClientIds.has(cid));
-  }, [isEdit, productId, skuInAgreement, codeEntries]);
+    return true;
+  }, [productId, skuInAgreement, codeEntries]);
 
-  // requiredClientIds: en creación, si el SKU ya tiene posiciones PUBLICADAS
-  // en el acuerdo, marcar como "* Requerido" a los clientes que ya nombran
-  // ese SKU. Basta un código de CUALQUIERA de esos clientes para desempatar
-  // (RN-MATCH-01). El `*` es aviso — no bloquea el guardado (D-05).
+  // requiredClientIds: tarjetas que muestran `* Requerido`. Son los clientes
+  // que ya nombran ese SKU en posiciones PUBLICADAS del acuerdo (excluyendo la
+  // propia en edición). En cuanto CUALQUIERA de ellos tenga un código en el
+  // formulario, el desempate está resuelto y se limpia el conjunto (basta uno,
+  // RN-MATCH-01). Mismo cálculo en creación (predicción) y edición (diagnóstico).
   const requiredClientIds = useMemo<Set<string>>(() => {
-    if (isEdit) return new Set();
     if (!productId || !skuInAgreement) return new Set();
     const s = new Set<string>();
     for (const p of skuInAgreement.positions) {
       if (p.published_at == null) continue;
       for (const c of p.codes) s.add(c.client_id);
     }
+    if (s.size === 0) return s;
+    for (const cid of s) {
+      const e = codeEntries.get(cid);
+      if (e && e.code && e.code.trim() !== "") return new Set();
+    }
     return s;
-  }, [isEdit, productId, skuInAgreement]);
+  }, [productId, skuInAgreement, codeEntries]);
 
   // isPublishableDraft(values): completa (SKU, precio, fecha inicio) y vigente
   // (fecha efectiva de fin no vencida). Usa las fechas efectivas del acuerdo
