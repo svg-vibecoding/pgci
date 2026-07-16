@@ -1232,35 +1232,36 @@ export const isSkuLinked = createServerFn({ method: "POST" })
 export const linkSkuPrice = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => skuLinkWithPriceSchema.parse(d))
-  .handler(async ({ data, context }) => {
-    // R-09 style: puerta cerrada, cuerpo conservado.
+  .handler(async ({ data: _data, context: _context }) => {
+    // R-09 style: puerta cerrada, cuerpo conservado (comentado).
     // La vinculación de precios queda deshabilitada mientras se estabiliza
     // el modelo de posiciones (grupos + miembros para subconjuntos del mismo SKU).
     // Ver PGCI_03.21.00 §5.3.
     throw new Error(
       "La vinculación de precios está temporalmente deshabilitada mientras se estabiliza el modelo de posiciones. Ver PGCI_03.21.00 §5.3.",
     );
-    // eslint-disable-next-line no-unreachable
-    await assertCanAdmin(context.supabase, data.agreement_id);
-    const { error: insErr } = await context.supabase
-      .from("agreement_sku_links")
-      .insert({
-        agreement_id: data.agreement_id,
-        product_id: data.product_id,
-        created_by: context.userId,
-      });
-    if (insErr && !insErr.message.toLowerCase().includes("duplicate")) {
-      throw new Error(`No se pudo vincular el SKU: ${insErr.message}`);
-    }
-    const { error, count } = await context.supabase
-      .from("agreement_positions")
-      .update({ sale_price: data.price, updated_by: context.userId }, { count: "exact" })
-      .eq("agreement_id", data.agreement_id)
-      .eq("product_id", data.product_id)
-      .neq("status", "excluded");
-    if (error) throw new Error(`Vínculo creado pero no se pudo aplicar el precio: ${error.message}`);
-    return { linked: true as const, updated: count ?? 0 };
+    // --- Cuerpo original conservado para reactivación futura ---
+    // await assertCanAdmin(_context.supabase, _data.agreement_id);
+    // const { error: insErr } = await _context.supabase
+    //   .from("agreement_sku_links")
+    //   .insert({
+    //     agreement_id: _data.agreement_id,
+    //     product_id: _data.product_id,
+    //     created_by: _context.userId,
+    //   });
+    // if (insErr && !insErr.message.toLowerCase().includes("duplicate")) {
+    //   throw new Error(`No se pudo vincular el SKU: ${insErr.message}`);
+    // }
+    // const { error, count } = await _context.supabase
+    //   .from("agreement_positions")
+    //   .update({ sale_price: _data.price, updated_by: _context.userId }, { count: "exact" })
+    //   .eq("agreement_id", _data.agreement_id)
+    //   .eq("product_id", _data.product_id)
+    //   .neq("status", "excluded");
+    // if (error) throw new Error(`Vínculo creado pero no se pudo aplicar el precio: ${error.message}`);
+    // return { linked: true as const, updated: count ?? 0 };
   });
+
 
 
 export const unlinkSkuPrice = createServerFn({ method: "POST" })
