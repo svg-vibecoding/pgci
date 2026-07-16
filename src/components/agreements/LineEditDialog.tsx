@@ -2522,7 +2522,7 @@ export function LineEditDialog({
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   Puedes relacionar la posición con el código que cada cliente
                   usa para identificar este producto. Búscalo en su catálogo o
-                  créalo si no existe.
+                  créalo si no existe.{"\n\n"}
                 </p>
               )}
               <ClientCodeCards
