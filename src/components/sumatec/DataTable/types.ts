@@ -37,6 +37,8 @@ export type RowAction<T> = {
   onSelect: (row: T) => void;
   destructive?: boolean;
   disabled?: boolean;
+  /** Tooltip nativo (title HTML), útil para explicar por qué está deshabilitada. */
+  title?: string;
 };
 
 export type DataTableSelection<T> = {
