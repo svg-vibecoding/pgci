@@ -2405,7 +2405,7 @@ export function LineEditDialog({
             >
               {save.isPending
                 ? "Guardando…"
-                : publishOnSave && canPublishNow
+                : publishOnSave && effectiveCanPublishNow
                   ? "Guardar y publicar"
                   : isEdit
                     ? "Guardar cambios"
