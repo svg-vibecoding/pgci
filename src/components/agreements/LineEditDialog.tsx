@@ -1329,7 +1329,7 @@ export function LineEditDialog({
     await runConflict(trimmed, null);
   };
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!open) return;
     const merged = { ...empty, ...(initial ?? {}) };
     const next: LineEditValues = {
