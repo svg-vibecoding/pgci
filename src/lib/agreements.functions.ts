@@ -3133,6 +3133,15 @@ export const getArchivedPositionDetail = createServerFn({ method: "GET" })
 // ==========================================================================
 
 export type ArchivedAgreementContext = {
+  agreement: {
+    id: string;
+    name: string;
+    scope: string; // 'global' | 'unit'
+    unit_name: string | null;
+    status: string;
+    start_date: string | null;
+    end_date: string | null;
+  };
   window: {
     from: string | null; // original_created_at
     to: string; // archived_at
@@ -3185,7 +3194,12 @@ export const getArchivedPositionAgreementContext = createServerFn({ method: "GET
     const createdAt = (pos.original_created_at as string | null) ?? archivedAt;
     const agreementId = pos.agreement_id as string;
 
-    const [compRes, memRes] = await Promise.all([
+    const [agrRes, compRes, memRes] = await Promise.all([
+      context.supabase
+        .from("agreements")
+        .select("id, name, scope, unit_name, status, start_date, end_date")
+        .eq("id", agreementId)
+        .maybeSingle(),
       context.supabase
         .from("agreement_companies")
         .select(
@@ -3199,6 +3213,8 @@ export const getArchivedPositionAgreementContext = createServerFn({ method: "GET
         )
         .eq("agreement_id", agreementId),
     ]);
+    if (agrRes.error) throw new Error(agrRes.error.message);
+    if (!agrRes.data) throw new Error("Acuerdo no encontrado");
     if (compRes.error) throw new Error(compRes.error.message);
     if (memRes.error) throw new Error(memRes.error.message);
 
@@ -3324,6 +3340,15 @@ export const getArchivedPositionAgreementContext = createServerFn({ method: "GET
     events.sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0));
 
     return {
+      agreement: {
+        id: agrRes.data.id as string,
+        name: agrRes.data.name as string,
+        scope: agrRes.data.scope as string,
+        unit_name: (agrRes.data.unit_name as string | null) ?? null,
+        status: agrRes.data.status as string,
+        start_date: (agrRes.data.start_date as string | null) ?? null,
+        end_date: (agrRes.data.end_date as string | null) ?? null,
+      },
       window: { from: pos.original_created_at as string | null, to: archivedAt },
       covered_clients,
       active_members,
