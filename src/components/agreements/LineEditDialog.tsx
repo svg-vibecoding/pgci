@@ -399,6 +399,7 @@ function ClientCodeCard({
       setPopoverOpen(false);
       setTakenBlock(null);
       setShowCodeSearch(false);
+      setShowDescriptionEdit(false);
     }
   }
 
