@@ -3194,7 +3194,12 @@ export const getArchivedPositionAgreementContext = createServerFn({ method: "GET
     const createdAt = (pos.original_created_at as string | null) ?? archivedAt;
     const agreementId = pos.agreement_id as string;
 
-    const [compRes, memRes] = await Promise.all([
+    const [agrRes, compRes, memRes] = await Promise.all([
+      context.supabase
+        .from("agreements")
+        .select("id, name, scope, unit_name, status, start_date, end_date")
+        .eq("id", agreementId)
+        .maybeSingle(),
       context.supabase
         .from("agreement_companies")
         .select(
@@ -3208,6 +3213,8 @@ export const getArchivedPositionAgreementContext = createServerFn({ method: "GET
         )
         .eq("agreement_id", agreementId),
     ]);
+    if (agrRes.error) throw new Error(agrRes.error.message);
+    if (!agrRes.data) throw new Error("Acuerdo no encontrado");
     if (compRes.error) throw new Error(compRes.error.message);
     if (memRes.error) throw new Error(memRes.error.message);
 
