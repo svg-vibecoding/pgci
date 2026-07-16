@@ -1292,15 +1292,10 @@ function AgreementLinesPage() {
                       status={meta!.status}
                       label={meta!.label}
                       icon={badgeKey === "draft" ? Pencil : undefined}
-                      style={{ padding: "0 7px", gap: 4 }}
                     />
                   )}
                   {readyToPublish && (
-                    <StatusBadge
-                      status="active"
-                      label="OK para publicar"
-                      style={{ padding: "0 7px", gap: 4 }}
-                    />
+                    <StatusBadge status="active" label="OK para publicar" />
                   )}
                   {reasonTokens.length > 0 && (
                     <div className="flex flex-wrap gap-1">
