@@ -430,6 +430,18 @@ function AgreementLinesPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const archivePosition = useMutation({
+    mutationFn: (vars: { line_id: string; reason: string }) =>
+      archiveFn({ data: vars }),
+    onSuccess: () => {
+      toast.success("Posición archivada");
+      invalidateAll();
+      setArchiveTarget(null);
+      setArchiveReason("");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   type Line = NonNullable<typeof lines>[number] & {
     products?: {
