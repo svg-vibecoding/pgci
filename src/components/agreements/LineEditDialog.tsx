@@ -2605,7 +2605,11 @@ export function LineEditDialog({
                   return;
                 }
                 setSaveError(null);
-                save.mutate();
+                if (isSkuChangeOnPublished) {
+                  setSkuChangePrompt({ open: true, kind: null, note: "" });
+                  return;
+                }
+                save.mutate(undefined);
               }}
               disabled={save.isPending || hasCreatingIncomplete}
             >
