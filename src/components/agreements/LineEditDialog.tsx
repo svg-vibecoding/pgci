@@ -341,7 +341,7 @@ function ClientCodeCard({
 }) {
 
   const disabled = !card.can_manage;
-  const readonlyClass = "bg-muted/50 cursor-not-allowed";
+  const readonlyClass = "bg-muted/70 border-transparent shadow-none cursor-not-allowed focus-visible:ring-0 focus-visible:ring-offset-0";
 
   const searchFn = useServerFn(searchClientCodes);
   const reactivateFn = useServerFn(reactivateAgreementLine);
