@@ -2288,7 +2288,7 @@ export function LineEditDialog({
           {saveError && (
             <p className="text-xs text-destructive sm:mr-auto">{saveError}</p>
           )}
-          {canOfferPublish && !saveError && !skuBlocksForm && (
+          {canOfferPublish && !saveError && (
             <label
               className={cn(
                 "flex items-start gap-2 sm:mr-auto",
@@ -2299,7 +2299,7 @@ export function LineEditDialog({
                 id="publish-on-save"
                 checked={publishOnSave}
                 onCheckedChange={(c) => setPublishOnSave(c === true)}
-                disabled={!canPublishNow || save.isPending || skuBlocksForm}
+                disabled={!canPublishNow || save.isPending}
                 className="mt-0.5"
               />
               <span className="flex flex-col leading-tight">
