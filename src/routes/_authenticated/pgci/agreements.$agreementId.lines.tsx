@@ -1529,6 +1529,45 @@ function AgreementLinesPage() {
       </AlertDialog>
 
       <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => {
+          if (!o && !deletePosition.isPending) setDeleteTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar posición en gestión</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se eliminará este registro en gestión. Los códigos de cliente que
+              hayas creado se conservan en el catálogo.
+              {deleteTarget?.sku ? (
+                <span className="mt-2 block text-text-primary">
+                  SKU: <strong>{deleteTarget.sku}</strong>
+                  {deleteTarget.description ? ` — ${deleteTarget.description}` : ""}
+                </span>
+              ) : null}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletePosition.isPending}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deleteTarget) deletePosition.mutate(deleteTarget.id);
+              }}
+              disabled={deletePosition.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+
+
+      <AlertDialog
         open={confirmPublishOpen}
         onOpenChange={(o) => {
           if (!publishMut.isPending) setConfirmPublishOpen(o);
