@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 
@@ -1329,7 +1329,7 @@ export function LineEditDialog({
     await runConflict(trimmed, null);
   };
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!open) return;
     const merged = { ...empty, ...(initial ?? {}) };
     const next: LineEditValues = {
