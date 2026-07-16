@@ -1184,6 +1184,42 @@ export function LineEditDialog({
         kind: res.status === "active" ? "active" : "inactive",
         catalogUpdatedAt: res.catalog_updated_at,
       });
+      // En edición también necesitamos las OTRAS posiciones del mismo SKU en
+      // el acuerdo (para las fichas y el bloque de conflicto). Reusamos
+      // searchProducts filtrado por agreement_id y descartamos la propia.
+      try {
+        const s = await searchFn({
+          data: {
+            query: trimmed,
+            offset: 0,
+            limit: 5,
+            agreement_id: agreementId,
+          },
+        });
+        const match = s.rows.find((r) => r.sku === trimmed);
+        if (match) {
+          setProductId(match.id);
+          if (match.agreement_status.kind === "in_agreement") {
+            const own = initial?.line_id ?? null;
+            const others = match.agreement_status.positions.filter(
+              (p) => p.position_id !== own,
+            );
+            if (others.length > 0) {
+              setSkuInAgreement({
+                sku: match.sku,
+                productDescription: match.erp_description,
+                positions: others,
+              });
+            } else {
+              setSkuInAgreement(null);
+            }
+          } else {
+            setSkuInAgreement(null);
+          }
+        }
+      } catch (e) {
+        console.error("prefill searchProducts failed", e);
+      }
     } catch (e) {
       console.error("lookupProductBySku failed", e);
     }
