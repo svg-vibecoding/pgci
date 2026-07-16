@@ -129,6 +129,7 @@ type LookupKind =
 type ProductMeta = {
   erp_description: string | null;
   commercial_brand: string | null;
+  updated_at: string | null;
 };
 
 function fmtCatalogDate(iso: string | null | undefined): string | null {
@@ -1124,6 +1125,7 @@ export function LineEditDialog({
     erp_description: string | null;
     commercial_brand: string | null;
     status: "active" | "inactive";
+    updated_at: string | null;
     agreement_status: SkuAgreementStatus;
   };
   const [searchOpen, setSearchOpen] = useState(false);
@@ -1237,6 +1239,7 @@ export function LineEditDialog({
       setProductMeta({
         erp_description: res.erp_description,
         commercial_brand: res.commercial_brand,
+        updated_at: res.product_updated_at ?? null,
       });
       setLookup({
         kind: res.status === "active" ? "active" : "inactive",
@@ -1388,6 +1391,7 @@ export function LineEditDialog({
     setProductMeta({
       erp_description: p.erp_description,
       commercial_brand: p.commercial_brand,
+      updated_at: p.updated_at,
     });
     setProductId(p.id);
     setLookup({ kind: p.status === "active" ? "active" : "inactive" });
@@ -2094,6 +2098,9 @@ export function LineEditDialog({
                     <div className="flex justify-end">
                       <span className="text-xs font-medium text-muted-foreground/60">
                         PIM Sumatec
+                        {fmtCatalogDate(productMeta?.updated_at)
+                          ? `: ${fmtCatalogDate(productMeta?.updated_at)}`
+                          : ""}
                       </span>
                     </div>
                   )}
