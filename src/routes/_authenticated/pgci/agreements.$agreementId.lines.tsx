@@ -356,6 +356,11 @@ function AgreementLinesPage() {
     description: string | null;
     codes: LineCode[];
   } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: string;
+    sku: string | null;
+    description: string | null;
+  } | null>(null);
   const [reason, setReason] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [confirmPublishOpen, setConfirmPublishOpen] = useState(false);
