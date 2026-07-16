@@ -783,7 +783,17 @@ function ClientCodeCard({
                 size="sm"
                 variant="outline"
                 disabled={!canRemove}
-                onClick={onRemove}
+                onClick={() => {
+                  onRemove();
+                  setMode("search");
+                  setOriginalDescription(null);
+                  setIsNew(false);
+                  setQuery("");
+                  setResults([]);
+                  setExpandedId(null);
+                  setPopoverOpen(false);
+                  setTakenBlock(null);
+                }}
                 title={
                   canRemove
                     ? undefined
@@ -795,6 +805,7 @@ function ClientCodeCard({
               </Button>
             </div>
           )}
+
         </>
       )}
 
