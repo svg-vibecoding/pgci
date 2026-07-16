@@ -254,13 +254,16 @@ export function ArchivedPositionDialog({ open, onOpenChange, archivedId }: Props
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl w-[calc(100vw-2rem)] h-[92vh] p-0 gap-0 overflow-hidden flex flex-col">
-        {/* Barra superior: contexto */}
-        <div className="flex items-center gap-2 border-b border-border bg-muted/40 px-6 py-2.5 pr-12">
-          <Archive className="h-3.5 w-3.5 text-text-tertiary" />
-          <span className="suma-overline text-text-tertiary">
-            HISTORIAL DE LA POSICIÓN ARCHIVADA
+        {/* Header del modal */}
+        <div className="flex items-center gap-3 border-b border-border bg-muted/40 px-6 py-4 pr-14">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-card text-text-primary">
+            <Archive className="h-4.5 w-4.5" strokeWidth={2} />
+          </span>
+          <span className="suma-h4 text-text-primary tracking-tight">
+            Historial de la posición archivada
           </span>
         </div>
+
 
         {isLoading && (
           <div className="p-6 text-sm text-text-tertiary">Cargando foto…</div>
