@@ -1475,7 +1475,6 @@ function AgreementLinesPage() {
                             }
                             actionType={g.state === "conflict" ? "review" : "link"}
                             actionDisabled={g.state === "repeated" || (g.state !== "conflict" && (busy || !canLink))}
-                            actionTitle={g.state === "repeated" ? linkDisabledReason : undefined}
                             fmtMoney={fmtMoney}
                           />
                         );
