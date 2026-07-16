@@ -2077,16 +2077,20 @@ function ArchivedTable({
       id: "jaivana",
       header: "Jaivaná",
       cell: (r) => (
-        <span className="text-text-tertiary">
-          <IdentityCell
-            code={<span className="text-text-tertiary">{r.sku ?? "—"}</span>}
-            description={
-              <span className="text-text-tertiary">
-                {r.product_description ?? "—"}
-              </span>
-            }
-          />
-        </span>
+        <div className="min-w-0">
+          <div
+            className="truncate font-mono text-[12.5px] font-semibold text-text-tertiary"
+            title={r.sku ?? undefined}
+          >
+            {r.sku ?? "—"}
+          </div>
+          <div
+            className="line-clamp-2 text-[13px] leading-[1.35] text-text-tertiary"
+            title={r.product_description ?? undefined}
+          >
+            {r.product_description ?? "—"}
+          </div>
+        </div>
       ),
     },
     {
