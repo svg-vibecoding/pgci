@@ -179,10 +179,9 @@ function buildTimeline(data: Detail): TimelineEvent[] {
   });
 
   evts.sort((a, b) => {
-    const ta = new Date(a.at).getTime();
-    const tb = new Date(b.at).getTime();
+    const ta = a.at ? new Date(a.at).getTime() : 0;
+    const tb = b.at ? new Date(b.at).getTime() : 0;
     if (ta !== tb) return ta - tb;
-    // archivado siempre al final si empata
     if (a.kind === "archived") return 1;
     if (b.kind === "archived") return -1;
     return 0;
