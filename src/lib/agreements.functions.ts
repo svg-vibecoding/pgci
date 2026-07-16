@@ -3133,6 +3133,15 @@ export const getArchivedPositionDetail = createServerFn({ method: "GET" })
 // ==========================================================================
 
 export type ArchivedAgreementContext = {
+  agreement: {
+    id: string;
+    name: string;
+    scope: string; // 'global' | 'unit'
+    unit_name: string | null;
+    status: string;
+    start_date: string | null;
+    end_date: string | null;
+  };
   window: {
     from: string | null; // original_created_at
     to: string; // archived_at
