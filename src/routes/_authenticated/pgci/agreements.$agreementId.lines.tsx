@@ -168,6 +168,113 @@ function vigenciaBadge(
   return { color: "info", label };
 }
 
+function fmtDMY(d: Date): string {
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  return `${dd}/${mm}/${d.getFullYear()}`;
+}
+
+type VigenciaTone = "ok" | "warning" | "expired" | "none";
+
+function vigenciaTone(
+  lineEnd: string | null,
+  agreementEnd: string | null,
+): { tone: VigenciaTone; diffDays: number | null } {
+  const end = parseLocalDate(lineEnd ?? agreementEnd ?? null);
+  if (!end) return { tone: "none", diffDays: null };
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diffDays = Math.round((end.getTime() - today.getTime()) / 86_400_000);
+  if (diffDays < 0) return { tone: "expired", diffDays };
+  if (diffDays <= 30) return { tone: "warning", diffDays };
+  return { tone: "ok", diffDays };
+}
+
+function VigenciaCell({
+  lineStart,
+  lineEnd,
+  agreementStart,
+  agreementEnd,
+}: {
+  lineStart: string | null;
+  lineEnd: string | null;
+  agreementStart: string | null;
+  agreementEnd: string | null;
+}) {
+  const startDate = parseLocalDate(lineStart ?? agreementStart ?? null);
+  const endDate = parseLocalDate(lineEnd ?? agreementEnd ?? null);
+  const { tone, diffDays } = vigenciaTone(lineEnd, agreementEnd);
+
+  if (!startDate && !endDate) {
+    return (
+      <span
+        className="text-text-tertiary"
+        style={{ fontSize: 13 }}
+        title="Sin vigencia"
+      >
+        —
+      </span>
+    );
+  }
+
+  const color =
+    tone === "expired"
+      ? "var(--danger-strong)"
+      : tone === "warning"
+        ? "var(--warning-strong)"
+        : "var(--text-primary)";
+
+  const Icon =
+    tone === "expired" ? AlertCircle : tone === "warning" ? AlertTriangle : null;
+
+  const iconTitle =
+    tone === "expired" && diffDays !== null
+      ? `Vencida hace ${Math.abs(diffDays)} día${Math.abs(diffDays) === 1 ? "" : "s"}`
+      : tone === "warning" && diffDays !== null
+        ? diffDays === 0
+          ? "Vence hoy"
+          : `Vence en ${diffDays} día${diffDays === 1 ? "" : "s"}`
+        : undefined;
+
+  return (
+    <div
+      className="flex items-start gap-1.5"
+      style={{ color, lineHeight: 1.25 }}
+    >
+      {Icon && (
+        <Icon
+          size={14}
+          strokeWidth={2.25}
+          aria-hidden="true"
+          style={{ marginTop: 1, flexShrink: 0 }}
+        >
+          {iconTitle ? <title>{iconTitle}</title> : null}
+        </Icon>
+      )}
+      <div className="flex flex-col" style={{ gap: 1 }}>
+        <div style={{ fontSize: 11 }}>
+          <span className="text-text-tertiary">Desde: </span>
+          <span className="tabular-nums" style={{ fontSize: 12 }}>
+            {startDate ? fmtDMY(startDate) : "—"}
+          </span>
+        </div>
+        <div style={{ fontSize: 11 }}>
+          <span className="text-text-tertiary">Hasta: </span>
+          <span
+            className="tabular-nums"
+            style={{
+              fontSize: 12,
+              textDecoration: tone === "expired" ? "line-through" : undefined,
+            }}
+          >
+            {endDate ? fmtDMY(endDate) : "—"}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AgreementLinesPage() {
   const { agreementId } = Route.useParams();
   const qc = useQueryClient();
