@@ -1087,14 +1087,20 @@ export const searchClientCodes = createServerFn({ method: "POST" })
 
     // Estado en el acuerdo: activa/excluida/pendiente sin filtrar por estado
     // — el nuevo modelo mantiene el código en la posición para siempre.
+    // Estado en el acuerdo: solo relaciones vigentes (valid_until is null).
+    // Una relación cerrada (quitada/reemplazada) libera el código; una posición
+    // excluida NO cierra el período de sus apcc, así que "excluida" sigue
+    // visible como "ocupado" en el buscador.
     const { data: apcc, error: apccErr } = await context.supabase
       .from("agreement_position_client_codes")
       .select(
         "client_product_id, agreement_position_id, agreement_positions!inner(id, status, sale_price, product_id, products(sku, erp_description))",
       )
       .eq("agreement_id", data.agreement_id)
-      .in("client_product_id", allIds);
+      .in("client_product_id", allIds)
+      .is("valid_until", null);
     if (apccErr) throw new Error(apccErr.message);
+
 
     const statusByCp = new Map<string, ClientCodeSearchResult["status"]>();
     const excludedPosIds: string[] = [];

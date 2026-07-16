@@ -236,6 +236,7 @@ function ClientCodeCards({
   clients,
   values,
   onChange,
+  onRemove,
   agreementId,
   initialLineId,
   open,
@@ -243,10 +244,12 @@ function ClientCodeCards({
   onRequestSwitchToPosition,
   onCreatingIncompleteChange,
   requiredForClientIds,
+  canRemoveClientIds,
 }: {
   clients: ClientCard[];
   values: Map<string, ClientCodeEntry>;
   onChange: (clientId: string, next: ClientCodeEntry) => void;
+  onRemove: (clientId: string) => void;
   agreementId: string;
   initialLineId: string | null;
   open: boolean;
@@ -254,6 +257,7 @@ function ClientCodeCards({
   onRequestSwitchToPosition: (positionId: string) => void;
   onCreatingIncompleteChange: (clientId: string, incomplete: boolean) => void;
   requiredForClientIds?: Set<string>;
+  canRemoveClientIds?: Set<string>;
 }) {
   if (clients.length === 0) {
     return (
@@ -275,7 +279,9 @@ function ClientCodeCards({
             initialLineId={initialLineId}
             open={open}
             required={requiredForClientIds?.has(c.id) ?? false}
+            canRemove={canRemoveClientIds?.has(c.id) ?? true}
             onChange={(next) => onChange(c.id, next)}
+            onRemove={() => onRemove(c.id)}
             onReactivated={onReactivated}
             onRequestSwitchToPosition={onRequestSwitchToPosition}
             onCreatingIncompleteChange={(incomplete) =>
@@ -287,6 +293,7 @@ function ClientCodeCards({
     </div>
   );
 }
+
 
 
 type TakenBlock = {
@@ -309,7 +316,9 @@ function ClientCodeCard({
   initialLineId,
   open,
   required = false,
+  canRemove = true,
   onChange,
+  onRemove,
   onReactivated,
   onRequestSwitchToPosition,
   onCreatingIncompleteChange,
@@ -320,11 +329,14 @@ function ClientCodeCard({
   initialLineId: string | null;
   open: boolean;
   required?: boolean;
+  canRemove?: boolean;
   onChange: (next: ClientCodeEntry) => void;
+  onRemove: () => void;
   onReactivated: () => void;
   onRequestSwitchToPosition: (positionId: string) => void;
   onCreatingIncompleteChange: (incomplete: boolean) => void;
 }) {
+
   const disabled = !card.can_manage;
   const readonlyClass = "bg-muted/50 cursor-not-allowed";
 
@@ -764,8 +776,39 @@ function ClientCodeCard({
               </span>
             </div>
           )}
+          {!disabled && (
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={!canRemove}
+                onClick={() => {
+                  onRemove();
+                  setMode("search");
+                  setOriginalDescription(null);
+                  setIsNew(false);
+                  setQuery("");
+                  setResults([]);
+                  setExpandedId(null);
+                  setPopoverOpen(false);
+                  setTakenBlock(null);
+                }}
+                title={
+                  canRemove
+                    ? undefined
+                    : "Este código distingue esta posición de otra del mismo SKU. Puedes editarlo, pero no quitarlo."
+                }
+                className="text-destructive hover:text-destructive"
+              >
+                Quitar relación
+              </Button>
+            </div>
+          )}
+
         </>
       )}
+
 
       {disabled && (
         <p className="text-xs text-muted-foreground">
@@ -1459,6 +1502,41 @@ export function LineEditDialog({
     }
     return s;
   }, [undistinguishedSiblings]);
+
+  // canRemoveClientIds: para cada cliente con código en esta posición, simular
+  // la lista sin ese cliente y aplicar la regla par a par de
+  // position_has_sku_conflict. Si tras quitarlo alguna hermana publicada queda
+  // sin distinguirse contra mí, no se puede quitar (rompería el desempate).
+  // "Editar" no pasa por acá — reemplazar sigue permitido.
+  const canRemoveClientIds = useMemo<Set<string>>(() => {
+    const out = new Set<string>();
+    if (!productId || !skuInAgreement) {
+      for (const [cid, e] of codeEntries) {
+        if (e && e.code && e.code.trim() !== "") out.add(cid);
+      }
+      return out;
+    }
+    const publishedSiblings = skuInAgreement.positions.filter(
+      (p) => p.published_at != null,
+    );
+    const myClientsWithCode = new Set<string>();
+    for (const [cid, e] of codeEntries) {
+      if (e && e.code && e.code.trim() !== "") myClientsWithCode.add(cid);
+    }
+    for (const cid of myClientsWithCode) {
+      const simulated = new Set(myClientsWithCode);
+      simulated.delete(cid);
+      const stillDistinguished = publishedSiblings.every((p) => {
+        for (const c of p.codes) {
+          if (simulated.has(c.client_id)) return true;
+        }
+        return false;
+      });
+      if (stillDistinguished) out.add(cid);
+    }
+    return out;
+  }, [productId, skuInAgreement, codeEntries]);
+
 
   // isPublishableDraft(values): completa (SKU, precio, fecha inicio) y vigente
   // (fecha efectiva de fin no vencida). Usa las fechas efectivas del acuerdo
@@ -2395,6 +2473,7 @@ export function LineEditDialog({
                 initialLineId={initial?.line_id ?? null}
                 open={open}
                 requiredForClientIds={requiredClientIds}
+                canRemoveClientIds={canRemoveClientIds}
                 onChange={(clientId, next) => {
                   setCodeEntries((prev) => {
                     const m = new Map(prev);
@@ -2402,6 +2481,14 @@ export function LineEditDialog({
                     return m;
                   });
                 }}
+                onRemove={(clientId) => {
+                  setCodeEntries((prev) => {
+                    const m = new Map(prev);
+                    m.set(clientId, { code: "", description: "" });
+                    return m;
+                  });
+                }}
+
                 onReactivated={() => {
                   qc.invalidateQueries({ queryKey: ["agreements", "lines", agreementId] });
                   qc.invalidateQueries({ queryKey: ["agreements", "detail", agreementId] });
