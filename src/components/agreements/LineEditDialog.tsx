@@ -710,6 +710,10 @@ function ClientCodeCard({
                 onSelect: () => setShowCodeSearch(true),
               },
               {
+                label: "Editar producto",
+                onSelect: () => setShowDescriptionEdit(true),
+              },
+              {
                 label: "Quitar relación",
                 destructive: true,
                 disabled: !canRemove,
@@ -727,6 +731,7 @@ function ClientCodeCard({
                   setPopoverOpen(false);
                   setTakenBlock(null);
                   setShowCodeSearch(false);
+                  setShowDescriptionEdit(false);
                 },
               },
             ]}
