@@ -729,6 +729,50 @@ export type Database = {
           },
         ]
       }
+      archived_position_alternatives: {
+        Row: {
+          archived_position_id: string
+          id: string
+          notes: string | null
+          original_created_at: string | null
+          original_created_by: string | null
+          product_brand: string | null
+          product_description: string | null
+          product_id: string | null
+          sku: string | null
+        }
+        Insert: {
+          archived_position_id: string
+          id?: string
+          notes?: string | null
+          original_created_at?: string | null
+          original_created_by?: string | null
+          product_brand?: string | null
+          product_description?: string | null
+          product_id?: string | null
+          sku?: string | null
+        }
+        Update: {
+          archived_position_id?: string
+          id?: string
+          notes?: string | null
+          original_created_at?: string | null
+          original_created_by?: string | null
+          product_brand?: string | null
+          product_description?: string | null
+          product_id?: string | null
+          sku?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "archived_position_alternatives_archived_position_id_fkey"
+            columns: ["archived_position_id"]
+            isOneToOne: false
+            referencedRelation: "archived_positions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       archived_position_codes: {
         Row: {
           archived_position_id: string
