@@ -1238,6 +1238,7 @@ export function LineEditDialog({
       setProductMeta({
         erp_description: res.erp_description,
         commercial_brand: res.commercial_brand,
+        updated_at: res.product_updated_at ?? null,
       });
       setLookup({
         kind: res.status === "active" ? "active" : "inactive",
