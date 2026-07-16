@@ -2510,6 +2510,13 @@ export function LineEditDialog({
                   <SectionHeader title="PRODUCTOS DEL CLIENTE" number="03" />
                 </div>
               </div>
+              {!isEdit && (
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Puedes relacionar la posición con el código que cada cliente
+                  usa para identificar este producto. Búscalo en su catálogo o
+                  créalo si no existe.
+                </p>
+              )}
               <ClientCodeCards
                 clients={clientCards}
                 values={codeEntries}
@@ -2518,6 +2525,7 @@ export function LineEditDialog({
                 open={open}
                 requiredForClientIds={requiredClientIds}
                 canRemoveClientIds={canRemoveClientIds}
+                isCreate={!isEdit}
                 onChange={(clientId, next) => {
                   setCodeEntries((prev) => {
                     const m = new Map(prev);
