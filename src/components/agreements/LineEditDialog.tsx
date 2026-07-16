@@ -388,6 +388,7 @@ function ClientCodeCard({
       setExpandedId(null);
       setPopoverOpen(false);
       setTakenBlock(null);
+      setShowCodeSearch(false);
     }
   }
 
