@@ -64,6 +64,7 @@ import {
   listAgreementLines,
   excludeAgreementLine,
   deleteAgreementLine,
+  archiveAgreementLine,
   reactivateAgreementLine,
   listAgreementSkuGroups,
   listAgreementCompanies,
