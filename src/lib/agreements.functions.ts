@@ -3126,3 +3126,207 @@ export const getArchivedPositionDetail = createServerFn({ method: "GET" })
   });
 
 
+
+// ==========================================================================
+// Contexto del acuerdo alrededor de una posición archivada.
+// Lee agreement_companies y agreement_members ya versionadas (no congela).
+// ==========================================================================
+
+export type ArchivedAgreementContext = {
+  window: {
+    from: string | null; // original_created_at
+    to: string; // archived_at
+  };
+  covered_clients: {
+    id: string;
+    client_id: string;
+    client_name: string;
+    valid_from: string;
+    valid_until: string | null;
+  }[];
+  active_members: {
+    id: string;
+    user_id: string;
+    user_name: string;
+    role: string;
+    valid_from: string;
+    valid_until: string | null;
+  }[];
+  events: {
+    key: string;
+    at: string;
+    kind:
+      | "client_joined"
+      | "client_left"
+      | "member_joined"
+      | "member_left";
+    subject: string; // client or user name
+    role?: string | null;
+    reason?: string | null;
+    actor_name?: string | null;
+  }[];
+};
+
+export const getArchivedPositionAgreementContext = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ archived_id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<ArchivedAgreementContext> => {
+    const { data: pos, error: pErr } = await context.supabase
+      .from("archived_positions")
+      .select("agreement_id, archived_at, original_created_at")
+      .eq("id", data.archived_id)
+      .maybeSingle();
+    if (pErr) throw new Error(pErr.message);
+    if (!pos) throw new Error("Posición archivada no encontrada");
+
+    const archivedAt = pos.archived_at as string;
+    const createdAt = (pos.original_created_at as string | null) ?? archivedAt;
+    const agreementId = pos.agreement_id as string;
+
+    const [compRes, memRes] = await Promise.all([
+      context.supabase
+        .from("agreement_companies")
+        .select(
+          "id, client_id, valid_from, valid_until, started_by, ended_by, ended_reason, clients:client_id(commercial_name, legal_name)",
+        )
+        .eq("agreement_id", agreementId),
+      context.supabase
+        .from("agreement_members")
+        .select(
+          "id, user_id, role, valid_from, valid_until, started_by, ended_by, ended_reason",
+        )
+        .eq("agreement_id", agreementId),
+    ]);
+    if (compRes.error) throw new Error(compRes.error.message);
+    if (memRes.error) throw new Error(memRes.error.message);
+
+    const comps = (compRes.data ?? []) as Array<{
+      id: string;
+      client_id: string;
+      valid_from: string;
+      valid_until: string | null;
+      started_by: string | null;
+      ended_by: string | null;
+      ended_reason: string | null;
+      clients: { commercial_name: string | null; legal_name: string | null } | null;
+    }>;
+    const mems = (memRes.data ?? []) as Array<{
+      id: string;
+      user_id: string;
+      role: string;
+      valid_from: string;
+      valid_until: string | null;
+      started_by: string | null;
+      ended_by: string | null;
+      ended_reason: string | null;
+    }>;
+
+    const userIds = new Set<string>();
+    for (const m of mems) {
+      userIds.add(m.user_id);
+      if (m.started_by) userIds.add(m.started_by);
+      if (m.ended_by) userIds.add(m.ended_by);
+    }
+    for (const c of comps) {
+      if (c.started_by) userIds.add(c.started_by);
+      if (c.ended_by) userIds.add(c.ended_by);
+    }
+    const names = await resolveUserNames(context.supabase, Array.from(userIds));
+
+    const clientName = (c: (typeof comps)[number]) =>
+      c.clients?.commercial_name || c.clients?.legal_name || "—";
+
+    const covered_clients = comps
+      .filter(
+        (c) =>
+          c.valid_from <= archivedAt &&
+          (c.valid_until === null || c.valid_until > archivedAt),
+      )
+      .map((c) => ({
+        id: c.id,
+        client_id: c.client_id,
+        client_name: clientName(c),
+        valid_from: c.valid_from,
+        valid_until: c.valid_until,
+      }))
+      .sort((a, b) =>
+        a.client_name.localeCompare(b.client_name, "es", { sensitivity: "base" }),
+      );
+
+    const active_members = mems
+      .filter(
+        (m) =>
+          m.valid_from <= archivedAt &&
+          (m.valid_until === null || m.valid_until > archivedAt),
+      )
+      .map((m) => ({
+        id: m.id,
+        user_id: m.user_id,
+        user_name: names.get(m.user_id) ?? "—",
+        role: m.role,
+        valid_from: m.valid_from,
+        valid_until: m.valid_until,
+      }))
+      .sort((a, b) =>
+        a.user_name.localeCompare(b.user_name, "es", { sensitivity: "base" }),
+      );
+
+    const events: ArchivedAgreementContext["events"] = [];
+    const inRange = (t: string) => t >= createdAt && t <= archivedAt;
+
+    for (const c of comps) {
+      if (inRange(c.valid_from)) {
+        events.push({
+          key: `c_in:${c.id}`,
+          at: c.valid_from,
+          kind: "client_joined",
+          subject: clientName(c),
+          actor_name: c.started_by ? names.get(c.started_by) ?? null : null,
+        });
+      }
+      if (c.valid_until && inRange(c.valid_until)) {
+        events.push({
+          key: `c_out:${c.id}`,
+          at: c.valid_until,
+          kind: "client_left",
+          subject: clientName(c),
+          reason: c.ended_reason,
+          actor_name: c.ended_by ? names.get(c.ended_by) ?? null : null,
+        });
+      }
+    }
+    for (const m of mems) {
+      const uname = names.get(m.user_id) ?? "—";
+      if (inRange(m.valid_from)) {
+        events.push({
+          key: `m_in:${m.id}`,
+          at: m.valid_from,
+          kind: "member_joined",
+          subject: uname,
+          role: m.role,
+          actor_name: m.started_by ? names.get(m.started_by) ?? null : null,
+        });
+      }
+      if (m.valid_until && inRange(m.valid_until)) {
+        events.push({
+          key: `m_out:${m.id}`,
+          at: m.valid_until,
+          kind: "member_left",
+          subject: uname,
+          role: m.role,
+          reason: m.ended_reason,
+          actor_name: m.ended_by ? names.get(m.ended_by) ?? null : null,
+        });
+      }
+    }
+    events.sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0));
+
+    return {
+      window: { from: pos.original_created_at as string | null, to: archivedAt },
+      covered_clients,
+      active_members,
+      events,
+    };
+  });
