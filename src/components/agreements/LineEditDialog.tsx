@@ -2442,6 +2442,7 @@ export function LineEditDialog({
                 initialLineId={initial?.line_id ?? null}
                 open={open}
                 requiredForClientIds={requiredClientIds}
+                canRemoveClientIds={canRemoveClientIds}
                 onChange={(clientId, next) => {
                   setCodeEntries((prev) => {
                     const m = new Map(prev);
@@ -2449,6 +2450,14 @@ export function LineEditDialog({
                     return m;
                   });
                 }}
+                onRemove={(clientId) => {
+                  setCodeEntries((prev) => {
+                    const m = new Map(prev);
+                    m.set(clientId, { code: "", description: "" });
+                    return m;
+                  });
+                }}
+
                 onReactivated={() => {
                   qc.invalidateQueries({ queryKey: ["agreements", "lines", agreementId] });
                   qc.invalidateQueries({ queryKey: ["agreements", "detail", agreementId] });
