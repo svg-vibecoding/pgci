@@ -1351,23 +1351,38 @@ function AgreementLinesPage() {
                 onSelect: () => reactivate.mutate(r.id as string),
               });
             } else {
+              const isDraft = r.status === "draft";
               actions.push({
                 label: "Editar",
                 icon: <Pencil className="h-4 w-4" />,
                 onSelect: () => openEditForLine(r.id as string),
               });
-              actions.push({
-                label: "Excluir",
-                icon: <Ban className="h-4 w-4" />,
-                destructive: true,
-                onSelect: () =>
-                  setExcludeTarget({
-                    id: r.id as string,
-                    sku: r.products?.sku ?? null,
-                    description: r.products?.erp_description ?? null,
-                    codes: r.codes ?? [],
-                  }),
-              });
+              if (isDraft) {
+                actions.push({
+                  label: "Eliminar",
+                  icon: <Trash2 className="h-4 w-4" />,
+                  destructive: true,
+                  onSelect: () =>
+                    setDeleteTarget({
+                      id: r.id as string,
+                      sku: r.products?.sku ?? null,
+                      description: r.products?.erp_description ?? null,
+                    }),
+                });
+              } else {
+                actions.push({
+                  label: "Excluir",
+                  icon: <Ban className="h-4 w-4" />,
+                  destructive: true,
+                  onSelect: () =>
+                    setExcludeTarget({
+                      id: r.id as string,
+                      sku: r.products?.sku ?? null,
+                      description: r.products?.erp_description ?? null,
+                      codes: r.codes ?? [],
+                    }),
+                });
+              }
             }
           }
           return actions;
