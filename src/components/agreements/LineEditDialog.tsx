@@ -187,19 +187,17 @@ function normalizePriceOnBlur(raw: string): string {
 
 function FieldLabel({
   children,
+  required,
   className,
 }: {
   children: React.ReactNode;
+  required?: boolean;
   className?: string;
 }) {
   return (
-    <Label
-      className={cn(
-        "text-[11px] font-semibold uppercase tracking-wider text-muted-foreground",
-        className,
-      )}
-    >
+    <Label className={className}>
       {children}
+      {required ? <span className="text-primary"> *</span> : null}
     </Label>
   );
 }
@@ -692,7 +690,7 @@ function ClientCodeCard({
         <>
           {searchBlock(searchPlaceholder)}
           <div className="space-y-1.5">
-            <FieldLabel>CÓDIGO</FieldLabel>
+            <FieldLabel required>Código</FieldLabel>
             <Input
               value={entry.code}
               disabled={disabled}
@@ -701,7 +699,7 @@ function ClientCodeCard({
             />
           </div>
           <div className="space-y-1.5">
-            <FieldLabel>DESCRIPCIÓN DEL PRODUCTO</FieldLabel>
+            <FieldLabel required>Descripción del producto</FieldLabel>
             <Input
               value={entry.description}
               disabled={disabled}
@@ -748,7 +746,7 @@ function ClientCodeCard({
           {takenAlert}
           {takenActions}
           <div className="space-y-1.5">
-            <FieldLabel>CÓDIGO</FieldLabel>
+            <FieldLabel>Código</FieldLabel>
             <Input
               value={entry.code}
               disabled={disabled}
@@ -758,7 +756,7 @@ function ClientCodeCard({
             />
           </div>
           <div className="space-y-1.5">
-            <FieldLabel>DESCRIPCIÓN DEL PRODUCTO</FieldLabel>
+            <FieldLabel required>Descripción del producto</FieldLabel>
             <Input
               value={entry.description}
               disabled={disabled}
@@ -2389,7 +2387,7 @@ export function LineEditDialog({
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                     <div className="space-y-1.5">
-                      <FieldLabel>Precio de venta</FieldLabel>
+                      <FieldLabel required>Precio de venta</FieldLabel>
                       <Input
                         className={inputClass}
                         inputMode="decimal"
@@ -2423,7 +2421,7 @@ export function LineEditDialog({
                   </div>
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="space-y-1.5">
-                      <FieldLabel>Fecha inicio</FieldLabel>
+                      <FieldLabel required>Fecha inicio</FieldLabel>
                       <div className="relative">
                         <Input
                           className={cn(
