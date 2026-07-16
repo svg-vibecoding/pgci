@@ -1669,7 +1669,7 @@ export function LineEditDialog({
   }, [open, initial?.line_id]);
 
   const save = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (choice: SkuChangeChoice | undefined = undefined) => {
       const num = (s: string) => {
         const n = parsePriceInput(s);
         return n == null ? undefined : n;
@@ -1699,6 +1699,10 @@ export function LineEditDialog({
               start_date: txt(v.start_date) ?? undefined,
               end_date: txt(v.end_date) ?? undefined,
               observations: txt(v.observations) ?? undefined,
+              // R-09: la RPC valida obligatoriedad. Solo se envían si el
+              // usuario declaró el motivo del cambio de SKU.
+              sku_change_kind: choice?.kind,
+              sku_change_note: choice?.note,
             },
             confirm_n_conflict: true,
           },
