@@ -1951,7 +1951,7 @@ export function LineEditDialog({
                                       onSwitchToPosition?.(pos.position_id)
                                     }
                                   >
-                                    {isCreatingLine ? editLabel : nonCreateLabel}
+                                    {editLabel}
                                   </Button>
                                 </div>
                               )}
