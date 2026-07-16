@@ -2421,7 +2421,7 @@ export function LineEditDialog({
                   </div>
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="space-y-1.5">
-                      <FieldLabel>Fecha inicio</FieldLabel>
+                      <FieldLabel required>Fecha inicio</FieldLabel>
                       <div className="relative">
                         <Input
                           className={cn(
