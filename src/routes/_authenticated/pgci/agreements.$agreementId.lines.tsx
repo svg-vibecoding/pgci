@@ -1268,10 +1268,6 @@ function AgreementLinesPage() {
                         ? "requires_review"
                         : null;
               const meta = badgeKey ? STATUS_META[badgeKey] : null;
-              const vig = vigenciaBadge(
-                r.end_date ?? null,
-                (agreement.end_date as string | null) ?? null,
-              );
               const reasonTokens = (r.pending_reason ?? "")
                 .split(",")
                 .map((t) => t.trim())
