@@ -1363,14 +1363,28 @@ function AgreementLinesPage() {
             },
           ];
           if (canAdmin) {
+            const isDraft = r.status === "draft";
+            const openArchive = () =>
+              setArchiveTarget({
+                id: r.id as string,
+                sku: r.products?.sku ?? null,
+                description: r.products?.erp_description ?? null,
+                codes: r.codes ?? [],
+                status: r.status as string,
+              });
             if (isExcluded) {
               actions.push({
                 label: "Reactivar",
                 icon: <RotateCcw className="h-4 w-4" />,
                 onSelect: () => reactivate.mutate(r.id as string),
               });
+              actions.push({
+                label: "Archivar",
+                icon: <Archive className="h-4 w-4" />,
+                destructive: true,
+                onSelect: openArchive,
+              });
             } else {
-              const isDraft = r.status === "draft";
               actions.push({
                 label: "Editar",
                 icon: <Pencil className="h-4 w-4" />,
@@ -1400,6 +1414,12 @@ function AgreementLinesPage() {
                       description: r.products?.erp_description ?? null,
                       codes: r.codes ?? [],
                     }),
+                });
+                actions.push({
+                  label: "Archivar",
+                  icon: <Archive className="h-4 w-4" />,
+                  destructive: true,
+                  onSelect: openArchive,
                 });
               }
             }
