@@ -2129,7 +2129,7 @@ export function LineEditDialog({
                     );
                   })()}
 
-                  {nConflict.kind === "found" && !isCreatingLine && (
+                  {false && nConflict.kind === "found" && !isCreatingLine && (
                     <Alert variant="warning" className="p-0 overflow-hidden">
                       <Collapsible open={nExpanded} onOpenChange={setNExpanded}>
                         <CollapsibleTrigger asChild>
