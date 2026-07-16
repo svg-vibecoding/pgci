@@ -172,6 +172,18 @@ export const linePatchSchema = z.object({
       start_date: dateOptional,
       end_date: dateOptional,
       observations: trimmedOptional,
+      // R-09: etiqueta parseable + narrativa cuando cambia el SKU en una
+      // posición publicada. La RPC valida obligatoriedad (solo ella sabe si
+      // el product_id realmente cambió). Si el SKU no cambia, se ignoran.
+      sku_change_kind: z
+        .enum(["sku_changed", "sku_corrected"])
+        .optional(),
+      sku_change_note: z
+        .string()
+        .trim()
+        .max(500)
+        .optional()
+        .transform((v) => (v && v.length ? v : undefined)),
     })
     .strict(),
   // Se conserva por compatibilidad; la RPC nueva no lo usa.
