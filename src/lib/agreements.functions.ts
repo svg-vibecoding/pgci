@@ -440,7 +440,7 @@ export const listAgreementLines = createServerFn({ method: "GET" })
     const positionsRes = await context.supabase
       .from("agreement_positions")
       .select(
-        "id, agreement_id, product_id, sale_price, par_price, start_date, end_date, observations, status, created_at, updated_at, products:product_id(sku, erp_description, commercial_brand, status)",
+        "id, agreement_id, product_id, sale_price, par_price, start_date, end_date, observations, status, pending_reason, created_at, updated_at, products:product_id(sku, erp_description, commercial_brand, status)",
       )
       .eq("agreement_id", data.agreement_id)
       .order("created_at", { ascending: false });
