@@ -2710,11 +2710,14 @@ export function LineEditDialog({
                   return;
                 }
                 setSaveError(null);
-                if (isSkuChangeOnPublished) {
+                if (isSkuChangeOnPublished && !skuChangeIntent) {
+                  // Salvaguarda: en el flujo normal el intent se declara al
+                  // pulsar "Cambiar SKU". Si por algún motivo llega hasta aquí
+                  // sin intent, pedimos la razón antes de guardar.
                   setSkuChangePrompt({ open: true, kind: null, note: "" });
                   return;
                 }
-                save.mutate(undefined);
+                save.mutate(skuChangeIntent ?? undefined);
               }}
               disabled={save.isPending || hasCreatingIncomplete}
             >
