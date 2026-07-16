@@ -534,6 +534,7 @@ export const listAgreementLines = createServerFn({ method: "GET" })
       end_date: (r.end_date as string | null) ?? null,
       observations: (r.observations as string | null) ?? null,
       status: r.status as AgreementLineRow["status"],
+      pending_reason: (r.pending_reason as string | null) ?? null,
       exclusion_reason: exclusionByPos.get(r.id as string) ?? null,
       created_at: r.created_at as string,
       updated_at: r.updated_at as string,
