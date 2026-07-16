@@ -446,6 +446,7 @@ function AgreementLinesPage() {
       line_id: r.id as string,
       kind: "position",
       status: r.status as LineEditValues["status"],
+      pending_reason: r.pending_reason ?? null,
       sku: r.products?.sku ?? "",
       // Estado completo declarativo: preserva todos los códigos de otros clientes.
       client_codes: (r.codes ?? []).map((c) => ({
