@@ -2400,6 +2400,7 @@ export function LineEditDialog({
                 agreementId={agreementId}
                 initialLineId={initial?.line_id ?? null}
                 open={open}
+                requiredForClientIds={requiredClientIds}
                 onChange={(clientId, next) => {
                   setCodeEntries((prev) => {
                     const m = new Map(prev);
