@@ -238,15 +238,15 @@ function VigenciaCell({
 
   return (
     <div
-      className="flex items-start gap-1.5"
-      style={{ color, lineHeight: 1.25 }}
+      className="flex flex-col items-start"
+      style={{ color, lineHeight: 1.25, gap: Icon ? 3 : 1 }}
     >
       {Icon && (
         <Icon
           size={14}
           strokeWidth={2.25}
           aria-hidden="true"
-          style={{ marginTop: 1, flexShrink: 0 }}
+          style={{ flexShrink: 0 }}
         >
           {iconTitle ? <title>{iconTitle}</title> : null}
         </Icon>
