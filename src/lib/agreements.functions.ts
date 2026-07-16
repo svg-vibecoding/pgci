@@ -11,6 +11,7 @@ import {
   companyRemoveSchema,
   importCommitSchema,
   importPreviewSchema,
+  lineArchiveSchema,
   lineCreateSchema,
   lineDeleteSchema,
   lineExcludeSchema,
