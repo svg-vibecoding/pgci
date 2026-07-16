@@ -1161,33 +1161,34 @@ function AgreementLinesPage() {
                 r.end_date ?? null,
                 (agreement.end_date as string | null) ?? null,
               );
+              const reasonTokens = (r.pending_reason ?? "")
+                .split(",")
+                .map((t) => t.trim())
+                .filter((t) => t.length > 0);
+              const REASON_LABEL: Record<string, string> = {
+                no_sku: "Sin SKU",
+                no_price: "Sin precio",
+                no_dates: "Sin vigencia",
+                expired: "Vigencia vencida",
+                sku_inactive: "SKU inactivo",
+                sku_conflict: "En conflicto",
+              };
               return (
                 <div className="flex flex-col items-start gap-1">
                   {meta && <StatusBadge status={meta.status} label={meta.label} />}
-                  {(r.status === "requires_review" || r.status === "draft") && (
+                  {reasonTokens.length > 0 && (
                     <div className="flex flex-wrap gap-1">
-                      {r.product_id && r.products?.status !== "active" && (
-                        <Badge color="error" variant="soft">
+                      {reasonTokens.map((tok) => (
+                        <Badge key={tok} color="error" variant="soft">
                           <XCircle className="h-3 w-3" />
-                          SKU inactivo
+                          {REASON_LABEL[tok] ?? tok}
                         </Badge>
-                      )}
-                      {hasReasonToken(r, "sku_conflict") && (
-                        <Badge color="error" variant="soft">
-                          <XCircle className="h-3 w-3" />
-                          En conflicto
-                        </Badge>
-                      )}
-                      {vig.color === "error" && (
-                        <Badge color="error" variant="soft">
-                          <XCircle className="h-3 w-3" />
-                          Vigencia vencida
-                        </Badge>
-                      )}
+                      ))}
                     </div>
                   )}
                 </div>
               );
+
             },
           },
         ];
