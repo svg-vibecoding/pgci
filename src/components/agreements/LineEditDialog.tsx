@@ -187,19 +187,17 @@ function normalizePriceOnBlur(raw: string): string {
 
 function FieldLabel({
   children,
+  required,
   className,
 }: {
   children: React.ReactNode;
+  required?: boolean;
   className?: string;
 }) {
   return (
-    <Label
-      className={cn(
-        "text-[11px] font-semibold uppercase tracking-wider text-muted-foreground",
-        className,
-      )}
-    >
+    <Label className={className}>
       {children}
+      {required ? <span className="text-primary"> *</span> : null}
     </Label>
   );
 }
