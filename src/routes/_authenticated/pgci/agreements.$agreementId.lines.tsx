@@ -614,6 +614,12 @@ function AgreementLinesPage() {
       status: r.status as LineEditValues["status"],
       pending_reason: r.pending_reason ?? null,
       sku: r.products?.sku ?? "",
+      // Semilla para evitar el parpadeo del modal en edición: la lista ya
+      // trae estos datos, así que se muestran de inmediato y `prefillFromSku`
+      // solo refresca por si algo cambió en PIM.
+      erp_description: r.products?.erp_description ?? null,
+      commercial_brand: r.products?.commercial_brand ?? null,
+      product_status: r.products?.status ?? null,
       // Estado completo declarativo: preserva todos los códigos de otros clientes.
       client_codes: (r.codes ?? []).map((c) => ({
         client_id: c.client_id,
