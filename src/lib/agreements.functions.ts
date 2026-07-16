@@ -733,6 +733,7 @@ export const lookupProductBySku = createServerFn({ method: "POST" })
 export type ProductAgreementPosition = {
   position_id: string;
   position_status: "active" | "excluded" | "requires_review" | "draft";
+  published_at: string | null;
   sale_price: number | null;
   codes: Array<{
     client_id: string;
@@ -791,7 +792,7 @@ export const searchProducts = createServerFn({ method: "POST" })
 
       const { data: positions, error: posErr } = await context.supabase
         .from("agreement_positions")
-        .select("id, status, sale_price, product_id")
+        .select("id, status, sale_price, product_id, published_at")
         .eq("agreement_id", data.agreement_id)
         .in("product_id", productIds);
       if (posErr) throw new Error(`No se pudieron consultar posiciones: ${posErr.message}`);
@@ -925,6 +926,7 @@ export const searchProducts = createServerFn({ method: "POST" })
         const entry: ProductAgreementPosition = {
           position_id: p.id as string,
           position_status: posStatus,
+          published_at: (p.published_at as string | null) ?? null,
           sale_price: (p.sale_price as number | null) ?? null,
           codes: codesByPos.get(p.id as string) ?? [],
           exclusion_reason: excl?.reason ?? null,
