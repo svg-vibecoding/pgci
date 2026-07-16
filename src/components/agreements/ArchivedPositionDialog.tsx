@@ -257,7 +257,7 @@ export function ArchivedPositionDialog({ open, onOpenChange, archivedId }: Props
         {/* Header del modal */}
         <div className="flex items-center gap-3 border-b border-border bg-muted/40 px-6 py-4 pr-14">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-card text-text-primary">
-            <Archive className="h-4.5 w-4.5" strokeWidth={2} />
+            <Archive className="h-5 w-5" strokeWidth={2} />
           </span>
           <span className="suma-h4 text-text-primary tracking-tight">
             Historial de la posición archivada
