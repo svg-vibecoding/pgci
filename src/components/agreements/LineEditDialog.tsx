@@ -2387,7 +2387,7 @@ export function LineEditDialog({
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                     <div className="space-y-1.5">
-                      <FieldLabel>Precio de venta</FieldLabel>
+                      <FieldLabel required>Precio de venta</FieldLabel>
                       <Input
                         className={inputClass}
                         inputMode="decimal"
