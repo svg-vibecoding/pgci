@@ -1838,15 +1838,9 @@ export function LineEditDialog({
                           Este SKU ya está en el acuerdo
                         </p>
 
-                        <div
-                          className={cn(
-                            "space-y-3",
-                            skuBlocksForm &&
-                              visible.length === 1 &&
-                              "lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(280px,340px)] lg:items-start lg:gap-4 lg:space-y-0",
-                          )}
-                        >
                         <div className="space-y-3">
+                        <div className="space-y-3">
+
                         {visible.map((pos) => {
                           const variant = variantForPositionStatus(pos.position_status);
                           const title =
