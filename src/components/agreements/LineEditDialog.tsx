@@ -2318,8 +2318,8 @@ export function LineEditDialog({
                 <span className="suma-caption text-text-tertiary">
                   {canPublishNow
                     ? isEdit
-                      ? "Pasará a Activa al guardar."
-                      : "Nacerá como Activa."
+                      ? "La posición cumple con los datos requeridos para activarse en el acuerdo."
+                      : "La posición cumple con los datos requeridos para activarse en el acuerdo."
                     : wouldConflictOnPublish
                       ? "Esta posición quedará en conflicto y no podrá publicarse."
                       : "Completa producto, precio y fechas vigentes para habilitar."}
