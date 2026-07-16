@@ -365,6 +365,14 @@ function AgreementLinesPage() {
     sku: string | null;
     description: string | null;
   } | null>(null);
+  const [archiveTarget, setArchiveTarget] = useState<{
+    id: string;
+    sku: string | null;
+    description: string | null;
+    codes: LineCode[];
+    status: string;
+  } | null>(null);
+  const [archiveReason, setArchiveReason] = useState("");
   const [reason, setReason] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [confirmPublishOpen, setConfirmPublishOpen] = useState(false);
