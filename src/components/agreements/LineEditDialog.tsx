@@ -2320,7 +2320,9 @@ export function LineEditDialog({
                     ? isEdit
                       ? "Pasará a Activa al guardar."
                       : "Nacerá como Activa."
-                    : "Completa producto, precio y fechas vigentes para habilitar."}
+                    : wouldConflictOnPublish
+                      ? "Esta posición quedará en conflicto y no podrá publicarse."
+                      : "Completa producto, precio y fechas vigentes para habilitar."}
                 </span>
               </span>
             </label>
