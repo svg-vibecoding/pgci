@@ -630,20 +630,28 @@ function ClientCodeCard({
       {
         label: "SUMATEC",
         body: (
-          <>
-            <span className="font-mono">{takenBlock.sku ?? "—"}</span>
-            {" "}· {takenBlock.product_description ?? "—"}
-            {vigencia && (
-              <>
-                {" "}· <span className="font-sans">{vigencia}</span>
-              </>
-            )}
-            {takenBlock.sale_price != null && (
-              <span className="font-sans font-medium">
-                {" "}· {formatMoneyCOP(takenBlock.sale_price)}
-              </span>
-            )}
-          </>
+          <div className="space-y-1.5">
+            <StatusBadge
+              size="sm"
+              status={statusBadgeStatus}
+              label={statusLabel}
+              icon={badgeIcon}
+            />
+            <div>
+              <span className="font-mono">{takenBlock.sku ?? "—"}</span>
+              {" "}· {takenBlock.product_description ?? "—"}
+              {vigencia && (
+                <>
+                  {" "}· <span className="font-sans">{vigencia}</span>
+                </>
+              )}
+              {takenBlock.sale_price != null && (
+                <span className="font-sans font-medium">
+                  {" "}· {formatMoneyCOP(takenBlock.sale_price)}
+                </span>
+              )}
+            </div>
+          </div>
         ),
       },
     ];
@@ -665,15 +673,7 @@ function ClientCodeCard({
     return (
       <PositionTakenPanel
         variant="info"
-        title="Código asignado en el acuerdo"
-        titleRight={
-          <StatusBadge
-            size="sm"
-            status={statusBadgeStatus}
-            label={statusLabel}
-            icon={badgeIcon}
-          />
-        }
+        title="Este código ya está asignado en el acuerdo"
         sections={sections}
       />
     );
