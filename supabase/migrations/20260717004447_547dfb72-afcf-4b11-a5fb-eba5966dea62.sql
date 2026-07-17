@@ -1,0 +1,1 @@
+DROP TRIGGER IF EXISTS add_creator_as_group_admin_trigger ON public.agreement_groups;
