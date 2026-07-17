@@ -768,6 +768,8 @@ export type ProductAgreementPosition = {
   position_status: "active" | "excluded" | "requires_review" | "draft";
   published_at: string | null;
   sale_price: number | null;
+  start_date: string | null;
+  end_date: string | null;
   codes: Array<{
     client_id: string;
     client_name: string | null;
@@ -777,6 +779,7 @@ export type ProductAgreementPosition = {
   exclusion_reason: string | null;
   exclusion_date: string | null;
 };
+
 
 export type ProductAgreementStatus =
   | { kind: "free" }
@@ -825,7 +828,7 @@ export const searchProducts = createServerFn({ method: "POST" })
 
       const { data: positions, error: posErr } = await context.supabase
         .from("agreement_positions")
-        .select("id, status, sale_price, product_id, published_at")
+        .select("id, status, sale_price, start_date, end_date, product_id, published_at")
         .eq("agreement_id", data.agreement_id)
         .in("product_id", productIds);
       if (posErr) throw new Error(`No se pudieron consultar posiciones: ${posErr.message}`);
@@ -961,7 +964,10 @@ export const searchProducts = createServerFn({ method: "POST" })
           position_status: posStatus,
           published_at: (p.published_at as string | null) ?? null,
           sale_price: (p.sale_price as number | null) ?? null,
+          start_date: (p.start_date as string | null) ?? null,
+          end_date: (p.end_date as string | null) ?? null,
           codes: codesByPos.get(p.id as string) ?? [],
+
           exclusion_reason: excl?.reason ?? null,
           exclusion_date: excl?.date ?? null,
         };

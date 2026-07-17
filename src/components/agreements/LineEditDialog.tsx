@@ -1190,6 +1190,8 @@ export function LineEditDialog({
     position_status: "active" | "requires_review" | "draft" | "excluded";
     published_at: string | null;
     sale_price: number | null;
+    start_date: string | null;
+    end_date: string | null;
     codes: Array<{
       client_id: string;
       client_name: string | null;
@@ -1199,6 +1201,7 @@ export function LineEditDialog({
     exclusion_reason: string | null;
     exclusion_date: string | null;
   };
+
   type SkuAgreementStatus =
     | { kind: "free" }
     | { kind: "in_agreement"; positions: SkuAgreementPosition[] };
@@ -1974,7 +1977,142 @@ export function LineEditDialog({
           </DialogDescription>
         </DialogHeader>
 
+        {skuInAgreement && skuInAgreement.positions.length > 0 && (() => {
+          const positions = skuInAgreement.positions;
+          const visible = skuPositionsExpanded ? positions : positions.slice(0, 3);
+          const hidden = positions.length - visible.length;
+          const statusMeta: Record<
+            SkuAgreementPosition["position_status"],
+            { label: string; status: "active" | "danger" | "neutral" }
+          > = {
+            active: { label: "Activa", status: "active" },
+            requires_review: { label: "Revisar", status: "danger" },
+            draft: { label: "En gestión", status: "neutral" },
+            excluded: { label: "Excluida", status: "neutral" },
+          };
+          const effRange = (pos: SkuAgreementPosition) => {
+            const s = fmtDateLocal(pos.start_date) ?? fmtDateLocal(agreementStartDate);
+            const e = fmtDateLocal(pos.end_date) ?? fmtDateLocal(agreementEndDate);
+            if (!s && !e) return null;
+            return `${s ?? "—"} → ${e ?? "—"}`;
+          };
+          const fmtExclusionDate = (iso: string | null) => {
+            if (!iso) return null;
+            const d = new Date(iso);
+            if (Number.isNaN(d.getTime())) return null;
+            return d.toLocaleDateString("es-CO", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+            });
+          };
+          const gridCols =
+            positions.length === 1
+              ? "grid-cols-1"
+              : "grid-cols-1 md:grid-cols-2 xl:grid-cols-3";
+          return (
+            <div className="shrink-0 max-h-[40vh] overflow-y-auto border-b border-border bg-muted/30 px-6 py-4">
+              <div className="mb-3 flex items-baseline justify-between gap-3">
+                <h3 className="text-sm font-semibold text-foreground">
+                  Este SKU ya está en otras posiciones del acuerdo
+                </h3>
+                <span className="text-xs text-muted-foreground">
+                  {positions.length}
+                </span>
+              </div>
+              <div className={cn("grid gap-3", gridCols)}>
+                {visible.map((pos) => {
+                  const meta = statusMeta[pos.position_status];
+                  const isExcluded = pos.position_status === "excluded";
+                  const range = effRange(pos);
+                  const exclDate = fmtExclusionDate(pos.exclusion_date);
+                  return (
+                    <div
+                      key={pos.position_id}
+                      className="rounded-md border border-border bg-white p-3 text-sm"
+                    >
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <StatusBadge status={meta.status} label={meta.label} />
+                          <span className="font-medium text-foreground">
+                            {pos.sale_price != null
+                              ? formatMoneyCOP(pos.sale_price)
+                              : "—"}
+                          </span>
+                        </div>
+                        {range && (
+                          <span className="text-xs text-muted-foreground">
+                            {range}
+                          </span>
+                        )}
+                      </div>
+                      {pos.codes.length > 0 && (
+                        <div className="mt-2 border-t border-border pt-2 space-y-1">
+                          {pos.codes.map((c) => (
+                            <div
+                              key={`${c.client_id}|${c.client_code}`}
+                              className="text-sm text-foreground"
+                            >
+                              <span className="text-xs font-semibold uppercase tracking-wide text-accent">
+                                {c.client_name ?? "Cliente"}
+                              </span>{" "}
+                              ·{" "}
+                              <span className="font-mono">{c.client_code}</span>
+                              {c.description ? (
+                                <>
+                                  {" "}·{" "}
+                                  <span className="text-muted-foreground">
+                                    {c.description}
+                                  </span>
+                                </>
+                              ) : null}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {isExcluded && (pos.exclusion_reason || exclDate) && (
+                        <div className="mt-2 border-t border-border pt-2 text-xs text-muted-foreground">
+                          {pos.exclusion_reason ?? "Sin motivo registrado."}
+                          {exclDate ? ` · ${exclDate}` : ""}
+                        </div>
+                      )}
+                      {!isExcluded && (
+                        <div className="mt-2 flex justify-end">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="link"
+                            className="h-auto px-0"
+                            onClick={() =>
+                              onSwitchToPosition?.(pos.position_id)
+                            }
+                          >
+                            Ir a esa posición
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              {hidden > 0 && (
+                <div className="mt-3 flex justify-center">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="link"
+                    onClick={() => setSkuPositionsExpanded(true)}
+                  >
+                    Ver {hidden} {hidden === 1 ? "posición más" : "posiciones más"}
+                  </Button>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
         <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[minmax(0,55fr)_minmax(0,45fr)]">
+
           {/* Columna izquierda — la posición */}
           <div className="min-h-0 overflow-y-auto bg-white border-r border-border">
 
@@ -2223,9 +2361,6 @@ export function LineEditDialog({
                   )}
 
                   {skuInAgreement && (() => {
-                    const positions = skuInAgreement.positions;
-                    const visible = skuPositionsExpanded ? positions : positions.slice(0, 3);
-                    const hidden = positions.length - visible.length;
                     const hasSkuConflict =
                       isEdit &&
                       (initial?.pending_reason ?? "")
@@ -2244,7 +2379,6 @@ export function LineEditDialog({
                           </AlertDescription>
                         </Alert>
 
-
                         {hasSkuConflict && (
                           <Alert variant="warning">
                             <AlertTriangle className="h-4 w-4" />
@@ -2262,148 +2396,10 @@ export function LineEditDialog({
                             </AlertDescription>
                           </Alert>
                         )}
-
-                        <div className="space-y-3">
-                        <div className="space-y-3">
-
-
-                        {visible.map((pos) => {
-                          const variant = variantForPositionStatus(pos.position_status);
-                          const title =
-                            pos.position_status === "excluded"
-                              ? "Posición excluida"
-                              : pos.position_status === "requires_review"
-                                ? "Posición en revisión"
-                                : pos.position_status === "draft"
-                                  ? "Posición en gestión"
-                                  : "Posición activa";
-                          const sections: PositionTakenSection[] = [
-                            {
-                              label: "SUMATEC",
-                              body: (
-                                <>
-                                  <span className="font-mono">
-                                    {skuInAgreement.sku}
-                                  </span>
-                                  {" "}· {skuInAgreement.productDescription ?? "—"}
-                                  {pos.sale_price != null && (
-                                    <span className="font-sans font-medium">
-                                      {" "}· {formatMoneyCOP(pos.sale_price)}
-                                    </span>
-                                  )}
-                                </>
-                              ),
-                            },
-                          ];
-                          if (pos.codes.length === 0) {
-                            sections.push({
-                              label: "SIN CÓDIGO DE CLIENTE",
-                              body: (
-                                <span className="text-muted-foreground">
-                                  Esta posición ocupa el SKU sin código que la distinga.
-                                </span>
-                              ),
-                            });
-                          } else {
-                            for (const c of pos.codes) {
-                              sections.push({
-                                label: c.client_name ?? "CLIENTE",
-                                body: (
-                                  <>
-                                    <span className="font-mono">{c.client_code}</span>
-                                    {" "}· {c.description ?? "—"}
-                                  </>
-                                ),
-                              });
-                            }
-                          }
-                          if (pos.position_status === "excluded") {
-                            const dateLabel = (() => {
-                              if (!pos.exclusion_date) return "EXCLUIDA";
-                              const d = new Date(pos.exclusion_date);
-                              if (Number.isNaN(d.getTime())) return "EXCLUIDA";
-                              const s = d.toLocaleDateString("es-CO", {
-                                day: "2-digit",
-                                month: "2-digit",
-                                year: "numeric",
-                              });
-                              return `EXCLUIDA EL ${s}`;
-                            })();
-                            sections.push({
-                              label: "MOTIVO DE EXCLUSIÓN",
-                              body: (
-                                <div className="space-y-1.5">
-                                  <p className="text-sm text-muted-foreground">
-                                    {pos.exclusion_reason ?? "—"}
-                                  </p>
-                                  <span className="text-[11px] font-medium text-text-tertiary">
-                                    {dateLabel}
-                                  </span>
-                                </div>
-                              ),
-                            });
-                          }
-                          const hasCode = pos.codes.length > 0;
-                          const isExcluded = pos.position_status === "excluded";
-                          const codedClientIds = new Set(
-                            pos.codes.map((c) => c.client_id),
-                          );
-                          const hasMissingClient =
-                            isCreatingLine &&
-                            hasCode &&
-                            !isExcluded &&
-                            clientCards.some((c) => !codedClientIds.has(c.id));
-                          // Un solo CTA de edición por posición.
-                          const editLabel = isExcluded
-                            ? "Reactivar esa posición"
-                            : "Ir a esa posición";
-                          const showEditCta = true;
-
-                          return (
-                            <div key={pos.position_id} className="space-y-1">
-                              <PositionTakenPanel
-                                variant={variant}
-                                title={title}
-                                sections={sections}
-                              />
-                              {showEditCta && (
-                                <div className="flex justify-end">
-                                  <Button
-                                    type="button"
-                                    size="sm"
-                                    variant="link"
-                                    className="h-auto px-0 text-muted-foreground hover:text-foreground"
-                                    onClick={() =>
-                                      onSwitchToPosition?.(pos.position_id)
-                                    }
-                                  >
-                                    {editLabel}
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-
-                        {hidden > 0 && (
-                          <div className="flex justify-center">
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="link"
-                              onClick={() => setSkuPositionsExpanded(true)}
-                            >
-                              Ver {hidden} {hidden === 1 ? "posición más" : "posiciones más"}
-                            </Button>
-                          </div>
-                        )}
-                        </div>
-
-                        </div>
                       </div>
-
                     );
                   })()}
+
 
                 </div>
               </section>
