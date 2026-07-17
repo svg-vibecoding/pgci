@@ -27,6 +27,8 @@ import {
   skuLinkSchema,
   skuLinkWithPriceSchema,
 } from "./agreements.schemas";
+
+const agreementIdInput = z.object({ agreement_id: z.string().uuid() });
 import {
   assertCanAccess,
   assertCanAdmin,
