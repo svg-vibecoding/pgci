@@ -1246,12 +1246,10 @@ export function LineEditDialog({
     const trimmed = sku.trim();
     if (!trimmed) {
       setNConflict({ kind: "idle", lines: [] });
-      setIsLinked(false);
       return;
     }
     const cseq = ++conflictSeq.current;
     setNConflict({ kind: "loading", lines: [] });
-    setLinkError(null);
     try {
       const res = await conflictFn({
         data: { agreement_id: agreementId, sku: trimmed },
@@ -1259,8 +1257,6 @@ export function LineEditDialog({
       if (cseq !== conflictSeq.current) return;
       if (pid) setProductId(pid);
       else setProductId(res.product_id ?? null);
-      const linked = !!res.isLinked;
-      setIsLinked(linked);
       const excludeId = initial?.line_id ?? null;
       const lines = (res.conflicts ?? []).filter((l) => l.line_id !== excludeId);
       if (lines.length === 0) {
@@ -1274,24 +1270,9 @@ export function LineEditDialog({
       });
       setNConflict({ kind: "found", lines: sorted });
       setNExpanded(true);
-      // Auto-prefill de precio vinculado: solo aplica en edición.
-      // En creación, la vinculación de precios no se ofrece (el panel se
-      // oculta cuando !initial?.line_id) y prefill'ear un precio de otra
-      // posición prometía un vínculo que aún no existía.
-      if (linked && initial?.line_id) {
-        const linkedPrice = sorted.find((l) => l.current_price != null)?.current_price;
-        if (linkedPrice != null) {
-          setV((prev) =>
-            prev.sale_price.trim() === ""
-              ? { ...prev, sale_price: formatPriceDisplay(linkedPrice) }
-              : prev,
-          );
-        }
-      }
     } catch (e) {
       if (cseq !== conflictSeq.current) return;
       setNConflict({ kind: "idle", lines: [] });
-      setIsLinked(false);
       console.error("detectNConflict failed", e);
     }
   };
