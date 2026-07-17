@@ -1,93 +1,54 @@
+## Cambio
 
-## Diagnóstico
+Solo presentación en `src/components/agreements/LineEditDialog.tsx`. Mismo dato (`skuInAgreement.positions`), nueva ubicación y nueva disposición de fichas.
 
-El parpadeo tiene una causa única: al abrir el modal en edición, `useEffect` hace `setProductMeta(null)` + `setLookup({ kind: "idle" })` y luego dispara `prefillFromSku(sku)` (línea 1337-1351 de `LineEditDialog.tsx`), que va al servidor por `lookupProductBySku` para traer datos que **la lista ya tiene**:
+## Ubicación
 
-- `listAgreementLines` selecciona `products:product_id(sku, erp_description, commercial_brand, status)` (línea 445 de `agreements.functions.ts`) y esos campos ya llegan a la fila.
-- El `openEditForLine` de la ruta (línea 611) descarta `erp_description`, `commercial_brand` y `status` — solo pasa `sku` al `initial`.
-- El modal borra su estado y muestra los inputs vacíos hasta que responde el RPC → parpadeo. Con 70k SKUs y catálogo creciente, cada apertura paga esa latencia.
+- Extraer el render de `visible.map((pos) => …)` (dentro del bloque `skuInAgreement`) fuera de la columna del SKU.
+- Insertar un nuevo bloque **transversal, ancho completo**, entre el `DialogHeader` y el `<div class="grid grid-cols-1 lg:grid-cols-…">`.
+- Contenido: encabezado corto "Este SKU ya está en otras posiciones del acuerdo" + contador; contenedor con las fichas; toggle "Ver N posiciones más" cuando `positions.length > 3` (misma lógica `skuPositionsExpanded`).
+- Aparece solo cuando `skuInAgreement && skuInAgreement.positions.length > 0`.
+- Solo mueve JSX; no cambia estado ni handlers.
 
-Lo único que no viene en la fila es `catalog_updated_at` (el "PIM Sumatec: dd/mm/aaaa"), que hoy `lookupProductBySku` calcula con un `select ... order by updated_at desc limit 1` sobre `products` — es un valor **global del catálogo**, no del SKU, así que es el mismo para todas las filas de la lista.
+**Se queda en la columna del SKU:**
+- `Alert variant="info"` con el mensaje azul de la regla.
+- Banner ámbar de conflicto `hasSkuConflict`.
+- Columna de códigos y su `* Requerido`.
 
-## Cambios
+## Diseño de cada ficha
 
-### 1. Propagar los datos de producto por `initial`
+Deja de usar `PositionTakenPanel`. Tarjeta compacta con borde y padding, sin ícono, sin secciones etiquetadas:
 
-**`LineEditDialog.tsx`** — extender `LineEditValues` (o un tipo hermano `LineEditInitial` si prefieres no ensuciar el de creación, pero como `initial` ya es `Partial<LineEditValues>` lo más simple es agregar campos opcionales):
-
-```ts
-erp_description?: string | null;
-commercial_brand?: string | null;
-product_status?: "active" | "inactive" | string | null;
-product_updated_at?: string | null; // opcional, ver §2
+```text
+┌─────────────────────────────────────────────────────┐
+│ [StatusBadge]  $ 123.456        01/01/26 → 31/12/26 │
+│ ─────────────────────────────────────────────────── │
+│ CLIENTE A  ·  COD-123  ·  Descripción del código    │
+│ CLIENTE B  ·  COD-456  ·  Otra descripción          │
+│                                    Ir a esa posición│
+└─────────────────────────────────────────────────────┘
 ```
 
-En el `useEffect` de apertura (línea 1325):
+- **Chip de estado**: mismo mapeo que la lista de posiciones del acuerdo (`STATUS_META` en `agreements.$agreementId.lines.tsx`, líneas 126–137):
+  - `active` → `status="active"`, label `"Activa"`
+  - `requires_review` → `status="danger"`, label `"Revisar"`
+  - `draft` → `status="neutral"`, label `"En gestión"`
+  - `excluded` → `status="neutral"`, label `"Excluida"`
+  - Componente `StatusBadge`, tamaño default.
+- **Precio**: `formatMoneyCOP(pos.sale_price)`; si `null`, "—".
+- **Vigencia efectiva**: `pos.start_date → pos.end_date`; si falta alguna, usar la fecha correspondiente del acuerdo. Formato `dd/mm/aa`. Verificar/añadir `agreementStartDate` al desestructurado si falta.
+- **Códigos**: una línea por código (`cliente · code monoespaciado · descripción`). Si `pos.codes.length === 0`, no renderizar nada en esa zona.
+- **Ficha excluida**: **sin CTA** (no hay modal de edición para excluidas). Añadir debajo de los códigos una línea muted con el motivo + fecha de exclusión (mismo dato que hoy, sin la etiqueta "MOTIVO DE EXCLUSIÓN"). El chip "Excluida" ya comunica el estado.
+- **Acción (no excluidas)**: link `Ir a esa posición` alineado a la derecha, mismo `onSwitchToPosition(pos.position_id)`.
 
-- Si `initial?.line_id` y trae `erp_description`/`commercial_brand`, sembrar `productMeta` y `lookup` **antes** de decidir si consultar:
-  ```ts
-  if (initial?.erp_description !== undefined || initial?.commercial_brand !== undefined) {
-    setProductMeta({
-      erp_description: initial.erp_description ?? null,
-      commercial_brand: initial.commercial_brand ?? null,
-      updated_at: initial.product_updated_at ?? null,
-    });
-    setLookup({
-      kind: initial.product_status === "active" ? "active"
-          : initial.product_status ? "inactive" : "idle",
-      // catalogUpdatedAt se rellena al llegar la consulta de refresco (§2)
-    });
-  } else {
-    setProductMeta(null);
-    setLookup({ kind: next.sku.trim() ? "idle" : "empty" });
-  }
-  ```
-- Seguir llamando `prefillFromSku(next.sku)` en edición, pero como **refresco en segundo plano**: los `setProductMeta`/`setLookup` que hace hoy ya son idempotentes; el usuario no ve blanco porque partimos hidratados. Si el servidor devuelve algo distinto (estado cambió a inactive, descripción se editó en PIM), pisa lo mostrado sin parpadeo.
+**Eliminar de la ficha:** SKU + descripción del producto y el bloque "SIN CÓDIGO DE CLIENTE / Esta posición ocupa el SKU…".
 
-**`agreements.$agreementId.lines.tsx`** — en `openEditForLine` (línea 611) pasar los campos que la fila ya tiene:
+## Disposición cuando hay varias fichas
 
-```ts
-erp_description: r.products?.erp_description ?? null,
-commercial_brand: r.products?.commercial_brand ?? null,
-product_status: r.products?.status ?? null,
-```
+- 1 ficha: ancho completo.
+- 2+ fichas: `grid-cols-1 md:grid-cols-2 xl:grid-cols-3`, `gap-3`. Con el toggle limitando a 3 por defecto no apilan en exceso.
 
-### 2. `catalog_updated_at` — refresco en segundo plano, no bloqueante
+## Qué no se toca
 
-Dos opciones; recomiendo **B**:
-
-- **A.** Agregar el valor al retorno de `listAgreementLines` (una consulta `products.updated_at desc limit 1` una sola vez, pegada al listado). Ventaja: 0 red al abrir. Contra: acopla la lista a un dato que también consume el modal de creación, y hoy vive naturalmente en `lookupProductBySku`.
-- **B.** Dejar `prefillFromSku` corriendo en segundo plano tal como está. Con `productMeta` ya sembrado, la única cosa que "aparece con retraso" es la línea gris `PIM Sumatec: dd/mm/aaaa`. Ese retardo es invisible perceptualmente (la línea está en el pie del bloque, en tono muted) y el usuario nunca ve inputs vacíos.
-
-Fuera de alcance rehacer `lookupProductBySku` o el backend. Con B no se toca nada del servidor.
-
-### 3. Creación
-
-No se rompe: en creación `initial` es `null`, así que la rama del `if` cae a `setProductMeta(null)` como hoy. La consulta se dispara desde `handleSkuPicked`/`prefillFromSku` cuando el usuario elige un SKU (líneas 1411-1451), no desde el `useEffect` de apertura.
-
-### 4. Otros consumidores de `prefillFromSku` / `setProductMeta(null)`
-
-Los usos (líneas 1337, 1414, 1451) son:
-- 1337: `useEffect` de apertura — el que estamos cambiando.
-- 1414: dentro de `handleSkuPicked` cuando el usuario acaba de elegir un SKU desde el buscador — ese sí debe empezar sembrando con los datos del row del buscador (ya lo hace: `setProductMeta({ erp_description: p.erp_description, ... })`).
-- 1451: reset al descartar cambio de SKU — sigue válido.
-
-Ninguno depende del `setProductMeta(null)` inicial para lógica: solo era "estado limpio antes de fetch". Al sembrar desde `initial` no rompemos nada.
-
-### 5. Fallback
-
-- Si la fila **no** trae `erp_description`/`commercial_brand` (fila vieja, campo null en `products`), cae por la rama actual: `productMeta=null` + `lookup=idle` + `prefillFromSku`. Comportamiento idéntico al de hoy.
-- Si `prefillFromSku` falla en segundo plano, el `catch` ya solo hace `console.error`; los datos sembrados desde `initial` se quedan mostrados. Mejor que hoy (hoy se quedaría en blanco).
-- Si el catálogo cambió entre listar y abrir (SKU pasó a inactive, descripción editada), el refresco pisa el estado unos ms después sin parpadear los inputs (mismo comportamiento de un re-render normal).
-
-## Validación
-
-- Abrir modal de edición de una posición existente → los tres campos (Código Jaivaná, Marca, Descripción) aparecen **inmediatamente**, sin flash vacío. La línea `PIM Sumatec: dd/mm/aaaa` puede aparecer con un pequeño retraso (aceptable).
-- Abrir modal de creación → sin cambios; buscador abre en blanco, al elegir SKU se llena.
-- Abrir edición de una posición cuyo SKU quedó inactive en PIM después de crearse → arranca marcado como active (dato viejo de la fila), y al llegar el refresco cambia a inactive. Verificar que el badge/estado se actualiza sin remontar.
-- Editar → cambiar SKU vía "Cambiar SKU" → confirma que el flujo de `handleSkuPicked` sigue sembrando bien.
-- Row sin `products` (edge case archived/borrado) → `initial.erp_description` es null; cae al comportamiento actual.
-
-## Fuera de alcance
-
-Buscador de SKU, `searchProducts`, `lookupProductBySku`, backend, R-09, modal de creación, tipos generados.
+- `PositionTakenPanel` (lo sigue usando el panel de código ocupado).
+- Server functions, `detectNConflict`, `skuInAgreement`, lógica `sku_conflict`/`hasSkuConflict`, `onSwitchToPosition`, cálculos de vigencia/pending.
