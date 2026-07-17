@@ -2079,7 +2079,7 @@ export function LineEditDialog({
                                     {p.sku}
                                   </span>
                                   {isInactive && (
-                                    <StatusBadge status="neutral" label="Inactivo" />
+                                    <StatusBadge status="danger" label="Inactivo" />
                                   )}
                                 </span>
                                 <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
