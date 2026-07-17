@@ -105,7 +105,7 @@ export const listAgreements = createServerFn({ method: "GET" })
 export const getAgreement = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    importPreviewSchema.pick({ agreement_id: true }).parse(d),
+    agreementIdInput.parse(d),
   )
   .handler(async ({ data, context }) => {
     const { data: row, error } = await context.supabase
@@ -132,7 +132,7 @@ export const getAgreement = createServerFn({ method: "GET" })
 export const getAgreementContext = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    importPreviewSchema.pick({ agreement_id: true }).parse(d),
+    agreementIdInput.parse(d),
   )
   .handler(async ({ data, context }) => {
     const [admin, access] = await Promise.all([
@@ -431,7 +431,7 @@ export type AgreementLineRow = {
 export const listAgreementLines = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    importPreviewSchema.pick({ agreement_id: true }).parse(d),
+    agreementIdInput.parse(d),
   )
   .handler(async ({ data, context }): Promise<AgreementLineRow[]> => {
     await assertCanAccess(context.supabase, data.agreement_id);
@@ -1751,8 +1751,7 @@ async function resolveImportTargetClient(
 // Miembros
 // ---------------------------------------------------------------------------
 
-const listAgreementMembersInput = importPreviewSchema
-  .pick({ agreement_id: true })
+const listAgreementMembersInput = agreementIdInput
   .extend({ include_history: z.boolean().optional().default(false) });
 
 export const listAgreementMembers = createServerFn({ method: "GET" })
@@ -1946,8 +1945,7 @@ export const removeAgreementMember = createServerFn({ method: "POST" })
 // Empresas
 // ---------------------------------------------------------------------------
 
-const listAgreementCompaniesInput = importPreviewSchema
-  .pick({ agreement_id: true })
+const listAgreementCompaniesInput = agreementIdInput
   .extend({ include_history: z.boolean().optional().default(false) });
 
 export const listAgreementCompanies = createServerFn({ method: "GET" })
@@ -2847,7 +2845,7 @@ export const deleteAgreementGroup = createServerFn({ method: "POST" })
 export const listClientCatalogPermissions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    importPreviewSchema.pick({ agreement_id: true }).parse(d),
+    agreementIdInput.parse(d),
   )
   .handler(
     async ({
@@ -2882,7 +2880,7 @@ export const listClientCatalogPermissions = createServerFn({ method: "GET" })
 export const listAssignableUsersForAgreement = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    importPreviewSchema.pick({ agreement_id: true }).parse(d),
+    agreementIdInput.parse(d),
   )
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase.rpc(
