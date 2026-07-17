@@ -1137,9 +1137,7 @@ export function LineEditDialog({
     }>;
   }>({ kind: "idle", lines: [] });
   const [nExpanded, setNExpanded] = useState(true);
-  const [isLinked, setIsLinked] = useState(false);
   const [productId, setProductId] = useState<string | null>(null);
-  const [linkError, setLinkError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
 
   // Estado por cliente (tarjetas).
