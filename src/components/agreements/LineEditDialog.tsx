@@ -886,21 +886,6 @@ function ClientCodeCard({
                     className={disabled ? readonlyClass : ""}
                     onChange={(e) => onChange({ ...entry, description: e.target.value })}
                   />
-                  {!disabled && (
-                    <div className="flex justify-end">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          onChange({ ...entry, description: originalDescription ?? "" });
-                          setShowDescriptionEdit(false);
-                        }}
-                      >
-                        Descartar
-                      </Button>
-                    </div>
-                  )}
                 </div>
               )}
             </div>
@@ -912,6 +897,21 @@ function ClientCodeCard({
                 La descripción se actualizará en el catálogo de {card.name}&nbsp;y
                 se refleja en todos los acuerdos que usen este código.
               </span>
+            </div>
+          )}
+          {!isCreate && showDescriptionEdit && !disabled && (
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  onChange({ ...entry, description: originalDescription ?? "" });
+                  setShowDescriptionEdit(false);
+                }}
+              >
+                Descartar
+              </Button>
             </div>
           )}
         </>
