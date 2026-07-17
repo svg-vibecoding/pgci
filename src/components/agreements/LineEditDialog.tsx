@@ -2739,6 +2739,15 @@ export function LineEditDialog({
                     return m;
                   });
                 }}
+                onModeChange={(clientId, mode) => {
+                  setCodeModes((prev) => {
+                    const cur = prev.get(clientId) ?? "search";
+                    if (cur === mode) return prev;
+                    const m = new Map(prev);
+                    m.set(clientId, mode);
+                    return m;
+                  });
+                }}
               />
 
 
