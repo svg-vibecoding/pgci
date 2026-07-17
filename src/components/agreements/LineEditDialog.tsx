@@ -2237,11 +2237,13 @@ export function LineEditDialog({
                     );
                     return (
                       <div className="space-y-3">
-                        <p className="text-sm font-semibold text-foreground">
-                          {isEdit
-                            ? `Esta posición comparte SKU con ${positions.length} ${positions.length === 1 ? "posición" : "posiciones"} más del acuerdo`
-                            : "Este SKU ya está en el acuerdo"}
-                        </p>
+                        <Alert variant="info">
+                          <Info className="h-4 w-4" />
+                          <AlertDescription>
+                            Este SKU ya está en otras posiciones del acuerdo. Puede estar en varias, si cada una tiene un código de cliente que la distinga.
+                          </AlertDescription>
+                        </Alert>
+
 
                         {hasSkuConflict && (
                           <Alert variant="warning">
