@@ -1430,7 +1430,7 @@ export function LineEditDialog({
     const willPrefill = !!(initial?.line_id && next.sku.trim());
     // Encender el skeleton ya, en el mismo commit sincrónico, para que el
     // hueco esté reservado antes del primer paint del modal.
-    setSkuBlockLoading(willPrefill);
+    setSkuBlockLoading(willPrefill && (initial?.sibling_positions_hint ?? 0) > 0);
     if (willPrefill) {
       void prefillFromSku(next.sku);
     }
