@@ -668,7 +668,6 @@ function ClientCodeCard({
         title="Este código ya está asignado en el acuerdo"
         headerExtra={
           <StatusBadge
-            size="sm"
             status={statusBadgeStatus}
             label={statusLabel}
             icon={badgeIcon}
@@ -688,6 +687,7 @@ function ClientCodeCard({
           <Button
             type="button"
             size="sm"
+            variant="outline"
             onClick={() => onRequestSwitchToPosition(takenBlock.position_id)}
           >
             Ir a esa posición
@@ -696,7 +696,6 @@ function ClientCodeCard({
         <Button
           type="button"
           size="sm"
-          variant="outline"
           onClick={() => setTakenBlock(null)}
         >
           Elegir otro código
