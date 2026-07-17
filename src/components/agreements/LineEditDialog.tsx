@@ -2063,30 +2063,11 @@ export function LineEditDialog({
                       ) : (
                         <div className="max-h-72 overflow-y-auto py-1">
                           {searchResults.map((p) => {
-                            const firstPos =
+                            const positionsCount =
                               p.agreement_status.kind === "in_agreement"
-                                ? p.agreement_status.positions[0]
-                                : null;
-                            const agLabel = !firstPos
-                              ? null
-                              : firstPos.position_status === "active"
-                                ? "En acuerdo · Activa"
-                                : firstPos.position_status === "requires_review"
-                                  ? "En acuerdo · En revisión"
-                                  : firstPos.position_status === "draft"
-                                    ? "En acuerdo · En gestión"
-                                    : "En acuerdo · Excluida";
-                            const agStatus:
-                              | "active"
-                              | "warning"
-                              | "info"
-                              | "neutral" = !firstPos
-                              ? "neutral"
-                              : firstPos.position_status === "active"
-                                ? "warning"
-                                : firstPos.position_status === "excluded"
-                                  ? "neutral"
-                                  : "info";
+                                ? p.agreement_status.positions.length
+                                : 0;
+                            const isInactive = p.status !== "active";
                             return (
                               <button
                                 key={p.id}
@@ -2094,8 +2075,13 @@ export function LineEditDialog({
                                 onClick={() => onSelectProduct(p)}
                                 className="flex w-full flex-col gap-0.5 px-3 py-2 text-left hover:bg-muted focus:bg-muted focus:outline-none"
                               >
-                                <span className="font-mono text-sm font-medium text-foreground">
-                                  {p.sku}
+                                <span className="flex items-center gap-2">
+                                  <span className="font-mono text-sm font-medium text-foreground">
+                                    {p.sku}
+                                  </span>
+                                  {isInactive && (
+                                    <StatusBadge status="neutral" label="Inactivo" />
+                                  )}
                                 </span>
                                 <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
                                   <span className="truncate">
@@ -2103,23 +2089,15 @@ export function LineEditDialog({
                                   </span>
                                   <span aria-hidden>·</span>
                                   <span>{p.commercial_brand ?? "—"}</span>
-                                  <span aria-hidden>·</span>
-                                  <StatusBadge
-                                    size="sm"
-                                    status={p.status === "active" ? "active" : "neutral"}
-                                    label={p.status === "active" ? "Activo" : "Inactivo"}
-                                  />
-                                  {agLabel && (
-                                    <>
-                                      <span aria-hidden>·</span>
-                                      <StatusBadge
-                                        size="sm"
-                                        status={agStatus}
-                                        label={agLabel}
-                                      />
-                                    </>
-                                  )}
                                 </span>
+                                {positionsCount > 0 && (
+                                  <span className="mt-1">
+                                    <StatusBadge
+                                      status="info"
+                                      label={`En acuerdo (${positionsCount} ${positionsCount === 1 ? "posición" : "posiciones"})`}
+                                    />
+                                  </span>
+                                )}
                               </button>
                             );
                           })}
