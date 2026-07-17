@@ -333,7 +333,5 @@ export type AgreementCreateInput = z.input<typeof agreementCreateSchema>;
 export type AgreementUpdateInput = z.input<typeof agreementUpdateSchema>;
 export type LineCreateInput = z.input<typeof lineCreateSchema>;
 export type LinePatchInput = z.input<typeof linePatchSchema>;
-export type ImportRowInput = z.input<typeof importRowSchema>;
-export type ImportCommitInput = z.input<typeof importCommitSchema>;
 export type MemberAddInput = z.input<typeof memberAddSchema>;
 export type CompanyAddInput = z.input<typeof companyAddSchema>;
