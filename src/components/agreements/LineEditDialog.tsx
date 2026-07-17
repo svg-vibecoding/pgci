@@ -1022,7 +1022,7 @@ function ClientCodeSearchList({
                 <span className="font-mono text-sm font-medium text-foreground">
                   {r.client_code}
                 </span>
-                <StatusBadge size="sm" status="neutral" label="Asignado a esta posición" />
+                <StatusBadge status="neutral" label="Asignado a esta posición" />
               </div>
               {r.description && (
                 <span className="text-xs text-muted-foreground">{r.description}</span>
@@ -1066,7 +1066,6 @@ function ClientCodeSearchList({
                 {r.client_code}
               </span>
               <StatusBadge
-                size="sm"
                 status={badgeStatus}
                 label={badgeLabel}
                 icon={badgeIcon}
