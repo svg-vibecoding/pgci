@@ -43,11 +43,13 @@ const VARIANT_STYLES: Record<
 export function PositionTakenPanel({
   variant,
   title,
+  titleRight,
   sections,
   className,
 }: {
   variant: PositionTakenVariant;
   title: string;
+  titleRight?: ReactNode;
   sections: PositionTakenSection[];
   className?: string;
 }) {
@@ -55,9 +57,12 @@ export function PositionTakenPanel({
   const Icon = styles.icon === "warning" ? AlertTriangle : Info;
   return (
     <div className={cn(styles.container, className)}>
-      <div className="flex items-start gap-2">
-        <Icon className="mt-0.5 h-4 w-4 shrink-0" />
-        <p className="text-sm font-medium">{title}</p>
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-start gap-2">
+          <Icon className="mt-0.5 h-4 w-4 shrink-0" />
+          <p className="text-sm font-medium">{title}</p>
+        </div>
+        {titleRight && <div className="shrink-0">{titleRight}</div>}
       </div>
       <div className="mt-2 space-y-2 pl-6">
         {sections.map((s, i) => (
