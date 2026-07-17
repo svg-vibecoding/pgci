@@ -433,6 +433,8 @@ function ClientCodeCard({
       setTakenBlock(null);
       setShowCodeSearch(false);
       setShowDescriptionEdit(false);
+      setExistingMatch(null);
+      setMatchLoading(false);
     }
   }
 
