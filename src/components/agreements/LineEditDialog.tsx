@@ -1990,7 +1990,7 @@ export function LineEditDialog({
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <DialogHeader className="px-6 py-4 border-b border-border shrink-0">
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start justify-between gap-4 pr-8">
             <div className="min-w-0 flex-1">
               <DialogTitle className="text-2xl font-bold tracking-tight">
                 {titleKind}
