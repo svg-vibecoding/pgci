@@ -24,8 +24,6 @@ import {
   groupMemberUpdateSchema,
   assignAgreementGroupSchema,
   nConflictDetectSchema,
-  skuLinkSchema,
-  skuLinkWithPriceSchema,
 } from "./agreements.schemas";
 
 const agreementIdInput = z.object({ agreement_id: z.string().uuid() });
@@ -1221,18 +1219,7 @@ export const detectNConflict = createServerFn({ method: "POST" })
       detectSkuConflicts(context.supabase, data.agreement_id, data.sku),
       resolveProductBySku(context.supabase, data.sku),
     ]);
-    let isLinked = false;
-    const product_id = product?.id ?? null;
-    if (product_id) {
-      const { data: linkRow } = await context.supabase
-        .from("agreement_sku_links")
-        .select("id")
-        .eq("agreement_id", data.agreement_id)
-        .eq("product_id", product_id)
-        .maybeSingle();
-      isLinked = !!linkRow;
-    }
-    return { conflicts, isLinked, product_id };
+    return { conflicts, product_id: product?.id ?? null };
   });
 
 export const applyPriceToSku = createServerFn({ method: "POST" })
@@ -1250,74 +1237,6 @@ export const applyPriceToSku = createServerFn({ method: "POST" })
       .neq("status", "excluded");
     if (error) throw new Error(error.message);
     return { updated: count ?? 0 };
-  });
-
-// ---------------------------------------------------------------------------
-// Vinculación de precio por SKU
-// ---------------------------------------------------------------------------
-
-export const isSkuLinked = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => skuLinkSchema.parse(d))
-  .handler(async ({ data, context }) => {
-    await assertCanAccess(context.supabase, data.agreement_id);
-    const { data: row, error } = await context.supabase
-      .from("agreement_sku_links")
-      .select("id")
-      .eq("agreement_id", data.agreement_id)
-      .eq("product_id", data.product_id)
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    return { linked: !!row };
-  });
-
-export const linkSkuPrice = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => skuLinkWithPriceSchema.parse(d))
-  .handler(async ({ data: _data, context: _context }): Promise<{ linked: true; updated: number }> => {
-    // R-09 style: puerta cerrada, cuerpo conservado (comentado).
-    // La vinculación de precios queda deshabilitada mientras se estabiliza
-    // el modelo de posiciones (grupos + miembros para subconjuntos del mismo SKU).
-    // Ver PGCI_03.21.00 §5.3.
-    throw new Error(
-      "La vinculación de precios está temporalmente deshabilitada mientras se estabiliza el modelo de posiciones. Ver PGCI_03.21.00 §5.3.",
-    );
-    // --- Cuerpo original conservado para reactivación futura ---
-    // await assertCanAdmin(_context.supabase, _data.agreement_id);
-    // const { error: insErr } = await _context.supabase
-    //   .from("agreement_sku_links")
-    //   .insert({
-    //     agreement_id: _data.agreement_id,
-    //     product_id: _data.product_id,
-    //     created_by: _context.userId,
-    //   });
-    // if (insErr && !insErr.message.toLowerCase().includes("duplicate")) {
-    //   throw new Error(`No se pudo vincular el SKU: ${insErr.message}`);
-    // }
-    // const { error, count } = await _context.supabase
-    //   .from("agreement_positions")
-    //   .update({ sale_price: _data.price, updated_by: _context.userId }, { count: "exact" })
-    //   .eq("agreement_id", _data.agreement_id)
-    //   .eq("product_id", _data.product_id)
-    //   .neq("status", "excluded");
-    // if (error) throw new Error(`Vínculo creado pero no se pudo aplicar el precio: ${error.message}`);
-    // return { linked: true as const, updated: count ?? 0 };
-  });
-
-
-
-export const unlinkSkuPrice = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => skuLinkSchema.parse(d))
-  .handler(async ({ data, context }) => {
-    await assertCanAdmin(context.supabase, data.agreement_id);
-    const { error } = await context.supabase
-      .from("agreement_sku_links")
-      .delete()
-      .eq("agreement_id", data.agreement_id)
-      .eq("product_id", data.product_id);
-    if (error) throw new Error(`No se pudo desvincular el SKU: ${error.message}`);
-    return { linked: false as const };
   });
 
 // ---------------------------------------------------------------------------
@@ -1340,10 +1259,9 @@ export type AgreementSkuGroup = {
   position_ids: string[];
   positions: AgreementSkuGroupPosition[];
   prices: number[];
-  linked: boolean;
   // Contrato §7: agrupación por SKU + cliente.
-  // "unified" = precio vinculado; "conflict" = precios distintos; "repeated" = repetido con mismo precio.
-  state: "conflict" | "unified" | "repeated";
+  // "conflict" = precios distintos; "repeated" = repetido con mismo precio.
+  state: "conflict" | "repeated";
 };
 
 export const listAgreementSkuGroups = createServerFn({ method: "POST" })
@@ -1478,23 +1396,9 @@ export const listAgreementSkuGroups = createServerFn({ method: "POST" })
     const repeated = Array.from(groups.values()).filter((g) => g.ids.size >= 2);
     if (repeated.length === 0) return [];
 
-    const productIds = Array.from(new Set(repeated.map((g) => g.product_id)));
-    const { data: links, error: linkErr } = await context.supabase
-      .from("agreement_sku_links")
-      .select("product_id")
-      .eq("agreement_id", data.agreement_id)
-      .in("product_id", productIds);
-    if (linkErr) throw new Error(`No se pudieron cargar vínculos: ${linkErr.message}`);
-    const linkedSet = new Set((links ?? []).map((l) => l.product_id as string));
-
     return repeated.map((g) => {
       const prices = Array.from(g.prices);
-      const linked = linkedSet.has(g.product_id);
-      const state: AgreementSkuGroup["state"] = linked
-        ? "unified"
-        : prices.length > 1
-          ? "conflict"
-          : "repeated";
+      const state: AgreementSkuGroup["state"] = prices.length > 1 ? "conflict" : "repeated";
       return {
         product_id: g.product_id,
         client_id: g.client_id,
@@ -1504,7 +1408,6 @@ export const listAgreementSkuGroups = createServerFn({ method: "POST" })
         position_ids: Array.from(g.ids),
         positions: g.positions,
         prices,
-        linked,
         state,
       };
     });

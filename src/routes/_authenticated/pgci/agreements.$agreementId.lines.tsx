@@ -69,8 +69,6 @@ import {
   listAgreementSkuGroups,
   listAgreementCompanies,
   listClientCatalogPermissions,
-  linkSkuPrice,
-  unlinkSkuPrice,
   publishAgreementPositions,
   listArchivedPositions,
   type LineCode,
@@ -300,8 +298,6 @@ function AgreementLinesPage() {
   const archivedListFn = useServerFn(listArchivedPositions);
 
   const skuGroupsFn = useServerFn(listAgreementSkuGroups);
-  const linkFn = useServerFn(linkSkuPrice);
-  const unlinkFn = useServerFn(unlinkSkuPrice);
   const publishFn = useServerFn(publishAgreementPositions);
   const companiesFn = useServerFn(listAgreementCompanies);
   const catalogPermsFn = useServerFn(listClientCatalogPermissions);
@@ -354,7 +350,7 @@ function AgreementLinesPage() {
 
   const [activeCard, setActiveCard] = useState<LineCardKey>("all");
   const [skuModalOpen, setSkuModalOpen] = useState(false);
-  const [linkingProductId, setLinkingProductId] = useState<string | null>(null);
+  
   const [skuConflictOnly, setSkuConflictOnly] = useState(false);
   const [q, setQ] = useState("");
   const [projectionClientId, setProjectionClientId] = useState<string | null>(null);
@@ -494,26 +490,17 @@ function AgreementLinesPage() {
     () => (skuGroups ?? []).filter((g) => g.state === "repeated"),
     [skuGroups],
   );
-  const unifiedGroups = useMemo(
-    () => (skuGroups ?? []).filter((g) => g.state === "unified"),
-    [skuGroups],
-  );
   // "Sin vincular" = conflict + repeated. Conflictos primero.
   const unlinkedGroups = useMemo(
     () => [...conflictGroups, ...repeatedGroups],
     [conflictGroups, repeatedGroups],
   );
   const conflictGroupsCount = conflictGroups.length;
-  const repeatedTotalCount =
-    conflictGroups.length + repeatedGroups.length + unifiedGroups.length;
+  const repeatedTotalCount = conflictGroups.length + repeatedGroups.length;
 
   const conflictPositionCount = useMemo(
     () => conflictGroups.reduce((sum, g) => sum + (g.position_ids.length ?? 0), 0),
     [conflictGroups],
-  );
-  const unifiedPositionCount = useMemo(
-    () => unifiedGroups.reduce((sum, g) => sum + (g.position_ids.length ?? 0), 0),
-    [unifiedGroups],
   );
   const repeatedPositionCount = useMemo(
     () => repeatedGroups.reduce((sum, g) => sum + (g.position_ids.length ?? 0), 0),
@@ -521,39 +508,6 @@ function AgreementLinesPage() {
   );
 
 
-
-
-  const linkMut = useMutation({
-    mutationFn: async (v: { product_id: string; price: number }) => {
-      setLinkingProductId(v.product_id);
-      return linkFn({
-        data: { agreement_id: agreementId, product_id: v.product_id, price: v.price },
-      });
-    },
-    onSuccess: (res) => {
-      toast.success(
-        `SKU vinculado. Precio aplicado a ${res.updated} ${res.updated === 1 ? "posición" : "posiciones"}.`,
-      );
-      invalidateAll();
-    },
-    onError: (e: Error) => toast.error(e.message),
-    onSettled: () => setLinkingProductId(null),
-  });
-
-  const unlinkMut = useMutation({
-    mutationFn: async (v: { product_id: string }) => {
-      setLinkingProductId(v.product_id);
-      return unlinkFn({
-        data: { agreement_id: agreementId, product_id: v.product_id },
-      });
-    },
-    onSuccess: () => {
-      toast.success("SKU desvinculado. Las posiciones vuelven a tener precios independientes.");
-      invalidateAll();
-    },
-    onError: (e: Error) => toast.error(e.message),
-    onSettled: () => setLinkingProductId(null),
-  });
 
   const REASON_LABELS: Record<string, string> = {
     no_sku: "sin SKU",
@@ -1008,14 +962,14 @@ function AgreementLinesPage() {
           <AlertDescription className="mt-1 pl-0">
                 <div className="space-y-0.5 text-sm">
                   <p>
-                    {conflictGroups.length} códigos en <span className="font-semibold">{conflictPositionCount}</span> posiciones no vinculadas con precios distintos
+                    {conflictGroups.length} códigos en <span className="font-semibold">{conflictPositionCount}</span> posiciones con precios distintos
                   </p>
                   <p>
-                    {repeatedGroups.length} códigos en <span className="font-semibold">{repeatedPositionCount}</span> posiciones no vinculadas / {unifiedGroups.length} códigos en <span className="font-semibold">{unifiedPositionCount}</span> posiciones vinculadas
+                    {repeatedGroups.length} códigos en <span className="font-semibold">{repeatedPositionCount}</span> posiciones con el mismo precio
                   </p>
                 </div>
                 <p className="mt-1 text-xs opacity-90">
-                  Las posiciones pueden vincularse para compartir un mismo precio; las no vinculadas se gestionan de forma independiente.
+                  Cada posición gestiona su precio de forma independiente.
                 </p>
               </AlertDescription>
         </Alert>
@@ -1194,30 +1148,6 @@ function AgreementLinesPage() {
                       </div>
                       <div>
                         Precios no vinculados ({fmtMoney(g.prices[0] ?? null)})
-                      </div>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            );
-          }
-          if (g.state === "unified") {
-            return (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Link2
-                      className="h-3.5 w-3.5 text-muted-foreground"
-                      aria-label="SKU vinculado"
-                    />
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-xs">
-                    <div className="space-y-1">
-                      <div className="font-medium">
-                        SKU en {g.position_ids.length} posiciones
-                      </div>
-                      <div>
-                        Precios vinculados ({fmtMoney(g.prices[0] ?? null)})
                       </div>
                     </div>
                   </TooltipContent>
@@ -1813,18 +1743,15 @@ function AgreementLinesPage() {
                   <div className="flex items-center gap-2">
                     <Link2 className="h-4 w-4 text-muted-foreground" />
                     <h3 className="text-sm font-semibold">
-                      Posiciones no vinculadas ({unlinkedGroups.length})
+                      SKUs en múltiples posiciones ({unlinkedGroups.length})
                     </h3>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Códigos Jaivaná presentes en más de una posición. Al no estar vinculados, el precio de cada posición se gestiona de forma independiente.
+                    Códigos Jaivaná presentes en más de una posición. Cada posición gestiona su precio de forma independiente.
                   </p>
                   <div className="rounded-lg border border-border bg-muted/20 p-3">
                     <ul className="space-y-2">
                       {unlinkedGroups.map((g) => {
-                        const busy = linkingProductId === g.product_id;
-                        const price = g.prices[0];
-                        const canLink = g.state === "repeated" && price != null;
                         return (
                           <SkuGroupCard
                             key={g.product_id}
@@ -1836,52 +1763,10 @@ function AgreementLinesPage() {
                               if (g.state === "conflict") {
                                 openEditForLine(g.position_ids[0]);
                               }
-                              // Vinculación deshabilitada — no-op para 'repeated'.
                             }}
-                            actionLabel={
-                              g.state === "conflict"
-                                ? "Revisar"
-                                : "Vincular"
-                            }
-                            actionType={g.state === "conflict" ? "review" : "link"}
-                            actionDisabled={g.state === "repeated" || (g.state !== "conflict" && (busy || !canLink))}
-                            fmtMoney={fmtMoney}
-                          />
-                        );
-                      })}
-                    </ul>
-                  </div>
-                </section>
-              )}
-
-              {unifiedGroups.length > 0 && (
-                <section className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Link2 className="h-4 w-4 text-muted-foreground" />
-                    <h3 className="text-sm font-semibold">
-                      Posiciones vinculadas ({unifiedGroups.length})
-                    </h3>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Códigos Jaivaná presentes en más de una posición. Al estar vinculados, cualquier cambio de precio se aplicará automáticamente a todas las posiciones.
-                  </p>
-                  <div className="rounded-lg border border-border bg-muted/20 p-3">
-                    <ul className="space-y-2">
-                      {unifiedGroups.map((g) => {
-                        const busy = linkingProductId === g.product_id;
-                        return (
-                          <SkuGroupCard
-                            key={g.product_id}
-                            group={g}
-                            variant="unified"
-                            defaultOpen={false}
-                            canAdmin={canAdmin}
-                            onAction={() =>
-                              unlinkMut.mutate({ product_id: g.product_id })
-                            }
-                            actionLabel={busy ? "Desvinculando…" : "Desvincular"}
-                            actionType="unlink"
-                            actionDisabled={busy}
+                            actionLabel={g.state === "conflict" ? "Revisar" : ""}
+                            actionType={g.state === "conflict" ? "review" : undefined}
+                            actionDisabled={g.state !== "conflict"}
                             fmtMoney={fmtMoney}
                           />
                         );
@@ -1942,12 +1827,12 @@ function SkuGroupCard({
     }[];
     prices: number[];
   };
-  variant: "conflict" | "repeated" | "unified";
+  variant: "conflict" | "repeated";
   defaultOpen: boolean;
   canAdmin: boolean;
   onAction: () => void;
   actionLabel: string;
-  actionType?: "link" | "unlink" | "review";
+  actionType?: "review";
   actionDisabled?: boolean;
   fmtMoney: (v: number | null) => string;
 }) {
@@ -1962,9 +1847,7 @@ function SkuGroupCard({
           .sort((a, b) => a - b)
           .map((p) => fmtMoney(p))
           .join(" · ")}`
-      : variant === "unified"
-        ? `${count} posiciones · precio vinculado: ${fmtMoney(group.prices[0] ?? null)}`
-        : `${count} posiciones · precio común: ${fmtMoney(group.prices[0] ?? null)}`;
+      : `${count} posiciones · precio común: ${fmtMoney(group.prices[0] ?? null)}`;
 
   return (
     <li className="rounded-lg border border-border bg-card p-3">
@@ -1995,8 +1878,6 @@ function SkuGroupCard({
             onClick={onAction}
             disabled={actionDisabled}
           >
-            {actionType === "link" && <Link2 />}
-            {actionType === "unlink" && <Unlink />}
             {actionType === "review" && <Eye />}
             {actionLabel}
           </Button>

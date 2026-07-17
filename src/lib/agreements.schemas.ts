@@ -230,14 +230,6 @@ export const applyPriceSchema = z.object({
   new_price: z.number(),
 });
 
-export const skuLinkSchema = z.object({
-  agreement_id: z.string().uuid(),
-  product_id: z.string().uuid(),
-});
-
-export const skuLinkWithPriceSchema = skuLinkSchema.extend({
-  price: z.number().nonnegative(),
-});
 
 
 

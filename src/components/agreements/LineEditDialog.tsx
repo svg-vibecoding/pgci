@@ -8,13 +8,10 @@ import {
   Calendar,
   ChevronDown,
   Info,
-  Link,
-  Link2,
   Loader2,
   Lock,
   Plus,
   Search,
-  Unlink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatMoneyCOP } from "@/lib/format";
@@ -62,8 +59,6 @@ import {
   updateAgreementLine,
   lookupProductBySku,
   detectNConflict,
-  linkSkuPrice,
-  unlinkSkuPrice,
   searchProducts,
   searchClientCodes,
   reactivateAgreementLine,
@@ -1119,8 +1114,6 @@ export function LineEditDialog({
   const patchFn = useServerFn(updateAgreementLine);
   const lookupFn = useServerFn(lookupProductBySku);
   const conflictFn = useServerFn(detectNConflict);
-  const linkFn = useServerFn(linkSkuPrice);
-  const unlinkFn = useServerFn(unlinkSkuPrice);
   const searchFn = useServerFn(searchProducts);
 
   const [v, setV] = useState<LineEditValues>(empty);
@@ -1144,9 +1137,7 @@ export function LineEditDialog({
     }>;
   }>({ kind: "idle", lines: [] });
   const [nExpanded, setNExpanded] = useState(true);
-  const [isLinked, setIsLinked] = useState(false);
   const [productId, setProductId] = useState<string | null>(null);
-  const [linkError, setLinkError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
 
   // Estado por cliente (tarjetas).
@@ -1255,12 +1246,10 @@ export function LineEditDialog({
     const trimmed = sku.trim();
     if (!trimmed) {
       setNConflict({ kind: "idle", lines: [] });
-      setIsLinked(false);
       return;
     }
     const cseq = ++conflictSeq.current;
     setNConflict({ kind: "loading", lines: [] });
-    setLinkError(null);
     try {
       const res = await conflictFn({
         data: { agreement_id: agreementId, sku: trimmed },
@@ -1268,8 +1257,6 @@ export function LineEditDialog({
       if (cseq !== conflictSeq.current) return;
       if (pid) setProductId(pid);
       else setProductId(res.product_id ?? null);
-      const linked = !!res.isLinked;
-      setIsLinked(linked);
       const excludeId = initial?.line_id ?? null;
       const lines = (res.conflicts ?? []).filter((l) => l.line_id !== excludeId);
       if (lines.length === 0) {
@@ -1283,24 +1270,9 @@ export function LineEditDialog({
       });
       setNConflict({ kind: "found", lines: sorted });
       setNExpanded(true);
-      // Auto-prefill de precio vinculado: solo aplica en edición.
-      // En creación, la vinculación de precios no se ofrece (el panel se
-      // oculta cuando !initial?.line_id) y prefill'ear un precio de otra
-      // posición prometía un vínculo que aún no existía.
-      if (linked && initial?.line_id) {
-        const linkedPrice = sorted.find((l) => l.current_price != null)?.current_price;
-        if (linkedPrice != null) {
-          setV((prev) =>
-            prev.sale_price.trim() === ""
-              ? { ...prev, sale_price: formatPriceDisplay(linkedPrice) }
-              : prev,
-          );
-        }
-      }
     } catch (e) {
       if (cseq !== conflictSeq.current) return;
       setNConflict({ kind: "idle", lines: [] });
-      setIsLinked(false);
       console.error("detectNConflict failed", e);
     }
   };
@@ -1417,9 +1389,7 @@ export function LineEditDialog({
       setLookup({ kind: next.sku.trim() ? "idle" : "empty" });
     }
     setNConflict({ kind: "idle", lines: [] });
-    setIsLinked(false);
     setProductId(null);
-    setLinkError(null);
     setSaveError(null);
     setSearchOpen(false);
     setSearchQuery("");
@@ -1534,7 +1504,6 @@ export function LineEditDialog({
     setSkuInAgreement(null);
     setSkuPositionsExpanded(false);
     setNConflict({ kind: "idle", lines: [] });
-    setIsLinked(false);
     setSaveError(null);
   };
 
@@ -1967,46 +1936,6 @@ export function LineEditDialog({
   };
 
 
-  const linkMut = useMutation({
-    mutationFn: async () => {
-      if (!productId) throw new Error("SKU no válido para vincular");
-      const price = parsePriceInput(v.sale_price);
-      if (price == null) throw new Error("Ingresa un precio antes de vincular");
-      if (price < 0) throw new Error("Precio inválido");
-      return linkFn({
-        data: { agreement_id: agreementId, product_id: productId, price },
-      });
-    },
-    onSuccess: (res) => {
-      setIsLinked(true);
-      setLinkError(null);
-      toast.success(
-        `SKU vinculado. Precio aplicado a ${res.updated} ${res.updated === 1 ? "posición" : "posiciones"}.`,
-      );
-      invalidateLines();
-      if (v.sku.trim()) void runConflict(v.sku, productId);
-    },
-    onError: (e: Error) => {
-      setLinkError(e.message);
-      toast.error(e.message);
-    },
-  });
-
-  const unlinkMut = useMutation({
-    mutationFn: async () => {
-      if (!productId) throw new Error("SKU no válido para desvincular");
-      return unlinkFn({
-        data: { agreement_id: agreementId, product_id: productId },
-      });
-    },
-    onSuccess: () => {
-      setIsLinked(false);
-      setLinkError(null);
-      toast.success("SKU desvinculado.");
-      invalidateLines();
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
 
   const readonlyClass = "bg-muted/70 border-transparent shadow-none cursor-not-allowed focus-visible:ring-0 focus-visible:ring-offset-0";
   const inputClass = "";
@@ -2483,125 +2412,6 @@ export function LineEditDialog({
                     );
                   })()}
 
-                  {false && nConflict.kind === "found" && !isCreatingLine && (
-                    <Alert variant="warning" className="p-0 overflow-hidden">
-                      <Collapsible open={nExpanded} onOpenChange={setNExpanded}>
-                        <CollapsibleTrigger asChild>
-                          <button
-                            type="button"
-                            className="flex w-full items-center gap-2 px-4 py-3 text-left bg-warning/10 hover:bg-warning/15 transition-colors"
-                          >
-                            {isLinked ? (
-                              <Link2 className="h-4 w-4 shrink-0" />
-                            ) : (
-                              <AlertTriangle className="h-4 w-4 shrink-0" />
-                            )}
-                            <span className="flex-1 text-sm font-medium">
-                              {isLinked
-                                ? `Este SKU está vinculado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} del acuerdo.`
-                                : `Este SKU está asignado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} más del acuerdo.`}
-                            </span>
-                            <ChevronDown
-                              className={cn(
-                                "h-4 w-4 shrink-0 text-[var(--status-warning-strong)] transition-transform",
-                                nExpanded && "rotate-180",
-                              )}
-                            />
-                          </button>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent>
-                          <div className="border-t border-border px-4 py-4 space-y-3">
-                            <div className="rounded-md border border-border bg-surface-card overflow-hidden">
-                              <Table>
-                                <TableHeader>
-                                  <TableRow>
-                                    <TableHead>Código cliente</TableHead>
-                                    <TableHead>Descripción cliente</TableHead>
-                                    <TableHead className="text-right">Precio actual</TableHead>
-                                  </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                  {nConflict.lines.map((l) => {
-                                    const first = l.codes[0] ?? null;
-                                    return (
-                                      <TableRow key={l.line_id}>
-                                        <TableCell className="text-sm text-foreground">
-                                          {first?.client_code ?? "—"}
-                                        </TableCell>
-                                        <TableCell className="text-sm text-foreground">
-                                          {first?.description ?? "—"}
-                                        </TableCell>
-                                        <TableCell className="text-right text-sm tabular-nums text-foreground">
-                                          {formatMoneyCOP(l.current_price)}
-                                        </TableCell>
-                                      </TableRow>
-                                    );
-                                  })}
-                                </TableBody>
-                              </Table>
-                            </div>
-
-                            <div className="rounded-md border border-border bg-surface-card p-4 space-y-3">
-                              {isLinked ? (
-                                <>
-                                  <h4 className="text-sm font-semibold text-foreground">
-                                    Posiciones vinculadas
-                                  </h4>
-                                  <p className="text-sm text-foreground">
-                                    {`Este SKU está vinculado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} del acuerdo. Cualquier cambio de precio se aplicará automáticamente a todas.`}
-                                  </p>
-                                  <Button
-                                    type="button"
-                                    size="sm"
-                                    variant="outline"
-                                    className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-                                    disabled={unlinkMut.isPending || !productId}
-                                    onClick={() => unlinkMut.mutate()}
-                                  >
-                                    {unlinkMut.isPending ? (
-                                      <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                                    ) : (
-                                      <Unlink className="mr-2 h-3.5 w-3.5" />
-                                    )}
-                                    Desvincular
-                                  </Button>
-                                </>
-                              ) : (
-                                <>
-                                  <h4 className="text-sm font-semibold text-foreground">
-                                    Posiciones no vinculadas
-                                  </h4>
-                                  <p className="text-sm text-foreground">
-                                    {`Este SKU está asignado en ${nConflict.lines.length} ${nConflict.lines.length === 1 ? "posición" : "posiciones"} más del acuerdo. Si las vinculas, compartirán el mismo precio y se actualizarán juntas automáticamente en cada cambio de precio.`}
-                                  </p>
-                                  <Button
-                                    type="button"
-                                    size="sm"
-                                    variant="outline"
-                                    className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-                                    disabled
-                                    title="Vinculación de precios temporalmente deshabilitada mientras se estabiliza el modelo de posiciones."
-                                    onClick={() => linkMut.mutate()}
-                                  >
-                                    <Link className="mr-2 h-3.5 w-3.5" />
-                                    Vincular
-                                  </Button>
-                                  <p className="text-xs text-muted-foreground">
-                                    Vinculación de precios temporalmente deshabilitada mientras se estabiliza el modelo de posiciones.
-                                  </p>
-                                  {linkError && (
-                                    <p className="text-xs font-medium text-destructive">
-                                      {linkError}
-                                    </p>
-                                  )}
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        </CollapsibleContent>
-                      </Collapsible>
-                    </Alert>
-                  )}
                 </div>
               </section>
 
