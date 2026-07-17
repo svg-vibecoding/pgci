@@ -1228,6 +1228,10 @@ export function LineEditDialog({
   } | null>(null);
   const [skuPositionsExpanded, setSkuPositionsExpanded] = useState(false);
   const [skuBlockCollapsed, setSkuBlockCollapsed] = useState(false);
+  // Loading del bloque transversal mientras `prefillFromSku` resuelve las
+  // dos llamadas en paralelo. Reserva altura con skeleton para evitar que
+  // el modal empuje el contenido al aparecer el bloque.
+  const [skuBlockLoading, setSkuBlockLoading] = useState(false);
   const conflictSeq = useRef(0);
   const searchSeq = useRef(0);
   const PAGE_SIZE = 20;
