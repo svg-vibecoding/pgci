@@ -2023,24 +2023,25 @@ export function LineEditDialog({
               ? "grid-cols-1"
               : "grid-cols-1 md:grid-cols-2 xl:grid-cols-3";
           return (
-            <div className="shrink-0 max-h-[40vh] overflow-y-auto border-b border-border bg-muted/30 px-6 py-4">
-              <div className="mb-3 flex items-center justify-between gap-3">
+            <div className={cn("shrink-0 max-h-[40vh] overflow-y-auto border-b border-border bg-muted/30 px-6", skuBlockCollapsed ? "py-2" : "py-4")}>
+              <button
+                type="button"
+                onClick={() => setSkuBlockCollapsed((v) => !v)}
+                className={cn(
+                  "w-full flex items-center justify-between gap-3 cursor-pointer text-left",
+                  !skuBlockCollapsed && "mb-3",
+                )}
+              >
                 <div className="flex items-center gap-2 min-w-0">
                   <Info className="h-4 w-4 text-accent shrink-0" aria-hidden="true" />
                   <h3 className="text-sm font-semibold text-accent truncate">
                     Posiciones en el acuerdo con este SKU ({positions.length})
                   </h3>
                 </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="link"
-                  className="h-auto px-0 text-muted-foreground hover:text-foreground"
-                  onClick={() => setSkuBlockCollapsed((v) => !v)}
-                >
+                <span className="text-sm font-medium text-accent hover:underline shrink-0">
                   {skuBlockCollapsed ? "Mostrar" : "Cerrar"}
-                </Button>
-              </div>
+                </span>
+              </button>
               {!skuBlockCollapsed && (
               <div className={cn("grid gap-3 items-stretch", gridCols)}>
                 {visible.map((pos) => {
@@ -2083,7 +2084,7 @@ export function LineEditDialog({
                                   {c.client_name ?? "Cliente"}
                                 </span>{" "}
                                 ·{" "}
-                                <span className="font-mono text-foreground">{c.client_code}</span>
+                                <span className="font-mono font-semibold text-foreground">{c.client_code}</span>
                               </div>
                               {c.description && (
                                 <div className="text-muted-foreground">
