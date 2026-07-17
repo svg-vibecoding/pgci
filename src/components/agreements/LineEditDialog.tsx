@@ -13,6 +13,7 @@ import {
   Pencil,
   Plus,
   Search,
+  XCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatMoneyCOP } from "@/lib/format";
@@ -40,6 +41,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { StatusBadge } from "@/components/sumatec/StatusBadge";
+import { Badge } from "@/components/sumatec/Badge";
 import { RowActionsMenu } from "@/components/sumatec";
 
 import {
@@ -1988,12 +1990,73 @@ export function LineEditDialog({
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <DialogHeader className="px-6 py-4 border-b border-border shrink-0">
-          <DialogTitle className="text-2xl font-bold tracking-tight">
-            {titleKind}
-          </DialogTitle>
-          <DialogDescription className="text-sm text-muted-foreground">
-            {agreementName || "Acuerdo comercial"}
-          </DialogDescription>
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <DialogTitle className="text-2xl font-bold tracking-tight">
+                {titleKind}
+              </DialogTitle>
+              <DialogDescription className="text-sm text-muted-foreground">
+                {agreementName || "Acuerdo comercial"}
+              </DialogDescription>
+            </div>
+            {isEdit && (() => {
+              const posStatus = initial?.status;
+              if (!posStatus || posStatus === "archived") return null;
+              const endIso = v.end_date.trim() || agreementEndDate || null;
+              let covers = true;
+              if (endIso) {
+                const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(endIso);
+                if (m) {
+                  const end = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+                  const now = new Date();
+                  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                  covers = end.getTime() >= today.getTime();
+                }
+              }
+              type BadgeKey = "active" | "requires_review" | "draft" | "expired" | "excluded";
+              const badgeKey: BadgeKey =
+                posStatus === "active"
+                  ? covers ? "active" : "expired"
+                  : posStatus === "draft"
+                    ? "draft"
+                    : posStatus === "excluded"
+                      ? "excluded"
+                      : "requires_review";
+              const meta: Record<BadgeKey, { label: string; status: "active" | "danger" | "neutral" }> = {
+                active: { label: "Activa", status: "active" },
+                requires_review: { label: "Revisar", status: "danger" },
+                draft: { label: "En gestión", status: "neutral" },
+                expired: { label: "Vencida", status: "danger" },
+                excluded: { label: "Excluida", status: "neutral" },
+              };
+              const m = meta[badgeKey];
+              const readyToPublish =
+                pendingReasonTokens.length === 0 &&
+                (posStatus === "draft" || posStatus === "requires_review");
+              const showStatusBadge =
+                !(readyToPublish && posStatus === "requires_review");
+              return (
+                <div className="flex flex-wrap items-center justify-end gap-1.5 shrink-0 max-w-[60%]">
+                  {showStatusBadge && (
+                    <StatusBadge
+                      status={m.status}
+                      label={m.label}
+                      icon={badgeKey === "draft" ? Pencil : undefined}
+                    />
+                  )}
+                  {readyToPublish && (
+                    <StatusBadge status="active" label="OK para publicar" />
+                  )}
+                  {pendingReasonTokens.map((tok) => (
+                    <Badge key={tok} color="error" variant="soft">
+                      <XCircle className="h-3 w-3" />
+                      {PENDING_LABELS[tok] ?? tok}
+                    </Badge>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
         </DialogHeader>
 
         {skuBlockLoading && !skuInAgreement && (
@@ -2658,15 +2721,6 @@ export function LineEditDialog({
               />
               <span className="flex flex-col leading-tight">
                 <span className="suma-body text-text-primary font-medium">Publicar en acuerdo al guardar</span>
-                <span className="suma-caption text-text-tertiary">
-                  {wouldConflictOnPublish
-                    ? "Esta posición quedará en conflicto y no podrá publicarse."
-                    : hasPendingTokens
-                      ? `Pendiente: ${pendingReasonTokens.map((t) => PENDING_LABELS[t] ?? t).join(" · ")}.`
-                      : effectiveCanPublishNow
-                        ? "La posición cumple con los datos requeridos para activarse en el acuerdo."
-                        : "Completa producto, precio y fechas vigentes para habilitar."}
-                </span>
               </span>
             </label>
 
