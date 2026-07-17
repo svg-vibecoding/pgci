@@ -1389,9 +1389,7 @@ export function LineEditDialog({
       setLookup({ kind: next.sku.trim() ? "idle" : "empty" });
     }
     setNConflict({ kind: "idle", lines: [] });
-    setIsLinked(false);
     setProductId(null);
-    setLinkError(null);
     setSaveError(null);
     setSearchOpen(false);
     setSearchQuery("");
