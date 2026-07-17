@@ -298,8 +298,6 @@ function AgreementLinesPage() {
   const archivedListFn = useServerFn(listArchivedPositions);
 
   const skuGroupsFn = useServerFn(listAgreementSkuGroups);
-  const linkFn = useServerFn(linkSkuPrice);
-  const unlinkFn = useServerFn(unlinkSkuPrice);
   const publishFn = useServerFn(publishAgreementPositions);
   const companiesFn = useServerFn(listAgreementCompanies);
   const catalogPermsFn = useServerFn(listClientCatalogPermissions);
