@@ -2084,7 +2084,7 @@ export function LineEditDialog({
                                   {c.client_name ?? "Cliente"}
                                 </span>{" "}
                                 ·{" "}
-                                <span className="font-mono text-foreground">{c.client_code}</span>
+                                <span className="font-mono font-semibold text-foreground">{c.client_code}</span>
                               </div>
                               {c.description && (
                                 <div className="text-muted-foreground">
