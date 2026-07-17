@@ -406,6 +406,13 @@ function ClientCodeCard({
   // "Editar producto": revela el input de descripción bajo demanda desde el menú.
   const [showDescriptionEdit, setShowDescriptionEdit] = useState(false);
   const seq = useRef(0);
+  // Detección de match del código tecleado contra el catálogo del cliente
+  // mientras se "crea producto". Reutiliza searchClientCodes (misma info
+  // que el buscador de arriba: code, description vigente y estado en el
+  // acuerdo). Solo se usa en mode === "creating".
+  const [existingMatch, setExistingMatch] = useState<ClientCodeSearchResult | null>(null);
+  const [matchLoading, setMatchLoading] = useState(false);
+  const matchSeq = useRef(0);
 
   // Resync por cambio de posición (o al abrir/cerrar). Se hace durante render
   // con un ref para leer el `entry` ya poblado por el padre en este mismo
