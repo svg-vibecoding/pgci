@@ -350,7 +350,7 @@ function AgreementLinesPage() {
 
   const [activeCard, setActiveCard] = useState<LineCardKey>("all");
   const [skuModalOpen, setSkuModalOpen] = useState(false);
-  const [linkingProductId, setLinkingProductId] = useState<string | null>(null);
+  
   const [skuConflictOnly, setSkuConflictOnly] = useState(false);
   const [q, setQ] = useState("");
   const [projectionClientId, setProjectionClientId] = useState<string | null>(null);
@@ -1148,30 +1148,6 @@ function AgreementLinesPage() {
                       </div>
                       <div>
                         Precios no vinculados ({fmtMoney(g.prices[0] ?? null)})
-                      </div>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            );
-          }
-          if (g.state === "unified") {
-            return (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Link2
-                      className="h-3.5 w-3.5 text-muted-foreground"
-                      aria-label="SKU vinculado"
-                    />
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-xs">
-                    <div className="space-y-1">
-                      <div className="font-medium">
-                        SKU en {g.position_ids.length} posiciones
-                      </div>
-                      <div>
-                        Precios vinculados ({fmtMoney(g.prices[0] ?? null)})
                       </div>
                     </div>
                   </TooltipContent>
