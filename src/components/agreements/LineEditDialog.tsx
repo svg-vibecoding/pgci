@@ -255,6 +255,7 @@ function ClientCodeCards({
   onRequestSwitchToPosition,
   onCreatingIncompleteChange,
   onModeChange,
+  onCatalogOverrideChange,
   requiredForClientIds,
   canRemoveClientIds,
   isCreate = false,
@@ -272,6 +273,7 @@ function ClientCodeCards({
   onRequestSwitchToPosition: (positionId: string) => void;
   onCreatingIncompleteChange: (clientId: string, incomplete: boolean) => void;
   onModeChange: (clientId: string, mode: "search" | "creating" | "edit") => void;
+  onCatalogOverrideChange: (clientId: string, description: string | null) => void;
   requiredForClientIds?: Set<string>;
   canRemoveClientIds?: Set<string>;
   isCreate?: boolean;
@@ -307,6 +309,9 @@ function ClientCodeCards({
               onCreatingIncompleteChange(c.id, incomplete)
             }
             onModeChange={(mode) => onModeChange(c.id, mode)}
+            onCatalogOverrideChange={(desc) =>
+              onCatalogOverrideChange(c.id, desc)
+            }
             isCreate={isCreate}
           />
         );
