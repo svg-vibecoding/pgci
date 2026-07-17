@@ -1366,6 +1366,12 @@ export function LineEditDialog({
   const [codeModes, setCodeModes] = useState<Map<string, "search" | "creating" | "edit">>(
     new Map(),
   );
+  // Override de descripción del catálogo cuando la tarjeta detecta un match
+  // libre existente. Se usa en buildClientCodes para NO sobrescribir la
+  // descripción vigente del client_product con la tecleada.
+  const [catalogOverrides, setCatalogOverrides] = useState<Map<string, string>>(
+    new Map(),
+  );
 
   // Cambio a otra posición desde la alerta "código ya asignado".
   const [pendingSwitchTarget, setPendingSwitchTarget] = useState<string | null>(null);
