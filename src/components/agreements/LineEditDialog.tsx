@@ -10,6 +10,7 @@ import {
   Info,
   Loader2,
   Lock,
+  Pencil,
   Plus,
   Search,
 } from "lucide-react";
