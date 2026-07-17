@@ -1012,6 +1012,8 @@ export type ClientCodeSearchResult = {
         sku: string | null;
         product_description: string | null;
         sale_price: number | null;
+        position_start_date: string | null;
+        position_end_date: string | null;
         exclusion_reason: string | null;
         exclusion_date: string | null;
       };
