@@ -1767,18 +1767,15 @@ function AgreementLinesPage() {
                   <div className="flex items-center gap-2">
                     <Link2 className="h-4 w-4 text-muted-foreground" />
                     <h3 className="text-sm font-semibold">
-                      Posiciones no vinculadas ({unlinkedGroups.length})
+                      SKUs en múltiples posiciones ({unlinkedGroups.length})
                     </h3>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Códigos Jaivaná presentes en más de una posición. Al no estar vinculados, el precio de cada posición se gestiona de forma independiente.
+                    Códigos Jaivaná presentes en más de una posición. Cada posición gestiona su precio de forma independiente.
                   </p>
                   <div className="rounded-lg border border-border bg-muted/20 p-3">
                     <ul className="space-y-2">
                       {unlinkedGroups.map((g) => {
-                        const busy = linkingProductId === g.product_id;
-                        const price = g.prices[0];
-                        const canLink = g.state === "repeated" && price != null;
                         return (
                           <SkuGroupCard
                             key={g.product_id}
@@ -1790,52 +1787,10 @@ function AgreementLinesPage() {
                               if (g.state === "conflict") {
                                 openEditForLine(g.position_ids[0]);
                               }
-                              // Vinculación deshabilitada — no-op para 'repeated'.
                             }}
-                            actionLabel={
-                              g.state === "conflict"
-                                ? "Revisar"
-                                : "Vincular"
-                            }
-                            actionType={g.state === "conflict" ? "review" : "link"}
-                            actionDisabled={g.state === "repeated" || (g.state !== "conflict" && (busy || !canLink))}
-                            fmtMoney={fmtMoney}
-                          />
-                        );
-                      })}
-                    </ul>
-                  </div>
-                </section>
-              )}
-
-              {unifiedGroups.length > 0 && (
-                <section className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Link2 className="h-4 w-4 text-muted-foreground" />
-                    <h3 className="text-sm font-semibold">
-                      Posiciones vinculadas ({unifiedGroups.length})
-                    </h3>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Códigos Jaivaná presentes en más de una posición. Al estar vinculados, cualquier cambio de precio se aplicará automáticamente a todas las posiciones.
-                  </p>
-                  <div className="rounded-lg border border-border bg-muted/20 p-3">
-                    <ul className="space-y-2">
-                      {unifiedGroups.map((g) => {
-                        const busy = linkingProductId === g.product_id;
-                        return (
-                          <SkuGroupCard
-                            key={g.product_id}
-                            group={g}
-                            variant="unified"
-                            defaultOpen={false}
-                            canAdmin={canAdmin}
-                            onAction={() =>
-                              unlinkMut.mutate({ product_id: g.product_id })
-                            }
-                            actionLabel={busy ? "Desvinculando…" : "Desvincular"}
-                            actionType="unlink"
-                            actionDisabled={busy}
+                            actionLabel={g.state === "conflict" ? "Revisar" : ""}
+                            actionType={g.state === "conflict" ? "review" : undefined}
+                            actionDisabled={g.state !== "conflict"}
                             fmtMoney={fmtMoney}
                           />
                         );
