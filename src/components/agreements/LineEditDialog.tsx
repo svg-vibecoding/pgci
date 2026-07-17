@@ -2438,7 +2438,7 @@ export function LineEditDialog({
                     </Alert>
                   )}
 
-                  {skuInAgreement && (isEdit ? hasSkuConflict : true) && (
+                  {skuInAgreement && (isEdit ? wouldConflictOnPublish : true) && (
                     <Alert variant="info">
                       <Info className="h-4 w-4" />
                       <AlertDescription>
