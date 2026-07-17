@@ -880,6 +880,12 @@ function ClientCodeCard({
               {showDescriptionEdit && (
                 <div className="space-y-1.5 pt-2">
                   <FieldLabel required>Descripción del producto</FieldLabel>
+                  <Input
+                    value={entry.description}
+                    disabled={disabled}
+                    className={disabled ? readonlyClass : ""}
+                    onChange={(e) => onChange({ ...entry, description: e.target.value })}
+                  />
                 </div>
               )}
             </div>
