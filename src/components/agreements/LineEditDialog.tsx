@@ -585,7 +585,7 @@ function ClientCodeCard({
       ps === "excluded"
         ? "Posición excluida"
         : ps === "requires_review"
-          ? "En revisión"
+          ? "Posición en revisión"
           : ps === "draft"
             ? "En gestión"
             : "Posición activa";
@@ -665,7 +665,7 @@ function ClientCodeCard({
     return (
       <PositionTakenPanel
         variant="info"
-        title="Este código ya está en el acuerdo"
+        title="Código asignado en el acuerdo"
         titleRight={
           <StatusBadge
             size="sm"
