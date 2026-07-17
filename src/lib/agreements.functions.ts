@@ -1396,23 +1396,9 @@ export const listAgreementSkuGroups = createServerFn({ method: "POST" })
     const repeated = Array.from(groups.values()).filter((g) => g.ids.size >= 2);
     if (repeated.length === 0) return [];
 
-    const productIds = Array.from(new Set(repeated.map((g) => g.product_id)));
-    const { data: links, error: linkErr } = await context.supabase
-      .from("agreement_sku_links")
-      .select("product_id")
-      .eq("agreement_id", data.agreement_id)
-      .in("product_id", productIds);
-    if (linkErr) throw new Error(`No se pudieron cargar vínculos: ${linkErr.message}`);
-    const linkedSet = new Set((links ?? []).map((l) => l.product_id as string));
-
     return repeated.map((g) => {
       const prices = Array.from(g.prices);
-      const linked = linkedSet.has(g.product_id);
-      const state: AgreementSkuGroup["state"] = linked
-        ? "unified"
-        : prices.length > 1
-          ? "conflict"
-          : "repeated";
+      const state: AgreementSkuGroup["state"] = prices.length > 1 ? "conflict" : "repeated";
       return {
         product_id: g.product_id,
         client_id: g.client_id,
@@ -1422,7 +1408,6 @@ export const listAgreementSkuGroups = createServerFn({ method: "POST" })
         position_ids: Array.from(g.ids),
         positions: g.positions,
         prices,
-        linked,
         state,
       };
     });
