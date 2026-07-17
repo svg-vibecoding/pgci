@@ -1114,8 +1114,6 @@ export function LineEditDialog({
   const patchFn = useServerFn(updateAgreementLine);
   const lookupFn = useServerFn(lookupProductBySku);
   const conflictFn = useServerFn(detectNConflict);
-  const linkFn = useServerFn(linkSkuPrice);
-  const unlinkFn = useServerFn(unlinkSkuPrice);
   const searchFn = useServerFn(searchProducts);
 
   const [v, setV] = useState<LineEditValues>(empty);
