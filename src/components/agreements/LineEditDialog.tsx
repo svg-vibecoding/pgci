@@ -2023,7 +2023,7 @@ export function LineEditDialog({
               ? "grid-cols-1"
               : "grid-cols-1 md:grid-cols-2 xl:grid-cols-3";
           return (
-            <div className={cn("shrink-0 max-h-[40vh] overflow-y-auto border-b border-border bg-muted/30 px-6", skuBlockCollapsed ? "py-2" : "py-4")}>
+            <div className="shrink-0 max-h-[40vh] overflow-y-auto border-b border-border bg-muted/30 px-6 py-3">
               <button
                 type="button"
                 onClick={() => setSkuBlockCollapsed((v) => !v)}
