@@ -1770,10 +1770,18 @@ export function LineEditDialog({
       const entry = codeEntries.get(c.id);
       const code = (entry?.code ?? "").trim();
       if (!code) continue;
+      // Si la tarjeta detectó un match libre existente en el catálogo y el
+      // usuario no lo adoptó, preservamos la descripción vigente del
+      // catálogo: nunca sobrescribir desde un flujo que decía "crear".
+      const override = catalogOverrides.get(c.id);
+      const description =
+        codeModes.get(c.id) === "creating" && override != null
+          ? override
+          : (entry?.description ?? "").trim();
       codes.push({
         client_id: c.id,
         client_code: code,
-        description: (entry?.description ?? "").trim(),
+        description,
       });
     }
     return codes;
