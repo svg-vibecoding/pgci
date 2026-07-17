@@ -2014,7 +2014,7 @@ export function LineEditDialog({
             <div className="shrink-0 max-h-[40vh] overflow-y-auto border-b border-border bg-muted/30 px-6 py-4">
               <div className="mb-3 flex items-baseline justify-between gap-3">
                 <h3 className="text-sm font-semibold text-foreground">
-                  Este SKU ya está en otras posiciones del acuerdo
+                  Posiciones en el acuerdo con este SKU
                 </h3>
                 <span className="text-xs text-muted-foreground">
                   {positions.length}
