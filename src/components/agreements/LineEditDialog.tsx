@@ -1991,11 +1991,22 @@ export function LineEditDialog({
             draft: { label: "En gestión", status: "neutral" },
             excluded: { label: "Excluida", status: "neutral" },
           };
-          const effRange = (pos: SkuAgreementPosition) => {
+          const effRangeParts = (pos: SkuAgreementPosition) => {
             const s = fmtDateLocal(pos.start_date) ?? fmtDateLocal(agreementStartDate);
             const e = fmtDateLocal(pos.end_date) ?? fmtDateLocal(agreementEndDate);
             if (!s && !e) return null;
-            return `${s ?? "—"} → ${e ?? "—"}`;
+            const endIso = pos.end_date ?? agreementEndDate ?? null;
+            let expired = false;
+            if (endIso) {
+              const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(endIso);
+              if (m) {
+                const endDate = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+                const now = new Date();
+                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                expired = endDate.getTime() < today.getTime();
+              }
+            }
+            return { start: s ?? "—", end: e ?? "—", expired };
           };
           const fmtExclusionDate = (iso: string | null) => {
             if (!iso) return null;
@@ -2013,60 +2024,72 @@ export function LineEditDialog({
               : "grid-cols-1 md:grid-cols-2 xl:grid-cols-3";
           return (
             <div className="shrink-0 max-h-[40vh] overflow-y-auto border-b border-border bg-muted/30 px-6 py-4">
-              <div className="mb-3 flex items-baseline justify-between gap-3">
-                <h3 className="text-sm font-semibold text-foreground">
-                  Posiciones en el acuerdo con este SKU
-                </h3>
-                <span className="text-xs text-muted-foreground">
-                  {positions.length}
-                </span>
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Info className="h-4 w-4 text-accent shrink-0" aria-hidden="true" />
+                  <h3 className="text-sm font-semibold text-accent truncate">
+                    Posiciones en el acuerdo con este SKU ({positions.length})
+                  </h3>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="link"
+                  className="h-auto px-0 text-muted-foreground hover:text-foreground"
+                  onClick={() => setSkuBlockCollapsed((v) => !v)}
+                >
+                  {skuBlockCollapsed ? "Mostrar" : "Cerrar"}
+                </Button>
               </div>
-              <div className={cn("grid gap-3", gridCols)}>
+              {!skuBlockCollapsed && (
+              <div className={cn("grid gap-3 items-stretch", gridCols)}>
                 {visible.map((pos) => {
                   const meta = statusMeta[pos.position_status];
                   const isExcluded = pos.position_status === "excluded";
-                  const range = effRange(pos);
+                  const range = effRangeParts(pos);
                   const exclDate = fmtExclusionDate(pos.exclusion_date);
                   return (
                     <div
                       key={pos.position_id}
-                      className="rounded-md border border-border bg-white p-3 text-sm"
+                      className="rounded-md border border-border bg-white p-3 text-sm flex flex-col h-full"
                     >
                       <div className="flex items-center justify-between gap-2 flex-wrap">
                         <div className="flex items-center gap-2 flex-wrap">
                           <StatusBadge status={meta.status} label={meta.label} />
-                          <span className="font-medium text-foreground">
-                            {pos.sale_price != null
-                              ? formatMoneyCOP(pos.sale_price)
-                              : "—"}
-                          </span>
+                          {range && (
+                            <span className="text-xs text-muted-foreground">
+                              {range.start} →{" "}
+                              <span className={range.expired ? "line-through text-error-strong" : ""}>
+                                {range.end}
+                              </span>
+                            </span>
+                          )}
                         </div>
-                        {range && (
-                          <span className="text-xs text-muted-foreground">
-                            {range}
-                          </span>
-                        )}
+                        <span className="font-bold text-foreground">
+                          {pos.sale_price != null
+                            ? formatMoneyCOP(pos.sale_price)
+                            : "—"}
+                        </span>
                       </div>
                       {pos.codes.length > 0 && (
-                        <div className="mt-2 border-t border-border pt-2 space-y-1">
+                        <div className="mt-2 border-t border-border pt-2 space-y-2">
                           {pos.codes.map((c) => (
                             <div
                               key={`${c.client_id}|${c.client_code}`}
-                              className="text-sm text-foreground"
+                              className="text-sm"
                             >
-                              <span className="text-xs font-semibold uppercase tracking-wide text-accent">
-                                {c.client_name ?? "Cliente"}
-                              </span>{" "}
-                              ·{" "}
-                              <span className="font-mono">{c.client_code}</span>
-                              {c.description ? (
-                                <>
-                                  {" "}·{" "}
-                                  <span className="text-muted-foreground">
-                                    {c.description}
-                                  </span>
-                                </>
-                              ) : null}
+                              <div>
+                                <span className="text-xs font-semibold uppercase tracking-wide text-accent">
+                                  {c.client_name ?? "Cliente"}
+                                </span>{" "}
+                                ·{" "}
+                                <span className="font-mono text-foreground">{c.client_code}</span>
+                              </div>
+                              {c.description && (
+                                <div className="text-muted-foreground">
+                                  {c.description}
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -2078,17 +2101,17 @@ export function LineEditDialog({
                         </div>
                       )}
                       {!isExcluded && (
-                        <div className="mt-2 flex justify-end">
+                        <div className="mt-auto pt-2 flex justify-end">
                           <Button
                             type="button"
                             size="sm"
                             variant="link"
-                            className="h-auto px-0"
+                            className="h-auto px-0 text-accent"
                             onClick={() =>
                               onSwitchToPosition?.(pos.position_id)
                             }
                           >
-                            Ir a esa posición
+                            Ir a esta posición
                           </Button>
                         </div>
                       )}
@@ -2096,7 +2119,8 @@ export function LineEditDialog({
                   );
                 })}
               </div>
-              {hidden > 0 && (
+              )}
+              {!skuBlockCollapsed && hidden > 0 && (
                 <div className="mt-3 flex justify-center">
                   <Button
                     type="button"
