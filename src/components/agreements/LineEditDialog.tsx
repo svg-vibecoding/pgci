@@ -254,6 +254,7 @@ function ClientCodeCards({
   onReactivated,
   onRequestSwitchToPosition,
   onCreatingIncompleteChange,
+  onModeChange,
   requiredForClientIds,
   canRemoveClientIds,
   isCreate = false,
@@ -270,6 +271,7 @@ function ClientCodeCards({
   onReactivated: () => void;
   onRequestSwitchToPosition: (positionId: string) => void;
   onCreatingIncompleteChange: (clientId: string, incomplete: boolean) => void;
+  onModeChange: (clientId: string, mode: "search" | "creating" | "edit") => void;
   requiredForClientIds?: Set<string>;
   canRemoveClientIds?: Set<string>;
   isCreate?: boolean;
