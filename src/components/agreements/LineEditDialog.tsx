@@ -1422,7 +1422,12 @@ export function LineEditDialog({
     setSearchHasMore(false);
     setSkuInAgreement(null);
     setSkuPositionsExpanded(false);
-    if (initial?.line_id && next.sku.trim()) {
+    setSkuBlockCollapsed(false);
+    const willPrefill = !!(initial?.line_id && next.sku.trim());
+    // Encender el skeleton ya, en el mismo commit sincrónico, para que el
+    // hueco esté reservado antes del primer paint del modal.
+    setSkuBlockLoading(willPrefill);
+    if (willPrefill) {
       void prefillFromSku(next.sku);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
