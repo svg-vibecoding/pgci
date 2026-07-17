@@ -306,6 +306,7 @@ function ClientCodeCards({
             onCreatingIncompleteChange={(incomplete) =>
               onCreatingIncompleteChange(c.id, incomplete)
             }
+            onModeChange={(mode) => onModeChange(c.id, mode)}
             isCreate={isCreate}
           />
         );
