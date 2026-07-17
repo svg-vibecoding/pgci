@@ -9,8 +9,6 @@ import {
   applyPriceSchema,
   companyAddSchema,
   companyRemoveSchema,
-  importCommitSchema,
-  importPreviewSchema,
   lineArchiveSchema,
   lineCreateSchema,
   lineDeleteSchema,
@@ -29,6 +27,9 @@ import {
   skuLinkSchema,
   skuLinkWithPriceSchema,
 } from "./agreements.schemas";
+
+// Input schema simple para server fns que solo requieren agreement_id.
+const agreementIdInput = z.object({ agreement_id: z.string().uuid() });
 import {
   assertCanAccess,
   assertCanAdmin,
