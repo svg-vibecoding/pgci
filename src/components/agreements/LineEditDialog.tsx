@@ -254,6 +254,7 @@ function ClientCodeCards({
   onReactivated,
   onRequestSwitchToPosition,
   onCreatingIncompleteChange,
+  onModeChange,
   requiredForClientIds,
   canRemoveClientIds,
   isCreate = false,
@@ -270,6 +271,7 @@ function ClientCodeCards({
   onReactivated: () => void;
   onRequestSwitchToPosition: (positionId: string) => void;
   onCreatingIncompleteChange: (clientId: string, incomplete: boolean) => void;
+  onModeChange: (clientId: string, mode: "search" | "creating" | "edit") => void;
   requiredForClientIds?: Set<string>;
   canRemoveClientIds?: Set<string>;
   isCreate?: boolean;
@@ -304,6 +306,7 @@ function ClientCodeCards({
             onCreatingIncompleteChange={(incomplete) =>
               onCreatingIncompleteChange(c.id, incomplete)
             }
+            onModeChange={(mode) => onModeChange(c.id, mode)}
             isCreate={isCreate}
           />
         );
@@ -344,6 +347,7 @@ function ClientCodeCard({
   onReactivated,
   onRequestSwitchToPosition,
   onCreatingIncompleteChange,
+  onModeChange,
   isCreate = false,
 }: {
   card: ClientCard;
@@ -360,6 +364,7 @@ function ClientCodeCard({
   onReactivated: () => void;
   onRequestSwitchToPosition: (positionId: string) => void;
   onCreatingIncompleteChange: (incomplete: boolean) => void;
+  onModeChange: (mode: "search" | "creating" | "edit") => void;
   isCreate?: boolean;
 }) {
 
@@ -454,6 +459,16 @@ function ClientCodeCard({
     return () => onCreatingIncompleteChange(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [creatingIncomplete]);
+
+  // Reportar el modo del card al padre para que el predicado de conflicto
+  // pueda alinearse con position_has_sku_conflict (BD): un cliente distingue
+  // solo si su código es resoluble — 'edit' siempre; 'creating' cuando el
+  // formulario está completo. Ver clientDistinguishes en LineEditDialog.
+  useEffect(() => {
+    onModeChange(mode);
+    return () => onModeChange("search");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
 
   const handleSelectFree = (r: ClientCodeSearchResult) => {
     onChange({ code: r.client_code, description: r.description ?? "" });
@@ -1185,6 +1200,13 @@ export function LineEditDialog({
   );
   const hasCreatingIncomplete = Array.from(creatingIncomplete.values()).some(Boolean);
 
+  // Modo actual de cada ClientCodeCard (search | creating | edit). Se usa
+  // para saber si un cliente aporta un client_product_id resoluble: en 'edit'
+  // siempre; en 'creating' solo cuando el formulario está completo.
+  const [codeModes, setCodeModes] = useState<Map<string, "search" | "creating" | "edit">>(
+    new Map(),
+  );
+
   // Cambio a otra posición desde la alerta "código ya asignado".
   const [pendingSwitchTarget, setPendingSwitchTarget] = useState<string | null>(null);
 
@@ -1606,25 +1628,40 @@ export function LineEditDialog({
 
   // Regla par a par (position_has_sku_conflict): estoy en conflicto si existe
   // AL MENOS UNA posición publicada del mismo SKU contra la cual NINGÚN cliente
-  // me distingue. Un cliente distingue un par si tiene código en ambos lados
-  // (RN-MATCH-01 garantiza que los códigos serán distintos entre posiciones).
-  // Distinguir contra UNA no basta; hay que distinguir contra TODAS.
+  // me distingue. Un cliente distingue un par si en AMBAS posiciones existe una
+  // fila en agreement_position_client_codes con client_product_id — es decir,
+  // un código resoluble. En la UI eso se traduce en:
+  //   - card en modo 'edit' con código no vacío (producto de cliente ya
+  //     seleccionado o hidratado desde initial), o
+  //   - card en modo 'creating' con código Y descripción llenos (forma_ que
+  //     al guardar se convertirá en un client_product real).
+  // Además el código debe ser distinto al de la hermana (defensivo: RN-MATCH-01
+  // ya impide colisiones, pero el predicado lo comenta así).
+  const clientDistinguishes = (cid: string, siblingCode: string | null): boolean => {
+    if (!siblingCode) return false;
+    const entry = codeEntries.get(cid);
+    if (!entry) return false;
+    const mine = entry.code.trim();
+    if (!mine) return false;
+    const mode = codeModes.get(cid) ?? "search";
+    if (mode === "search") return false;
+    if (mode === "creating" && entry.description.trim() === "") return false;
+    return mine.toLowerCase() !== siblingCode.trim().toLowerCase();
+  };
+
   const undistinguishedSiblings = useMemo(() => {
     if (!productId || !skuInAgreement) return [];
     const publishedSiblings = skuInAgreement.positions.filter(
       (p) => p.published_at != null,
     );
-    const myClientsWithCode = new Set<string>();
-    for (const [cid, e] of codeEntries) {
-      if (e && e.code && e.code.trim() !== "") myClientsWithCode.add(cid);
-    }
     return publishedSiblings.filter((p) => {
       for (const c of p.codes) {
-        if (myClientsWithCode.has(c.client_id)) return false;
+        if (clientDistinguishes(c.client_id, c.client_code)) return false;
       }
       return true;
     });
-  }, [productId, skuInAgreement, codeEntries]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productId, skuInAgreement, codeEntries, codeModes]);
 
   const wouldConflictOnPublish = undistinguishedSiblings.length > 0;
 
@@ -1639,11 +1676,10 @@ export function LineEditDialog({
     return s;
   }, [undistinguishedSiblings]);
 
-  // canRemoveClientIds: para cada cliente con código en esta posición, simular
-  // la lista sin ese cliente y aplicar la regla par a par de
-  // position_has_sku_conflict. Si tras quitarlo alguna hermana publicada queda
-  // sin distinguirse contra mí, no se puede quitar (rompería el desempate).
-  // "Editar" no pasa por acá — reemplazar sigue permitido.
+  // canRemoveClientIds: para cada cliente que hoy distingue, simular quitarlo
+  // y verificar que las hermanas publicadas sigan distinguidas por otro
+  // cliente resoluble. Si al quitarlo alguna hermana queda indistinguida, no
+  // se puede quitar (rompería el desempate). "Editar" no pasa por acá.
   const canRemoveClientIds = useMemo<Set<string>>(() => {
     const out = new Set<string>();
     if (!productId || !skuInAgreement) {
@@ -1655,23 +1691,33 @@ export function LineEditDialog({
     const publishedSiblings = skuInAgreement.positions.filter(
       (p) => p.published_at != null,
     );
-    const myClientsWithCode = new Set<string>();
-    for (const [cid, e] of codeEntries) {
-      if (e && e.code && e.code.trim() !== "") myClientsWithCode.add(cid);
+    const distinguishingClients = new Set<string>();
+    for (const [cid] of codeEntries) {
+      // Un cliente "distingue en general" si aporta desempate contra al menos
+      // una hermana publicada que lo tenga con código distinto.
+      for (const p of publishedSiblings) {
+        for (const c of p.codes) {
+          if (c.client_id === cid && clientDistinguishes(cid, c.client_code)) {
+            distinguishingClients.add(cid);
+            break;
+          }
+        }
+        if (distinguishingClients.has(cid)) break;
+      }
     }
-    for (const cid of myClientsWithCode) {
-      const simulated = new Set(myClientsWithCode);
-      simulated.delete(cid);
+    for (const cid of distinguishingClients) {
       const stillDistinguished = publishedSiblings.every((p) => {
         for (const c of p.codes) {
-          if (simulated.has(c.client_id)) return true;
+          if (c.client_id === cid) continue; // simular quitar 'cid'
+          if (clientDistinguishes(c.client_id, c.client_code)) return true;
         }
         return false;
       });
       if (stillDistinguished) out.add(cid);
     }
     return out;
-  }, [productId, skuInAgreement, codeEntries]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productId, skuInAgreement, codeEntries, codeModes]);
 
 
   // isPublishableDraft(values): completa (SKU, precio, fecha inicio) y vigente
@@ -2690,6 +2736,15 @@ export function LineEditDialog({
                     if (cur === incomplete) return prev;
                     const m = new Map(prev);
                     m.set(clientId, incomplete);
+                    return m;
+                  });
+                }}
+                onModeChange={(clientId, mode) => {
+                  setCodeModes((prev) => {
+                    const cur = prev.get(clientId) ?? "search";
+                    if (cur === mode) return prev;
+                    const m = new Map(prev);
+                    m.set(clientId, mode);
                     return m;
                   });
                 }}
