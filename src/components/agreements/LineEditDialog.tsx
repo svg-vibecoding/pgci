@@ -804,16 +804,7 @@ function ClientCodeCard({
               onChange={(e) => onChange({ ...entry, description: e.target.value })}
             />
           </div>
-          {entry.code.trim() === "" || entry.description.trim() === "" ? (
-            <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-[var(--status-warning-strong)]">
-              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--status-warning-strong)]" />
-              <span>
-                {entry.code.trim() === ""
-                  ? `Para crear un producto en ${card.name}. Registra el código o descarta la creación.`
-                  : `Para crear un producto en ${card.name}. Registra la descripción o descarta la creación.`}
-              </span>
-            </div>
-          ) : (
+          {entry.code.trim() !== "" && entry.description.trim() !== "" && (
             <div className="flex items-start gap-2 rounded-md border border-[var(--status-info-base)]/40 bg-[var(--status-info-soft)] px-3 py-2 text-xs text-[var(--status-info-strong)]">
               <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--status-info-strong)]" />
               <span>
