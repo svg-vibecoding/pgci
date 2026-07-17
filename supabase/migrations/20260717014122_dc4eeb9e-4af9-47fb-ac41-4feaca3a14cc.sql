@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public.commit_agreement_import(uuid, jsonb);

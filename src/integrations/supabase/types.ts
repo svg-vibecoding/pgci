@@ -1522,10 +1522,6 @@ export type Database = {
       }
       can_manage_matching: { Args: { p_client_id: string }; Returns: boolean }
       can_view_costs: { Args: { p_agreement_id: string }; Returns: boolean }
-      commit_agreement_import: {
-        Args: { p_agreement_id: string; p_payload: Json }
-        Returns: Json
-      }
       compute_position_pending_reason:
         | { Args: { p_position_id: string }; Returns: string }
         | {

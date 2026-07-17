@@ -239,33 +239,6 @@ export const skuLinkWithPriceSchema = skuLinkSchema.extend({
   price: z.number().nonnegative(),
 });
 
-export const importRowSchema = z.object({
-  row_number: z.number().int().positive(),
-  sku: z.string().trim().nullable().optional(),
-  client_code: z.string().trim().nullable().optional(),
-  description: z.string().trim().nullable().optional(),
-  sale_price: z.number().nullable().optional(),
-  par_price: z.number().nullable().optional(),
-  start_date: z.string().nullable().optional(),
-  end_date: z.string().nullable().optional(),
-  observations: z.string().nullable().optional(),
-});
-
-export const importPreviewSchema = z.object({
-  agreement_id: z.string().uuid(),
-  target_client_id: z.string().uuid().optional(),
-  rows: z.array(importRowSchema),
-});
-
-export const importCommitSchema = z.object({
-  agreement_id: z.string().uuid(),
-  target_client_id: z.string().uuid().optional(),
-  rows: z.array(importRowSchema),
-  price_resolutions: z
-    .record(z.string(), z.enum(["applyAll", "keepDistinct"]))
-    .optional()
-    .default({}),
-});
 
 
 export const memberAddSchema = z.object({
@@ -360,7 +333,5 @@ export type AgreementCreateInput = z.input<typeof agreementCreateSchema>;
 export type AgreementUpdateInput = z.input<typeof agreementUpdateSchema>;
 export type LineCreateInput = z.input<typeof lineCreateSchema>;
 export type LinePatchInput = z.input<typeof linePatchSchema>;
-export type ImportRowInput = z.input<typeof importRowSchema>;
-export type ImportCommitInput = z.input<typeof importCommitSchema>;
 export type MemberAddInput = z.input<typeof memberAddSchema>;
 export type CompanyAddInput = z.input<typeof companyAddSchema>;
