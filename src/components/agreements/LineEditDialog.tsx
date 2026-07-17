@@ -1227,6 +1227,7 @@ export function LineEditDialog({
     positions: SkuAgreementPosition[];
   } | null>(null);
   const [skuPositionsExpanded, setSkuPositionsExpanded] = useState(false);
+  const [skuBlockCollapsed, setSkuBlockCollapsed] = useState(false);
   const conflictSeq = useRef(0);
   const searchSeq = useRef(0);
   const PAGE_SIZE = 20;
