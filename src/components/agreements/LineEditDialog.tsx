@@ -13,6 +13,7 @@ import {
   Pencil,
   Plus,
   Search,
+  XCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatMoneyCOP } from "@/lib/format";
