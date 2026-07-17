@@ -1231,7 +1231,7 @@ export function LineEditDialog({
     positions: SkuAgreementPosition[];
   } | null>(null);
   const [skuPositionsExpanded, setSkuPositionsExpanded] = useState(false);
-  const [skuBlockCollapsed, setSkuBlockCollapsed] = useState(false);
+  const [skuBlockCollapsed, setSkuBlockCollapsed] = useState(true);
   // Loading del bloque transversal mientras `prefillFromSku` resuelve las
   // dos llamadas en paralelo. Reserva altura con skeleton para evitar que
   // el modal empuje el contenido al aparecer el bloque.
@@ -1427,7 +1427,7 @@ export function LineEditDialog({
     setSearchHasMore(false);
     setSkuInAgreement(null);
     setSkuPositionsExpanded(false);
-    setSkuBlockCollapsed(false);
+    setSkuBlockCollapsed(true);
     const willPrefill = !!(initial?.line_id && next.sku.trim());
     // Encender el skeleton ya, en el mismo commit sincrónico, para que el
     // hueco esté reservado antes del primer paint del modal.
