@@ -463,6 +463,8 @@ function ClientCodeCard({
       product_description: r.status.product_description,
       sale_price: r.status.sale_price,
       position_status: r.status.position_status,
+      position_start_date: r.status.position_start_date,
+      position_end_date: r.status.position_end_date,
       exclusion_reason: excluded ? r.status.exclusion_reason : null,
       exclusion_date: excluded ? r.status.exclusion_date : null,
     });
