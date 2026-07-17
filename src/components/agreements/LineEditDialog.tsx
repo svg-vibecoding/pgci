@@ -108,6 +108,10 @@ export type LineEditValues = {
   commercial_brand?: string | null;
   product_status?: string | null;
   product_updated_at?: string | null;
+  // Semilla del conteo de otras posiciones del acuerdo con el mismo SKU.
+  // Se calcula en memoria desde la tabla al abrir el modal para decidir si
+  // reservar hueco con skeleton. No se envía al backend.
+  sibling_positions_hint?: number;
 };
 
 const empty: LineEditValues = {
@@ -1426,7 +1430,7 @@ export function LineEditDialog({
     const willPrefill = !!(initial?.line_id && next.sku.trim());
     // Encender el skeleton ya, en el mismo commit sincrónico, para que el
     // hueco esté reservado antes del primer paint del modal.
-    setSkuBlockLoading(willPrefill);
+    setSkuBlockLoading(willPrefill && (initial?.sibling_positions_hint ?? 0) > 0);
     if (willPrefill) {
       void prefillFromSku(next.sku);
     }

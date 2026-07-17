@@ -562,6 +562,16 @@ function AgreementLinesPage() {
   const openEditForLine = (lineId: string) => {
     const r = (lines ?? []).find((x) => x.id === lineId) as Line | undefined;
     if (!r) return;
+    // Conteo en memoria de otras posiciones del acuerdo con el mismo SKU.
+    // Las excluidas cuentan: conservan códigos y aparecen en el bloque.
+    const siblingCount = r.product_id
+      ? (lines ?? []).filter(
+          (x) =>
+            x.id !== r.id &&
+            x.product_id &&
+            x.product_id === r.product_id,
+        ).length
+      : 0;
     setEditInitial({
       line_id: r.id as string,
       kind: "position",
@@ -574,6 +584,7 @@ function AgreementLinesPage() {
       erp_description: r.products?.erp_description ?? null,
       commercial_brand: r.products?.commercial_brand ?? null,
       product_status: r.products?.status ?? null,
+      sibling_positions_hint: siblingCount,
       // Estado completo declarativo: preserva todos los códigos de otros clientes.
       client_codes: (r.codes ?? []).map((c) => ({
         client_id: c.client_id,
