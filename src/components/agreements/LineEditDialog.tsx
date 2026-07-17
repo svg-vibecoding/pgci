@@ -2042,6 +2042,7 @@ export function LineEditDialog({
                   {skuBlockCollapsed ? "Mostrar" : "Cerrar"}
                 </span>
               </button>
+              {!skuBlockCollapsed && (
               <div className={cn("grid gap-3 items-stretch", gridCols)}>
                 {visible.map((pos) => {
                   const meta = statusMeta[pos.position_status];
