@@ -1190,6 +1190,8 @@ export function LineEditDialog({
     position_status: "active" | "requires_review" | "draft" | "excluded";
     published_at: string | null;
     sale_price: number | null;
+    start_date: string | null;
+    end_date: string | null;
     codes: Array<{
       client_id: string;
       client_name: string | null;
@@ -1199,6 +1201,7 @@ export function LineEditDialog({
     exclusion_reason: string | null;
     exclusion_date: string | null;
   };
+
   type SkuAgreementStatus =
     | { kind: "free" }
     | { kind: "in_agreement"; positions: SkuAgreementPosition[] };
