@@ -44,12 +44,14 @@ export function PositionTakenPanel({
   variant,
   title,
   titleRight,
+  headerExtra,
   sections,
   className,
 }: {
   variant: PositionTakenVariant;
   title: string;
   titleRight?: ReactNode;
+  headerExtra?: ReactNode;
   sections: PositionTakenSection[];
   className?: string;
 }) {
@@ -64,6 +66,7 @@ export function PositionTakenPanel({
         </div>
         {titleRight && <div className="shrink-0">{titleRight}</div>}
       </div>
+      {headerExtra && <div className="mt-2 pl-6">{headerExtra}</div>}
       <div className="mt-2 space-y-2 pl-6">
         {sections.map((s, i) => (
           <div key={`${s.label}-${i}`}>
