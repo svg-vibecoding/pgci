@@ -2922,6 +2922,17 @@ export function LineEditDialog({
                     return m;
                   });
                 }}
+                onCatalogOverrideChange={(clientId, description) => {
+                  setCatalogOverrides((prev) => {
+                    const cur = prev.get(clientId);
+                    const next = description ?? undefined;
+                    if (cur === next) return prev;
+                    const m = new Map(prev);
+                    if (next == null) m.delete(clientId);
+                    else m.set(clientId, next);
+                    return m;
+                  });
+                }}
               />
 
 
