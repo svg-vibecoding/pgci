@@ -8,13 +8,10 @@ import {
   Calendar,
   ChevronDown,
   Info,
-  Link,
-  Link2,
   Loader2,
   Lock,
   Plus,
   Search,
-  Unlink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatMoneyCOP } from "@/lib/format";
@@ -62,8 +59,6 @@ import {
   updateAgreementLine,
   lookupProductBySku,
   detectNConflict,
-  linkSkuPrice,
-  unlinkSkuPrice,
   searchProducts,
   searchClientCodes,
   reactivateAgreementLine,
