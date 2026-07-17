@@ -2533,8 +2533,7 @@ export function LineEditDialog({
               </div>
               {!isEdit && (
                 <p className="text-xs text-muted-foreground leading-relaxed min-h-[3.75rem]">
-                  Puedes relacionar la posición con el código que cada cliente
-                  usa para identificar este producto. Búscalo en su catálogo o créalo si no existe.
+                  Relaciona la posición con el código que cada cliente usa para identificar este producto. Cada código puede estar en una sola posición del acuerdo. Búscalo en su catálogo o créalo si no existe.
                 </p>
               )}
               <ClientCodeCards
