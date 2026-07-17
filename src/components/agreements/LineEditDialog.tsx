@@ -255,6 +255,7 @@ function ClientCodeCards({
   onRequestSwitchToPosition,
   onCreatingIncompleteChange,
   onModeChange,
+  onCatalogOverrideChange,
   requiredForClientIds,
   canRemoveClientIds,
   isCreate = false,
@@ -272,6 +273,7 @@ function ClientCodeCards({
   onRequestSwitchToPosition: (positionId: string) => void;
   onCreatingIncompleteChange: (clientId: string, incomplete: boolean) => void;
   onModeChange: (clientId: string, mode: "search" | "creating" | "edit") => void;
+  onCatalogOverrideChange: (clientId: string, description: string | null) => void;
   requiredForClientIds?: Set<string>;
   canRemoveClientIds?: Set<string>;
   isCreate?: boolean;
@@ -307,6 +309,9 @@ function ClientCodeCards({
               onCreatingIncompleteChange(c.id, incomplete)
             }
             onModeChange={(mode) => onModeChange(c.id, mode)}
+            onCatalogOverrideChange={(desc) =>
+              onCatalogOverrideChange(c.id, desc)
+            }
             isCreate={isCreate}
           />
         );
@@ -348,6 +353,7 @@ function ClientCodeCard({
   onRequestSwitchToPosition,
   onCreatingIncompleteChange,
   onModeChange,
+  onCatalogOverrideChange,
   isCreate = false,
 }: {
   card: ClientCard;
@@ -365,6 +371,7 @@ function ClientCodeCard({
   onRequestSwitchToPosition: (positionId: string) => void;
   onCreatingIncompleteChange: (incomplete: boolean) => void;
   onModeChange: (mode: "search" | "creating" | "edit") => void;
+  onCatalogOverrideChange: (description: string | null) => void;
   isCreate?: boolean;
 }) {
 
@@ -399,6 +406,13 @@ function ClientCodeCard({
   // "Editar producto": revela el input de descripción bajo demanda desde el menú.
   const [showDescriptionEdit, setShowDescriptionEdit] = useState(false);
   const seq = useRef(0);
+  // Detección de match del código tecleado contra el catálogo del cliente
+  // mientras se "crea producto". Reutiliza searchClientCodes (misma info
+  // que el buscador de arriba: code, description vigente y estado en el
+  // acuerdo). Solo se usa en mode === "creating".
+  const [existingMatch, setExistingMatch] = useState<ClientCodeSearchResult | null>(null);
+  const [matchLoading, setMatchLoading] = useState(false);
+  const matchSeq = useRef(0);
 
   // Resync por cambio de posición (o al abrir/cerrar). Se hace durante render
   // con un ref para leer el `entry` ya poblado por el padre en este mismo
@@ -419,6 +433,8 @@ function ClientCodeCard({
       setTakenBlock(null);
       setShowCodeSearch(false);
       setShowDescriptionEdit(false);
+      setExistingMatch(null);
+      setMatchLoading(false);
     }
   }
 
@@ -450,10 +466,97 @@ function ClientCodeCard({
     return () => clearTimeout(t);
   }, [query, popoverOpen, disabled, agreementId, card.id, searchFn, open]);
 
-  // Reportar si esta tarjeta bloquea el guardado (creando con campos vacíos).
+  // Detección de match del código tecleado contra el catálogo del cliente.
+  // Solo corre en mode === "creating" y con code >= 2 chars. Sin match, sin
+  // efecto; con match libre, avisa (no bloquea); con match tomado en otra
+  // posición del acuerdo, popula takenBlock y bloquea (RN-MATCH-01).
+  useEffect(() => {
+    if (!open || disabled) return;
+    if (mode !== "creating") {
+      setExistingMatch(null);
+      setMatchLoading(false);
+      return;
+    }
+    const code = entry.code.trim();
+    if (code.length < 2) {
+      setExistingMatch(null);
+      setMatchLoading(false);
+      return;
+    }
+    const s = ++matchSeq.current;
+    setMatchLoading(true);
+    const t = setTimeout(async () => {
+      try {
+        const res = await searchFn({
+          data: { agreement_id: agreementId, client_id: card.id, query: code },
+        });
+        if (s !== matchSeq.current) return;
+        const exact =
+          res.find(
+            (r) => r.client_code.toLowerCase() === code.toLowerCase(),
+          ) ?? null;
+        setExistingMatch(exact);
+        // Si el match es "taken", trasladar a takenBlock para reutilizar el
+        // panel visual y las acciones ya implementadas del buscador.
+        if (exact && exact.status.kind === "taken") {
+          const st = exact.status;
+          const excluded = st.position_status === "excluded";
+          setTakenBlock({
+            position_id: st.position_id,
+            client_code: exact.client_code,
+            client_description: exact.description,
+            sku: st.sku,
+            product_description: st.product_description,
+            sale_price: st.sale_price,
+            position_status: st.position_status,
+            position_start_date: st.position_start_date,
+            position_end_date: st.position_end_date,
+            exclusion_reason: excluded ? st.exclusion_reason : null,
+            exclusion_date: excluded ? st.exclusion_date : null,
+          });
+        } else {
+          // Limpiar takenBlock solo si vino de una detección previa
+          // (usuario cambió el código a uno libre / inexistente).
+          setTakenBlock((prev) =>
+            prev && prev.client_code.toLowerCase() === code.toLowerCase()
+              ? null
+              : prev,
+          );
+        }
+      } catch (e) {
+        if (s !== matchSeq.current) return;
+        console.error("searchClientCodes (creating match) failed", e);
+        setExistingMatch(null);
+      } finally {
+        if (s === matchSeq.current) setMatchLoading(false);
+      }
+    }, 250);
+    return () => clearTimeout(t);
+  }, [entry.code, mode, open, disabled, agreementId, card.id, searchFn]);
+
+  // Reporta al padre la descripción del catálogo cuando hay match libre
+  // pendiente de resolver. El padre la usa en buildClientCodes para NO
+  // sobreescribir la descripción vigente del client_product al guardar.
+  useEffect(() => {
+    if (mode === "creating" && existingMatch && existingMatch.status.kind === "free") {
+      onCatalogOverrideChange(existingMatch.description);
+    } else {
+      onCatalogOverrideChange(null);
+    }
+    return () => onCatalogOverrideChange(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, existingMatch]);
+
+  // Reportar si esta tarjeta bloquea el guardado.
+  // - creating con campos vacíos: incompleto (falta información).
+  // - creating con código tomado por otra posición: bloquea (RN-MATCH-01).
+  // - creating con match libre: NO bloquea (código libre → posición válida;
+  //   la descripción del catálogo se preserva vía onCatalogOverrideChange).
   const creatingIncomplete =
     mode === "creating" &&
-    (entry.code.trim() === "" || entry.description.trim() === "");
+    ((entry.code.trim() === "" || entry.description.trim() === "") ||
+      (!!existingMatch && existingMatch.status.kind === "taken") ||
+      !!takenBlock);
   useEffect(() => {
     onCreatingIncompleteChange(creatingIncomplete);
     return () => onCreatingIncompleteChange(false);
@@ -528,6 +631,26 @@ function ClientCodeCard({
     setResults([]);
     setExpandedId(null);
     setPopoverOpen(false);
+    setExistingMatch(null);
+    setTakenBlock(null);
+  };
+
+  // Case B: código libre existente en el catálogo. El usuario decide adoptar
+  // el producto vigente. Cambia a modo edit y trae la descripción real del
+  // catálogo (nunca la tecleada).
+  const handleAdoptExistingMatch = () => {
+    if (!existingMatch || existingMatch.status.kind !== "free") return;
+    onChange({
+      code: existingMatch.client_code,
+      description: existingMatch.description ?? "",
+    });
+    setOriginalDescription(existingMatch.description ?? "");
+    setIsNew(false);
+    setMode("edit");
+    setShowCodeSearch(false);
+    setShowDescriptionEdit(false);
+    setExistingMatch(null);
+    setTakenBlock(null);
   };
 
   const doReactivate = async () => {
@@ -825,14 +948,51 @@ function ClientCodeCard({
               onChange={(e) => onChange({ ...entry, description: e.target.value })}
             />
           </div>
-          {entry.code.trim() !== "" && entry.description.trim() !== "" && (
-            <div className="flex items-start gap-2 rounded-md border border-[var(--status-info-base)]/40 bg-[var(--status-info-soft)] px-3 py-2 text-xs text-[var(--status-info-strong)]">
-              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--status-info-strong)]" />
-              <span>
-                {`El producto se creará en el catálogo de ${card.name} al guardar la posición.`}
-              </span>
-            </div>
-          )}
+          {/* Case C: código tomado en otra posición del acuerdo (RN-MATCH-01).
+              Reutiliza el panel del buscador y bloquea el guardado desde
+              creatingIncomplete. */}
+          {takenBlock && takenAlert}
+          {takenBlock && takenActions}
+          {/* Case B: código existe libre en el catálogo. Avisa y ofrece
+              adoptar el producto existente. No bloquea el guardado. */}
+          {!takenBlock &&
+            existingMatch &&
+            existingMatch.status.kind === "free" &&
+            !disabled && (
+              <div className="flex items-start justify-between gap-3 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-[var(--status-warning-strong)]">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <span>
+                    Este código ya existe en el catálogo de {card.name}
+                    {existingMatch.description
+                      ? `: “${existingMatch.description}”. `
+                      : ". "}
+                    Si guardas así, se usará la descripción actual del catálogo
+                    (no la tecleada aquí).
+                  </span>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="shrink-0"
+                  onClick={handleAdoptExistingMatch}
+                >
+                  Usar el producto existente
+                </Button>
+              </div>
+            )}
+          {!takenBlock &&
+            !(existingMatch && existingMatch.status.kind === "free") &&
+            entry.code.trim() !== "" &&
+            entry.description.trim() !== "" && (
+              <div className="flex items-start gap-2 rounded-md border border-[var(--status-info-base)]/40 bg-[var(--status-info-soft)] px-3 py-2 text-xs text-[var(--status-info-strong)]">
+                <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--status-info-strong)]" />
+                <span>
+                  {`El producto se creará en el catálogo de ${card.name} al guardar la posición.`}
+                </span>
+              </div>
+            )}
 
           {!disabled && (
             <div className="flex justify-end">
@@ -1204,6 +1364,12 @@ export function LineEditDialog({
   // para saber si un cliente aporta un client_product_id resoluble: en 'edit'
   // siempre; en 'creating' solo cuando el formulario está completo.
   const [codeModes, setCodeModes] = useState<Map<string, "search" | "creating" | "edit">>(
+    new Map(),
+  );
+  // Override de descripción del catálogo cuando la tarjeta detecta un match
+  // libre existente. Se usa en buildClientCodes para NO sobrescribir la
+  // descripción vigente del client_product con la tecleada.
+  const [catalogOverrides, setCatalogOverrides] = useState<Map<string, string>>(
     new Map(),
   );
 
@@ -1604,10 +1770,18 @@ export function LineEditDialog({
       const entry = codeEntries.get(c.id);
       const code = (entry?.code ?? "").trim();
       if (!code) continue;
+      // Si la tarjeta detectó un match libre existente en el catálogo y el
+      // usuario no lo adoptó, preservamos la descripción vigente del
+      // catálogo: nunca sobrescribir desde un flujo que decía "crear".
+      const override = catalogOverrides.get(c.id);
+      const description =
+        codeModes.get(c.id) === "creating" && override != null
+          ? override
+          : (entry?.description ?? "").trim();
       codes.push({
         client_id: c.id,
         client_code: code,
-        description: (entry?.description ?? "").trim(),
+        description,
       });
     }
     return codes;
@@ -2745,6 +2919,17 @@ export function LineEditDialog({
                     if (cur === mode) return prev;
                     const m = new Map(prev);
                     m.set(clientId, mode);
+                    return m;
+                  });
+                }}
+                onCatalogOverrideChange={(clientId, description) => {
+                  setCatalogOverrides((prev) => {
+                    const cur = prev.get(clientId);
+                    const next = description ?? undefined;
+                    if (cur === next) return prev;
+                    const m = new Map(prev);
+                    if (next == null) m.delete(clientId);
+                    else m.set(clientId, next);
                     return m;
                   });
                 }}
