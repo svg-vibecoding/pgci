@@ -1228,6 +1228,10 @@ export function LineEditDialog({
   } | null>(null);
   const [skuPositionsExpanded, setSkuPositionsExpanded] = useState(false);
   const [skuBlockCollapsed, setSkuBlockCollapsed] = useState(false);
+  // Loading del bloque transversal mientras `prefillFromSku` resuelve las
+  // dos llamadas en paralelo. Reserva altura con skeleton para evitar que
+  // el modal empuje el contenido al aparecer el bloque.
+  const [skuBlockLoading, setSkuBlockLoading] = useState(false);
   const conflictSeq = useRef(0);
   const searchSeq = useRef(0);
   const PAGE_SIZE = 20;
@@ -1297,75 +1301,79 @@ export function LineEditDialog({
   const prefillFromSku = async (sku: string) => {
     const trimmed = sku.trim();
     if (!trimmed) return;
-    try {
-      const res = await lookupFn({ data: { sku: trimmed } });
+    // En edición el producto ya existe: no hay razón para esperar a
+    // `lookupProductBySku` antes de disparar `searchProducts`. Se lanzan en
+    // paralelo y cada resultado se procesa de forma independiente.
+    setSkuBlockLoading(true);
+    const [lookupR, searchR] = await Promise.allSettled([
+      lookupFn({ data: { sku: trimmed } }),
+      searchFn({
+        data: {
+          query: trimmed,
+          offset: 0,
+          limit: 5,
+          agreement_id: agreementId,
+        },
+      }),
+    ]);
+
+    // Metadatos del producto (ficha SUMATEC).
+    if (lookupR.status === "fulfilled") {
+      const res = lookupR.value;
       if (!res.found) {
         setProductMeta(null);
         setLookup({ kind: "not_found", catalogUpdatedAt: res.catalog_updated_at });
-        return;
-      }
-      setProductMeta({
-        erp_description: res.erp_description,
-        commercial_brand: res.commercial_brand,
-        updated_at: res.product_updated_at ?? null,
-      });
-      setLookup({
-        kind: res.status === "active" ? "active" : "inactive",
-        catalogUpdatedAt: res.catalog_updated_at,
-      });
-      // En edición también necesitamos las OTRAS posiciones del mismo SKU en
-      // el acuerdo (para las fichas y el bloque de conflicto). Reusamos
-      // searchProducts filtrado por agreement_id y descartamos la propia.
-      try {
-        const s = await searchFn({
-          data: {
-            query: trimmed,
-            offset: 0,
-            limit: 5,
-            agreement_id: agreementId,
-          },
+      } else {
+        setProductMeta({
+          erp_description: res.erp_description,
+          commercial_brand: res.commercial_brand,
+          updated_at: res.product_updated_at ?? null,
         });
-        const match = s.rows.find((r) => r.sku === trimmed);
-        if (match) {
-          setProductId(match.id);
-          if (match.agreement_status.kind === "in_agreement") {
-            const own = initial?.line_id ?? null;
-            // Regla de fichas en EDICIÓN (decidida con Sergio):
-            // - Editando una posición PUBLICADA (status !== 'draft', que en el
-            //   backend equivale a published_at != null): solo se muestran las
-            //   OTRAS publicadas. Los drafts no compiten y no la degradan, así
-            //   que incluirlos sería ruido que sugiere una causa incorrecta.
-            // - Editando un DRAFT: se muestran TODAS las demás (publicadas y
-            //   otros drafts). El draft necesita el panorama completo porque
-            //   choca contra publicadas y otros drafts podrían publicarse antes.
-            // En ambos casos se excluye la propia posición.
-            const editingPublished = !!initial?.status && initial.status !== "draft";
-            const others = match.agreement_status.positions.filter((p) => {
-              if (p.position_id === own) return false;
-              if (editingPublished) return p.published_at != null;
-              return true;
+        setLookup({
+          kind: res.status === "active" ? "active" : "inactive",
+          catalogUpdatedAt: res.catalog_updated_at,
+        });
+      }
+    } else {
+      console.error("lookupProductBySku failed", lookupR.reason);
+    }
+
+    // Otras posiciones del mismo SKU en el acuerdo (bloque transversal).
+    // Ver comentario en la versión previa: en edición PUBLICADA solo se
+    // muestran las OTRAS publicadas; en DRAFT se muestran todas las demás.
+    if (searchR.status === "fulfilled") {
+      const s = searchR.value;
+      const match = s.rows.find((r) => r.sku === trimmed);
+      if (match) {
+        setProductId(match.id);
+        if (match.agreement_status.kind === "in_agreement") {
+          const own = initial?.line_id ?? null;
+          const editingPublished = !!initial?.status && initial.status !== "draft";
+          const others = match.agreement_status.positions.filter((p) => {
+            if (p.position_id === own) return false;
+            if (editingPublished) return p.published_at != null;
+            return true;
+          });
+          if (others.length > 0) {
+            setSkuInAgreement({
+              sku: match.sku,
+              productDescription: match.erp_description,
+              positions: others,
             });
-            if (others.length > 0) {
-              setSkuInAgreement({
-                sku: match.sku,
-                productDescription: match.erp_description,
-                positions: others,
-              });
-            } else {
-              setSkuInAgreement(null);
-            }
           } else {
             setSkuInAgreement(null);
           }
+        } else {
+          setSkuInAgreement(null);
         }
-      } catch (e) {
-        console.error("prefill searchProducts failed", e);
       }
-    } catch (e) {
-      console.error("lookupProductBySku failed", e);
+    } else {
+      console.error("prefill searchProducts failed", searchR.reason);
     }
+    setSkuBlockLoading(false);
     await runConflict(trimmed, null);
   };
+
 
   useLayoutEffect(() => {
     if (!open) return;
@@ -1414,7 +1422,12 @@ export function LineEditDialog({
     setSearchHasMore(false);
     setSkuInAgreement(null);
     setSkuPositionsExpanded(false);
-    if (initial?.line_id && next.sku.trim()) {
+    setSkuBlockCollapsed(false);
+    const willPrefill = !!(initial?.line_id && next.sku.trim());
+    // Encender el skeleton ya, en el mismo commit sincrónico, para que el
+    // hueco esté reservado antes del primer paint del modal.
+    setSkuBlockLoading(willPrefill);
+    if (willPrefill) {
       void prefillFromSku(next.sku);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1977,6 +1990,40 @@ export function LineEditDialog({
             {agreementName || "Acuerdo comercial"}
           </DialogDescription>
         </DialogHeader>
+
+        {skuBlockLoading && !skuInAgreement && (
+          <div
+            className="shrink-0 border-b border-border bg-muted/30 px-6 py-3"
+            aria-busy="true"
+            aria-live="polite"
+          >
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <Info className="h-4 w-4 text-accent shrink-0 opacity-40" aria-hidden="true" />
+                <div className="h-4 w-64 rounded bg-muted animate-pulse" />
+              </div>
+              <div className="h-4 w-14 rounded bg-muted animate-pulse" />
+            </div>
+            <div className="grid gap-3 items-stretch grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="rounded-md border border-border bg-white p-3 flex flex-col gap-2 h-[116px]"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="h-5 w-20 rounded-full bg-muted animate-pulse" />
+                    <div className="h-4 w-20 rounded bg-muted animate-pulse" />
+                  </div>
+                  <div className="h-3 w-40 rounded bg-muted animate-pulse" />
+                  <div className="border-t border-border mt-1 pt-2 space-y-2">
+                    <div className="h-3 w-52 rounded bg-muted animate-pulse" />
+                    <div className="h-3 w-32 rounded bg-muted animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {skuInAgreement && skuInAgreement.positions.length > 0 && (() => {
           const positions = skuInAgreement.positions;
