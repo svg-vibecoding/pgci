@@ -2307,7 +2307,7 @@ export function LineEditDialog({
                               : pos.position_status === "requires_review"
                                 ? "Posición en revisión"
                                 : pos.position_status === "draft"
-                                  ? "Registro en gestión"
+                                  ? "Posición en gestión"
                                   : "Posición activa";
                           const sections: PositionTakenSection[] = [
                             {
