@@ -962,14 +962,14 @@ function AgreementLinesPage() {
           <AlertDescription className="mt-1 pl-0">
                 <div className="space-y-0.5 text-sm">
                   <p>
-                    {conflictGroups.length} códigos en <span className="font-semibold">{conflictPositionCount}</span> posiciones no vinculadas con precios distintos
+                    {conflictGroups.length} códigos en <span className="font-semibold">{conflictPositionCount}</span> posiciones con precios distintos
                   </p>
                   <p>
-                    {repeatedGroups.length} códigos en <span className="font-semibold">{repeatedPositionCount}</span> posiciones no vinculadas / {unifiedGroups.length} códigos en <span className="font-semibold">{unifiedPositionCount}</span> posiciones vinculadas
+                    {repeatedGroups.length} códigos en <span className="font-semibold">{repeatedPositionCount}</span> posiciones con el mismo precio
                   </p>
                 </div>
                 <p className="mt-1 text-xs opacity-90">
-                  Las posiciones pueden vincularse para compartir un mismo precio; las no vinculadas se gestionan de forma independiente.
+                  Cada posición gestiona su precio de forma independiente.
                 </p>
               </AlertDescription>
         </Alert>
