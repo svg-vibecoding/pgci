@@ -631,6 +631,26 @@ function ClientCodeCard({
     setResults([]);
     setExpandedId(null);
     setPopoverOpen(false);
+    setExistingMatch(null);
+    setTakenBlock(null);
+  };
+
+  // Case B: código libre existente en el catálogo. El usuario decide adoptar
+  // el producto vigente. Cambia a modo edit y trae la descripción real del
+  // catálogo (nunca la tecleada).
+  const handleAdoptExistingMatch = () => {
+    if (!existingMatch || existingMatch.status.kind !== "free") return;
+    onChange({
+      code: existingMatch.client_code,
+      description: existingMatch.description ?? "",
+    });
+    setOriginalDescription(existingMatch.description ?? "");
+    setIsNew(false);
+    setMode("edit");
+    setShowCodeSearch(false);
+    setShowDescriptionEdit(false);
+    setExistingMatch(null);
+    setTakenBlock(null);
   };
 
   const doReactivate = async () => {
