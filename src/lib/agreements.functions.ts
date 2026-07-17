@@ -768,6 +768,8 @@ export type ProductAgreementPosition = {
   position_status: "active" | "excluded" | "requires_review" | "draft";
   published_at: string | null;
   sale_price: number | null;
+  start_date: string | null;
+  end_date: string | null;
   codes: Array<{
     client_id: string;
     client_name: string | null;
@@ -777,6 +779,7 @@ export type ProductAgreementPosition = {
   exclusion_reason: string | null;
   exclusion_date: string | null;
 };
+
 
 export type ProductAgreementStatus =
   | { kind: "free" }
