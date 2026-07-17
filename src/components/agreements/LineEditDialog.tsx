@@ -1060,20 +1060,10 @@ function ClientCodeSearchList({
           );
         }
 
-        const badgeStatus: "neutral" | "warning" | "info" =
-          posStatus === "excluded"
-            ? "neutral"
-            : posStatus === "requires_review" || posStatus === "draft"
-              ? "info"
-              : "warning";
-        const badgeLabel =
-          posStatus === "excluded"
-            ? "Posición excluida"
-            : posStatus === "requires_review"
-              ? "Posición en revisión"
-              : posStatus === "draft"
-                ? "Registro en gestión"
-                : "Posición activa";
+        const isDraft = posStatus === "draft";
+        const badgeStatus: "info" | "neutral" = isDraft ? "neutral" : "info";
+        const badgeLabel = isDraft ? "En gestión" : "En posición";
+        const badgeIcon = isDraft ? Pencil : Info;
 
         return (
           <button
@@ -1086,7 +1076,12 @@ function ClientCodeSearchList({
               <span className="font-mono text-sm font-medium text-muted-foreground">
                 {r.client_code}
               </span>
-              <StatusBadge size="sm" status={badgeStatus} label={badgeLabel} />
+              <StatusBadge
+                size="sm"
+                status={badgeStatus}
+                label={badgeLabel}
+                icon={badgeIcon}
+              />
             </div>
             {r.description && (
               <span className="text-xs text-muted-foreground">{r.description}</span>
