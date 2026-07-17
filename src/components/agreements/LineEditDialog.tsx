@@ -1308,7 +1308,8 @@ export function LineEditDialog({
     // En edición el producto ya existe: no hay razón para esperar a
     // `lookupProductBySku` antes de disparar `searchProducts`. Se lanzan en
     // paralelo y cada resultado se procesa de forma independiente.
-    setSkuBlockLoading(true);
+    // El skeleton lo enciende el efecto de apertura solo si la semilla
+    // (`sibling_positions_hint`) indica que hay hermanas; aquí no se toca.
     const [lookupR, searchR] = await Promise.allSettled([
       lookupFn({ data: { sku: trimmed } }),
       searchFn({
