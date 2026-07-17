@@ -2555,6 +2555,8 @@ export function LineEditDialog({
                 clients={clientCards}
                 values={codeEntries}
                 agreementId={agreementId}
+                agreementStartDate={agreementStartDate}
+                agreementEndDate={agreementEndDate}
                 initialLineId={initial?.line_id ?? null}
                 open={open}
                 requiredForClientIds={requiredClientIds}
