@@ -1259,10 +1259,9 @@ export type AgreementSkuGroup = {
   position_ids: string[];
   positions: AgreementSkuGroupPosition[];
   prices: number[];
-  linked: boolean;
   // Contrato §7: agrupación por SKU + cliente.
-  // "unified" = precio vinculado; "conflict" = precios distintos; "repeated" = repetido con mismo precio.
-  state: "conflict" | "unified" | "repeated";
+  // "conflict" = precios distintos; "repeated" = repetido con mismo precio.
+  state: "conflict" | "repeated";
 };
 
 export const listAgreementSkuGroups = createServerFn({ method: "POST" })
