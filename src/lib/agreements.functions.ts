@@ -964,7 +964,10 @@ export const searchProducts = createServerFn({ method: "POST" })
           position_status: posStatus,
           published_at: (p.published_at as string | null) ?? null,
           sale_price: (p.sale_price as number | null) ?? null,
+          start_date: (p.start_date as string | null) ?? null,
+          end_date: (p.end_date as string | null) ?? null,
           codes: codesByPos.get(p.id as string) ?? [],
+
           exclusion_reason: excl?.reason ?? null,
           exclusion_date: excl?.date ?? null,
         };
