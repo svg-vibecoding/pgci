@@ -1991,6 +1991,40 @@ export function LineEditDialog({
           </DialogDescription>
         </DialogHeader>
 
+        {skuBlockLoading && !skuInAgreement && (
+          <div
+            className="shrink-0 border-b border-border bg-muted/30 px-6 py-3"
+            aria-busy="true"
+            aria-live="polite"
+          >
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <Info className="h-4 w-4 text-accent shrink-0 opacity-40" aria-hidden="true" />
+                <div className="h-4 w-64 rounded bg-muted animate-pulse" />
+              </div>
+              <div className="h-4 w-14 rounded bg-muted animate-pulse" />
+            </div>
+            <div className="grid gap-3 items-stretch grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="rounded-md border border-border bg-white p-3 flex flex-col gap-2 h-[116px]"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="h-5 w-20 rounded-full bg-muted animate-pulse" />
+                    <div className="h-4 w-20 rounded bg-muted animate-pulse" />
+                  </div>
+                  <div className="h-3 w-40 rounded bg-muted animate-pulse" />
+                  <div className="border-t border-border mt-1 pt-2 space-y-2">
+                    <div className="h-3 w-52 rounded bg-muted animate-pulse" />
+                    <div className="h-3 w-32 rounded bg-muted animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {skuInAgreement && skuInAgreement.positions.length > 0 && (() => {
           const positions = skuInAgreement.positions;
           const visible = skuPositionsExpanded ? positions : positions.slice(0, 3);
