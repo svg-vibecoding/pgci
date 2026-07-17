@@ -1936,46 +1936,6 @@ export function LineEditDialog({
   };
 
 
-  const linkMut = useMutation({
-    mutationFn: async () => {
-      if (!productId) throw new Error("SKU no válido para vincular");
-      const price = parsePriceInput(v.sale_price);
-      if (price == null) throw new Error("Ingresa un precio antes de vincular");
-      if (price < 0) throw new Error("Precio inválido");
-      return linkFn({
-        data: { agreement_id: agreementId, product_id: productId, price },
-      });
-    },
-    onSuccess: (res) => {
-      setIsLinked(true);
-      setLinkError(null);
-      toast.success(
-        `SKU vinculado. Precio aplicado a ${res.updated} ${res.updated === 1 ? "posición" : "posiciones"}.`,
-      );
-      invalidateLines();
-      if (v.sku.trim()) void runConflict(v.sku, productId);
-    },
-    onError: (e: Error) => {
-      setLinkError(e.message);
-      toast.error(e.message);
-    },
-  });
-
-  const unlinkMut = useMutation({
-    mutationFn: async () => {
-      if (!productId) throw new Error("SKU no válido para desvincular");
-      return unlinkFn({
-        data: { agreement_id: agreementId, product_id: productId },
-      });
-    },
-    onSuccess: () => {
-      setIsLinked(false);
-      setLinkError(null);
-      toast.success("SKU desvinculado.");
-      invalidateLines();
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
 
   const readonlyClass = "bg-muted/70 border-transparent shadow-none cursor-not-allowed focus-visible:ring-0 focus-visible:ring-offset-0";
   const inputClass = "";
