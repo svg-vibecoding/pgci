@@ -241,6 +241,8 @@ function ClientCodeCards({
   onChange,
   onRemove,
   agreementId,
+  agreementStartDate,
+  agreementEndDate,
   initialLineId,
   open,
   onReactivated,
@@ -255,6 +257,8 @@ function ClientCodeCards({
   onChange: (clientId: string, next: ClientCodeEntry) => void;
   onRemove: (clientId: string) => void;
   agreementId: string;
+  agreementStartDate?: string | null;
+  agreementEndDate?: string | null;
   initialLineId: string | null;
   open: boolean;
   onReactivated: () => void;
@@ -281,6 +285,8 @@ function ClientCodeCards({
             card={c}
             entry={entry}
             agreementId={agreementId}
+            agreementStartDate={agreementStartDate}
+            agreementEndDate={agreementEndDate}
             initialLineId={initialLineId}
             open={open}
             required={requiredForClientIds?.has(c.id) ?? false}
