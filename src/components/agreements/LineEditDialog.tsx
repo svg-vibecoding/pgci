@@ -587,7 +587,8 @@ function ClientCodeCard({
         : ps === "requires_review"
           ? "Posición en revisión"
           : ps === "draft"
-            ? "Posición en gestión"
+            ? "En gestión"
+
             : "Posición activa";
     const statusBadgeStatus: "active" | "danger" | "neutral" =
       ps === "active"
