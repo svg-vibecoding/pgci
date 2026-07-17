@@ -948,14 +948,51 @@ function ClientCodeCard({
               onChange={(e) => onChange({ ...entry, description: e.target.value })}
             />
           </div>
-          {entry.code.trim() !== "" && entry.description.trim() !== "" && (
-            <div className="flex items-start gap-2 rounded-md border border-[var(--status-info-base)]/40 bg-[var(--status-info-soft)] px-3 py-2 text-xs text-[var(--status-info-strong)]">
-              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--status-info-strong)]" />
-              <span>
-                {`El producto se creará en el catálogo de ${card.name} al guardar la posición.`}
-              </span>
-            </div>
-          )}
+          {/* Case C: código tomado en otra posición del acuerdo (RN-MATCH-01).
+              Reutiliza el panel del buscador y bloquea el guardado desde
+              creatingIncomplete. */}
+          {takenBlock && takenAlert}
+          {takenBlock && takenActions}
+          {/* Case B: código existe libre en el catálogo. Avisa y ofrece
+              adoptar el producto existente. No bloquea el guardado. */}
+          {!takenBlock &&
+            existingMatch &&
+            existingMatch.status.kind === "free" &&
+            !disabled && (
+              <div className="flex items-start justify-between gap-3 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-[var(--status-warning-strong)]">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <span>
+                    Este código ya existe en el catálogo de {card.name}
+                    {existingMatch.description
+                      ? `: “${existingMatch.description}”. `
+                      : ". "}
+                    Si guardas así, se usará la descripción actual del catálogo
+                    (no la tecleada aquí).
+                  </span>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="shrink-0"
+                  onClick={handleAdoptExistingMatch}
+                >
+                  Usar el producto existente
+                </Button>
+              </div>
+            )}
+          {!takenBlock &&
+            !(existingMatch && existingMatch.status.kind === "free") &&
+            entry.code.trim() !== "" &&
+            entry.description.trim() !== "" && (
+              <div className="flex items-start gap-2 rounded-md border border-[var(--status-info-base)]/40 bg-[var(--status-info-soft)] px-3 py-2 text-xs text-[var(--status-info-strong)]">
+                <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--status-info-strong)]" />
+                <span>
+                  {`El producto se creará en el catálogo de ${card.name} al guardar la posición.`}
+                </span>
+              </div>
+            )}
 
           {!disabled && (
             <div className="flex justify-end">
