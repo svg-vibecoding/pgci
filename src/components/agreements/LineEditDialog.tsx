@@ -1504,7 +1504,6 @@ export function LineEditDialog({
     setSkuInAgreement(null);
     setSkuPositionsExpanded(false);
     setNConflict({ kind: "idle", lines: [] });
-    setIsLinked(false);
     setSaveError(null);
   };
 
