@@ -2226,9 +2226,6 @@ export function LineEditDialog({
                   )}
 
                   {skuInAgreement && (() => {
-                    const positions = skuInAgreement.positions;
-                    const visible = skuPositionsExpanded ? positions : positions.slice(0, 3);
-                    const hidden = positions.length - visible.length;
                     const hasSkuConflict =
                       isEdit &&
                       (initial?.pending_reason ?? "")
@@ -2247,7 +2244,6 @@ export function LineEditDialog({
                           </AlertDescription>
                         </Alert>
 
-
                         {hasSkuConflict && (
                           <Alert variant="warning">
                             <AlertTriangle className="h-4 w-4" />
@@ -2265,148 +2261,10 @@ export function LineEditDialog({
                             </AlertDescription>
                           </Alert>
                         )}
-
-                        <div className="space-y-3">
-                        <div className="space-y-3">
-
-
-                        {visible.map((pos) => {
-                          const variant = variantForPositionStatus(pos.position_status);
-                          const title =
-                            pos.position_status === "excluded"
-                              ? "Posición excluida"
-                              : pos.position_status === "requires_review"
-                                ? "Posición en revisión"
-                                : pos.position_status === "draft"
-                                  ? "Posición en gestión"
-                                  : "Posición activa";
-                          const sections: PositionTakenSection[] = [
-                            {
-                              label: "SUMATEC",
-                              body: (
-                                <>
-                                  <span className="font-mono">
-                                    {skuInAgreement.sku}
-                                  </span>
-                                  {" "}· {skuInAgreement.productDescription ?? "—"}
-                                  {pos.sale_price != null && (
-                                    <span className="font-sans font-medium">
-                                      {" "}· {formatMoneyCOP(pos.sale_price)}
-                                    </span>
-                                  )}
-                                </>
-                              ),
-                            },
-                          ];
-                          if (pos.codes.length === 0) {
-                            sections.push({
-                              label: "SIN CÓDIGO DE CLIENTE",
-                              body: (
-                                <span className="text-muted-foreground">
-                                  Esta posición ocupa el SKU sin código que la distinga.
-                                </span>
-                              ),
-                            });
-                          } else {
-                            for (const c of pos.codes) {
-                              sections.push({
-                                label: c.client_name ?? "CLIENTE",
-                                body: (
-                                  <>
-                                    <span className="font-mono">{c.client_code}</span>
-                                    {" "}· {c.description ?? "—"}
-                                  </>
-                                ),
-                              });
-                            }
-                          }
-                          if (pos.position_status === "excluded") {
-                            const dateLabel = (() => {
-                              if (!pos.exclusion_date) return "EXCLUIDA";
-                              const d = new Date(pos.exclusion_date);
-                              if (Number.isNaN(d.getTime())) return "EXCLUIDA";
-                              const s = d.toLocaleDateString("es-CO", {
-                                day: "2-digit",
-                                month: "2-digit",
-                                year: "numeric",
-                              });
-                              return `EXCLUIDA EL ${s}`;
-                            })();
-                            sections.push({
-                              label: "MOTIVO DE EXCLUSIÓN",
-                              body: (
-                                <div className="space-y-1.5">
-                                  <p className="text-sm text-muted-foreground">
-                                    {pos.exclusion_reason ?? "—"}
-                                  </p>
-                                  <span className="text-[11px] font-medium text-text-tertiary">
-                                    {dateLabel}
-                                  </span>
-                                </div>
-                              ),
-                            });
-                          }
-                          const hasCode = pos.codes.length > 0;
-                          const isExcluded = pos.position_status === "excluded";
-                          const codedClientIds = new Set(
-                            pos.codes.map((c) => c.client_id),
-                          );
-                          const hasMissingClient =
-                            isCreatingLine &&
-                            hasCode &&
-                            !isExcluded &&
-                            clientCards.some((c) => !codedClientIds.has(c.id));
-                          // Un solo CTA de edición por posición.
-                          const editLabel = isExcluded
-                            ? "Reactivar esa posición"
-                            : "Ir a esa posición";
-                          const showEditCta = true;
-
-                          return (
-                            <div key={pos.position_id} className="space-y-1">
-                              <PositionTakenPanel
-                                variant={variant}
-                                title={title}
-                                sections={sections}
-                              />
-                              {showEditCta && (
-                                <div className="flex justify-end">
-                                  <Button
-                                    type="button"
-                                    size="sm"
-                                    variant="link"
-                                    className="h-auto px-0 text-muted-foreground hover:text-foreground"
-                                    onClick={() =>
-                                      onSwitchToPosition?.(pos.position_id)
-                                    }
-                                  >
-                                    {editLabel}
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-
-                        {hidden > 0 && (
-                          <div className="flex justify-center">
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="link"
-                              onClick={() => setSkuPositionsExpanded(true)}
-                            >
-                              Ver {hidden} {hidden === 1 ? "posición más" : "posiciones más"}
-                            </Button>
-                          </div>
-                        )}
-                        </div>
-
-                        </div>
                       </div>
-
                     );
                   })()}
+
 
                 </div>
               </section>
