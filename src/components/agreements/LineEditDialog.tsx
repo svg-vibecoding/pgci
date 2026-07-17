@@ -10,6 +10,7 @@ import {
   Info,
   Loader2,
   Lock,
+  Pencil,
   Plus,
   Search,
 } from "lucide-react";
@@ -240,6 +241,8 @@ function ClientCodeCards({
   onChange,
   onRemove,
   agreementId,
+  agreementStartDate,
+  agreementEndDate,
   initialLineId,
   open,
   onReactivated,
@@ -254,6 +257,8 @@ function ClientCodeCards({
   onChange: (clientId: string, next: ClientCodeEntry) => void;
   onRemove: (clientId: string) => void;
   agreementId: string;
+  agreementStartDate?: string | null;
+  agreementEndDate?: string | null;
   initialLineId: string | null;
   open: boolean;
   onReactivated: () => void;
@@ -280,6 +285,8 @@ function ClientCodeCards({
             card={c}
             entry={entry}
             agreementId={agreementId}
+            agreementStartDate={agreementStartDate}
+            agreementEndDate={agreementEndDate}
             initialLineId={initialLineId}
             open={open}
             required={requiredForClientIds?.has(c.id) ?? false}
@@ -309,6 +316,8 @@ type TakenBlock = {
   product_description: string | null;
   sale_price: number | null;
   position_status: "active" | "requires_review" | "draft" | "excluded";
+  position_start_date: string | null;
+  position_end_date: string | null;
   exclusion_reason: string | null;
   exclusion_date: string | null;
 };
@@ -318,6 +327,8 @@ function ClientCodeCard({
   card,
   entry,
   agreementId,
+  agreementStartDate,
+  agreementEndDate,
   initialLineId,
   open,
   required = false,
@@ -332,6 +343,8 @@ function ClientCodeCard({
   card: ClientCard;
   entry: ClientCodeEntry;
   agreementId: string;
+  agreementStartDate?: string | null;
+  agreementEndDate?: string | null;
   initialLineId: string | null;
   open: boolean;
   required?: boolean;
@@ -460,6 +473,8 @@ function ClientCodeCard({
       product_description: r.status.product_description,
       sale_price: r.status.sale_price,
       position_status: r.status.position_status,
+      position_start_date: r.status.position_start_date,
+      position_end_date: r.status.position_end_date,
       exclusion_reason: excluded ? r.status.exclusion_reason : null,
       exclusion_date: excluded ? r.status.exclusion_date : null,
     });
@@ -566,15 +581,31 @@ function ClientCodeCard({
 
   const takenAlert = takenBlock && (() => {
     const ps = takenBlock.position_status;
-    const variant = variantForPositionStatus(ps);
-    const title =
+    const statusLabel =
       ps === "excluded"
-        ? "Este código está vinculado a una posición excluida del acuerdo"
+        ? "Posición excluida"
         : ps === "requires_review"
-          ? "Este código está en una posición en revisión del acuerdo"
+          ? "Posición en revisión"
           : ps === "draft"
-            ? "Este código está reservado por un registro en gestión del acuerdo"
-            : "Este código ya está vinculado a una posición del acuerdo";
+            ? "Posición en gestión"
+            : "Posición activa";
+    const statusBadgeStatus: "active" | "danger" | "neutral" =
+      ps === "active"
+        ? "active"
+        : ps === "requires_review"
+          ? "danger"
+          : "neutral";
+    const badgeIcon = ps === "draft" ? Pencil : undefined;
+    const effStart =
+      fmtDateLocal(takenBlock.position_start_date) ??
+      fmtDateLocal(agreementStartDate);
+    const effEnd =
+      fmtDateLocal(takenBlock.position_end_date) ??
+      fmtDateLocal(agreementEndDate);
+    const vigencia =
+      effStart || effEnd
+        ? `${effStart ?? "—"} – ${effEnd ?? "—"}`
+        : null;
     const exclusionDateLabel = (() => {
       if (ps !== "excluded" || !takenBlock.exclusion_date) return "EXCLUIDA";
       const d = new Date(takenBlock.exclusion_date);
@@ -602,6 +633,11 @@ function ClientCodeCard({
           <>
             <span className="font-mono">{takenBlock.sku ?? "—"}</span>
             {" "}· {takenBlock.product_description ?? "—"}
+            {vigencia && (
+              <>
+                {" "}· <span className="font-sans">{vigencia}</span>
+              </>
+            )}
             {takenBlock.sale_price != null && (
               <span className="font-sans font-medium">
                 {" "}· {formatMoneyCOP(takenBlock.sale_price)}
@@ -626,41 +662,35 @@ function ClientCodeCard({
         ),
       });
     }
-    return <PositionTakenPanel variant={variant} title={title} sections={sections} />;
+    return (
+      <PositionTakenPanel
+        variant="info"
+        title="Este código ya está en el acuerdo"
+        titleRight={
+          <StatusBadge
+            size="sm"
+            status={statusBadgeStatus}
+            label={statusLabel}
+            icon={badgeIcon}
+          />
+        }
+        sections={sections}
+      />
+    );
   })();
 
   const takenActions = takenBlock && !disabled && (() => {
     const ps = takenBlock.position_status;
-    const primary = !initialLineId
-      ? ps === "excluded"
-        ? {
-            label: "Reactivar esta posición",
-            onClick: () =>
-              setReactivateTarget({
-                position_id: takenBlock.position_id,
-                sku: takenBlock.sku,
-              }),
-          }
-        : ps === "requires_review"
-          ? {
-              label: "Ir a esa posición",
-              onClick: () => onRequestSwitchToPosition(takenBlock.position_id),
-            }
-          : ps === "draft"
-            ? {
-                label: "Ir a ese registro en gestión",
-                onClick: () => onRequestSwitchToPosition(takenBlock.position_id),
-              }
-            : {
-                label: "Editar esta posición",
-                onClick: () => onRequestSwitchToPosition(takenBlock.position_id),
-              }
-      : null;
+    const isExcluded = ps === "excluded";
     return (
       <div className="flex justify-end gap-2">
-        {primary && (
-          <Button type="button" size="sm" onClick={primary.onClick}>
-            {primary.label}
+        {!isExcluded && (
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => onRequestSwitchToPosition(takenBlock.position_id)}
+          >
+            Ir a esa posición
           </Button>
         )}
         <Button
@@ -1030,20 +1060,10 @@ function ClientCodeSearchList({
           );
         }
 
-        const badgeStatus: "neutral" | "warning" | "info" =
-          posStatus === "excluded"
-            ? "neutral"
-            : posStatus === "requires_review" || posStatus === "draft"
-              ? "info"
-              : "warning";
-        const badgeLabel =
-          posStatus === "excluded"
-            ? "Posición excluida"
-            : posStatus === "requires_review"
-              ? "Posición en revisión"
-              : posStatus === "draft"
-                ? "Registro en gestión"
-                : "Posición activa";
+        const isDraft = posStatus === "draft";
+        const badgeStatus: "info" | "neutral" = isDraft ? "neutral" : "info";
+        const badgeLabel = isDraft ? "En gestión" : "En posición";
+        const badgeIcon = isDraft ? Pencil : Info;
 
         return (
           <button
@@ -1056,7 +1076,12 @@ function ClientCodeSearchList({
               <span className="font-mono text-sm font-medium text-muted-foreground">
                 {r.client_code}
               </span>
-              <StatusBadge size="sm" status={badgeStatus} label={badgeLabel} />
+              <StatusBadge
+                size="sm"
+                status={badgeStatus}
+                label={badgeLabel}
+                icon={badgeIcon}
+              />
             </div>
             {r.description && (
               <span className="text-xs text-muted-foreground">{r.description}</span>
@@ -2540,6 +2565,8 @@ export function LineEditDialog({
                 clients={clientCards}
                 values={codeEntries}
                 agreementId={agreementId}
+                agreementStartDate={agreementStartDate}
+                agreementEndDate={agreementEndDate}
                 initialLineId={initial?.line_id ?? null}
                 open={open}
                 requiredForClientIds={requiredClientIds}

@@ -1012,6 +1012,8 @@ export type ClientCodeSearchResult = {
         sku: string | null;
         product_description: string | null;
         sale_price: number | null;
+        position_start_date: string | null;
+        position_end_date: string | null;
         exclusion_reason: string | null;
         exclusion_date: string | null;
       };
@@ -1113,7 +1115,7 @@ export const searchClientCodes = createServerFn({ method: "POST" })
     const { data: apcc, error: apccErr } = await context.supabase
       .from("agreement_position_client_codes")
       .select(
-        "client_product_id, agreement_position_id, agreement_positions!inner(id, status, sale_price, product_id, products(sku, erp_description))",
+        "client_product_id, agreement_position_id, agreement_positions!inner(id, status, sale_price, start_date, end_date, product_id, products(sku, erp_description))",
       )
       .eq("agreement_id", data.agreement_id)
       .in("client_product_id", allIds)
@@ -1130,12 +1132,16 @@ export const searchClientCodes = createServerFn({ method: "POST" })
       sku: string | null;
       product_description: string | null;
       sale_price: number | null;
+      start_date: string | null;
+      end_date: string | null;
     }> = [];
     for (const row of apcc ?? []) {
       const pos = row.agreement_positions as {
         id: string;
         status: string;
         sale_price: number | null;
+        start_date: string | null;
+        end_date: string | null;
         product_id: string | null;
         products: { sku: string | null; erp_description: string | null } | null;
       } | null;
@@ -1155,6 +1161,8 @@ export const searchClientCodes = createServerFn({ method: "POST" })
         sku: pos.products?.sku ?? null,
         product_description: pos.products?.erp_description ?? null,
         sale_price: pos.sale_price,
+        start_date: pos.start_date ?? null,
+        end_date: pos.end_date ?? null,
       });
       if (posStatus === "excluded") excludedPosIds.push(pos.id);
     }
@@ -1188,6 +1196,8 @@ export const searchClientCodes = createServerFn({ method: "POST" })
         sku: t.sku,
         product_description: t.product_description,
         sale_price: t.sale_price,
+        position_start_date: t.start_date,
+        position_end_date: t.end_date,
         exclusion_reason: excl?.reason ?? null,
         exclusion_date: excl?.date ?? null,
       });
