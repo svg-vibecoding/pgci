@@ -1200,6 +1200,13 @@ export function LineEditDialog({
   );
   const hasCreatingIncomplete = Array.from(creatingIncomplete.values()).some(Boolean);
 
+  // Modo actual de cada ClientCodeCard (search | creating | edit). Se usa
+  // para saber si un cliente aporta un client_product_id resoluble: en 'edit'
+  // siempre; en 'creating' solo cuando el formulario está completo.
+  const [codeModes, setCodeModes] = useState<Map<string, "search" | "creating" | "edit">>(
+    new Map(),
+  );
+
   // Cambio a otra posición desde la alerta "código ya asignado".
   const [pendingSwitchTarget, setPendingSwitchTarget] = useState<string | null>(null);
 
