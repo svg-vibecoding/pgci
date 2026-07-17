@@ -828,7 +828,7 @@ export const searchProducts = createServerFn({ method: "POST" })
 
       const { data: positions, error: posErr } = await context.supabase
         .from("agreement_positions")
-        .select("id, status, sale_price, product_id, published_at")
+        .select("id, status, sale_price, start_date, end_date, product_id, published_at")
         .eq("agreement_id", data.agreement_id)
         .in("product_id", productIds);
       if (posErr) throw new Error(`No se pudieron consultar posiciones: ${posErr.message}`);
