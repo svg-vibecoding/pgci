@@ -466,10 +466,97 @@ function ClientCodeCard({
     return () => clearTimeout(t);
   }, [query, popoverOpen, disabled, agreementId, card.id, searchFn, open]);
 
-  // Reportar si esta tarjeta bloquea el guardado (creando con campos vacíos).
+  // Detección de match del código tecleado contra el catálogo del cliente.
+  // Solo corre en mode === "creating" y con code >= 2 chars. Sin match, sin
+  // efecto; con match libre, avisa (no bloquea); con match tomado en otra
+  // posición del acuerdo, popula takenBlock y bloquea (RN-MATCH-01).
+  useEffect(() => {
+    if (!open || disabled) return;
+    if (mode !== "creating") {
+      setExistingMatch(null);
+      setMatchLoading(false);
+      return;
+    }
+    const code = entry.code.trim();
+    if (code.length < 2) {
+      setExistingMatch(null);
+      setMatchLoading(false);
+      return;
+    }
+    const s = ++matchSeq.current;
+    setMatchLoading(true);
+    const t = setTimeout(async () => {
+      try {
+        const res = await searchFn({
+          data: { agreement_id: agreementId, client_id: card.id, query: code },
+        });
+        if (s !== matchSeq.current) return;
+        const exact =
+          res.find(
+            (r) => r.client_code.toLowerCase() === code.toLowerCase(),
+          ) ?? null;
+        setExistingMatch(exact);
+        // Si el match es "taken", trasladar a takenBlock para reutilizar el
+        // panel visual y las acciones ya implementadas del buscador.
+        if (exact && exact.status.kind === "taken") {
+          const st = exact.status;
+          const excluded = st.position_status === "excluded";
+          setTakenBlock({
+            position_id: st.position_id,
+            client_code: exact.client_code,
+            client_description: exact.description,
+            sku: st.sku,
+            product_description: st.product_description,
+            sale_price: st.sale_price,
+            position_status: st.position_status,
+            position_start_date: st.position_start_date,
+            position_end_date: st.position_end_date,
+            exclusion_reason: excluded ? st.exclusion_reason : null,
+            exclusion_date: excluded ? st.exclusion_date : null,
+          });
+        } else {
+          // Limpiar takenBlock solo si vino de una detección previa
+          // (usuario cambió el código a uno libre / inexistente).
+          setTakenBlock((prev) =>
+            prev && prev.client_code.toLowerCase() === code.toLowerCase()
+              ? null
+              : prev,
+          );
+        }
+      } catch (e) {
+        if (s !== matchSeq.current) return;
+        console.error("searchClientCodes (creating match) failed", e);
+        setExistingMatch(null);
+      } finally {
+        if (s === matchSeq.current) setMatchLoading(false);
+      }
+    }, 250);
+    return () => clearTimeout(t);
+  }, [entry.code, mode, open, disabled, agreementId, card.id, searchFn]);
+
+  // Reporta al padre la descripción del catálogo cuando hay match libre
+  // pendiente de resolver. El padre la usa en buildClientCodes para NO
+  // sobreescribir la descripción vigente del client_product al guardar.
+  useEffect(() => {
+    if (mode === "creating" && existingMatch && existingMatch.status.kind === "free") {
+      onCatalogOverrideChange(existingMatch.description);
+    } else {
+      onCatalogOverrideChange(null);
+    }
+    return () => onCatalogOverrideChange(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, existingMatch]);
+
+  // Reportar si esta tarjeta bloquea el guardado.
+  // - creating con campos vacíos: incompleto (falta información).
+  // - creating con código tomado por otra posición: bloquea (RN-MATCH-01).
+  // - creating con match libre: NO bloquea (código libre → posición válida;
+  //   la descripción del catálogo se preserva vía onCatalogOverrideChange).
   const creatingIncomplete =
     mode === "creating" &&
-    (entry.code.trim() === "" || entry.description.trim() === "");
+    ((entry.code.trim() === "" || entry.description.trim() === "") ||
+      (!!existingMatch && existingMatch.status.kind === "taken") ||
+      !!takenBlock);
   useEffect(() => {
     onCreatingIncompleteChange(creatingIncomplete);
     return () => onCreatingIncompleteChange(false);
