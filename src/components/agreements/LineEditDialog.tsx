@@ -1977,7 +1977,142 @@ export function LineEditDialog({
           </DialogDescription>
         </DialogHeader>
 
+        {skuInAgreement && skuInAgreement.positions.length > 0 && (() => {
+          const positions = skuInAgreement.positions;
+          const visible = skuPositionsExpanded ? positions : positions.slice(0, 3);
+          const hidden = positions.length - visible.length;
+          const statusMeta: Record<
+            SkuAgreementPosition["position_status"],
+            { label: string; status: "active" | "danger" | "neutral" }
+          > = {
+            active: { label: "Activa", status: "active" },
+            requires_review: { label: "Revisar", status: "danger" },
+            draft: { label: "En gestión", status: "neutral" },
+            excluded: { label: "Excluida", status: "neutral" },
+          };
+          const effRange = (pos: SkuAgreementPosition) => {
+            const s = fmtDateLocal(pos.start_date) ?? fmtDateLocal(agreementStartDate);
+            const e = fmtDateLocal(pos.end_date) ?? fmtDateLocal(agreementEndDate);
+            if (!s && !e) return null;
+            return `${s ?? "—"} → ${e ?? "—"}`;
+          };
+          const fmtExclusionDate = (iso: string | null) => {
+            if (!iso) return null;
+            const d = new Date(iso);
+            if (Number.isNaN(d.getTime())) return null;
+            return d.toLocaleDateString("es-CO", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+            });
+          };
+          const gridCols =
+            positions.length === 1
+              ? "grid-cols-1"
+              : "grid-cols-1 md:grid-cols-2 xl:grid-cols-3";
+          return (
+            <div className="shrink-0 max-h-[40vh] overflow-y-auto border-b border-border bg-muted/30 px-6 py-4">
+              <div className="mb-3 flex items-baseline justify-between gap-3">
+                <h3 className="text-sm font-semibold text-foreground">
+                  Este SKU ya está en otras posiciones del acuerdo
+                </h3>
+                <span className="text-xs text-muted-foreground">
+                  {positions.length}
+                </span>
+              </div>
+              <div className={cn("grid gap-3", gridCols)}>
+                {visible.map((pos) => {
+                  const meta = statusMeta[pos.position_status];
+                  const isExcluded = pos.position_status === "excluded";
+                  const range = effRange(pos);
+                  const exclDate = fmtExclusionDate(pos.exclusion_date);
+                  return (
+                    <div
+                      key={pos.position_id}
+                      className="rounded-md border border-border bg-white p-3 text-sm"
+                    >
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <StatusBadge status={meta.status} label={meta.label} />
+                          <span className="font-medium text-foreground">
+                            {pos.sale_price != null
+                              ? formatMoneyCOP(pos.sale_price)
+                              : "—"}
+                          </span>
+                        </div>
+                        {range && (
+                          <span className="text-xs text-muted-foreground">
+                            {range}
+                          </span>
+                        )}
+                      </div>
+                      {pos.codes.length > 0 && (
+                        <div className="mt-2 border-t border-border pt-2 space-y-1">
+                          {pos.codes.map((c) => (
+                            <div
+                              key={`${c.client_id}|${c.client_code}`}
+                              className="text-sm text-foreground"
+                            >
+                              <span className="text-xs font-semibold uppercase tracking-wide text-accent">
+                                {c.client_name ?? "Cliente"}
+                              </span>{" "}
+                              ·{" "}
+                              <span className="font-mono">{c.client_code}</span>
+                              {c.description ? (
+                                <>
+                                  {" "}·{" "}
+                                  <span className="text-muted-foreground">
+                                    {c.description}
+                                  </span>
+                                </>
+                              ) : null}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {isExcluded && (pos.exclusion_reason || exclDate) && (
+                        <div className="mt-2 border-t border-border pt-2 text-xs text-muted-foreground">
+                          {pos.exclusion_reason ?? "Sin motivo registrado."}
+                          {exclDate ? ` · ${exclDate}` : ""}
+                        </div>
+                      )}
+                      {!isExcluded && (
+                        <div className="mt-2 flex justify-end">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="link"
+                            className="h-auto px-0"
+                            onClick={() =>
+                              onSwitchToPosition?.(pos.position_id)
+                            }
+                          >
+                            Ir a esa posición
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              {hidden > 0 && (
+                <div className="mt-3 flex justify-center">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="link"
+                    onClick={() => setSkuPositionsExpanded(true)}
+                  >
+                    Ver {hidden} {hidden === 1 ? "posición más" : "posiciones más"}
+                  </Button>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
         <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[minmax(0,55fr)_minmax(0,45fr)]">
+
           {/* Columna izquierda — la posición */}
           <div className="min-h-0 overflow-y-auto bg-white border-r border-border">
 
