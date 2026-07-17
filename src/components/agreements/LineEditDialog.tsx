@@ -2721,15 +2721,6 @@ export function LineEditDialog({
               />
               <span className="flex flex-col leading-tight">
                 <span className="suma-body text-text-primary font-medium">Publicar en acuerdo al guardar</span>
-                <span className="suma-caption text-text-tertiary">
-                  {wouldConflictOnPublish
-                    ? "Esta posición quedará en conflicto y no podrá publicarse."
-                    : hasPendingTokens
-                      ? `Pendiente: ${pendingReasonTokens.map((t) => PENDING_LABELS[t] ?? t).join(" · ")}.`
-                      : effectiveCanPublishNow
-                        ? "La posición cumple con los datos requeridos para activarse en el acuerdo."
-                        : "Completa producto, precio y fechas vigentes para habilitar."}
-                </span>
               </span>
             </label>
 
