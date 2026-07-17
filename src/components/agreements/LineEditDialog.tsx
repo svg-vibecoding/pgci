@@ -327,6 +327,8 @@ function ClientCodeCard({
   card,
   entry,
   agreementId,
+  agreementStartDate,
+  agreementEndDate,
   initialLineId,
   open,
   required = false,
@@ -341,6 +343,8 @@ function ClientCodeCard({
   card: ClientCard;
   entry: ClientCodeEntry;
   agreementId: string;
+  agreementStartDate?: string | null;
+  agreementEndDate?: string | null;
   initialLineId: string | null;
   open: boolean;
   required?: boolean;
