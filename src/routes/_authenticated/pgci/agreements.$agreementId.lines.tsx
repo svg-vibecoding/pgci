@@ -1832,7 +1832,7 @@ function SkuGroupCard({
   canAdmin: boolean;
   onAction: () => void;
   actionLabel: string;
-  actionType?: "link" | "unlink" | "review";
+  actionType?: "review";
   actionDisabled?: boolean;
   fmtMoney: (v: number | null) => string;
 }) {
@@ -1878,8 +1878,6 @@ function SkuGroupCard({
             onClick={onAction}
             disabled={actionDisabled}
           >
-            {actionType === "link" && <Link2 />}
-            {actionType === "unlink" && <Unlink />}
             {actionType === "review" && <Eye />}
             {actionLabel}
           </Button>
