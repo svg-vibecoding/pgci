@@ -2704,7 +2704,7 @@ export type ArchivedPositionRow = {
   archived_by_name: string | null;
 };
 
-const agreementIdInput = z.object({ agreement_id: z.string().uuid() });
+
 
 async function resolveUserNames(
   supabase: import("@supabase/supabase-js").SupabaseClient,
