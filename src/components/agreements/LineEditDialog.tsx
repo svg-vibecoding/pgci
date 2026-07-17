@@ -460,6 +460,16 @@ function ClientCodeCard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [creatingIncomplete]);
 
+  // Reportar el modo del card al padre para que el predicado de conflicto
+  // pueda alinearse con position_has_sku_conflict (BD): un cliente distingue
+  // solo si su código es resoluble — 'edit' siempre; 'creating' cuando el
+  // formulario está completo. Ver clientDistinguishes en LineEditDialog.
+  useEffect(() => {
+    onModeChange(mode);
+    return () => onModeChange("search");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
+
   const handleSelectFree = (r: ClientCodeSearchResult) => {
     onChange({ code: r.client_code, description: r.description ?? "" });
     setOriginalDescription(r.description ?? "");
