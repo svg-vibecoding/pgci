@@ -347,6 +347,7 @@ function ClientCodeCard({
   onReactivated,
   onRequestSwitchToPosition,
   onCreatingIncompleteChange,
+  onModeChange,
   isCreate = false,
 }: {
   card: ClientCard;
@@ -363,6 +364,7 @@ function ClientCodeCard({
   onReactivated: () => void;
   onRequestSwitchToPosition: (positionId: string) => void;
   onCreatingIncompleteChange: (incomplete: boolean) => void;
+  onModeChange: (mode: "search" | "creating" | "edit") => void;
   isCreate?: boolean;
 }) {
 
