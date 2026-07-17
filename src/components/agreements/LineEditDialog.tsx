@@ -774,7 +774,7 @@ function ClientCodeCard({
                 className="inline-flex items-center gap-1 text-xs font-medium text-info hover:text-info-strong focus:outline-none focus:underline"
               >
                 <Plus className="h-3.5 w-3.5" />
-                Crear producto en el catálogo de {card.name}
+                Crear producto
               </button>
             </div>
           )}
