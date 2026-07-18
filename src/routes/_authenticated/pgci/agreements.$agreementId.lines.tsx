@@ -1852,7 +1852,7 @@ function SkuGroupCard({
     <li className="rounded-lg border border-border bg-card p-3">
       <div className="min-w-0 space-y-0.5">
         <div className="flex items-center gap-2">
-          <span className="font-mono text-sm font-medium">
+          <span className="font-mono font-semibold text-foreground">
             {group.sku ?? "—"}
           </span>
           {hasDistinctPrices && (
@@ -1867,7 +1867,6 @@ function SkuGroupCard({
             {group.product_description}
           </div>
         )}
-        <div className="text-xs text-muted-foreground">{summary}</div>
       </div>
 
       <div className="mt-2">
@@ -1875,8 +1874,8 @@ function SkuGroupCard({
           summary=""
           open={open}
           onToggle={() => setOpen((v) => !v)}
-          openLabel="Ocultar posiciones"
-          closedLabel="Ver posiciones"
+          openLabel={`Ocultar ${summary}`}
+          closedLabel={`Ver ${summary}`}
         />
       </div>
 
