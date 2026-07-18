@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatMoneyCOP } from "@/lib/format";
+import { undistinguishedSiblings as computeUndistinguishedSiblings } from "@/lib/sku-conflict";
 import {
   Dialog,
   DialogContent,
