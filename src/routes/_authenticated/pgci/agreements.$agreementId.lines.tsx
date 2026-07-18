@@ -1882,7 +1882,7 @@ function SkuGroupCard({
               : null) as Exclude<LineCardKey, "all"> | null;
     return key ? STATUS_META[key] : null;
   };
-  void agreementEnd; // reservado para futuras señales de vigencia
+
 
   return (
     <li className="rounded-lg border border-border bg-card p-3">
