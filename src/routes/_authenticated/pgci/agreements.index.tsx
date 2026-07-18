@@ -49,7 +49,7 @@ const COUNTER_STYLE: CSSProperties = {
 };
 
 function PositionsCounters({ counts }: { counts: CountSpec[] }) {
-  const visible = counts.filter((c) => c.value > 0);
+  const visible = counts.filter((c) => c.key === "total" || c.value > 0);
   if (visible.length === 0) {
     return <span className="text-text-tertiary">0</span>;
   }
