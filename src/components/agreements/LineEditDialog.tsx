@@ -1006,10 +1006,8 @@ function ClientCodeCard({
                   <span>
                     Este código ya existe en el catálogo de {card.name}
                     {existingMatch.description
-                      ? `: “${existingMatch.description}”. `
-                      : ". "}
-                    Si guardas así, se usará la descripción actual del catálogo
-                    (no la tecleada aquí).
+                      ? `: “${existingMatch.description}”.`
+                      : "."}
                   </span>
                 </div>
                 <div className="flex justify-end gap-2">
