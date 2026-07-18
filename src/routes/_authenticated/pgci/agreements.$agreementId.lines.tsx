@@ -387,22 +387,7 @@ function AgreementLinesPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [confirmPublishOpen, setConfirmPublishOpen] = useState(false);
   const [archivedViewId, setArchivedViewId] = useState<string | null>(null);
-  const [showClientCol, setShowClientCol] = useState(false);
-  useEffect(() => {
-    try {
-      const v = window.localStorage.getItem("pgci.lines.showClientCol");
-      if (v === "1") setShowClientCol(true);
-      else if (v === "0") setShowClientCol(false);
-    } catch {}
-  }, []);
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(
-        "pgci.lines.showClientCol",
-        showClientCol ? "1" : "0",
-      );
-    } catch {}
-  }, [showClientCol]);
+  const [showClientCol, setShowClientCol] = useState(true);
 
   const invalidateAll = () => {
     qc.invalidateQueries({ queryKey: ["agreements", "lines", agreementId] });
@@ -922,7 +907,7 @@ function AgreementLinesPage() {
             </button>
           )}
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex h-10 shrink-0 items-center gap-2 rounded-md border border-input bg-background px-3">
           <Switch
             id="toggle-client-col"
             checked={showClientCol}
@@ -931,9 +916,9 @@ function AgreementLinesPage() {
           />
           <Label
             htmlFor="toggle-client-col"
-            className="suma-body cursor-pointer text-text-tertiary"
+            className="suma-body cursor-pointer text-text-secondary"
           >
-            Ver cliente
+            Códigos cliente
           </Label>
         </div>
         <TooltipProvider>
