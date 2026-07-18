@@ -1849,6 +1849,22 @@ export function LineEditDialog({
   // Predicado extraído a src/lib/sku-conflict.ts (réplica cliente de
   // position_has_sku_conflict en Postgres). Ambas implementaciones deben decir
   // lo mismo — si cambia una, cambia la otra.
+  //
+  // Helper local `clientDistinguishes` conservado para canRemoveClientIds
+  // (simulación de "quitar un cliente y ver si sigue distinguido"); mantiene la
+  // misma semántica que el helper interno del módulo puro.
+  const clientDistinguishes = (cid: string, siblingCode: string | null): boolean => {
+    if (!siblingCode) return false;
+    const entry = codeEntries.get(cid);
+    if (!entry) return false;
+    const mine = entry.code.trim();
+    if (!mine) return false;
+    const mode = codeModes.get(cid) ?? "search";
+    if (mode === "search") return false;
+    if (mode === "creating" && entry.description.trim() === "") return false;
+    return mine.toLowerCase() !== siblingCode.trim().toLowerCase();
+  };
+
   const undistinguishedSiblings = useMemo(() => {
     return computeUndistinguishedSiblings({
       productId,
