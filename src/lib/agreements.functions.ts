@@ -1240,24 +1240,27 @@ export const applyPriceToSku = createServerFn({ method: "POST" })
 
 export type AgreementSkuGroupPosition = {
   id: string;
-  client_code: string | null;
-  client_description: string | null;
+  status: string;
   sale_price: number | null;
+  codes: {
+    client_code: string;
+    client_name: string | null;
+    description: string | null;
+  }[];
 };
 
 export type AgreementSkuGroup = {
   product_id: string;
-  client_id: string;
-  client_name: string | null;
   sku: string | null;
   product_description: string | null;
   position_ids: string[];
   positions: AgreementSkuGroupPosition[];
   prices: number[];
-  // Contrato §7: agrupación por SKU + cliente.
-  // "conflict" = precios distintos; "repeated" = repetido con mismo precio.
+  // Contrato §7: agrupación por SKU. "conflict" = precios distintos entre las
+  // posiciones del SKU en el acuerdo; "repeated" = todas comparten el precio.
   state: "conflict" | "repeated";
 };
+
 
 export const listAgreementSkuGroups = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
