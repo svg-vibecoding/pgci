@@ -966,23 +966,30 @@ function AgreementLinesPage() {
 
       {skuConflictOnly && repeatedTotalCount > 0 && (
         <Alert variant="info" className="py-2">
-          <div className="flex items-center gap-2">
-            <Layers className="h-4 w-4 shrink-0" />
-            <AlertTitle className="m-0">Estado de códigos en múltiples posiciones</AlertTitle>
+          <div className="flex items-start gap-2">
+            <Layers className="h-4 w-4 shrink-0 mt-0.5" />
+            <AlertDescription className="pl-0">
+              <div className="space-y-0.5 text-sm">
+                {conflictGroups.length > 0 && (
+                  <p>
+                    {conflictGroups.length} {conflictGroups.length === 1 ? "SKU" : "SKUs"} en{" "}
+                    <span className="font-semibold">{conflictPositionCount}</span>{" "}
+                    {conflictPositionCount === 1 ? "posición" : "posiciones"} con precios distintos
+                  </p>
+                )}
+                {repeatedGroups.length > 0 && (
+                  <p>
+                    {repeatedGroups.length} {repeatedGroups.length === 1 ? "SKU" : "SKUs"} en{" "}
+                    <span className="font-semibold">{repeatedPositionCount}</span>{" "}
+                    {repeatedPositionCount === 1 ? "posición" : "posiciones"} con el mismo precio
+                  </p>
+                )}
+              </div>
+              <p className="mt-1 text-xs opacity-90">
+                Cada posición gestiona su precio de forma independiente.
+              </p>
+            </AlertDescription>
           </div>
-          <AlertDescription className="mt-1 pl-0">
-                <div className="space-y-0.5 text-sm">
-                  <p>
-                    {conflictGroups.length} códigos en <span className="font-semibold">{conflictPositionCount}</span> posiciones con precios distintos
-                  </p>
-                  <p>
-                    {repeatedGroups.length} códigos en <span className="font-semibold">{repeatedPositionCount}</span> posiciones con el mismo precio
-                  </p>
-                </div>
-                <p className="mt-1 text-xs opacity-90">
-                  Cada posición gestiona su precio de forma independiente.
-                </p>
-              </AlertDescription>
         </Alert>
       )}
 
