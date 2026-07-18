@@ -2034,6 +2034,31 @@ export function LineEditDialog({
     if (!open) setPublishOnSave(false);
   }, [open, initial?.line_id]);
 
+  // Mensaje azul de la regla en la columna del SKU: se decide una sola vez
+  // (al abrir en edición; al elegir SKU en creación) y se queda mientras el
+  // modal esté abierto. Evita que el bloque de texto desaparezca del medio
+  // de la columna mientras el usuario resuelve el conflicto tecleando códigos.
+  const [frozenShowSkuRuleAlert, setFrozenShowSkuRuleAlert] = useState(false);
+  const skuRuleAnchorRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!open) {
+      setFrozenShowSkuRuleAlert(false);
+      skuRuleAnchorRef.current = null;
+      return;
+    }
+    const anchor = isEdit
+      ? `edit:${initial?.line_id ?? ""}`
+      : `create:${productId ?? ""}`;
+    if (skuRuleAnchorRef.current !== anchor) {
+      skuRuleAnchorRef.current = anchor;
+      setFrozenShowSkuRuleAlert(false);
+    }
+    const current = isEdit
+      ? wouldConflictOnPublish
+      : !!(skuInAgreement && skuInAgreement.positions.length > 0);
+    if (current) setFrozenShowSkuRuleAlert(true);
+  }, [open, isEdit, initial?.line_id, productId, wouldConflictOnPublish, skuInAgreement]);
+
   const computePendingLabels = (): string[] => {
     const missing: string[] = [];
     if (!productId || v.sku.trim() === "") missing.push("SKU");
@@ -2767,7 +2792,7 @@ export function LineEditDialog({
                     </Alert>
                   )}
 
-                  {skuInAgreement && (isEdit ? wouldConflictOnPublish : true) && (
+                  {frozenShowSkuRuleAlert && (
                     <Alert variant="info">
                       <Info className="h-4 w-4" />
                       <AlertDescription>
