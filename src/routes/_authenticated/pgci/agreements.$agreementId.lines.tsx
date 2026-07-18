@@ -15,7 +15,7 @@ import {
   X,
   XCircle,
   Info,
-  Link2,
+  
   Unlink,
   Eye,
   Layers,
@@ -1737,9 +1737,9 @@ function AgreementLinesPage() {
       <Dialog open={skuModalOpen} onOpenChange={setSkuModalOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Códigos en múltiples posiciones</DialogTitle>
+            <DialogTitle>SKUs en múltiples posiciones ({unlinkedGroups.length})</DialogTitle>
             <DialogDescription>
-              Códigos Jaivaná que participan en más de una posición en el acuerdo. Las posiciones pueden vincularse para compartir un mismo precio; las no vinculadas se gestionan de forma independiente.
+              Un mismo SKU puede estar en varias posiciones del acuerdo. Cada posición gestiona su precio de forma independiente.
             </DialogDescription>
           </DialogHeader>
 
@@ -1748,53 +1748,39 @@ function AgreementLinesPage() {
               No hay SKUs repetidos en este acuerdo.
             </div>
           ) : (
-            <div className="max-h-[60vh] space-y-6 overflow-y-auto pr-1">
-              {unlinkedGroups.length > 0 && (
-                <section className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Link2 className="h-4 w-4 text-muted-foreground" />
-                    <h3 className="text-sm font-semibold">
-                      SKUs en múltiples posiciones ({unlinkedGroups.length})
-                    </h3>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Códigos Jaivaná presentes en más de una posición. Cada posición gestiona su precio de forma independiente.
-                  </p>
-                  <div className="rounded-lg border border-border bg-muted/20 p-3">
-                    <ul className="space-y-2">
-                      {unlinkedGroups.map((g) => {
-                        return (
-                          <SkuGroupCard
-                            key={g.product_id}
-                            group={g}
-                            variant={g.state === "conflict" ? "conflict" : "repeated"}
-                            defaultOpen={false}
-                            canAdmin={canAdmin}
-                            onAction={() => {
-                              if (g.state === "conflict") {
-                                openEditForLine(g.position_ids[0]);
-                              }
-                            }}
-                            actionLabel={g.state === "conflict" ? "Revisar" : ""}
-                            actionType={g.state === "conflict" ? "review" : undefined}
-                            actionDisabled={g.state !== "conflict"}
-                            fmtMoney={fmtMoney}
-                          />
-                        );
-                      })}
-                    </ul>
-                  </div>
-                </section>
-              )}
+            <div className="max-h-[60vh] overflow-y-auto pr-1">
+              <div className="rounded-lg border border-border bg-muted/20 p-3">
+                <ul className="space-y-2">
+                  {unlinkedGroups.map((g) => {
+                    return (
+                      <SkuGroupCard
+                        key={g.product_id}
+                        group={g}
+                        variant={g.state === "conflict" ? "conflict" : "repeated"}
+                        defaultOpen={false}
+                        canAdmin={canAdmin}
+                        onAction={() => {
+                          if (g.state === "conflict") {
+                            openEditForLine(g.position_ids[0]);
+                          }
+                        }}
+                        actionLabel={g.state === "conflict" ? "Revisar" : ""}
+                        actionType={g.state === "conflict" ? "review" : undefined}
+                        actionDisabled={g.state !== "conflict"}
+                        fmtMoney={fmtMoney}
+                      />
+                    );
+                  })}
+                </ul>
+              </div>
             </div>
           )}
 
-          <DialogFooter className="sm:justify-between">
-            {conflictGroupsCount > 0 ? (
+          <DialogFooter>
+            {conflictGroupsCount > 0 && (
               <Button
                 type="button"
-                variant="ghost"
-                size="sm"
+                variant="outline"
                 onClick={() => {
                   setSkuModalOpen(false);
                   setSkuConflictOnly(true);
@@ -1802,13 +1788,12 @@ function AgreementLinesPage() {
               >
                 Ver en la tabla
               </Button>
-            ) : (
-              <span />
             )}
             <Button type="button" variant="outline" onClick={() => setSkuModalOpen(false)}>
               Cerrar
             </Button>
           </DialogFooter>
+
         </DialogContent>
       </Dialog>
     </div>
@@ -1857,14 +1842,8 @@ function SkuGroupCard({
   const count = group.positions.length;
   const distinctPrices = new Set(group.prices).size;
   const hasDistinctPrices = distinctPrices > 1;
-  const summary =
-    variant === "conflict"
-      ? `${count} posiciones · precios: ${group.prices
-          .slice()
-          .sort((a, b) => a - b)
-          .map((p) => fmtMoney(p))
-          .join(" · ")}`
-      : `${count} posiciones · precio común: ${fmtMoney(group.prices[0] ?? null)}`;
+  const summary = `${count} ${count === 1 ? "posición" : "posiciones"}`;
+
 
   const statusMetaFor = (
     status: string,
