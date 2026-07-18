@@ -76,7 +76,7 @@ export const Route = createFileRoute("/_authenticated/pgci/agreements/")({
   component: AgreementsList,
 });
 
-type CardKey = "all" | "active" | "review" | "transit";
+type CardKey = "all" | "active" | "review" | "expired";
 type StatusFilter = "all" | "active" | "inactive";
 
 type VigenciaBadge = {
@@ -129,15 +129,15 @@ function AgreementsList() {
   const reviewCount = all.filter(
     (a) => ((a as { lines_review?: number }).lines_review ?? 0) > 0,
   ).length;
-  const transitCount = all.filter(
-    (a) => ((a as { lines_transit?: number }).lines_transit ?? 0) > 0,
+  const expiredCount = all.filter(
+    (a) => ((a as { lines_expired?: number }).lines_expired ?? 0) > 0,
   ).length;
 
   const filtered = all.filter((a) => {
     if (activeCard === "active" && a.status !== "active") return false;
     if (activeCard === "review" && ((a as { lines_review?: number }).lines_review ?? 0) === 0)
       return false;
-    if (activeCard === "transit" && ((a as { lines_transit?: number }).lines_transit ?? 0) === 0)
+    if (activeCard === "expired" && ((a as { lines_expired?: number }).lines_expired ?? 0) === 0)
       return false;
 
     if (statusF !== "all" && a.status !== statusF) return false;
@@ -157,14 +157,14 @@ function AgreementsList() {
     { key: "all", label: "Acuerdos", value: totalCount },
     { key: "active", label: "Acuerdos activos", value: activeCount },
     { key: "review", label: "Requieren revisión", value: reviewCount },
-    { key: "transit", label: "En tránsito", value: transitCount },
+    { key: "expired", label: "Con vigencia vencida", value: expiredCount },
   ];
 
   const cardLabelByKey: Record<CardKey, string> = {
     all: "Acuerdos",
     active: "Acuerdos activos",
     review: "Requieren revisión",
-    transit: "En tránsito",
+    expired: "Con vigencia vencida",
   };
 
   const hasActiveFilters =
