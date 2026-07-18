@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatMoneyCOP } from "@/lib/format";
+import { undistinguishedSiblings as computeUndistinguishedSiblings } from "@/lib/sku-conflict";
 import {
   Dialog,
   DialogContent,
@@ -1846,17 +1847,13 @@ export function LineEditDialog({
 
   const [publishOnSave, setPublishOnSave] = useState(false);
 
-  // Regla par a par (position_has_sku_conflict): estoy en conflicto si existe
-  // AL MENOS UNA posición publicada del mismo SKU contra la cual NINGÚN cliente
-  // me distingue. Un cliente distingue un par si en AMBAS posiciones existe una
-  // fila en agreement_position_client_codes con client_product_id — es decir,
-  // un código resoluble. En la UI eso se traduce en:
-  //   - card en modo 'edit' con código no vacío (producto de cliente ya
-  //     seleccionado o hidratado desde initial), o
-  //   - card en modo 'creating' con código Y descripción llenos (forma_ que
-  //     al guardar se convertirá en un client_product real).
-  // Además el código debe ser distinto al de la hermana (defensivo: RN-MATCH-01
-  // ya impide colisiones, pero el predicado lo comenta así).
+  // Predicado extraído a src/lib/sku-conflict.ts (réplica cliente de
+  // position_has_sku_conflict en Postgres). Ambas implementaciones deben decir
+  // lo mismo — si cambia una, cambia la otra.
+  //
+  // Helper local `clientDistinguishes` conservado para canRemoveClientIds
+  // (simulación de "quitar un cliente y ver si sigue distinguido"); mantiene la
+  // misma semántica que el helper interno del módulo puro.
   const clientDistinguishes = (cid: string, siblingCode: string | null): boolean => {
     if (!siblingCode) return false;
     const entry = codeEntries.get(cid);
@@ -1870,17 +1867,12 @@ export function LineEditDialog({
   };
 
   const undistinguishedSiblings = useMemo(() => {
-    if (!productId || !skuInAgreement) return [];
-    const publishedSiblings = skuInAgreement.positions.filter(
-      (p) => p.published_at != null,
-    );
-    return publishedSiblings.filter((p) => {
-      for (const c of p.codes) {
-        if (clientDistinguishes(c.client_id, c.client_code)) return false;
-      }
-      return true;
+    return computeUndistinguishedSiblings({
+      productId,
+      siblings: skuInAgreement?.positions ?? null,
+      codeEntries,
+      codeModes,
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productId, skuInAgreement, codeEntries, codeModes]);
 
   const wouldConflictOnPublish = undistinguishedSiblings.length > 0;
