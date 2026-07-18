@@ -1851,8 +1851,8 @@ function SkuGroupCard({
   actionType?: "review";
   actionDisabled?: boolean;
   fmtMoney: (v: number | null) => string;
-  agreementEnd: string | null;
 }) {
+
   const [open, setOpen] = useState(defaultOpen);
   const count = group.positions.length;
   const distinctPrices = new Set(group.prices).size;
