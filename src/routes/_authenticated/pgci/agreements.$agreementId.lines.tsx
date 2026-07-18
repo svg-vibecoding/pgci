@@ -15,7 +15,7 @@ import {
   X,
   XCircle,
   Info,
-  Link2,
+  
   Unlink,
   Eye,
   Layers,
