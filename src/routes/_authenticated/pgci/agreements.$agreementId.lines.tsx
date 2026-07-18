@@ -1825,6 +1825,7 @@ function SkuGroupCard({
   actionType,
   actionDisabled,
   fmtMoney,
+  agreementEnd,
 }: {
   group: {
     product_id: string;
@@ -1832,9 +1833,13 @@ function SkuGroupCard({
     product_description: string | null;
     positions: {
       id: string;
-      client_code: string | null;
-      client_description: string | null;
+      status: string;
       sale_price: number | null;
+      codes: {
+        client_code: string;
+        client_name: string | null;
+        description: string | null;
+      }[];
     }[];
     prices: number[];
   };
@@ -1846,6 +1851,7 @@ function SkuGroupCard({
   actionType?: "review";
   actionDisabled?: boolean;
   fmtMoney: (v: number | null) => string;
+  agreementEnd: string | null;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const count = group.positions.length;
@@ -1859,6 +1865,24 @@ function SkuGroupCard({
           .map((p) => fmtMoney(p))
           .join(" · ")}`
       : `${count} posiciones · precio común: ${fmtMoney(group.prices[0] ?? null)}`;
+
+  const statusMetaFor = (
+    status: string,
+  ): { label: string; status: StatusBadgeStatus } | null => {
+    const key = (status === "active"
+      ? "active"
+      : status === "draft"
+        ? "draft"
+        : status === "excluded"
+          ? "excluded"
+          : status === "requires_review"
+            ? "requires_review"
+            : status === "archived"
+              ? "archived"
+              : null) as Exclude<LineCardKey, "all"> | null;
+    return key ? STATUS_META[key] : null;
+  };
+  void agreementEnd; // reservado para futuras señales de vigencia
 
   return (
     <li className="rounded-lg border border-border bg-card p-3">
@@ -1910,11 +1934,11 @@ function SkuGroupCard({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-32 py-1.5 px-2 text-[11px] font-normal text-muted-foreground">
-                  Código cliente
+                <TableHead className="w-28 py-1.5 px-2 text-[11px] font-normal text-muted-foreground">
+                  Estado
                 </TableHead>
                 <TableHead className="py-1.5 px-2 text-[11px] font-normal text-muted-foreground">
-                  Descripción cliente
+                  Códigos
                 </TableHead>
                 <TableHead className="w-32 whitespace-nowrap py-1.5 px-2 text-right text-[11px] font-normal text-muted-foreground">
                   Precio actual
@@ -1922,19 +1946,46 @@ function SkuGroupCard({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {group.positions.map((p) => (
-                <TableRow key={p.id}>
-                  <TableCell className="py-1.5 px-2 font-mono text-xs text-muted-foreground">
-                    {p.client_code ?? "—"}
-                  </TableCell>
-                  <TableCell className="py-1.5 px-2 text-xs text-muted-foreground">
-                    {p.client_description ?? "—"}
-                  </TableCell>
-                  <TableCell className="py-1.5 px-2 text-right text-xs tabular-nums text-muted-foreground">
-                    {fmtMoney(p.sale_price ?? null)}
-                  </TableCell>
-                </TableRow>
-              ))}
+              {group.positions.map((p) => {
+                const meta = statusMetaFor(p.status);
+                return (
+                  <TableRow key={p.id}>
+                    <TableCell className="py-1.5 px-2 align-top">
+                      {meta ? (
+                        <StatusBadge status={meta.status} label={meta.label} />
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="py-1.5 px-2 align-top text-xs text-muted-foreground">
+                      {p.codes.length === 0 ? (
+                        "—"
+                      ) : (
+                        <div className="flex flex-col gap-0.5">
+                          {p.codes.map((c, i) => (
+                            <div key={`${p.id}-${i}`} className="flex flex-wrap items-baseline gap-1">
+                              <span className="text-text-primary">
+                                {c.client_name ?? "—"}
+                              </span>
+                              <span className="text-muted-foreground">·</span>
+                              <span className="font-mono">{c.client_code}</span>
+                              {c.description && (
+                                <>
+                                  <span className="text-muted-foreground">·</span>
+                                  <span>{c.description}</span>
+                                </>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell className="py-1.5 px-2 text-right align-top text-xs tabular-nums text-muted-foreground">
+                      {fmtMoney(p.sale_price ?? null)}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>
@@ -1942,6 +1993,7 @@ function SkuGroupCard({
     </li>
   );
 }
+
 
 function ArchivedTable({
   rows,
