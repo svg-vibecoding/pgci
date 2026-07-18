@@ -34,7 +34,7 @@ export type SkuConflictInput = {
   codeModes: Map<string, ClientCodeMode>;
 };
 
-function clientDistinguishes(
+export function clientDistinguishes(
   cid: string,
   siblingCode: string | null,
   codeEntries: Map<string, ClientCodeEntry>,
