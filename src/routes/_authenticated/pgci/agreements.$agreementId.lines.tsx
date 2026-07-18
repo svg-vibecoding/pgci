@@ -1758,15 +1758,7 @@ function AgreementLinesPage() {
                         group={g}
                         variant={g.state === "conflict" ? "conflict" : "repeated"}
                         defaultOpen={false}
-                        canAdmin={canAdmin}
-                        onAction={() => {
-                          if (g.state === "conflict") {
-                            openEditForLine(g.position_ids[0]);
-                          }
-                        }}
-                        actionLabel={g.state === "conflict" ? "Revisar" : ""}
-                        actionType={g.state === "conflict" ? "review" : undefined}
-                        actionDisabled={g.state !== "conflict"}
+                        onOpenPosition={(id) => openEditForLine(id)}
                         fmtMoney={fmtMoney}
                       />
                     );
