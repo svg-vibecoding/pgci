@@ -244,33 +244,40 @@ function AgreementsList() {
       width: 200,
       wrap: false,
       cell: (a) => {
+        const active = (a as { lines_active?: number }).lines_active ?? 0;
+        const review = a.lines_review ?? 0;
+        const draft = (a as { lines_draft?: number }).lines_draft ?? 0;
+        const excluded = (a as { lines_excluded?: number }).lines_excluded ?? 0;
         const counts: CountSpec[] = [
           {
             key: "total",
             label: "Total de posiciones",
-            value:
-              ((a as { lines_active?: number }).lines_active ?? 0) +
-              (a.lines_review ?? 0) +
-              ((a as { lines_excluded?: number }).lines_excluded ?? 0),
+            value: active + review + draft + excluded,
             color: "neutral",
           },
           {
             key: "active",
             label: "Activas",
-            value: (a as { lines_active?: number }).lines_active ?? 0,
+            value: active,
             color: "success",
           },
           {
             key: "review",
             label: "Requieren revisión",
-            value: a.lines_review ?? 0,
+            value: review,
             color: "error",
           },
           {
-            key: "transit",
-            label: "En tránsito",
-            value: (a as { lines_transit?: number }).lines_transit ?? 0,
-            color: "warning",
+            key: "draft",
+            label: "En gestión",
+            value: draft,
+            color: "neutral",
+          },
+          {
+            key: "excluded",
+            label: "Excluidas",
+            value: excluded,
+            color: "neutral",
           },
         ];
         return <PositionsCounters counts={counts} />;
