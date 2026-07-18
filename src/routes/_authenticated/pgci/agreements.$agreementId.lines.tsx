@@ -907,7 +907,7 @@ function AgreementLinesPage() {
             </button>
           )}
         </div>
-        <div className="flex h-10 shrink-0 items-center gap-2 rounded-md border border-input bg-background px-3">
+        <div className="flex h-9 shrink-0 items-center gap-2 rounded-md border border-input bg-background px-3">
           <Switch
             id="toggle-client-col"
             checked={showClientCol}
