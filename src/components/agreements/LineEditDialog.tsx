@@ -939,15 +939,32 @@ function ClientCodeCard({
               onChange={(e) => onChange({ ...entry, code: e.target.value })}
             />
           </div>
-          <div className="space-y-1.5">
-            <FieldLabel required>Descripción del producto</FieldLabel>
-            <Input
-              value={entry.description}
-              disabled={disabled}
-              className={disabled ? readonlyClass : ""}
-              onChange={(e) => onChange({ ...entry, description: e.target.value })}
-            />
-          </div>
+          {(() => {
+            // Ocultar el campo cuando el código ya coincide con un producto
+            // existente (libre → aviso ámbar; tomado → panel de conflicto).
+            const hideDescription =
+              !!takenBlock ||
+              (existingMatch && existingMatch.status.kind === "free");
+            if (hideDescription) return null;
+            const code = entry.code.trim();
+            const codeReady = code.length >= 2 && !matchLoading;
+            const descDisabled = disabled || !codeReady;
+            return (
+              <div className="space-y-1.5">
+                <FieldLabel required={!descDisabled}>
+                  Descripción del producto
+                </FieldLabel>
+                <Input
+                  value={entry.description}
+                  disabled={descDisabled}
+                  className={descDisabled ? readonlyClass : ""}
+                  onChange={(e) =>
+                    onChange({ ...entry, description: e.target.value })
+                  }
+                />
+              </div>
+            );
+          })()}
           {/* Case C: código tomado en otra posición del acuerdo (RN-MATCH-01).
               Reutiliza el panel del buscador y bloquea el guardado desde
               creatingIncomplete. */}
