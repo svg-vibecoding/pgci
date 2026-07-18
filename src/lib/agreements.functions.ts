@@ -839,38 +839,66 @@ export const searchProducts = createServerFn({ method: "POST" })
         .filter((p) => (p.status as string) === "excluded")
         .map((p) => p.id as string);
 
-      // Códigos vigentes por posición.
+      // Códigos vigentes por posición + exclusiones (independientes → en paralelo).
       const codesByPos = new Map<string, ProductAgreementPosition["codes"]>();
+      const cpByPosClient = new Map<string, string>();
       const cpIdsForDesc: string[] = [];
-      if (posIds.length > 0) {
-        const { data: apcc, error: apccErr } = await context.supabase
-          .from("agreement_position_client_codes")
-          .select(
-            "agreement_position_id, client_id, client_product_id, clients!agreement_position_client_codes_client_id_fkey(commercial_name, legal_name), client_products!agreement_position_client_codes_client_product_id_fkey(client_code)",
-          )
-          .in("agreement_position_id", posIds)
-          .is("valid_until", null);
-        if (apccErr) throw new Error(apccErr.message);
-        for (const c of apcc ?? []) {
-          const client = c.clients as {
-            commercial_name: string | null;
-            legal_name: string | null;
-          } | null;
-          const cp = c.client_products as { client_code: string | null } | null;
-          const code = cp?.client_code ?? null;
-          if (!code) continue;
-          const cpId = c.client_product_id as string;
-          cpIdsForDesc.push(cpId);
-          const entry: ProductAgreementPosition["codes"][number] = {
-            client_id: c.client_id as string,
-            client_name: client?.commercial_name ?? client?.legal_name ?? null,
-            client_code: code,
-            description: null,
-          };
-          const arr = codesByPos.get(c.agreement_position_id as string) ?? [];
-          arr.push(entry);
-          codesByPos.set(c.agreement_position_id as string, arr);
-        }
+      const exclusionByPos = new Map<string, { reason: string | null; date: string | null }>();
+
+      const apccPromise =
+        posIds.length > 0
+          ? context.supabase
+              .from("agreement_position_client_codes")
+              .select(
+                "agreement_position_id, client_id, client_product_id, clients!agreement_position_client_codes_client_id_fkey(commercial_name, legal_name), client_products!agreement_position_client_codes_client_product_id_fkey(client_code)",
+              )
+              .in("agreement_position_id", posIds)
+              .is("valid_until", null)
+          : Promise.resolve({ data: [], error: null } as const);
+
+      const exclPromise =
+        excludedPosIds.length > 0
+          ? context.supabase
+              .from("agreement_position_exclusions")
+              .select("position_id, exclusion_reason, valid_from")
+              .in("position_id", excludedPosIds)
+              .is("valid_until", null)
+          : Promise.resolve({ data: [], error: null } as const);
+
+      const [apccRes, exclRes] = await Promise.all([apccPromise, exclPromise]);
+      if (apccRes.error) throw new Error(apccRes.error.message);
+      if (exclRes.error) throw new Error(exclRes.error.message);
+
+      for (const c of apccRes.data ?? []) {
+        const client = c.clients as {
+          commercial_name: string | null;
+          legal_name: string | null;
+        } | null;
+        const cp = c.client_products as { client_code: string | null } | null;
+        const code = cp?.client_code ?? null;
+        if (!code) continue;
+        const cpId = c.client_product_id as string;
+        cpIdsForDesc.push(cpId);
+        const posId = c.agreement_position_id as string;
+        const clientId = c.client_id as string;
+        cpByPosClient.set(`${posId}|${clientId}`, cpId);
+        const entry: ProductAgreementPosition["codes"][number] = {
+          client_id: clientId,
+          client_name: client?.commercial_name ?? client?.legal_name ?? null,
+          client_code: code,
+          description: null,
+        };
+        const arr = codesByPos.get(posId) ?? [];
+        arr.push(entry);
+        codesByPos.set(posId, arr);
+      }
+
+      for (const e of exclRes.data ?? []) {
+        const reasonRaw = (e.exclusion_reason as string | null) ?? null;
+        exclusionByPos.set(e.position_id as string, {
+          reason: reasonRaw && reasonRaw.trim() !== "" ? reasonRaw : null,
+          date: (e.valid_from as string | null) ?? null,
+        });
       }
 
       // Descripción más reciente por client_product_id (misma forma que detectSkuConflicts).
@@ -888,56 +916,6 @@ export const searchProducts = createServerFn({ method: "POST" })
             descByCp.set(cpId, (h.description as string | null) ?? null);
           }
         }
-      }
-      for (const [, codes] of codesByPos) {
-        for (const c of codes) {
-          // recover cp_id via lookup key: we stored client_product_id above; but
-          // we didn't retain it on the entry. Re-derive: match description by
-          // (client_id, client_code) is ambiguous. Simpler: attach description
-          // in a second pass by re-fetching per-position. Since we lose cp_id
-          // when pushing, extend the entry type to carry it internally.
-          void c;
-        }
-      }
-
-      // Exclusion reason/date por posición.
-      const exclusionByPos = new Map<string, { reason: string | null; date: string | null }>();
-      if (excludedPosIds.length > 0) {
-        const { data: excls, error: exclErr } = await context.supabase
-          .from("agreement_position_exclusions")
-          .select("position_id, exclusion_reason, valid_from")
-          .in("position_id", excludedPosIds)
-          .is("valid_until", null);
-        if (exclErr) throw new Error(exclErr.message);
-        for (const e of excls ?? []) {
-          const reasonRaw = (e.exclusion_reason as string | null) ?? null;
-          exclusionByPos.set(e.position_id as string, {
-            reason: reasonRaw && reasonRaw.trim() !== "" ? reasonRaw : null,
-            date: (e.valid_from as string | null) ?? null,
-          });
-        }
-      }
-
-      // Reconstruir codes con description a partir de un segundo pase:
-      // re-consultar apcc para obtener client_product_id por (position, client),
-      // luego mapear a descByCp. Simplificación: rehacer el fetch de apcc
-      // aquí es innecesario — extendemos codes con cp_id en el primer pase.
-      // Para evitar refactor mayor, hacemos una segunda consulta ligera:
-      if (posIds.length > 0 && uniqueCpIds.length > 0) {
-        // Ya cargamos (posId, clientId) -> cp_id implícitamente al construir codes.
-        // Necesitamos recuperar cp_id por (posId, clientId). Segunda pasada rápida:
-        const { data: apcc2 } = await context.supabase
-          .from("agreement_position_client_codes")
-          .select("agreement_position_id, client_id, client_product_id")
-          .in("agreement_position_id", posIds)
-          .is("valid_until", null);
-        const cpByPosClient = new Map<string, string>();
-        for (const r of apcc2 ?? []) {
-          cpByPosClient.set(
-            `${r.agreement_position_id as string}|${r.client_id as string}`,
-            r.client_product_id as string,
-          );
-        }
         for (const [posId, codes] of codesByPos) {
           for (const code of codes) {
             const cpId = cpByPosClient.get(`${posId}|${code.client_id}`);
@@ -945,6 +923,7 @@ export const searchProducts = createServerFn({ method: "POST" })
           }
         }
       }
+
 
       // Ensamblar por product_id.
       const byProduct = new Map<string, ProductAgreementPosition[]>();
