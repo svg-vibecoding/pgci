@@ -1240,24 +1240,27 @@ export const applyPriceToSku = createServerFn({ method: "POST" })
 
 export type AgreementSkuGroupPosition = {
   id: string;
-  client_code: string | null;
-  client_description: string | null;
+  status: string;
   sale_price: number | null;
+  codes: {
+    client_code: string;
+    client_name: string | null;
+    description: string | null;
+  }[];
 };
 
 export type AgreementSkuGroup = {
   product_id: string;
-  client_id: string;
-  client_name: string | null;
   sku: string | null;
   product_description: string | null;
   position_ids: string[];
   positions: AgreementSkuGroupPosition[];
   prices: number[];
-  // Contrato §7: agrupación por SKU + cliente.
-  // "conflict" = precios distintos; "repeated" = repetido con mismo precio.
+  // Contrato §7: agrupación por SKU. "conflict" = precios distintos entre las
+  // posiciones del SKU en el acuerdo; "repeated" = todas comparten el precio.
   state: "conflict" | "repeated";
 };
+
 
 export const listAgreementSkuGroups = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -1270,15 +1273,15 @@ export const listAgreementSkuGroups = createServerFn({ method: "POST" })
     const { data: positions, error } = await context.supabase
       .from("agreement_positions")
       .select(
-        "id, product_id, sale_price, products:product_id(sku, erp_description)",
+        "id, status, product_id, sale_price, products:product_id(sku, erp_description)",
       )
       .eq("agreement_id", data.agreement_id)
-      .neq("status", "excluded")
       .not("product_id", "is", null);
     if (error) throw new Error(`No se pudieron cargar posiciones: ${error.message}`);
 
     type PositionRow = {
       id: string;
+      status: string;
       product_id: string;
       sale_price: number | null;
       products: { sku: string | null; erp_description: string | null } | null;
@@ -1324,11 +1327,10 @@ export const listAgreementSkuGroups = createServerFn({ method: "POST" })
       }
     }
 
-    // Agrupar códigos por posición.
+    // Códigos vigentes por posición.
     type CodeEntry = {
-      client_id: string;
-      client_name: string | null;
       client_code: string;
+      client_name: string | null;
       description: string | null;
     };
     const codesByPos = new Map<string, CodeEntry[]>();
@@ -1337,20 +1339,19 @@ export const listAgreementSkuGroups = createServerFn({ method: "POST" })
       if (!code) continue;
       const arr = codesByPos.get(c.agreement_position_id) ?? [];
       arr.push({
-        client_id: c.client_id,
-        client_name: c.clients?.commercial_name ?? c.clients?.legal_name ?? null,
         client_code: code,
+        client_name: c.clients?.commercial_name ?? c.clients?.legal_name ?? null,
         description: descByCp.get(c.client_product_id) ?? null,
       });
       codesByPos.set(c.agreement_position_id, arr);
     }
 
-    // Contrato §7: agrupar por product_id + client_id. Una posición se cuenta
-    // una vez por cada cliente al que pertenece.
+    // Contrato §7: agrupar solo por product_id. El precio es de la posición y
+    // cubre a todo el acuerdo; el cliente no participa del precio. Incluye
+    // posiciones sin códigos y excluidas (mismo criterio que
+    // position_has_sku_conflict en Postgres).
     type GroupEntry = {
       product_id: string;
-      client_id: string;
-      client_name: string | null;
       sku: string | null;
       description: string | null;
       ids: Set<string>;
@@ -1358,34 +1359,26 @@ export const listAgreementSkuGroups = createServerFn({ method: "POST" })
       prices: Set<number>;
     };
     const groups = new Map<string, GroupEntry>();
-    const keyFor = (pid: string, cid: string) => `${pid}::${cid}`;
     for (const r of rows) {
-      const codes = codesByPos.get(r.id) ?? [];
-      if (codes.length === 0) continue; // sin códigos → no participa en agrupación por cliente
-      for (const c of codes) {
-        const k = keyFor(r.product_id, c.client_id);
-        const entry = groups.get(k) ?? {
-          product_id: r.product_id,
-          client_id: c.client_id,
-          client_name: c.client_name,
-          sku: r.products?.sku ?? null,
-          description: r.products?.erp_description ?? null,
-          ids: new Set<string>(),
-          positions: [],
-          prices: new Set<number>(),
-        };
-        if (!entry.ids.has(r.id)) {
-          entry.ids.add(r.id);
-          entry.positions.push({
-            id: r.id,
-            client_code: c.client_code,
-            client_description: c.description,
-            sale_price: r.sale_price,
-          });
-          if (typeof r.sale_price === "number") entry.prices.add(r.sale_price);
-        }
-        groups.set(k, entry);
+      const entry = groups.get(r.product_id) ?? {
+        product_id: r.product_id,
+        sku: r.products?.sku ?? null,
+        description: r.products?.erp_description ?? null,
+        ids: new Set<string>(),
+        positions: [],
+        prices: new Set<number>(),
+      };
+      if (!entry.ids.has(r.id)) {
+        entry.ids.add(r.id);
+        entry.positions.push({
+          id: r.id,
+          status: r.status,
+          sale_price: r.sale_price,
+          codes: codesByPos.get(r.id) ?? [],
+        });
+        if (typeof r.sale_price === "number") entry.prices.add(r.sale_price);
       }
+      groups.set(r.product_id, entry);
     }
 
     const repeated = Array.from(groups.values()).filter((g) => g.ids.size >= 2);
@@ -1396,8 +1389,6 @@ export const listAgreementSkuGroups = createServerFn({ method: "POST" })
       const state: AgreementSkuGroup["state"] = prices.length > 1 ? "conflict" : "repeated";
       return {
         product_id: g.product_id,
-        client_id: g.client_id,
-        client_name: g.client_name,
         sku: g.sku,
         product_description: g.description,
         position_ids: Array.from(g.ids),
@@ -1407,6 +1398,7 @@ export const listAgreementSkuGroups = createServerFn({ method: "POST" })
       };
     });
   });
+
 
 
 

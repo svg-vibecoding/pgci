@@ -1,54 +1,101 @@
-## Cambio
+# Plan — colapsar `listAgreementSkuGroups` por `product_id` (v2)
 
-Solo presentación en `src/components/agreements/LineEditDialog.tsx`. Mismo dato (`skuInAgreement.positions`), nueva ubicación y nueva disposición de fichas.
+Ajuste sobre v1: se **mantiene** la descripción del código (query a `client_product_history` y campo `description` por código).
 
-## Ubicación
+## Alcance
 
-- Extraer el render de `visible.map((pos) => …)` (dentro del bloque `skuInAgreement`) fuera de la columna del SKU.
-- Insertar un nuevo bloque **transversal, ancho completo**, entre el `DialogHeader` y el `<div class="grid grid-cols-1 lg:grid-cols-…">`.
-- Contenido: encabezado corto "Este SKU ya está en otras posiciones del acuerdo" + contador; contenedor con las fichas; toggle "Ver N posiciones más" cuando `positions.length > 3` (misma lógica `skuPositionsExpanded`).
-- Aparece solo cuando `skuInAgreement && skuInAgreement.positions.length > 0`.
-- Solo mueve JSX; no cambia estado ni handlers.
+1. `listAgreementSkuGroups`: agrupar por `product_id`, incluir posiciones sin códigos, incluir excluidas.
+2. Tipos: retirar `client_id` / `client_name` del grupo; posiciones llevan `status` + arreglo `codes[]` con `client_name`, `client_code`, `description`.
+3. `SkuGroupCard`: columna única "Códigos" que muestra por cada código `cliente · código · descripción`; añadir chip de estado por posición.
+4. Consumers indirectos (badge, filtro, alert, `openEditForLine`): sin cambios — no leen `client_id`/`client_name` del grupo.
 
-**Se queda en la columna del SKU:**
-- `Alert variant="info"` con el mensaje azul de la regla.
-- Banner ámbar de conflicto `hasSkuConflict`.
-- Columna de códigos y su `* Requerido`.
+Criterio de precios sin cambios: `sale_price === null` no aporta a `distinctPrices`.
 
-## Diseño de cada ficha
+## Cambios por archivo
 
-Deja de usar `PositionTakenPanel`. Tarjeta compacta con borde y padding, sin ícono, sin secciones etiquetadas:
+### `src/lib/agreements.functions.ts`
 
-```text
-┌─────────────────────────────────────────────────────┐
-│ [StatusBadge]  $ 123.456        01/01/26 → 31/12/26 │
-│ ─────────────────────────────────────────────────── │
-│ CLIENTE A  ·  COD-123  ·  Descripción del código    │
-│ CLIENTE B  ·  COD-456  ·  Otra descripción          │
-│                                    Ir a esa posición│
-└─────────────────────────────────────────────────────┘
+**Tipo:**
+
+```ts
+export type AgreementSkuGroupPosition = {
+  id: string;
+  status: string;
+  sale_price: number | null;
+  codes: {
+    client_code: string;
+    client_name: string | null;
+    description: string | null;
+  }[];
+};
 ```
 
-- **Chip de estado**: mismo mapeo que la lista de posiciones del acuerdo (`STATUS_META` en `agreements.$agreementId.lines.tsx`, líneas 126–137):
-  - `active` → `status="active"`, label `"Activa"`
-  - `requires_review` → `status="danger"`, label `"Revisar"`
-  - `draft` → `status="neutral"`, label `"En gestión"`
-  - `excluded` → `status="neutral"`, label `"Excluida"`
-  - Componente `StatusBadge`, tamaño default.
-- **Precio**: `formatMoneyCOP(pos.sale_price)`; si `null`, "—".
-- **Vigencia efectiva**: `pos.start_date → pos.end_date`; si falta alguna, usar la fecha correspondiente del acuerdo. Formato `dd/mm/aa`. Verificar/añadir `agreementStartDate` al desestructurado si falta.
-- **Códigos**: una línea por código (`cliente · code monoespaciado · descripción`). Si `pos.codes.length === 0`, no renderizar nada en esa zona.
-- **Ficha excluida**: **sin CTA** (no hay modal de edición para excluidas). Añadir debajo de los códigos una línea muted con el motivo + fecha de exclusión (mismo dato que hoy, sin la etiqueta "MOTIVO DE EXCLUSIÓN"). El chip "Excluida" ya comunica el estado.
-- **Acción (no excluidas)**: link `Ir a esa posición` alineado a la derecha, mismo `onSwitchToPosition(pos.position_id)`.
+`AgreementSkuGroup`: retirar `client_id` y `client_name`; el resto igual.
 
-**Eliminar de la ficha:** SKU + descripción del producto y el bloque "SIN CÓDIGO DE CLIENTE / Esta posición ocupa el SKU…".
+**Handler:**
 
-## Disposición cuando hay varias fichas
+- Query `agreement_positions`: quitar `.neq("status", "excluded")`; añadir `status` al select.
+- Se **mantiene** la query de `client_product_history` y el `descByCp` — la descripción sigue siendo campo real de cada código.
+- `codesByPos` mantiene `client_code`, `client_name`, `description` por entry.
+- Loop de agrupación:
+  - Clave: `${product_id}`.
+  - Iterar `rows` (posiciones); cada posición se añade **una sola vez** al grupo con `codes` = todos sus códigos vigentes (o `[]`).
+  - Eliminar `if (codes.length === 0) continue;`.
+  - `prices.add(sale_price)` sigue condicionado a `typeof sale_price === "number"`.
 
-- 1 ficha: ancho completo.
-- 2+ fichas: `grid-cols-1 md:grid-cols-2 xl:grid-cols-3`, `gap-3`. Con el toggle limitando a 3 por defecto no apilan en exceso.
+Retorno final: `product_id`, `sku`, `product_description`, `position_ids`, `positions[{id, status, sale_price, codes[]}]`, `prices`, `state`.
 
-## Qué no se toca
+### `src/routes/_authenticated/pgci/agreements.$agreementId.lines.tsx`
 
-- `PositionTakenPanel` (lo sigue usando el panel de código ocupado).
-- Server functions, `detectNConflict`, `skuInAgreement`, lógica `sku_conflict`/`hasSkuConflict`, `onSwitchToPosition`, cálculos de vigencia/pending.
+`**SkuGroupCard` (líneas 1818-1944):**
+
+- Actualizar el tipo `group.positions[i]` a la forma nueva (`status`, `codes[]`, sin campos escalares `client_code`/`client_description`).
+- Encabezado de la mini-tabla: **Estado · Códigos · Precio actual** (3 columnas).
+- Celda "Códigos": si `codes.length === 0`, mostrar "—"; si no, listar cada código en una línea con el mismo patrón visual que usa el bloque transversal del `LineEditDialog` (cliente · código · descripción). Cuando la posición tiene varios códigos, se apilan verticalmente dentro de la misma celda.
+- Celda "Estado": `<Badge>` usando `STATUS_META` ya existente en el archivo.
+
+Nada más cambia. `repeatedPositionIds`, `conflictGroups`, `repeatedGroups`, `repeatedTotalCount`, filtro `skuConflictOnly`, badge Layers, `openEditForLine(g.position_ids[0])` y alert azul leen solo `position_ids`, `state`, `prices` — ya verificado.
+
+## Efecto observable
+
+Acuerdo de prueba (`aff54201…`, SKU `830030571`):
+
+Antes: 1 tarjeta "CORONA · 2 posiciones (60.000, 65.000)". La tercera (draft, sin códigos) invisible.
+
+Después: 1 tarjeta "SKU · 3 posiciones (60.000, 65.000, sin precio)" en estado `conflict`. Mini-tabla:
+
+- `Activa` · CORONA · COR-001 · descripción-cliente · 60.000
+- `Borrador` · — · sin precio
+- `Activa` · CORONA · COR-002 · descripción / FALABELLA · FAL-002 · descripción · 65.000
+
+## Verificación
+
+1. Botón Layers → tarjeta con 3 posiciones para el SKU de prueba, incluida la draft sin códigos.
+2. Filtro "Ver en la tabla" incluye la fila draft.
+3. Badge y alert azul coherentes (el badge baja frente al valor previo: pasa de contar grupos SKU×cliente a contar SKUs).
+4. `tsgo` limpio.
+
+## Fuera de alcance
+
+- No se toca `position_has_sku_conflict`.
+- Criterio de precios intacto.
+- No se toca `hasMore` ni el `ilike` de `searchProducts` (pendientes aparte).
+- No se reescribe la DialogDescription ni la línea "mismo precio" del alert (otra tarea).
+
+Aprobado con una objeción.
+
+No quites la descripción del código. El plan elimina la query de
+
+client_product_history y la columna "Descripción cliente" para ahorrar
+
+un round-trip, pero el código sin descripción no dice nada al usuario
+
+— ya se decidió eso en el bloque de posiciones del SKU del modal.
+
+Mantén la descripción. La celda de códigos debe mostrar cliente,
+
+código y descripción, igual que en el bloque transversal del modal
+
+de posición.
+
+El resto del plan queda aprobado. Construye.
