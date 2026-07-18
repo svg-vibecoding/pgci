@@ -1825,7 +1825,7 @@ function SkuGroupCard({
   actionType,
   actionDisabled,
   fmtMoney,
-  agreementEnd,
+
 }: {
   group: {
     product_id: string;
