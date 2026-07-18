@@ -762,7 +762,14 @@ function AgreementLinesPage() {
     { key: "excluded", label: "Excluidas", value: num(agreement.lines_excluded) },
     { key: "archived", label: "Archivadas", value: archivedRows?.length ?? 0 },
   ];
-  const totalCount = summaryCards.reduce((s, c) => s + c.value, 0);
+  // Total alineado con la lista de acuerdos: activas + revisión + gestión + excluidas.
+  // Cuando el filtro es "Archivadas", el denominador refleja el total de archivadas.
+  const totalCount =
+    activeCard === "archived"
+      ? (archivedRows?.length ?? 0)
+      : summaryCards
+          .filter((c) => c.key !== "archived")
+          .reduce((s, c) => s + c.value, 0);
 
   // Selección masiva SOLO cuando el filtro está en "En gestión" o "Revisar".
   // Fuera de esos filtros, la tabla se ve igual que hoy: sin columna ni franja.
