@@ -922,7 +922,7 @@ function AgreementLinesPage() {
             </button>
           )}
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex h-10 shrink-0 items-center gap-2 rounded-md border border-input bg-background px-3">
           <Switch
             id="toggle-client-col"
             checked={showClientCol}
@@ -931,9 +931,9 @@ function AgreementLinesPage() {
           />
           <Label
             htmlFor="toggle-client-col"
-            className="suma-body cursor-pointer text-text-tertiary"
+            className="suma-body cursor-pointer text-text-secondary"
           >
-            Ver cliente
+            Códigos cliente
           </Label>
         </div>
         <TooltipProvider>
