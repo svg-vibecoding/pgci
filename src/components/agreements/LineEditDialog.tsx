@@ -969,15 +969,39 @@ function ClientCodeCard({
               Reutiliza el panel del buscador y bloquea el guardado desde
               creatingIncomplete. */}
           {takenBlock && takenAlert}
-          {takenBlock && takenActions}
+          {takenBlock && !disabled && (() => {
+            const ps = takenBlock.position_status;
+            const isExcluded = ps === "excluded";
+            return (
+              <div className="flex justify-end gap-2">
+                {!isExcluded && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onRequestSwitchToPosition(takenBlock.position_id)}
+                  >
+                    Ir a esa posición
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleDiscardCreate}
+                >
+                  Elegir otro código
+                </Button>
+              </div>
+            );
+          })()}
           {/* Case B: código existe libre en el catálogo. Avisa y ofrece
               adoptar el producto existente. No bloquea el guardado. */}
           {!takenBlock &&
             existingMatch &&
             existingMatch.status.kind === "free" &&
             !disabled && (
-              <div className="flex items-start justify-between gap-3 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-[var(--status-warning-strong)]">
-                <div className="flex items-start gap-2">
+              <>
+                <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-[var(--status-warning-strong)]">
                   <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                   <span>
                     Este código ya existe en el catálogo de {card.name}
@@ -988,16 +1012,24 @@ function ClientCodeCard({
                     (no la tecleada aquí).
                   </span>
                 </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="shrink-0"
-                  onClick={handleAdoptExistingMatch}
-                >
-                  Usar el producto existente
-                </Button>
-              </div>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={handleAdoptExistingMatch}
+                  >
+                    Usar el producto existente
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleDiscardCreate}
+                  >
+                    Elegir otro código
+                  </Button>
+                </div>
+              </>
             )}
           {!takenBlock &&
             !(existingMatch && existingMatch.status.kind === "free") &&
@@ -1011,18 +1043,21 @@ function ClientCodeCard({
               </div>
             )}
 
-          {!disabled && (
-            <div className="flex justify-end">
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={handleDiscardCreate}
-              >
-                Descartar
-              </Button>
-            </div>
-          )}
+          {/* Case A: solo "Descartar". No hay alternativa que ofrecer. */}
+          {!disabled &&
+            !takenBlock &&
+            !(existingMatch && existingMatch.status.kind === "free") && (
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={handleDiscardCreate}
+                >
+                  Descartar
+                </Button>
+              </div>
+            )}
         </>
       )}
 
