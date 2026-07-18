@@ -1794,13 +1794,9 @@ function AgreementLinesPage() {
 
 function SkuGroupCard({
   group,
-  variant,
+  variant: _variant,
   defaultOpen,
-  canAdmin,
-  onAction,
-  actionLabel,
-  actionType,
-  actionDisabled,
+  onOpenPosition,
   fmtMoney,
 
 }: {
@@ -1822,13 +1818,10 @@ function SkuGroupCard({
   };
   variant: "conflict" | "repeated";
   defaultOpen: boolean;
-  canAdmin: boolean;
-  onAction: () => void;
-  actionLabel: string;
-  actionType?: "review";
-  actionDisabled?: boolean;
+  onOpenPosition: (id: string) => void;
   fmtMoney: (v: number | null) => string;
 }) {
+  void _variant;
 
   const [open, setOpen] = useState(defaultOpen);
   const count = group.positions.length;
@@ -1857,37 +1850,24 @@ function SkuGroupCard({
 
   return (
     <li className="rounded-lg border border-border bg-card p-3">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1 space-y-0.5">
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-sm font-medium">
-              {group.sku ?? "—"}
-            </span>
-            {hasDistinctPrices && (
-              <Badge color="neutral" variant="soft">
-                <Info className="h-3 w-3" />
-                Precios ({distinctPrices})
-              </Badge>
-            )}
-          </div>
-          {group.product_description && (
-            <div className="text-sm text-text-secondary">
-              {group.product_description}
-            </div>
+      <div className="min-w-0 space-y-0.5">
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-sm font-medium">
+            {group.sku ?? "—"}
+          </span>
+          {hasDistinctPrices && (
+            <Badge color="neutral" variant="soft">
+              <Info className="h-3 w-3" />
+              Precios ({distinctPrices})
+            </Badge>
           )}
-          <div className="text-xs text-muted-foreground">{summary}</div>
         </div>
-        {canAdmin && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={onAction}
-            disabled={actionDisabled}
-          >
-            {actionType === "review" && <Eye />}
-            {actionLabel}
-          </Button>
+        {group.product_description && (
+          <div className="text-sm text-text-secondary">
+            {group.product_description}
+          </div>
         )}
+        <div className="text-xs text-muted-foreground">{summary}</div>
       </div>
 
       <div className="mt-2">
@@ -1901,64 +1881,60 @@ function SkuGroupCard({
       </div>
 
       {open && (
-        <div className="mt-2 overflow-x-auto rounded-md border border-border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-28 py-1.5 px-2 text-[11px] font-normal text-muted-foreground">
-                  Estado
-                </TableHead>
-                <TableHead className="py-1.5 px-2 text-[11px] font-normal text-muted-foreground">
-                  Códigos
-                </TableHead>
-                <TableHead className="w-32 whitespace-nowrap py-1.5 px-2 text-right text-[11px] font-normal text-muted-foreground">
-                  Precio actual
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {group.positions.map((p) => {
-                const meta = statusMetaFor(p.status);
-                return (
-                  <TableRow key={p.id}>
-                    <TableCell className="py-1.5 px-2 align-top">
-                      {meta ? (
-                        <StatusBadge status={meta.status} label={meta.label} />
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="py-1.5 px-2 align-top text-xs text-muted-foreground">
-                      {p.codes.length === 0 ? (
-                        "—"
-                      ) : (
-                        <div className="flex flex-col gap-0.5">
-                          {p.codes.map((c, i) => (
-                            <div key={`${p.id}-${i}`} className="flex flex-wrap items-baseline gap-1">
-                              <span className="text-text-primary">
-                                {c.client_name ?? "—"}
-                              </span>
-                              <span className="text-muted-foreground">·</span>
-                              <span className="font-mono">{c.client_code}</span>
-                              {c.description && (
-                                <>
-                                  <span className="text-muted-foreground">·</span>
-                                  <span>{c.description}</span>
-                                </>
-                              )}
-                            </div>
-                          ))}
+        <div className="mt-2 space-y-2">
+          {group.positions.map((p) => {
+            const meta = statusMetaFor(p.status);
+            return (
+              <div
+                key={p.id}
+                className="rounded-md border border-border bg-white p-3 text-sm flex flex-col"
+              >
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {meta && (
+                      <StatusBadge status={meta.status} label={meta.label} />
+                    )}
+                  </div>
+                  <span className="font-bold text-foreground tabular-nums">
+                    {fmtMoney(p.sale_price ?? null)}
+                  </span>
+                </div>
+                {p.codes.length > 0 && (
+                  <div className="mt-2 border-t border-border pt-2 space-y-2">
+                    {p.codes.map((c, i) => (
+                      <div key={`${p.id}-${i}`} className="text-sm">
+                        <div>
+                          <span className="text-xs font-semibold uppercase tracking-wide text-accent">
+                            {c.client_name ?? "Cliente"}
+                          </span>{" "}
+                          ·{" "}
+                          <span className="font-mono font-semibold text-foreground">
+                            {c.client_code}
+                          </span>
                         </div>
-                      )}
-                    </TableCell>
-                    <TableCell className="py-1.5 px-2 text-right align-top text-xs tabular-nums text-muted-foreground">
-                      {fmtMoney(p.sale_price ?? null)}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                        {c.description && (
+                          <div className="text-muted-foreground">
+                            {c.description}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="mt-2 pt-2 flex justify-end">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="link"
+                    className="h-auto px-0 text-accent"
+                    onClick={() => onOpenPosition(p.id)}
+                  >
+                    Ir a esta posición
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </li>
