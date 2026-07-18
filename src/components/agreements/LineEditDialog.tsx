@@ -515,12 +515,12 @@ function ClientCodeCard({
             exclusion_date: excluded ? st.exclusion_date : null,
           });
         } else {
-          // Limpiar takenBlock solo si vino de una detección previa
-          // (usuario cambió el código a uno libre / inexistente).
+          // El código tecleado ya no coincide con un match tomado: limpiar
+          // el panel si venía de una detección previa de este efecto.
           setTakenBlock((prev) =>
-            prev && prev.client_code.toLowerCase() === code.toLowerCase()
-              ? null
-              : prev,
+            prev && prev.client_code.toLowerCase() !== code.toLowerCase()
+              ? prev
+              : null,
           );
         }
       } catch (e) {
