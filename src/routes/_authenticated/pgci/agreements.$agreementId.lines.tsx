@@ -1842,14 +1842,8 @@ function SkuGroupCard({
   const count = group.positions.length;
   const distinctPrices = new Set(group.prices).size;
   const hasDistinctPrices = distinctPrices > 1;
-  const summary =
-    variant === "conflict"
-      ? `${count} posiciones · precios: ${group.prices
-          .slice()
-          .sort((a, b) => a - b)
-          .map((p) => fmtMoney(p))
-          .join(" · ")}`
-      : `${count} posiciones · precio común: ${fmtMoney(group.prices[0] ?? null)}`;
+  const summary = `${count} ${count === 1 ? "posición" : "posiciones"}`;
+
 
   const statusMetaFor = (
     status: string,
