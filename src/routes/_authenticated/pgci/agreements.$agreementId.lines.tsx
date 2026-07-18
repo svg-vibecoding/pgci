@@ -387,22 +387,7 @@ function AgreementLinesPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [confirmPublishOpen, setConfirmPublishOpen] = useState(false);
   const [archivedViewId, setArchivedViewId] = useState<string | null>(null);
-  const [showClientCol, setShowClientCol] = useState(false);
-  useEffect(() => {
-    try {
-      const v = window.localStorage.getItem("pgci.lines.showClientCol");
-      if (v === "1") setShowClientCol(true);
-      else if (v === "0") setShowClientCol(false);
-    } catch {}
-  }, []);
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(
-        "pgci.lines.showClientCol",
-        showClientCol ? "1" : "0",
-      );
-    } catch {}
-  }, [showClientCol]);
+  const [showClientCol, setShowClientCol] = useState(true);
 
   const invalidateAll = () => {
     qc.invalidateQueries({ queryKey: ["agreements", "lines", agreementId] });
