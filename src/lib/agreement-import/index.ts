@@ -10,3 +10,20 @@ export {
   type PricingFileFormatCode,
   PricingFileFormatError,
 } from "./types";
+export { classifyImport } from "./diff";
+export type {
+  ActiveClientCodeSnapshot,
+  AgreementSnapshot,
+  Candidate,
+  CatalogProduct,
+  ClassifiedRow,
+  ClassifyImportInput,
+  DecisionReason,
+  DiffGroup,
+  DiffPositionStatus,
+  DiffResult,
+  DiffTotals,
+  FieldChange,
+  NotProcessableReason,
+  PositionSnapshot,
+} from "./diff.types";
