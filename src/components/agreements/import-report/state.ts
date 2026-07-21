@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import type { ClassifiedRow, DiffResult } from "@/lib/agreement-import";
 
 /**
