@@ -1,5 +1,11 @@
 import type { ReactNode } from "react";
-import { TrendingDown, TrendingUp } from "lucide-react";
+import { ChevronDown, TrendingDown, TrendingUp } from "lucide-react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Chip, StatusBadge } from "@/components/sumatec";
 import { formatMoneyCOP } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -7,9 +13,14 @@ import type { FieldChange } from "@/lib/agreement-import";
 import { FIELD_LABEL, statusMeta } from "./labels";
 
 /**
- * GroupShell — contenedor visual coherente para cada grupo del reporte.
+ * GroupShell — acordeón uniforme para cada grupo del reporte.
+ * Colapsado por defecto. Fila limpia: (icono) + título + conteo + chevron.
+ * hint y toolbar se muestran dentro del cuerpo al abrir, para no competir
+ * con el clic del acordeón.
  */
 export function GroupShell({
+  id,
+  icon,
   title,
   count,
   hint,
@@ -17,6 +28,8 @@ export function GroupShell({
   children,
   tone = "default",
 }: {
+  id?: string;
+  icon?: ReactNode;
   title: string;
   count: number;
   hint?: string;
@@ -24,31 +37,55 @@ export function GroupShell({
   children: ReactNode;
   tone?: "default" | "muted";
 }) {
+  const value = id ?? title.replace(/\s+/g, "-").toLowerCase();
   return (
-    <section
-      className={cn(
-        "rounded-lg border",
-        tone === "muted"
-          ? "border-border/60 bg-muted/30"
-          : "border-border bg-white",
-      )}
-    >
-      <header className="flex flex-wrap items-start justify-between gap-3 border-b border-border/60 px-4 py-3">
-        <div className="min-w-0">
-          <h3 className="suma-h4 text-text-primary">
-            {title}{" "}
-            <span className="text-text-tertiary font-normal">({count})</span>
-          </h3>
-          {hint && (
-            <p className="mt-0.5 suma-caption text-text-tertiary">{hint}</p>
-          )}
-        </div>
-        {toolbar && (
-          <div className="flex flex-wrap items-center gap-2">{toolbar}</div>
+    <Accordion type="multiple" className="w-full">
+      <AccordionItem
+        value={value}
+        className={cn(
+          "overflow-hidden rounded-lg border !border-b",
+          tone === "muted"
+            ? "border-border/60 bg-muted/20"
+            : "border-border bg-white",
         )}
-      </header>
-      <div className="p-3 md:p-4">{children}</div>
-    </section>
+      >
+        <AccordionTrigger className="group px-4 py-3 hover:no-underline [&>svg]:hidden">
+          <div className="flex flex-1 items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              {icon && (
+                <span className="text-text-tertiary shrink-0">{icon}</span>
+              )}
+              <span className="suma-h4 text-text-primary truncate">
+                {title}
+              </span>
+              <span className="tabular-nums text-text-tertiary font-normal">
+                {count}
+              </span>
+            </div>
+            <ChevronDown className="h-4 w-4 shrink-0 text-text-tertiary transition-transform duration-200 group-data-[state=open]:rotate-180" />
+          </div>
+        </AccordionTrigger>
+        <AccordionContent className="border-t border-border/60 px-4 pb-4 pt-3">
+          {(hint || toolbar) && (
+            <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+              {hint ? (
+                <p className="suma-caption text-text-tertiary max-w-2xl">
+                  {hint}
+                </p>
+              ) : (
+                <span />
+              )}
+              {toolbar && (
+                <div className="flex flex-wrap items-center gap-2">
+                  {toolbar}
+                </div>
+              )}
+            </div>
+          )}
+          {children}
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
   );
 }
 
