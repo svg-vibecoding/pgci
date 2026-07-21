@@ -59,11 +59,6 @@ export function ImportReport({
           catalogBySku={catalogBySku}
           decisions={decisions}
         />
-        <Group4NotInAgreement
-          rows={byGroup.not_in_agreement}
-          catalogBySku={catalogBySku}
-          decisions={decisions}
-        />
         <Group2ModifiesPublished
           rows={byGroup.modifies_published}
           positionsById={positionsById}
@@ -74,13 +69,18 @@ export function ImportReport({
           positionsById={positionsById}
           decisions={decisions}
         />
-        <Group6NotProcessable
-          rows={byGroup.not_processable}
+        <Group4NotInAgreement
+          rows={byGroup.not_in_agreement}
           catalogBySku={catalogBySku}
+          decisions={decisions}
         />
         <Group5Unchanged
           rows={byGroup.unchanged}
           positionsById={positionsById}
+        />
+        <Group6NotProcessable
+          rows={byGroup.not_processable}
+          catalogBySku={catalogBySku}
         />
       </div>
     </div>
