@@ -73,10 +73,13 @@ function readXlsx(buf: ArrayBuffer): { headers: string[]; rows: RawRow[] } {
   });
   const headers = ((aoa[0] as unknown[]) ?? []).map((h) => (h == null ? "" : String(h)));
 
-  // Cuerpo con raw:true para preservar Date/number tipados en las celdas.
+  // Cuerpo con raw:false: SheetJS entrega strings formateados.
+  // Protege SKU con ceros a la izquierda ("0083" no colapsa a 83) y evita
+  // que las fechas lleguen como Date nativo (que forzaría reinterpretación de huso).
+  // defval:"" es consistente con isEmpty() (trata "" como vacío).
   const rows = XLSX.utils.sheet_to_json<RawRow>(sheet, {
-    defval: null,
-    raw: true,
+    defval: "",
+    raw: false,
     blankrows: false,
   });
 
