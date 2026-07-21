@@ -3027,7 +3027,7 @@ export const getAgreementImportSnapshot = createServerFn({ method: "GET" })
       context.supabase
         .from("agreement_positions")
         .select(
-          "id, product_id, status, sale_price, par_price, start_date, end_date, observations, products!inner(sku)",
+          "id, product_id, status, sale_price, par_price, start_date, end_date, observations, products!inner(sku, commercial_brand, commercial_description)",
         )
         .eq("agreement_id", data.agreement_id),
       context.supabase
@@ -3043,6 +3043,11 @@ export const getAgreementImportSnapshot = createServerFn({ method: "GET" })
         `No se pudo cargar empresas del acuerdo: ${companiesRes.error.message}`,
       );
 
+    type ProdJoin = {
+      sku: string;
+      commercial_brand: string | null;
+      commercial_description: string | null;
+    };
     const rawPositions = (posRes.data ?? []) as Array<{
       id: string;
       product_id: string;
@@ -3052,7 +3057,7 @@ export const getAgreementImportSnapshot = createServerFn({ method: "GET" })
       start_date: string | null;
       end_date: string | null;
       observations: string | null;
-      products: { sku: string } | { sku: string }[] | null;
+      products: ProdJoin | ProdJoin[] | null;
     }>;
 
     const positions = rawPositions.map((p) => {
@@ -3061,6 +3066,8 @@ export const getAgreementImportSnapshot = createServerFn({ method: "GET" })
         id: p.id,
         product_id: p.product_id,
         sku: (prod?.sku ?? "") as string,
+        commercial_brand: prod?.commercial_brand ?? null,
+        commercial_description: prod?.commercial_description ?? null,
         status: p.status as "active" | "requires_review" | "excluded" | "draft",
         sale_price: p.sale_price,
         par_price: p.par_price,
@@ -3120,13 +3127,19 @@ export const getCatalogProductsBySku = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => skuBatchInput.parse(d))
   .handler(async ({ data, context }) => {
     const unique = Array.from(new Set(data.skus.filter((s) => s && s.length > 0)));
-    const out: Array<{ product_id: string; sku: string; status: string }> = [];
+    const out: Array<{
+      product_id: string;
+      sku: string;
+      status: string;
+      commercial_brand: string | null;
+      commercial_description: string | null;
+    }> = [];
     const CHUNK = 200;
     for (let i = 0; i < unique.length; i += CHUNK) {
       const slice = unique.slice(i, i + CHUNK);
       const { data: rows, error } = await context.supabase
         .from("products")
-        .select("id, sku, status")
+        .select("id, sku, status, commercial_brand, commercial_description")
         .in("sku", slice);
       if (error)
         throw new Error(`No se pudo cargar catálogo: ${error.message}`);
@@ -3134,8 +3147,16 @@ export const getCatalogProductsBySku = createServerFn({ method: "POST" })
         id: string;
         sku: string;
         status: string;
+        commercial_brand: string | null;
+        commercial_description: string | null;
       }>) {
-        out.push({ product_id: r.id, sku: r.sku, status: r.status });
+        out.push({
+          product_id: r.id,
+          sku: r.sku,
+          status: r.status,
+          commercial_brand: r.commercial_brand,
+          commercial_description: r.commercial_description,
+        });
       }
     }
     return out;
