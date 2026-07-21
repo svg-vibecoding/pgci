@@ -3027,7 +3027,7 @@ export const getAgreementImportSnapshot = createServerFn({ method: "GET" })
       context.supabase
         .from("agreement_positions")
         .select(
-          "id, product_id, status, sale_price, par_price, start_date, end_date, observations, products!inner(sku, commercial_brand, commercial_description)",
+          "id, product_id, status, sale_price, par_price, start_date, end_date, observations, products!inner(sku, commercial_brand, erp_description)",
         )
         .eq("agreement_id", data.agreement_id),
       context.supabase
@@ -3046,7 +3046,7 @@ export const getAgreementImportSnapshot = createServerFn({ method: "GET" })
     type ProdJoin = {
       sku: string;
       commercial_brand: string | null;
-      commercial_description: string | null;
+      erp_description: string | null;
     };
     const rawPositions = (posRes.data ?? []) as Array<{
       id: string;
@@ -3067,7 +3067,7 @@ export const getAgreementImportSnapshot = createServerFn({ method: "GET" })
         product_id: p.product_id,
         sku: (prod?.sku ?? "") as string,
         commercial_brand: prod?.commercial_brand ?? null,
-        commercial_description: prod?.commercial_description ?? null,
+        erp_description: prod?.erp_description ?? null,
         status: p.status as "active" | "requires_review" | "excluded" | "draft",
         sale_price: p.sale_price,
         par_price: p.par_price,
@@ -3132,14 +3132,14 @@ export const getCatalogProductsBySku = createServerFn({ method: "POST" })
       sku: string;
       status: string;
       commercial_brand: string | null;
-      commercial_description: string | null;
+      erp_description: string | null;
     }> = [];
     const CHUNK = 200;
     for (let i = 0; i < unique.length; i += CHUNK) {
       const slice = unique.slice(i, i + CHUNK);
       const { data: rows, error } = await context.supabase
         .from("products")
-        .select("id, sku, status, commercial_brand, commercial_description")
+        .select("id, sku, status, commercial_brand, erp_description")
         .in("sku", slice);
       if (error)
         throw new Error(`No se pudo cargar catálogo: ${error.message}`);
@@ -3148,14 +3148,14 @@ export const getCatalogProductsBySku = createServerFn({ method: "POST" })
         sku: string;
         status: string;
         commercial_brand: string | null;
-        commercial_description: string | null;
+        erp_description: string | null;
       }>) {
         out.push({
           product_id: r.id,
           sku: r.sku,
           status: r.status,
           commercial_brand: r.commercial_brand,
-          commercial_description: r.commercial_description,
+          erp_description: r.erp_description,
         });
       }
     }

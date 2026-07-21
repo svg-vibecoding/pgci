@@ -116,7 +116,7 @@ function DecisionRow({
         <ProductCell
           sku={sku}
           brand={catalog?.commercial_brand ?? null}
-          description={catalog?.commercial_description ?? null}
+          description={catalog?.erp_description ?? null}
           sourceRow={row.sourceRow}
         />
         <td className="px-2 py-1.5 align-top">
