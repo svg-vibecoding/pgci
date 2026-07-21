@@ -74,8 +74,12 @@ export function parsePrice(value: unknown): PriceParse {
     // Debe haber un único separador. Si aparece más de una vez y son iguales,
     // el separador es forzosamente miles (ej. "1.234.567" o "1,234,567").
     const count = (stripped.match(sep === "." ? /\./g : /,/g) || []).length;
+    const head = stripped.slice(0, idx);
     const tail = stripped.slice(idx + 1);
-    const isThousands = count > 1 || /^\d{3}$/.test(tail);
+    // Miles requiere agrupación real: cabeza de 1–3 dígitos + cola de EXACTAMENTE 3.
+    // Repetido (>1) también es forzosamente miles ("1.234.567").
+    const isThousands =
+      count > 1 || (/^\d{1,3}$/.test(head) && /^\d{3}$/.test(tail));
     if (isThousands) {
       normalized = stripped.replace(sep === "." ? /\./g : /,/g, "");
     } else {
