@@ -19,6 +19,10 @@ export type PositionSnapshot = {
   product_id: string;
   /** SKU del producto vinculado, denormalizado para comparación por SKU. */
   sku: string;
+  /** Marca comercial del producto (para pintar filas en el reporte). */
+  commercial_brand?: string | null;
+  /** Descripción comercial del producto (para pintar filas en el reporte). */
+  commercial_description?: string | null;
   status: DiffPositionStatus;
   sale_price: number | null;
   par_price: number | null;
@@ -42,6 +46,8 @@ export type CatalogProduct = {
   sku: string;
   /** Se conserva por si downstream lo quiere leer; el motor no lo usa. */
   status: string;
+  commercial_brand?: string | null;
+  commercial_description?: string | null;
 };
 
 export type AgreementSnapshot = {

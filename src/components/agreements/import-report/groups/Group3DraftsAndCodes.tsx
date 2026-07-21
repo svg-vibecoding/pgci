@@ -3,8 +3,16 @@ import type {
   PositionSnapshot,
 } from "@/lib/agreement-import";
 import { Button } from "@/components/ui/button";
-import { PositionCard } from "@/components/agreements/PositionCard";
-import { GroupShell, ChangesBlock } from "../parts";
+import {
+  GroupShell,
+  ChangesInline,
+  ReportTable,
+  Th,
+  ProductCell,
+  StatusCell,
+  PriceCell,
+  DateRangeCell,
+} from "../parts";
 import type { DecisionsState } from "../state";
 import { EmptyGroup } from "./Group1RequiresDecision";
 
@@ -36,7 +44,7 @@ export function Group3DraftsAndCodes({
       {rows.length === 0 ? (
         <EmptyGroup message="Sin cambios en gestión ni códigos nuevos." />
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-4">
           {drafts.length > 0 && (
             <Sub
               title="Completan borradores"
@@ -72,10 +80,21 @@ function Sub({
 }) {
   return (
     <div>
-      <h4 className="suma-caption text-text-tertiary uppercase tracking-wide mb-2">
+      <h4 className="suma-caption text-text-tertiary uppercase tracking-wide mb-1.5">
         {title} ({rows.length})
       </h4>
-      <div className="grid gap-3 md:grid-cols-2">
+      <ReportTable
+        head={
+          <>
+            <Th>Producto</Th>
+            <Th>Estado</Th>
+            <Th align="right">Precio actual</Th>
+            <Th>Vigencia actual</Th>
+            <Th>Se aplicará</Th>
+            <Th align="right">Acción</Th>
+          </>
+        }
+      >
         {rows.map((r) => {
           const pos = r.resolvedPositionId
             ? positionsById.get(r.resolvedPositionId)
@@ -84,68 +103,47 @@ function Sub({
           const decision = decisions.get(r.sourceRow);
           const excluded = decision.kind === "ignore";
           return (
-            <PositionCard
-              key={r.sourceRow}
-              status={statusToBadge(pos.status)}
-              statusLabel={statusLabel(pos.status)}
-              startDate={pos.start_date}
-              endDate={pos.end_date}
-              price={pos.sale_price}
-              parPrice={pos.par_price}
-              sku={pos.sku}
-              tone={excluded ? "muted" : "info"}
-              className={excluded ? "opacity-60" : ""}
-              footer={
-                <>
-                  <span className="text-[11px] text-text-tertiary mr-auto">
-                    Fila {r.sourceRow}
-                  </span>
-                  {excluded ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() =>
-                        decisions.set(r.sourceRow, { kind: "apply" })
-                      }
-                    >
-                      Reincluir
-                    </Button>
-                  ) : (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() =>
-                        decisions.set(r.sourceRow, { kind: "ignore" })
-                      }
-                    >
-                      Excluir
-                    </Button>
-                  )}
-                </>
-              }
-            >
-              {r.changes && r.changes.length > 0 && (
-                <ChangesBlock changes={r.changes} />
-              )}
-            </PositionCard>
+            <tr key={r.sourceRow}>
+              <ProductCell
+                sku={pos.sku}
+                brand={pos.commercial_brand}
+                description={pos.commercial_description}
+                sourceRow={r.sourceRow}
+                muted={excluded}
+              />
+              <StatusCell status={pos.status} muted={excluded} />
+              <PriceCell value={pos.sale_price} muted={excluded} />
+              <DateRangeCell
+                start={pos.start_date}
+                end={pos.end_date}
+                muted={excluded}
+              />
+              <td className={"px-2 py-1.5 align-top " + (excluded ? "opacity-60" : "")}>
+                <ChangesInline changes={r.changes ?? []} />
+              </td>
+              <td className="px-2 py-1.5 text-right whitespace-nowrap">
+                {excluded ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => decisions.set(r.sourceRow, { kind: "apply" })}
+                  >
+                    Reincluir
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => decisions.set(r.sourceRow, { kind: "ignore" })}
+                  >
+                    Excluir
+                  </Button>
+                )}
+              </td>
+            </tr>
           );
         })}
-      </div>
+      </ReportTable>
     </div>
   );
-}
-
-function statusToBadge(s: string) {
-  if (s === "active") return "active" as const;
-  if (s === "requires_review") return "review" as const;
-  if (s === "excluded") return "danger" as const;
-  if (s === "draft") return "pending" as const;
-  return "neutral" as const;
-}
-function statusLabel(s: string) {
-  if (s === "active") return "Activa";
-  if (s === "requires_review") return "En revisión";
-  if (s === "excluded") return "Excluida";
-  if (s === "draft") return "Borrador";
-  return s;
 }

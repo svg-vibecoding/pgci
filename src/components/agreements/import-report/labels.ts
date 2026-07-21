@@ -2,6 +2,7 @@ import type { PricingField } from "@/lib/agreement-import";
 import type { NotProcessableReason } from "@/lib/agreement-import/diff.types";
 import type { ClassifiedRow } from "@/lib/agreement-import";
 import { CANONICAL_HEADERS } from "@/lib/agreement-import";
+import type { StatusBadgeStatus } from "@/components/sumatec";
 
 export const FIELD_LABEL: Record<PricingField, string> = {
   sku: "SKU",
@@ -32,7 +33,6 @@ export function describeRowReason(r: ClassifiedRow): string {
 
 export function reasonKind(r: ClassifiedRow): string {
   if (r.row.cellErrors && r.row.cellErrors.length > 0) {
-    // Agrupar por el primer campo con error
     const first = r.row.cellErrors[0].field;
     return FIELD_LABEL[first] ?? "Formato";
   }
@@ -43,3 +43,28 @@ export function reasonKind(r: ClassifiedRow): string {
   if (rn === "no_anchor") return "Sin SKU ni código utilizable";
   return "Otro";
 }
+
+const STATUS_TABLE: Record<
+  string,
+  { badge: StatusBadgeStatus; label: string }
+> = {
+  active: { badge: "active", label: "Activa" },
+  requires_review: { badge: "review", label: "En revisión" },
+  excluded: { badge: "danger", label: "Excluida" },
+  draft: { badge: "pending", label: "Borrador" },
+};
+
+export function statusMeta(s: string | null | undefined): {
+  badge: StatusBadgeStatus;
+  label: string;
+} {
+  if (!s) return { badge: "neutral", label: "—" };
+  return STATUS_TABLE[s] ?? { badge: "neutral", label: s };
+}
+
+export const DECISION_REASON_LABEL: Record<string, string> = {
+  sku_in_multiple_positions: "SKU en múltiples posiciones",
+  code_sku_mismatch: "Código y SKU no coinciden",
+  client_code_replace: "El código cliente ya está en otra posición",
+  duplicate_in_file: "Duplicado en el archivo",
+};

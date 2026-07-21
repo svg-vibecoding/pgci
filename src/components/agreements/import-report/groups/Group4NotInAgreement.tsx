@@ -1,20 +1,23 @@
+import { Info } from "lucide-react";
 import type {
   CatalogProduct,
   ClassifiedRow,
 } from "@/lib/agreement-import";
-import { Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Chip } from "@/components/sumatec";
-import { PositionCard } from "@/components/agreements/PositionCard";
-import { GroupShell } from "../parts";
+import {
+  GroupShell,
+  ReportTable,
+  Th,
+  ProductCell,
+  PriceCell,
+  DateRangeCell,
+  ClientCodeCell,
+} from "../parts";
 import type { DecisionsState } from "../state";
 import { EmptyGroup } from "./Group1RequiresDecision";
 
-/**
- * Filas cuyo SKU existe en catálogo pero no está en el acuerdo.
- * Default: IGNORAR. La persona puede marcar para crear como borrador.
- */
 export function Group4NotInAgreement({
   rows,
   catalogBySku,
@@ -24,7 +27,7 @@ export function Group4NotInAgreement({
   catalogBySku: Map<string, CatalogProduct>;
   decisions: DecisionsState;
 }) {
-  const complete = rows.filter((r) => isComplete(r));
+  const complete = rows.filter(isComplete);
   return (
     <GroupShell
       title="No están en el acuerdo"
@@ -36,9 +39,7 @@ export function Group4NotInAgreement({
             <Button
               size="sm"
               variant="outline"
-              onClick={() =>
-                decisions.setMany(rows, { kind: "create_draft" })
-              }
+              onClick={() => decisions.setMany(rows, { kind: "create_draft" })}
             >
               Crear todas como borrador
             </Button>
@@ -68,35 +69,36 @@ export function Group4NotInAgreement({
         <EmptyGroup message="Todas las filas del archivo corresponden a posiciones existentes." />
       ) : (
         <>
-          <div className="mb-3 flex items-start gap-2 rounded-md border border-border/60 bg-muted/40 p-3 suma-caption text-text-secondary">
+          <div className="mb-3 flex items-start gap-2 rounded-md border border-border/60 bg-muted/40 p-2.5 suma-caption text-text-secondary">
             <Info className="h-4 w-4 mt-0.5 shrink-0 text-text-tertiary" />
             <span>
               Nada se crea por defecto. Marca las filas que quieras crear como
-              borradores en el acuerdo. Los borradores requieren gestión
-              posterior (código cliente, revisión) antes de publicarse.
+              borradores.
             </span>
           </div>
-          <div className="grid gap-3 md:grid-cols-2">
+          <ReportTable
+            head={
+              <>
+                <Th className="w-8" align="center">
+                  Crear
+                </Th>
+                <Th>Producto</Th>
+                <Th align="right">Precio</Th>
+                <Th>Vigencia</Th>
+                <Th>Código propuesto</Th>
+                <Th>Nota</Th>
+              </>
+            }
+          >
             {rows.map((r) => {
               const decision = decisions.get(r.sourceRow);
               const willCreate = decision.kind === "create_draft";
               const sku = r.row.sku ?? null;
               const catalog = sku ? catalogBySku.get(sku) : undefined;
-              const complete = isComplete(r);
+              const rowComplete = isComplete(r);
               return (
-                <PositionCard
-                  key={r.sourceRow}
-                  status="pending"
-                  statusLabel="Se crearía como borrador"
-                  startDate={r.row.start_date ?? null}
-                  endDate={r.row.end_date ?? null}
-                  price={r.row.sale_price ?? null}
-                  parPrice={r.row.par_price ?? null}
-                  sku={sku}
-                  brand={catalog ? "Catálogo" : undefined}
-                  tone={willCreate ? "info" : "default"}
-                  className={willCreate ? "" : "opacity-90"}
-                  headerLeft={
+                <tr key={r.sourceRow} className={willCreate ? "bg-info/5" : ""}>
+                  <td className="px-2 py-1.5 text-center align-top">
                     <Checkbox
                       checked={willCreate}
                       onCheckedChange={(v) =>
@@ -106,30 +108,36 @@ export function Group4NotInAgreement({
                       }
                       aria-label="Crear como borrador"
                     />
-                  }
-                  footer={
-                    <div className="w-full flex items-center justify-between gap-2">
-                      <span className="text-[11px] text-text-tertiary">
-                        Fila {r.sourceRow}
-                      </span>
-                      {!complete && (
-                        <Chip color="warning" variant="soft" size="small">
-                          Datos incompletos
-                        </Chip>
-                      )}
-                    </div>
-                  }
-                >
-                  {r.row.client_code && (
-                    <div className="text-xs text-text-secondary">
-                      Código propuesto:{" "}
-                      <span className="font-mono">{r.row.client_code}</span>
-                    </div>
-                  )}
-                </PositionCard>
+                  </td>
+                  <ProductCell
+                    sku={sku}
+                    brand={catalog?.commercial_brand ?? null}
+                    description={catalog?.commercial_description ?? null}
+                    sourceRow={r.sourceRow}
+                    muted={!willCreate}
+                  />
+                  <PriceCell value={r.row.sale_price} muted={!willCreate} />
+                  <DateRangeCell
+                    start={r.row.start_date}
+                    end={r.row.end_date}
+                    muted={!willCreate}
+                  />
+                  <ClientCodeCell
+                    code={r.row.client_code}
+                    description={r.row.client_description}
+                    muted={!willCreate}
+                  />
+                  <td className="px-2 py-1.5 align-top">
+                    {!rowComplete && (
+                      <Chip color="warning" variant="soft" size="small">
+                        Datos incompletos
+                      </Chip>
+                    )}
+                  </td>
+                </tr>
               );
             })}
-          </div>
+          </ReportTable>
         </>
       )}
     </GroupShell>
