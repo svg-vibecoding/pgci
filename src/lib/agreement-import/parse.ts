@@ -95,13 +95,23 @@ function readXlsx(buf: ArrayBuffer): { headers: string[]; rows: RawRow[] } {
   //   el número de formato de la celda (p.ej. "mm-dd-yy" → "06-24-24"), que
   //   parseDate no reconoce. Con cellDates:true, .v es Date nativo y
   //   parseDate lo maneja sin corrimiento de huso.
+  // - sale_price / par_price: raw:false formatea el número; con formato
+  //   contable el 0 se pinta como "-", que parsePrice marca ilegible.
+  //   Releemos .v (número nativo 0) para que el 0 llegue como número limpio.
   const rawColumns: Array<{ header: string; col: number; field: PricingField }> = [];
   for (let c = 0; c < headers.length; c++) {
     const f = matchCanonical(headers[c]);
-    if (f === "sku" || f === "start_date" || f === "end_date") {
+    if (
+      f === "sku" ||
+      f === "start_date" ||
+      f === "end_date" ||
+      f === "sale_price" ||
+      f === "par_price"
+    ) {
       rawColumns.push({ header: headers[c], col: c, field: f });
     }
   }
+
   if (rawColumns.length > 0) {
     const ref = sheet["!ref"];
     const range = ref ? XLSX.utils.decode_range(ref) : null;
