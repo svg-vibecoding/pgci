@@ -18,6 +18,7 @@ import {
   getCatalogProductsBySku,
 } from "@/lib/agreements.functions";
 import {
+  CANONICAL_HEADERS,
   classifyImport,
   downloadPricingTemplate,
   parsePricingFile,
@@ -380,7 +381,7 @@ function ImportAgreementView() {
                       <p className="mb-2 suma-caption text-text-tertiary">
                         {g.hint}
                       </p>
-                      <GroupRowsList rows={rows} />
+                      <GroupRowsList rows={rows} group={g.key} />
                     </AccordionContent>
                   </AccordionItem>
                 );
@@ -397,7 +398,29 @@ function ImportAgreementView() {
 // Lista mínima por grupo (sourceRow + SKU + código si aplica)
 // ---------------------------------------------------------------------------
 
-function GroupRowsList({ rows }: { rows: ClassifiedRow[] }) {
+function describeRowReason(r: ClassifiedRow): string {
+  const errs = r.row.cellErrors;
+  if (errs && errs.length > 0) {
+    return errs
+      .map((e) => `${CANONICAL_HEADERS[e.field]}: ${e.reason.toLowerCase()}`)
+      .join(" · ");
+  }
+  if (r.reason === "sku_not_in_catalog") {
+    return "SKU no existe en el catálogo Jaivaná.";
+  }
+  if (r.reason === "no_anchor") {
+    return "La fila no trae SKU ni un código de cliente utilizable.";
+  }
+  return "Motivo no especificado.";
+}
+
+function GroupRowsList({
+  rows,
+  group,
+}: {
+  rows: ClassifiedRow[];
+  group: DiffGroup;
+}) {
   if (rows.length === 0) {
     return (
       <p className="suma-caption text-text-tertiary">Sin filas en este grupo.</p>
@@ -405,6 +428,7 @@ function GroupRowsList({ rows }: { rows: ClassifiedRow[] }) {
   }
   const visible = rows.slice(0, 100);
   const rest = rows.length - visible.length;
+  const showReason = group === "not_processable";
   return (
     <div>
       <table className="w-full suma-caption">
@@ -412,22 +436,28 @@ function GroupRowsList({ rows }: { rows: ClassifiedRow[] }) {
           <tr className="text-left text-text-tertiary">
             <th className="py-1 pr-3">Fila</th>
             <th className="py-1 pr-3">SKU</th>
-            <th className="py-1">Código cliente</th>
+            <th className="py-1 pr-3">Código cliente</th>
+            {showReason && <th className="py-1">Motivo</th>}
           </tr>
         </thead>
         <tbody>
           {visible.map((r) => (
             <tr
               key={`${r.sourceRow}-${r.group}`}
-              className="border-t border-border/60"
+              className="border-t border-border/60 align-top"
             >
               <td className="py-1 pr-3 text-text-secondary">{r.sourceRow}</td>
               <td className="py-1 pr-3 font-mono text-text-primary">
                 {r.row.sku ?? "—"}
               </td>
-              <td className="py-1 font-mono text-text-secondary">
+              <td className="py-1 pr-3 font-mono text-text-secondary">
                 {r.row.client_code ?? "—"}
               </td>
+              {showReason && (
+                <td className="py-1 suma-caption text-text-secondary">
+                  {describeRowReason(r)}
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
