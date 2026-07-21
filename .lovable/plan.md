@@ -1,28 +1,93 @@
 ## Diagnóstico
 
-El archivo del piloto guarda `Fecha inicio` y `Fecha fin` como `datetime` con formato de celda `mm-dd-yy`. En `src/lib/agreement-import/parse.ts`, `readXlsx` usa `raw: false`, así que SheetJS entrega la fecha ya formateada como string `"06-24-24"`. `parseDate` sólo acepta ISO `YYYY-MM-DD` o `D/M/YYYY|D-M-YYYY` con año de 4 dígitos → todas las fechas del archivo caen en **"Fecha no reconocida"** y las 30 filas terminan en *No procesables*.
+En el piloto, 22 celdas de `Precio par` son el número `0` con formato contable de Excel (`_-"$"* #,##0.00_-;...;_-"$"* "-"??_-;...`). La 3ª sección de ese formato pinta el cero como `"-"`. Con `raw:false`, SheetJS entrega el string formateado (≈ `" $   -   "`). `parsePrice` hace strip a `[0-9.,]`, obtiene cadena vacía y devuelve `ok:false` → "Precio par: precio no reconocido" → 22 filas al grupo *No procesables*.
 
-Los precios (`Precio de venta`, `Precio par`) llegan como número nativo (SheetJS con `raw:false` sobre celdas numéricas devuelve el string formateado `"$ 74,127.91"`, y `parsePrice` lo procesa bien). Si tras corregir las fechas siguen apareciendo filas por "Precio par", será por un valor puntual — lo verifico al final.
+El 0 real existe en la celda; sólo lo esconde el formato de presentación.
 
-## Fix propuesto (mínimo)
+## Fix (camino a — lectura cruda + normalización 0 → null)
 
-Aplicar en `readXlsx` de `src/lib/agreement-import/parse.ts` la misma técnica que ya usamos para la columna SKU, pero para las columnas de fecha (`start_date`, `end_date`):
+Contrato de negocio (spec §8): precio en `0` = "sin ese precio" (null), NO error. Aplica a `sale_price` y `par_price`.
 
-1. Detectar las columnas cuyo header canónico sea `start_date` o `end_date`.
-2. Para cada fila no vacía, sobrescribir el valor de esas columnas con `cell.v` crudo (que, gracias a `cellDates:true`, viene como `Date` nativo) en lugar del string formateado que dejó `raw:false`.
-3. `parseDate` ya sabe manejar `Date` (extrae `getUTCFullYear/Month/Date` sin corrimiento de huso), así que no hay que tocar `cells.ts`.
+### 1. `src/lib/agreement-import/parse.ts` — `readXlsx`
 
-Resultado: fechas con formato `mm-dd-yy`, `dd/mm/yyyy`, `yyyy-mm-dd` u otros formatos de Excel se resuelven todas por la vía del `Date` nativo y dejan de fallar por el string cortado a dos dígitos de año.
+Extender el mecanismo de lectura cruda que ya existe para `sku`/`start_date`/`end_date` para incluir `sale_price` y `par_price`. En `rawColumns`, agregar esos dos campos. Para ellos, asignar `cell.v` tal cual (número nativo o string, según venga) en lugar del string formateado por `raw:false`.
+
+Esto elimina la dependencia del formato de celda: un 0 llega como número `0`, no como `"-"`.
+
+### 2. `src/lib/agreement-import/cells.ts` — `parsePrice`
+
+Añadir una regla al inicio: si `value` es `number` finito igual a `0`, devolver `{ value: null, ok: true }`. Esto normaliza el cero legítimo a "sin precio" sin marcarlo como error.
+
+Nota: strings que representan cero (`"0"`, `"0,00"`, `"0.00"`, `"$ 0"`) también deben terminar en null. Se agrega un chequeo post-parseo: si tras normalizar `n === 0`, devolver `{ value: null, ok: true }`.
+
+No se toca la rama `ok:false` de strings ilegibles (letras, símbolos raros con dígitos inconsistentes): un valor realmente ilegible sigue siendo error.
+
+### 3. `parseRow`
+
+No cambia. Ya trata `value === null` con `ok:true` como "campo vacío". Con `parsePrice` devolviendo `{value:null, ok:true}` para ceros, la fila conserva sus otros campos y NO va a *No procesables* por esta razón.
 
 ## Sin cambios en
 
-- `cells.ts` (`parseDate` ya cubre `Date`).
-- `diff.ts`, motor de clasificación, vista `/import`.
-- Plantilla ni encabezados.
+- `diff.ts`, motor de clasificación.
+- Vista `/import` y `describeRowReason`.
+- Plantilla, encabezados, tipos públicos.
 
 ## Verificación
 
-1. Re-subir el mismo `plantilla_acuerdo_Carga_piloto_1.xlsx`.
-2. Confirmar en el reporte que las 30 filas dejan de estar en *No procesables* por fechas.
-3. Si aparecen residuales por "Precio par", inspeccionar celda concreta (probable valor atípico) y decidir si amerita otro fix — fuera de este plan.
-4. Al validar, retirar los `console.log` temporales que quedan en `onFile` de `agreements.$agreementId.import.tsx`.
+1. Re-subir `plantilla_acuerdo_Carga_piloto_1.xlsx`.
+2. Confirmar en el reporte que ninguna fila cae en *No procesables* por "Precio par: precio no reconocido".
+3. Las 22 filas con par en 0 deben quedar con `par_price: null` y clasificarse por sus demás campos (SKU, sale_price, fechas).
+4. Verificar que `sale_price = 0` (si aparece en otro archivo) también se normaliza a null sin error.
+5. Retirar los `console.log` temporales de `onFile` en `agreements.$agreementId.import.tsx`.
+
+[CONSTRUCCIÓN]
+
+Ajuste al fix de Precio par. Diagnóstico tuyo correcto (formato contable pinta 
+
+el 0 como "-", raw:false entrega el guion, parsePrice lo marca ilegible). 
+
+PERO corrige el enfoque: NO colapses 0 y vacío. Son distintos para el usuario 
+
+—"precio $0" no es lo mismo que "sin precio"— y el sistema debe preservar esa 
+
+distinción, aunque para escribir ambos acaben en null en un paso posterior.
+
+FIX CORRECTO:
+
+1. readXlsx (parse.ts): SÍ extiende la lectura cruda (.v) a sale_price y 
+
+   par_price, igual que hiciste con sku/fechas. Esto hace que el 0 escondido 
+
+   tras el formato contable llegue como el número 0 limpio, no como "-".
+
+   → Este paso resuelve el bug: el 0 deja de ser ilegible.
+
+2. parsePrice (cells.ts): NO agregues la regla "0 → null". Déjala como está:
+
+   - número 0 finito → { value: 0, ok: true }  (preserva el 0, NO error)
+
+   - vacío/null → { value: null, ok: true }     (preserva el vacío)
+
+   - string ilegible → { value: null, ok: false }
+
+   El 0 se preserva como 0. El vacío como null. NO se colapsan.
+
+3. parseRow: sin cambios.
+
+RESULTADO ESPERADO:
+
+- Las 22 filas con par en 0 → par_price = 0 (no null, no error), salen de 
+
+  No procesables, se clasifican por lo demás.
+
+- Una fila con par vacío → par_price = null.
+
+- Ambas son válidas; la diferencia 0 vs vacío se conserva en los datos.
+
+La normalización 0→null para escritura se queda en el Paso 4 (confirmación), 
+
+NO en el parser. El reporte podrá distinguir "precio $0" de "sin precio".
+
+Verifica: re-sube el piloto, confirma que las 22 salen de No procesables con 
+
+par_price = 0 (no null). Retira los console.log temporales.
