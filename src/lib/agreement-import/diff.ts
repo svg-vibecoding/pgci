@@ -96,11 +96,13 @@ function computeChanges(
     changes.push({ field: "end_date", from: position.end_date, to: row.end_date });
   }
   if (present.has("observations")) {
-    const from = position === position ? (positionObs(position)) : null; // noop, see below
-    // observations no está en PositionSnapshot; el snapshot definido no la incluye.
-    // El motor no compara observations contra la posición porque el snapshot
-    // no la trae. Si en el futuro se agrega, aquí se compara.
-    void from;
+    const from = position.observations;
+    const to = row.observations;
+    // null y "" cuentan como iguales
+    const norm = (v: string | null) => (v === null || v === "" ? null : v);
+    if (norm(from) !== norm(to)) {
+      changes.push({ field: "observations", from, to });
+    }
   }
 
   // add_client_code / client_code_replace
@@ -127,11 +129,6 @@ function computeChanges(
   }
 
   return { changes, codeReplace };
-}
-
-// observations no vive en PositionSnapshot; helper vacío para futura extensión.
-function positionObs(_p: PositionSnapshot): string | null {
-  return null;
 }
 
 // ---------------------------------------------------------------------------
