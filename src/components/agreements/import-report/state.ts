@@ -48,9 +48,11 @@ export type DecisionsState = {
 
 export function useImportDecisions(result: DiffResult | null): DecisionsState {
   const [map, setMap] = useState<Map<number, Decision>>(new Map());
+  const lastResultRef = useRef<DiffResult | null>(null);
 
-  // Reset defaults when the result changes
-  useMemo(() => {
+  useEffect(() => {
+    if (lastResultRef.current === result) return;
+    lastResultRef.current = result;
     if (!result) {
       setMap(new Map());
       return;
@@ -58,7 +60,6 @@ export function useImportDecisions(result: DiffResult | null): DecisionsState {
     const next = new Map<number, Decision>();
     for (const r of result.rows) next.set(r.sourceRow, defaultFor(r));
     setMap(next);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result]);
 
   const set = useCallback((sourceRow: number, d: Decision) => {
