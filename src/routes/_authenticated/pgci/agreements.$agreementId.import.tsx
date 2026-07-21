@@ -1,35 +1,28 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, Download, Paperclip, Upload, X } from "lucide-react";
+import { ArrowLeft, Download, Paperclip, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { Chip } from "@/components/sumatec";
 import {
   getAgreementImportSnapshot,
   getCatalogProductsBySku,
 } from "@/lib/agreements.functions";
 import {
-  CANONICAL_HEADERS,
   classifyImport,
   downloadPricingTemplate,
   parsePricingFile,
   PricingFileFormatError,
   type CatalogProduct,
-  type ClassifiedRow,
-  type DiffGroup,
   type DiffResult,
   type ParsedRow,
   type PricingField,
 } from "@/lib/agreement-import";
+import { ImportReport } from "@/components/agreements/import-report/ImportReport";
+import { FIELD_LABEL } from "@/components/agreements/import-report/labels";
 
 export const Route = createFileRoute(
   "/_authenticated/pgci/agreements/$agreementId/import",
@@ -37,58 +30,6 @@ export const Route = createFileRoute(
   head: () => ({ meta: [{ title: "Importar acuerdo · PGCI" }] }),
   component: ImportAgreementView,
 });
-
-// ---------------------------------------------------------------------------
-// Constantes de presentación
-// ---------------------------------------------------------------------------
-
-const FIELD_LABELS: Record<PricingField, string> = {
-  sku: "SKU",
-  client_code: "Código cliente",
-  client_description: "Descripción cliente",
-  sale_price: "Precio venta",
-  par_price: "Precio par",
-  start_date: "Fecha inicio",
-  end_date: "Fecha fin",
-  observations: "Observaciones",
-};
-
-const GROUP_ORDER: Array<{
-  key: DiffGroup;
-  title: string;
-  hint: string;
-}> = [
-  {
-    key: "requires_decision",
-    title: "Requieren decisión",
-    hint: "Filas donde la persona debe intervenir para elegir qué hacer.",
-  },
-  {
-    key: "modifies_published",
-    title: "Modifican posiciones publicadas",
-    hint: "Filas que cambian datos de posiciones activas, en revisión o excluidas.",
-  },
-  {
-    key: "modifies_draft_or_adds_code",
-    title: "Modifican gestión / agregan códigos",
-    hint: "Filas sobre posiciones en borrador o que solo agregan un código nuevo a un cliente.",
-  },
-  {
-    key: "not_in_agreement",
-    title: "No están en el acuerdo",
-    hint: "SKUs del catálogo que aún no tienen posición en este acuerdo.",
-  },
-  {
-    key: "unchanged",
-    title: "Sin cambios",
-    hint: "Filas que coinciden con el estado actual de la posición.",
-  },
-  {
-    key: "not_processable",
-    title: "No procesables",
-    hint: "Filas con errores de celda o SKUs desconocidos por el catálogo.",
-  },
-];
 
 const FILE_ERROR_MESSAGES: Record<string, string> = {
   FORMAT_UNSUPPORTED:
@@ -99,10 +40,6 @@ const FILE_ERROR_MESSAGES: Record<string, string> = {
     "El archivo tiene columnas duplicadas. Deja solo una por concepto.",
   EMPTY_FILE: "El archivo está vacío o no tiene filas de datos.",
 };
-
-// ---------------------------------------------------------------------------
-// Componente
-// ---------------------------------------------------------------------------
 
 function ImportAgreementView() {
   const { agreementId } = Route.useParams();
@@ -115,6 +52,9 @@ function ImportAgreementView() {
     presentColumns: PricingField[];
   } | null>(null);
   const [classified, setClassified] = useState<DiffResult | null>(null);
+  const [catalog, setCatalog] = useState<Map<string, CatalogProduct>>(
+    new Map(),
+  );
   const [fileError, setFileError] = useState<string | null>(null);
   const [loadingClassify, setLoadingClassify] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -131,6 +71,7 @@ function ImportAgreementView() {
     setFileName(null);
     setParsed(null);
     setClassified(null);
+    setCatalog(new Map());
     setFileError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
@@ -176,12 +117,13 @@ function ImportAgreementView() {
             .filter((s): s is string => !!s && s.length > 0),
         ),
       );
-      const catalog =
+      const catalogList =
         skus.length > 0
           ? ((await catalogFn({ data: { skus } })) as CatalogProduct[])
           : [];
       const catalogBySku = new Map<string, CatalogProduct>();
-      for (const p of catalog) catalogBySku.set(p.sku, p);
+      for (const p of catalogList) catalogBySku.set(p.sku, p);
+      setCatalog(catalogBySku);
 
       const result = classifyImport({
         rows: parseResult.rows,
@@ -206,15 +148,12 @@ function ImportAgreementView() {
   }
 
   const totalRows = parsed?.rows.length ?? 0;
-  const sumTotals = classified
-    ? GROUP_ORDER.reduce(
-        (acc, g) => acc + (classified.totals[g.key] ?? 0),
-        0,
-      )
-    : 0;
-  const totalsMismatch = classified !== null && sumTotals !== totalRows;
   const hasClientCode =
     parsed?.presentColumns.includes("client_code") ?? false;
+  const snapPositions = useMemo(
+    () => snapshotQuery.data?.positions ?? [],
+    [snapshotQuery.data],
+  );
 
   return (
     <div className="space-y-6">
@@ -310,7 +249,7 @@ function ImportAgreementView() {
               <Chip>{parsed.presentColumns.length} columnas</Chip>
               <span className="suma-body text-text-secondary">
                 {parsed.presentColumns
-                  .map((c) => FIELD_LABELS[c])
+                  .map((c) => FIELD_LABEL[c])
                   .join(" · ")}
               </span>
             </div>
@@ -334,127 +273,14 @@ function ImportAgreementView() {
           <CardHeader>
             <CardTitle className="suma-h4">3. Cómo se clasifica</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="suma-body text-text-primary">
-              <strong>{sumTotals}</strong>{" "}
-              {sumTotals === 1
-                ? "fila clasificada"
-                : "filas clasificadas"}
-              .
-            </p>
-            {totalsMismatch && (
-              <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3">
-                <p className="suma-body font-medium text-destructive">
-                  Inconsistencia interna: la suma de los grupos ({sumTotals})
-                  no coincide con las filas leídas ({totalRows}). Contacta
-                  soporte.
-                </p>
-              </div>
-            )}
-            <Accordion type="multiple" className="w-full">
-              {GROUP_ORDER.map((g) => {
-                const rows = classified.rows.filter((r) => r.group === g.key);
-                return (
-                  <AccordionItem key={g.key} value={g.key}>
-                    <AccordionTrigger>
-                      <span className="flex flex-1 items-center justify-between pr-2">
-                        <span className="suma-body font-medium text-text-primary">
-                          {g.title}
-                        </span>
-                        <span className="suma-body text-text-tertiary">
-                          ({classified.totals[g.key] ?? 0})
-                        </span>
-                      </span>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <p className="mb-2 suma-caption text-text-tertiary">
-                        {g.hint}
-                      </p>
-                      <GroupRowsList rows={rows} group={g.key} />
-                    </AccordionContent>
-                  </AccordionItem>
-                );
-              })}
-            </Accordion>
+          <CardContent>
+            <ImportReport
+              result={classified}
+              positions={snapPositions}
+              catalogBySku={catalog}
+            />
           </CardContent>
         </Card>
-      )}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Lista mínima por grupo (sourceRow + SKU + código si aplica)
-// ---------------------------------------------------------------------------
-
-function describeRowReason(r: ClassifiedRow): string {
-  const errs = r.row.cellErrors;
-  if (errs && errs.length > 0) {
-    return errs
-      .map((e) => `${CANONICAL_HEADERS[e.field]}: ${e.reason.toLowerCase()}`)
-      .join(" · ");
-  }
-  if (r.reason === "sku_not_in_catalog") {
-    return "SKU no existe en el catálogo Jaivaná.";
-  }
-  if (r.reason === "no_anchor") {
-    return "La fila no trae SKU ni un código de cliente utilizable.";
-  }
-  return "Motivo no especificado.";
-}
-
-function GroupRowsList({
-  rows,
-  group,
-}: {
-  rows: ClassifiedRow[];
-  group: DiffGroup;
-}) {
-  if (rows.length === 0) {
-    return (
-      <p className="suma-caption text-text-tertiary">Sin filas en este grupo.</p>
-    );
-  }
-  const visible = rows.slice(0, 100);
-  const rest = rows.length - visible.length;
-  const showReason = group === "not_processable";
-  return (
-    <div>
-      <table className="w-full suma-caption">
-        <thead>
-          <tr className="text-left text-text-tertiary">
-            <th className="py-1 pr-3">Fila</th>
-            <th className="py-1 pr-3">SKU</th>
-            <th className="py-1 pr-3">Código cliente</th>
-            {showReason && <th className="py-1">Motivo</th>}
-          </tr>
-        </thead>
-        <tbody>
-          {visible.map((r) => (
-            <tr
-              key={`${r.sourceRow}-${r.group}`}
-              className="border-t border-border/60 align-top"
-            >
-              <td className="py-1 pr-3 text-text-secondary">{r.sourceRow}</td>
-              <td className="py-1 pr-3 font-mono text-text-primary">
-                {r.row.sku ?? "—"}
-              </td>
-              <td className="py-1 pr-3 font-mono text-text-secondary">
-                {r.row.client_code ?? "—"}
-              </td>
-              {showReason && (
-                <td className="py-1 suma-caption text-text-secondary">
-                  {describeRowReason(r)}
-                </td>
-              )}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {rest > 0 && (
-        <p className="mt-2 suma-caption text-text-tertiary">
-          …y {rest} más.
-        </p>
       )}
     </div>
   );
