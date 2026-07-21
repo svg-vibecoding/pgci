@@ -110,7 +110,7 @@ export function Group6NotProcessable({
                 <ProductCell
                   sku={sku}
                   brand={catalog?.commercial_brand ?? null}
-                  description={catalog?.commercial_description ?? null}
+                  description={catalog?.erp_description ?? null}
                   sourceRow={r.sourceRow}
                   muted
                 />

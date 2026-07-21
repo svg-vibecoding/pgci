@@ -107,7 +107,7 @@ function Sub({
               <ProductCell
                 sku={pos.sku}
                 brand={pos.commercial_brand}
-                description={pos.commercial_description}
+                description={pos.erp_description}
                 sourceRow={r.sourceRow}
                 muted={excluded}
               />

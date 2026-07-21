@@ -22,7 +22,7 @@ export type PositionSnapshot = {
   /** Marca comercial del producto (para pintar filas en el reporte). */
   commercial_brand?: string | null;
   /** Descripción comercial del producto (para pintar filas en el reporte). */
-  commercial_description?: string | null;
+  erp_description?: string | null;
   status: DiffPositionStatus;
   sale_price: number | null;
   par_price: number | null;
@@ -47,7 +47,7 @@ export type CatalogProduct = {
   /** Se conserva por si downstream lo quiere leer; el motor no lo usa. */
   status: string;
   commercial_brand?: string | null;
-  commercial_description?: string | null;
+  erp_description?: string | null;
 };
 
 export type AgreementSnapshot = {

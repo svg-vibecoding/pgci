@@ -59,7 +59,7 @@ export function Group5Unchanged({
                 <ProductCell
                   sku={r.row.sku ?? pos?.sku ?? null}
                   brand={pos?.commercial_brand ?? null}
-                  description={pos?.commercial_description ?? null}
+                  description={pos?.erp_description ?? null}
                   sourceRow={r.sourceRow}
                   muted
                 />
