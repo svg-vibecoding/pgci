@@ -83,6 +83,54 @@ function readXlsx(buf: ArrayBuffer): { headers: string[]; rows: RawRow[] } {
     blankrows: false,
   });
 
+  // Excepción SOLO para la columna SKU: raw:false devuelve el valor
+  // formateado (.w), que para números largos es notación científica
+  // ("1.23457E+12") y corrompe el SKU. Releemos la celda cruda y tomamos
+  // .v: string tal cual (preserva "0083") o String(number) sobre el
+  // entero crudo (preserva "1234567890123"). Nunca cell.w.
+  let skuHeader: string | null = null;
+  let skuCol = -1;
+  for (let c = 0; c < headers.length; c++) {
+    if (matchCanonical(headers[c]) === "sku") {
+      skuHeader = headers[c];
+      skuCol = c;
+      break;
+    }
+  }
+  if (skuHeader && skuCol >= 0) {
+    const ref = sheet["!ref"];
+    const range = ref ? XLSX.utils.decode_range(ref) : null;
+    const startRow = range ? range.s.r + 1 : 1; // saltar cabecera
+    // sheet_to_json con blankrows:false descarta filas totalmente vacías.
+    // Recorremos las mismas filas no-vacías en orden y les asignamos la celda cruda.
+    let rowIdx = 0;
+    if (range) {
+      for (let r = startRow; r <= range.e.r && rowIdx < rows.length; r++) {
+        // detectar si la fila cruda está totalmente vacía → saltar (alinear con blankrows:false)
+        let anyCell = false;
+        for (let c = range.s.c; c <= range.e.c; c++) {
+          const cell = sheet[XLSX.utils.encode_cell({ r, c })];
+          if (cell && cell.v !== undefined && cell.v !== null && cell.v !== "") {
+            anyCell = true;
+            break;
+          }
+        }
+        if (!anyCell) continue;
+        const skuCell = sheet[XLSX.utils.encode_cell({ r, c: skuCol })];
+        if (!skuCell || skuCell.v === undefined || skuCell.v === null || skuCell.v === "") {
+          rows[rowIdx][skuHeader] = "";
+        } else if (typeof skuCell.v === "string") {
+          rows[rowIdx][skuHeader] = skuCell.v;
+        } else if (typeof skuCell.v === "number") {
+          rows[rowIdx][skuHeader] = String(skuCell.v);
+        } else {
+          rows[rowIdx][skuHeader] = String(skuCell.v);
+        }
+        rowIdx++;
+      }
+    }
+  }
+
   return { headers, rows };
 }
 
