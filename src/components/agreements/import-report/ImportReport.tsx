@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { AlertTriangle, Ban, CheckCircle2, FilePlus, PlusSquare, Wand2 } from "lucide-react";
 import type {
   CatalogProduct,
   DiffResult,
@@ -6,25 +7,31 @@ import type {
 } from "@/lib/agreement-import";
 import { useImportDecisions } from "./state";
 import { StickyDecisionBar } from "./StickyDecisionBar";
+import { ImportReportHeader } from "./ImportReportHeader";
 import { Group1RequiresDecision } from "./groups/Group1RequiresDecision";
 import { Group2ModifiesPublished } from "./groups/Group2ModifiesPublished";
 import { Group3DraftsAndCodes } from "./groups/Group3DraftsAndCodes";
-import { Group4NotInAgreement } from "./groups/Group4NotInAgreement";
+import { Group4NewPositions } from "./groups/Group4NewPositions";
 import { Group5Unchanged } from "./groups/Group5Unchanged";
 import { Group6NotProcessable } from "./groups/Group6NotProcessable";
 
 /**
  * ImportReport — Card 3 completa del flujo de importación.
- * Habla en modo POSICIÓN. Orden priorizado: 1 → 4 → 2 → 3 → 6 → 5.
- * Barra sticky con conteos vivos y confirmación bloqueada mientras
- * G1 tenga pendientes.
+ * Habla en modo POSICIÓN. Orden secuencial 1→6.
+ * - Header con 3 métricas del archivo.
+ * - Sticky con conteos VIVOS derivados de las decisiones del usuario.
+ * - Cada grupo es un acordeón, colapsado por defecto.
  */
 export function ImportReport({
   result,
+  totalRows,
+  activeClientCodes,
   positions,
   catalogBySku,
 }: {
   result: DiffResult;
+  totalRows: number;
+  activeClientCodes: Array<{ client_code: string }>;
   positions: PositionSnapshot[];
   catalogBySku: Map<string, CatalogProduct>;
 }) {
@@ -48,39 +55,50 @@ export function ImportReport({
     return g;
   }, [result]);
 
-  const total = result.rows.length;
+  const icon = (Icon: typeof AlertTriangle) => <Icon className="h-4 w-4" strokeWidth={2} />;
 
   return (
-    <div>
-      <StickyDecisionBar total={total} decisions={decisions} />
-      <div className="space-y-4">
+    <div className="space-y-4">
+      <ImportReportHeader
+        totalRows={totalRows}
+        rows={result.rows}
+        activeClientCodes={activeClientCodes}
+      />
+      <StickyDecisionBar decisions={decisions} />
+      <div className="space-y-3">
         <Group1RequiresDecision
           rows={byGroup.requires_decision}
           catalogBySku={catalogBySku}
           decisions={decisions}
+          icon={icon(AlertTriangle)}
         />
         <Group2ModifiesPublished
           rows={byGroup.modifies_published}
           positionsById={positionsById}
           decisions={decisions}
+          icon={icon(Wand2)}
         />
         <Group3DraftsAndCodes
           rows={byGroup.modifies_draft_or_adds_code}
           positionsById={positionsById}
           decisions={decisions}
+          icon={icon(FilePlus)}
         />
-        <Group4NotInAgreement
+        <Group4NewPositions
           rows={byGroup.not_in_agreement}
           catalogBySku={catalogBySku}
           decisions={decisions}
+          icon={icon(PlusSquare)}
         />
         <Group5Unchanged
           rows={byGroup.unchanged}
           positionsById={positionsById}
+          icon={icon(CheckCircle2)}
         />
         <Group6NotProcessable
           rows={byGroup.not_processable}
           catalogBySku={catalogBySku}
+          icon={icon(Ban)}
         />
       </div>
     </div>
