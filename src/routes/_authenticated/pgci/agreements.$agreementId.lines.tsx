@@ -828,20 +828,14 @@ function AgreementLinesPage() {
           </Button>
           {canAdmin && (
             <>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span>
-                      <Button variant="outline" size="sm" disabled>
-                        <Upload className="mr-1.5 h-4 w-4" /> Importar
-                      </Button>
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    Importación en mantenimiento — disponible en la próxima versión
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Button asChild variant="outline" size="sm">
+                <Link
+                  to="/pgci/agreements/$agreementId/import"
+                  params={{ agreementId }}
+                >
+                  <Upload className="mr-1.5 h-4 w-4" /> Importar
+                </Link>
+              </Button>
               <Button
                 size="sm"
                 onClick={() => {

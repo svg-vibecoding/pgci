@@ -3011,3 +3011,132 @@ export const getArchivedPositionAgreementContext = createServerFn({ method: "GET
       events,
     };
   });
+
+// ---------------------------------------------------------------------------
+// Importación de acuerdos (Paso 3.1): snapshot en modo LECTURA.
+// El motor de cruce (classifyImport) es puro: aquí solo se recolectan los
+// datos que necesita como AgreementSnapshot. Sin escrituras.
+// ---------------------------------------------------------------------------
+
+export const getAgreementImportSnapshot = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => agreementIdInput.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertCanAccess(context.supabase, data.agreement_id);
+    const [posRes, companiesRes] = await Promise.all([
+      context.supabase
+        .from("agreement_positions")
+        .select(
+          "id, product_id, status, sale_price, par_price, start_date, end_date, observations, products!inner(sku)",
+        )
+        .eq("agreement_id", data.agreement_id),
+      context.supabase
+        .from("agreement_companies")
+        .select("client_id")
+        .eq("agreement_id", data.agreement_id)
+        .is("valid_until", null),
+    ]);
+    if (posRes.error)
+      throw new Error(`No se pudo cargar posiciones: ${posRes.error.message}`);
+    if (companiesRes.error)
+      throw new Error(
+        `No se pudo cargar empresas del acuerdo: ${companiesRes.error.message}`,
+      );
+
+    const rawPositions = (posRes.data ?? []) as Array<{
+      id: string;
+      product_id: string;
+      status: string;
+      sale_price: number | null;
+      par_price: number | null;
+      start_date: string | null;
+      end_date: string | null;
+      observations: string | null;
+      products: { sku: string } | { sku: string }[] | null;
+    }>;
+
+    const positions = rawPositions.map((p) => {
+      const prod = Array.isArray(p.products) ? p.products[0] : p.products;
+      return {
+        id: p.id,
+        product_id: p.product_id,
+        sku: (prod?.sku ?? "") as string,
+        status: p.status as "active" | "requires_review" | "excluded" | "draft",
+        sale_price: p.sale_price,
+        par_price: p.par_price,
+        start_date: p.start_date,
+        end_date: p.end_date,
+        observations: p.observations,
+      };
+    });
+
+    const positionIds = positions.map((p) => p.id);
+    let activeClientCodes: Array<{
+      position_id: string;
+      client_id: string;
+      client_code: string;
+    }> = [];
+    if (positionIds.length > 0) {
+      const { data: codesData, error: codesErr } = await context.supabase
+        .from("agreement_position_client_codes")
+        .select(
+          "agreement_position_id, client_id, client_products!inner(client_code)",
+        )
+        .in("agreement_position_id", positionIds)
+        .is("valid_until", null);
+      if (codesErr)
+        throw new Error(
+          `No se pudo cargar códigos vigentes: ${codesErr.message}`,
+        );
+      activeClientCodes = ((codesData ?? []) as Array<{
+        agreement_position_id: string;
+        client_id: string;
+        client_products: { client_code: string } | { client_code: string }[] | null;
+      }>).map((r) => {
+        const cp = Array.isArray(r.client_products)
+          ? r.client_products[0]
+          : r.client_products;
+        return {
+          position_id: r.agreement_position_id,
+          client_id: r.client_id,
+          client_code: cp?.client_code ?? "",
+        };
+      });
+    }
+
+    const clientIds = Array.from(
+      new Set(((companiesRes.data ?? []) as Array<{ client_id: string }>).map(
+        (c) => c.client_id,
+      )),
+    );
+
+    return { positions, activeClientCodes, clientIds };
+  });
+
+const skuBatchInput = z.object({ skus: z.array(z.string()).max(100000) });
+
+export const getCatalogProductsBySku = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => skuBatchInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const unique = Array.from(new Set(data.skus.filter((s) => s && s.length > 0)));
+    const out: Array<{ product_id: string; sku: string; status: string }> = [];
+    const CHUNK = 200;
+    for (let i = 0; i < unique.length; i += CHUNK) {
+      const slice = unique.slice(i, i + CHUNK);
+      const { data: rows, error } = await context.supabase
+        .from("products")
+        .select("id, sku, status")
+        .in("sku", slice);
+      if (error)
+        throw new Error(`No se pudo cargar catálogo: ${error.message}`);
+      for (const r of (rows ?? []) as Array<{
+        id: string;
+        sku: string;
+        status: string;
+      }>) {
+        out.push({ product_id: r.id, sku: r.sku, status: r.status });
+      }
+    }
+    return out;
+  });
