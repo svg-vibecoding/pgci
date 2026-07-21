@@ -179,6 +179,8 @@ function ImportAgreementView() {
         skus.length > 0
           ? ((await catalogFn({ data: { skus } })) as CatalogProduct[])
           : [];
+      console.log("SKUs enviados:", skus.length, skus.slice(0, 3));
+      console.log("catálogo recibido:", catalog.length, catalog.slice(0, 3));
       const catalogBySku = new Map<string, CatalogProduct>();
       for (const p of catalog) catalogBySku.set(p.sku, p);
 
