@@ -343,10 +343,11 @@ function reclassifyDuplicates(rows: ClassifiedRow[]): void {
     // Solo consideramos filas que resolvieron a UNA posición y ya están
     // en 2/3/5. code_sku_mismatch y client_code_replace ya son grupo 1;
     // los ignoramos aquí (siguen siendo decisiones individuales).
+    // Solo compiten filas con cambio real. "unchanged" no genera conflicto:
+    // si una fila no toca nada, no hay decisión que tomar sobre ella.
     if (
       (r.group === "modifies_published" ||
-        r.group === "modifies_draft_or_adds_code" ||
-        r.group === "unchanged") &&
+        r.group === "modifies_draft_or_adds_code") &&
       r.resolvedPositionId
     ) {
       const arr = byPos.get(r.resolvedPositionId);
