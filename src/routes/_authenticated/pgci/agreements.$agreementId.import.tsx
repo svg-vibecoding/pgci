@@ -381,7 +381,7 @@ function ImportAgreementView() {
                       <p className="mb-2 suma-caption text-text-tertiary">
                         {g.hint}
                       </p>
-                      <GroupRowsList rows={rows} />
+                      <GroupRowsList rows={rows} group={g.key} />
                     </AccordionContent>
                   </AccordionItem>
                 );
