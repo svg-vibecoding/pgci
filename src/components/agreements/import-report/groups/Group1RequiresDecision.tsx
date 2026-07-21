@@ -22,13 +22,17 @@ export function Group1RequiresDecision({
   rows,
   catalogBySku,
   decisions,
+  icon,
 }: {
   rows: ClassifiedRow[];
   catalogBySku: Map<string, CatalogProduct>;
   decisions: DecisionsState;
+  icon?: React.ReactNode;
 }) {
   return (
     <GroupShell
+      id="g1"
+      icon={icon}
       title="Requieren decisión"
       count={rows.length}
       hint="El archivo no permite resolver estas filas por sí solo. Elige qué hacer con cada una."
@@ -36,7 +40,7 @@ export function Group1RequiresDecision({
         rows.length > 0 && (
           <Button
             size="sm"
-            variant="outline"
+            variant="ghost"
             onClick={() => decisions.setMany(rows, { kind: "ignore" })}
           >
             Ignorar todas

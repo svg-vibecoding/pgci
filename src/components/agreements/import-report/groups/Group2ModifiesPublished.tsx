@@ -35,10 +35,12 @@ export function Group2ModifiesPublished({
   rows,
   positionsById,
   decisions,
+  icon,
 }: {
   rows: ClassifiedRow[];
   positionsById: Map<string, PositionSnapshot>;
   decisions: DecisionsState;
+  icon?: React.ReactNode;
 }) {
   const [filter, setFilter] = useState<FilterKey>("all");
 
@@ -59,11 +61,28 @@ export function Group2ModifiesPublished({
 
   return (
     <GroupShell
+      id="g2"
+      icon={icon}
       title="Modifican posiciones publicadas"
       count={rows.length}
       hint="Cambian datos de posiciones activas, en revisión o excluidas. Por defecto se aplicarán."
       toolbar={
         <>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => decisions.setMany(rows, { kind: "apply" })}
+          >
+            Aplicar todas
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => decisions.setMany(rows, { kind: "ignore" })}
+          >
+            Ignorar todas
+          </Button>
+          <span className="mx-1 h-4 w-px bg-border" />
           <ChangeKindChip active={filter === "all"} onClick={() => setFilter("all")}>
             Todas
           </ChangeKindChip>
@@ -146,7 +165,7 @@ export function Group2ModifiesPublished({
                       variant="outline"
                       onClick={() => decisions.set(r.sourceRow, { kind: "apply" })}
                     >
-                      Reincluir
+                      Incluir
                     </Button>
                   ) : (
                     <Button
@@ -154,7 +173,7 @@ export function Group2ModifiesPublished({
                       variant="ghost"
                       onClick={() => decisions.set(r.sourceRow, { kind: "ignore" })}
                     >
-                      Excluir
+                      Ignorar
                     </Button>
                   )}
                 </td>
