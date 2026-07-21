@@ -1,13 +1,13 @@
 import type { ReactNode } from "react";
 import { TrendingDown, TrendingUp } from "lucide-react";
-import { Chip } from "@/components/sumatec";
+import { Chip, StatusBadge } from "@/components/sumatec";
 import { formatMoneyCOP } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import type { FieldChange } from "@/lib/agreement-import";
-import { FIELD_LABEL } from "./labels";
+import { FIELD_LABEL, statusMeta } from "./labels";
 
 /**
  * GroupShell — contenedor visual coherente para cada grupo del reporte.
- * Encabezado con título + conteo + hint neutro; cuerpo libre.
  */
 export function GroupShell({
   title,
@@ -26,12 +26,12 @@ export function GroupShell({
 }) {
   return (
     <section
-      className={
-        "rounded-lg border " +
-        (tone === "muted"
+      className={cn(
+        "rounded-lg border",
+        tone === "muted"
           ? "border-border/60 bg-muted/30"
-          : "border-border bg-white")
-      }
+          : "border-border bg-white",
+      )}
     >
       <header className="flex flex-wrap items-start justify-between gap-3 border-b border-border/60 px-4 py-3">
         <div className="min-w-0">
@@ -43,154 +43,16 @@ export function GroupShell({
             <p className="mt-0.5 suma-caption text-text-tertiary">{hint}</p>
           )}
         </div>
-        {toolbar && <div className="flex flex-wrap items-center gap-2">{toolbar}</div>}
+        {toolbar && (
+          <div className="flex flex-wrap items-center gap-2">{toolbar}</div>
+        )}
       </header>
-      <div className="p-4">{children}</div>
+      <div className="p-3 md:p-4">{children}</div>
     </section>
   );
 }
 
-/**
- * DeltaPrice — actual → nuevo con Δ% solo si actual > 0.
- * Colores: sube = warning, baja = success. Sin juicio en el texto.
- */
-export function DeltaPrice({
-  from,
-  to,
-  label,
-}: {
-  from: number | null;
-  to: number | null;
-  label: string;
-}) {
-  const showDelta = from != null && from > 0 && to != null;
-  const delta = showDelta ? ((to! - from!) / from!) * 100 : null;
-  const up = delta != null && delta > 0;
-  const down = delta != null && delta < 0;
-  return (
-    <div className="flex items-baseline gap-2 flex-wrap">
-      <span className="suma-caption text-text-tertiary uppercase tracking-wide">
-        {label}
-      </span>
-      {from != null && from > 0 ? (
-        <>
-          <span className="tabular-nums text-text-secondary">
-            {formatMoneyCOP(from)}
-          </span>
-          <span className="text-text-tertiary">→</span>
-          <span className="tabular-nums font-semibold text-text-primary">
-            {formatMoneyCOP(to)}
-          </span>
-          {delta != null && Math.abs(delta) >= 0.005 && (
-            <span
-              className={
-                "inline-flex items-center gap-0.5 tabular-nums text-xs font-semibold " +
-                (up
-                  ? "text-warning-strong"
-                  : down
-                    ? "text-success-strong"
-                    : "text-text-tertiary")
-              }
-            >
-              {up && <TrendingUp size={11} strokeWidth={2.5} />}
-              {down && <TrendingDown size={11} strokeWidth={2.5} />}
-              {delta > 0 ? "+" : ""}
-              {delta.toFixed(1)}%
-            </span>
-          )}
-        </>
-      ) : (
-        <>
-          <span className="text-text-tertiary">nuevo:</span>
-          <span className="tabular-nums font-semibold text-text-primary">
-            {formatMoneyCOP(to)}
-          </span>
-        </>
-      )}
-    </div>
-  );
-}
-
-function formatDate(iso: string | null): string {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("es-CO", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-}
-
-/** ChangesBlock — muestra los cambios `actual → nuevo` de una fila. */
-export function ChangesBlock({ changes }: { changes: FieldChange[] }) {
-  if (changes.length === 0) return null;
-  return (
-    <div className="rounded-md border border-border/60 bg-muted/30 p-2.5 space-y-1.5">
-      {changes.map((c, i) => {
-        if (c.field === "sale_price" || c.field === "par_price") {
-          return (
-            <DeltaPrice
-              key={i}
-              label={FIELD_LABEL[c.field]}
-              from={c.from}
-              to={c.to}
-            />
-          );
-        }
-        if (c.field === "start_date" || c.field === "end_date") {
-          return (
-            <div key={i} className="flex items-baseline gap-2 flex-wrap">
-              <span className="suma-caption text-text-tertiary uppercase tracking-wide">
-                {FIELD_LABEL[c.field]}
-              </span>
-              <span className="tabular-nums text-text-secondary">
-                {formatDate(c.from)}
-              </span>
-              <span className="text-text-tertiary">→</span>
-              <span className="tabular-nums font-semibold text-text-primary">
-                {formatDate(c.to)}
-              </span>
-            </div>
-          );
-        }
-        if (c.field === "observations") {
-          return (
-            <div key={i} className="space-y-0.5">
-              <div className="suma-caption text-text-tertiary uppercase tracking-wide">
-                {FIELD_LABEL.observations}
-              </div>
-              <div className="text-xs text-text-secondary line-through">
-                {c.from || <em className="not-italic">vacío</em>}
-              </div>
-              <div className="text-xs text-text-primary">
-                {c.to || <em className="text-text-tertiary">vacío</em>}
-              </div>
-            </div>
-          );
-        }
-        if (c.field === "add_client_code") {
-          return (
-            <div key={i} className="flex items-baseline gap-2 flex-wrap">
-              <span className="suma-caption text-text-tertiary uppercase tracking-wide">
-                Nuevo código
-              </span>
-              <span className="font-mono font-semibold text-foreground">
-                {c.client_code}
-              </span>
-              {c.description && (
-                <span className="text-text-secondary">— {c.description}</span>
-              )}
-            </div>
-          );
-        }
-        return null;
-      })}
-    </div>
-  );
-}
-
-/** Chip tipo-cambio para filtros de G2/G3. */
+/** Chip tipo-cambio para filtros de G2/G6. */
 export function ChangeKindChip({
   active,
   onClick,
@@ -203,7 +65,7 @@ export function ChangeKindChip({
   count?: number;
 }) {
   return (
-    <span onClick={onClick}>
+    <span onClick={onClick} className="cursor-pointer">
       <Chip
         color={active ? "accent" : "neutral"}
         variant={active ? "solid" : "outline"}
@@ -218,7 +80,336 @@ export function ChangeKindChip({
   );
 }
 
-/** Fila enriquecida para grupos INERTES (G5, G6): sin acciones. */
+// ---------------------------------------------------------------------------
+// Tabla + celdas compartidas (modo POSICIÓN, denso)
+// ---------------------------------------------------------------------------
+
+export function ReportTable({
+  head,
+  children,
+  compact,
+}: {
+  head: ReactNode;
+  children: ReactNode;
+  compact?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "overflow-x-auto rounded-md border border-border/60",
+        compact && "text-xs",
+      )}
+    >
+      <table className="w-full text-sm">
+        <thead className="bg-muted/40">
+          <tr className="text-left text-[10.5px] uppercase tracking-wide text-text-tertiary">
+            {head}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-border/60">{children}</tbody>
+      </table>
+    </div>
+  );
+}
+
+export function Th({
+  children,
+  className,
+  align,
+}: {
+  children?: ReactNode;
+  className?: string;
+  align?: "left" | "right" | "center";
+}) {
+  return (
+    <th
+      className={cn(
+        "px-2 py-2 font-semibold whitespace-nowrap",
+        align === "right" && "text-right",
+        align === "center" && "text-center",
+        className,
+      )}
+    >
+      {children}
+    </th>
+  );
+}
+
+/** Cabecera "Producto" — SKU (mono) + descripción debajo + marca en pill. */
+export function ProductCell({
+  sku,
+  brand,
+  description,
+  sourceRow,
+  muted,
+}: {
+  sku?: string | null;
+  brand?: string | null;
+  description?: string | null;
+  sourceRow?: number;
+  muted?: boolean;
+}) {
+  return (
+    <td className={cn("px-2 py-1.5 align-top", muted && "opacity-60")}>
+      <div className="flex items-center gap-2 flex-wrap">
+        {sourceRow != null && (
+          <span className="text-[10.5px] text-text-tertiary tabular-nums">
+            #{sourceRow}
+          </span>
+        )}
+        {brand && (
+          <span className="text-[10.5px] font-semibold uppercase tracking-wide text-accent">
+            {brand}
+          </span>
+        )}
+        <span className="font-mono text-sm font-semibold text-foreground">
+          {sku || "—"}
+        </span>
+      </div>
+      {description && (
+        <div className="text-xs text-muted-foreground line-clamp-2 max-w-[42ch]">
+          {description}
+        </div>
+      )}
+    </td>
+  );
+}
+
+export function StatusCell({
+  status,
+  overrideLabel,
+  muted,
+}: {
+  status?: string | null;
+  overrideLabel?: string;
+  muted?: boolean;
+}) {
+  if (!status)
+    return (
+      <td className={cn("px-2 py-1.5 text-text-tertiary", muted && "opacity-60")}>
+        —
+      </td>
+    );
+  const m = statusMeta(status);
+  return (
+    <td className={cn("px-2 py-1.5 whitespace-nowrap", muted && "opacity-60")}>
+      <StatusBadge status={m.badge} label={overrideLabel ?? m.label} />
+    </td>
+  );
+}
+
+export function PriceCell({
+  value,
+  muted,
+}: {
+  value: number | null | undefined;
+  muted?: boolean;
+}) {
+  return (
+    <td
+      className={cn(
+        "px-2 py-1.5 whitespace-nowrap tabular-nums text-right",
+        muted && "opacity-60",
+      )}
+    >
+      {value != null ? formatMoneyCOP(value) : "—"}
+    </td>
+  );
+}
+
+function fmtDate(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("es-CO", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+  });
+}
+
+export function DateRangeCell({
+  start,
+  end,
+  muted,
+}: {
+  start?: string | null;
+  end?: string | null;
+  muted?: boolean;
+}) {
+  if (!start && !end)
+    return (
+      <td className={cn("px-2 py-1.5 text-text-tertiary", muted && "opacity-60")}>
+        —
+      </td>
+    );
+  return (
+    <td
+      className={cn(
+        "px-2 py-1.5 whitespace-nowrap tabular-nums text-xs text-text-secondary",
+        muted && "opacity-60",
+      )}
+    >
+      {fmtDate(start)} → {fmtDate(end)}
+    </td>
+  );
+}
+
+export function ClientCodeCell({
+  code,
+  description,
+  muted,
+}: {
+  code?: string | null;
+  description?: string | null;
+  muted?: boolean;
+}) {
+  if (!code && !description)
+    return (
+      <td className={cn("px-2 py-1.5 text-text-tertiary", muted && "opacity-60")}>
+        —
+      </td>
+    );
+  return (
+    <td className={cn("px-2 py-1.5 align-top", muted && "opacity-60")}>
+      {code && (
+        <div className="font-mono text-xs font-semibold text-foreground">
+          {code}
+        </div>
+      )}
+      {description && (
+        <div className="text-[11px] text-muted-foreground line-clamp-1 max-w-[24ch]">
+          {description}
+        </div>
+      )}
+    </td>
+  );
+}
+
+/**
+ * DeltaValue — actual→nuevo (precio o texto), con Δ% solo si actual > 0.
+ * Se usa dentro de celdas Cambios.
+ */
+export function DeltaValue({
+  from,
+  to,
+  kind,
+}: {
+  from: number | null;
+  to: number | null;
+  kind: "price";
+}) {
+  const showDelta = from != null && from > 0 && to != null;
+  const delta = showDelta ? ((to! - from!) / from!) * 100 : null;
+  const up = delta != null && delta > 0;
+  const down = delta != null && delta < 0;
+  return (
+    <span className="inline-flex items-baseline gap-1.5 flex-wrap">
+      {from != null && from > 0 ? (
+        <>
+          <span className="tabular-nums text-xs text-text-tertiary">
+            {kind === "price" ? formatMoneyCOP(from) : String(from)}
+          </span>
+          <span className="text-text-tertiary">→</span>
+          <span className="tabular-nums font-semibold text-text-primary">
+            {kind === "price" ? formatMoneyCOP(to) : String(to)}
+          </span>
+          {delta != null && Math.abs(delta) >= 0.005 && (
+            <span
+              className={cn(
+                "inline-flex items-center gap-0.5 tabular-nums text-[11px] font-semibold",
+                up
+                  ? "text-warning-strong"
+                  : down
+                    ? "text-success-strong"
+                    : "text-text-tertiary",
+              )}
+            >
+              {up && <TrendingUp size={10} strokeWidth={2.5} />}
+              {down && <TrendingDown size={10} strokeWidth={2.5} />}
+              {delta > 0 ? "+" : ""}
+              {delta.toFixed(1)}%
+            </span>
+          )}
+        </>
+      ) : (
+        <>
+          <span className="text-text-tertiary text-xs">nuevo</span>
+          <span className="tabular-nums font-semibold text-text-primary">
+            {kind === "price" ? formatMoneyCOP(to) : String(to ?? "—")}
+          </span>
+        </>
+      )}
+    </span>
+  );
+}
+
+/** Compacto: lista de cambios como líneas dentro de una celda de tabla. */
+export function ChangesInline({ changes }: { changes: FieldChange[] }) {
+  if (changes.length === 0)
+    return <span className="text-text-tertiary">—</span>;
+  return (
+    <div className="space-y-0.5">
+      {changes.map((c, i) => {
+        if (c.field === "sale_price" || c.field === "par_price") {
+          return (
+            <div key={i} className="text-xs">
+              <span className="text-text-tertiary uppercase tracking-wide text-[10px] mr-1.5">
+                {FIELD_LABEL[c.field]}
+              </span>
+              <DeltaValue from={c.from} to={c.to} kind="price" />
+            </div>
+          );
+        }
+        if (c.field === "start_date" || c.field === "end_date") {
+          return (
+            <div key={i} className="text-xs tabular-nums">
+              <span className="text-text-tertiary uppercase tracking-wide text-[10px] mr-1.5">
+                {FIELD_LABEL[c.field]}
+              </span>
+              <span className="text-text-tertiary">{fmtDate(c.from)}</span>
+              <span className="mx-1 text-text-tertiary">→</span>
+              <span className="font-semibold text-text-primary">
+                {fmtDate(c.to)}
+              </span>
+            </div>
+          );
+        }
+        if (c.field === "observations") {
+          return (
+            <div key={i} className="text-xs">
+              <span className="text-text-tertiary uppercase tracking-wide text-[10px] mr-1.5">
+                {FIELD_LABEL.observations}
+              </span>
+              <span className="text-text-secondary line-through mr-1">
+                {c.from || "vacío"}
+              </span>
+              <span className="text-text-primary">{c.to || "vacío"}</span>
+            </div>
+          );
+        }
+        if (c.field === "add_client_code") {
+          return (
+            <div key={i} className="text-xs">
+              <span className="text-text-tertiary uppercase tracking-wide text-[10px] mr-1.5">
+                Nuevo código
+              </span>
+              <span className="font-mono font-semibold text-foreground">
+                {c.client_code}
+              </span>
+              {c.description && (
+                <span className="text-text-secondary"> — {c.description}</span>
+              )}
+            </div>
+          );
+        }
+        return null;
+      })}
+    </div>
+  );
+}
+
+/** Fila enriquecida para grupos INERTES (G5, G6). */
 export function EnrichedRow({
   sourceRow,
   sku,
@@ -238,9 +429,11 @@ export function EnrichedRow({
     <div className="flex items-start justify-between gap-3 border-t border-border/60 py-2 first:border-t-0 first:pt-0">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-[11px] text-text-tertiary">Fila {sourceRow}</span>
+          <span className="text-[10.5px] text-text-tertiary tabular-nums">
+            #{sourceRow}
+          </span>
           {brand && (
-            <span className="text-xs font-semibold uppercase tracking-wide text-accent">
+            <span className="text-[10.5px] font-semibold uppercase tracking-wide text-accent">
               {brand}
             </span>
           )}
@@ -249,7 +442,7 @@ export function EnrichedRow({
           </span>
         </div>
         {description && (
-          <div className="text-sm text-muted-foreground">{description}</div>
+          <div className="text-xs text-muted-foreground">{description}</div>
         )}
         {extra}
       </div>
