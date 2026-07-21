@@ -36,6 +36,7 @@ import { Route as AuthenticatedSetupUsersUserIdClientAccessRouteImport } from '.
 import { Route as AuthenticatedSetupClientsClientIdEditRouteImport } from './routes/_authenticated/setup/clients.$clientId.edit'
 import { Route as AuthenticatedSetupClientsClientIdCompaniesRouteImport } from './routes/_authenticated/setup/clients.$clientId.companies'
 import { Route as AuthenticatedPgciAgreementsAgreementIdLinesRouteImport } from './routes/_authenticated/pgci/agreements.$agreementId.lines'
+import { Route as AuthenticatedPgciAgreementsAgreementIdImportRouteImport } from './routes/_authenticated/pgci/agreements.$agreementId.import'
 import { Route as AuthenticatedPgciAgreementsAgreementIdEditRouteImport } from './routes/_authenticated/pgci/agreements.$agreementId.edit'
 
 const AuthRoute = AuthRouteImport.update({
@@ -192,6 +193,12 @@ const AuthenticatedPgciAgreementsAgreementIdLinesRoute =
     path: '/agreements/$agreementId/lines',
     getParentRoute: () => AuthenticatedPgciRouteRoute,
   } as any)
+const AuthenticatedPgciAgreementsAgreementIdImportRoute =
+  AuthenticatedPgciAgreementsAgreementIdImportRouteImport.update({
+    id: '/agreements/$agreementId/import',
+    path: '/agreements/$agreementId/import',
+    getParentRoute: () => AuthenticatedPgciRouteRoute,
+  } as any)
 const AuthenticatedPgciAgreementsAgreementIdEditRoute =
   AuthenticatedPgciAgreementsAgreementIdEditRouteImport.update({
     id: '/agreements/$agreementId/edit',
@@ -219,6 +226,7 @@ export interface FileRoutesByFullPath {
   '/setup/products/': typeof AuthenticatedSetupProductsIndexRoute
   '/setup/users/': typeof AuthenticatedSetupUsersIndexRoute
   '/pgci/agreements/$agreementId/edit': typeof AuthenticatedPgciAgreementsAgreementIdEditRoute
+  '/pgci/agreements/$agreementId/import': typeof AuthenticatedPgciAgreementsAgreementIdImportRoute
   '/pgci/agreements/$agreementId/lines': typeof AuthenticatedPgciAgreementsAgreementIdLinesRoute
   '/setup/clients/$clientId/companies': typeof AuthenticatedSetupClientsClientIdCompaniesRoute
   '/setup/clients/$clientId/edit': typeof AuthenticatedSetupClientsClientIdEditRoute
@@ -244,6 +252,7 @@ export interface FileRoutesByTo {
   '/setup/products': typeof AuthenticatedSetupProductsIndexRoute
   '/setup/users': typeof AuthenticatedSetupUsersIndexRoute
   '/pgci/agreements/$agreementId/edit': typeof AuthenticatedPgciAgreementsAgreementIdEditRoute
+  '/pgci/agreements/$agreementId/import': typeof AuthenticatedPgciAgreementsAgreementIdImportRoute
   '/pgci/agreements/$agreementId/lines': typeof AuthenticatedPgciAgreementsAgreementIdLinesRoute
   '/setup/clients/$clientId/companies': typeof AuthenticatedSetupClientsClientIdCompaniesRoute
   '/setup/clients/$clientId/edit': typeof AuthenticatedSetupClientsClientIdEditRoute
@@ -275,6 +284,7 @@ export interface FileRoutesById {
   '/_authenticated/setup/products/': typeof AuthenticatedSetupProductsIndexRoute
   '/_authenticated/setup/users/': typeof AuthenticatedSetupUsersIndexRoute
   '/_authenticated/pgci/agreements/$agreementId/edit': typeof AuthenticatedPgciAgreementsAgreementIdEditRoute
+  '/_authenticated/pgci/agreements/$agreementId/import': typeof AuthenticatedPgciAgreementsAgreementIdImportRoute
   '/_authenticated/pgci/agreements/$agreementId/lines': typeof AuthenticatedPgciAgreementsAgreementIdLinesRoute
   '/_authenticated/setup/clients/$clientId/companies': typeof AuthenticatedSetupClientsClientIdCompaniesRoute
   '/_authenticated/setup/clients/$clientId/edit': typeof AuthenticatedSetupClientsClientIdEditRoute
@@ -306,6 +316,7 @@ export interface FileRouteTypes {
     | '/setup/products/'
     | '/setup/users/'
     | '/pgci/agreements/$agreementId/edit'
+    | '/pgci/agreements/$agreementId/import'
     | '/pgci/agreements/$agreementId/lines'
     | '/setup/clients/$clientId/companies'
     | '/setup/clients/$clientId/edit'
@@ -331,6 +342,7 @@ export interface FileRouteTypes {
     | '/setup/products'
     | '/setup/users'
     | '/pgci/agreements/$agreementId/edit'
+    | '/pgci/agreements/$agreementId/import'
     | '/pgci/agreements/$agreementId/lines'
     | '/setup/clients/$clientId/companies'
     | '/setup/clients/$clientId/edit'
@@ -361,6 +373,7 @@ export interface FileRouteTypes {
     | '/_authenticated/setup/products/'
     | '/_authenticated/setup/users/'
     | '/_authenticated/pgci/agreements/$agreementId/edit'
+    | '/_authenticated/pgci/agreements/$agreementId/import'
     | '/_authenticated/pgci/agreements/$agreementId/lines'
     | '/_authenticated/setup/clients/$clientId/companies'
     | '/_authenticated/setup/clients/$clientId/edit'
@@ -568,6 +581,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPgciAgreementsAgreementIdLinesRouteImport
       parentRoute: typeof AuthenticatedPgciRouteRoute
     }
+    '/_authenticated/pgci/agreements/$agreementId/import': {
+      id: '/_authenticated/pgci/agreements/$agreementId/import'
+      path: '/agreements/$agreementId/import'
+      fullPath: '/pgci/agreements/$agreementId/import'
+      preLoaderRoute: typeof AuthenticatedPgciAgreementsAgreementIdImportRouteImport
+      parentRoute: typeof AuthenticatedPgciRouteRoute
+    }
     '/_authenticated/pgci/agreements/$agreementId/edit': {
       id: '/_authenticated/pgci/agreements/$agreementId/edit'
       path: '/agreements/$agreementId/edit'
@@ -584,6 +604,7 @@ interface AuthenticatedPgciRouteRouteChildren {
   AuthenticatedPgciGroupsGroupIdRoute: typeof AuthenticatedPgciGroupsGroupIdRoute
   AuthenticatedPgciAgreementsIndexRoute: typeof AuthenticatedPgciAgreementsIndexRoute
   AuthenticatedPgciAgreementsAgreementIdEditRoute: typeof AuthenticatedPgciAgreementsAgreementIdEditRoute
+  AuthenticatedPgciAgreementsAgreementIdImportRoute: typeof AuthenticatedPgciAgreementsAgreementIdImportRoute
   AuthenticatedPgciAgreementsAgreementIdLinesRoute: typeof AuthenticatedPgciAgreementsAgreementIdLinesRoute
   AuthenticatedPgciAgreementsAgreementIdIndexRoute: typeof AuthenticatedPgciAgreementsAgreementIdIndexRoute
 }
@@ -597,6 +618,8 @@ const AuthenticatedPgciRouteRouteChildren: AuthenticatedPgciRouteRouteChildren =
       AuthenticatedPgciAgreementsIndexRoute,
     AuthenticatedPgciAgreementsAgreementIdEditRoute:
       AuthenticatedPgciAgreementsAgreementIdEditRoute,
+    AuthenticatedPgciAgreementsAgreementIdImportRoute:
+      AuthenticatedPgciAgreementsAgreementIdImportRoute,
     AuthenticatedPgciAgreementsAgreementIdLinesRoute:
       AuthenticatedPgciAgreementsAgreementIdLinesRoute,
     AuthenticatedPgciAgreementsAgreementIdIndexRoute:
