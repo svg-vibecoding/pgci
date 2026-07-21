@@ -26,6 +26,7 @@ export type PositionSnapshot = {
   start_date: string | null;
   /** ISO YYYY-MM-DD. */
   end_date: string | null;
+  observations: string | null;
 };
 
 /** Un código vigente (valid_until IS NULL) del acuerdo. */
