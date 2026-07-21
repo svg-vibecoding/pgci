@@ -1,12 +1,28 @@
 import { useMemo, useState } from "react";
 import { Download } from "lucide-react";
-import type { ClassifiedRow } from "@/lib/agreement-import";
+import type {
+  CatalogProduct,
+  ClassifiedRow,
+} from "@/lib/agreement-import";
 import { Button } from "@/components/ui/button";
-import { GroupShell, EnrichedRow, ChangeKindChip } from "../parts";
+import {
+  GroupShell,
+  ChangeKindChip,
+  ReportTable,
+  Th,
+  ProductCell,
+  ClientCodeCell,
+} from "../parts";
 import { describeRowReason, reasonKind } from "../labels";
 import { EmptyGroup } from "./Group1RequiresDecision";
 
-export function Group6NotProcessable({ rows }: { rows: ClassifiedRow[] }) {
+export function Group6NotProcessable({
+  rows,
+  catalogBySku,
+}: {
+  rows: ClassifiedRow[];
+  catalogBySku: Map<string, CatalogProduct>;
+}) {
   const [filter, setFilter] = useState<string>("all");
 
   const kinds = useMemo(() => {
@@ -54,10 +70,7 @@ export function Group6NotProcessable({ rows }: { rows: ClassifiedRow[] }) {
       toolbar={
         rows.length > 0 && (
           <>
-            <ChangeKindChip
-              active={filter === "all"}
-              onClick={() => setFilter("all")}
-            >
+            <ChangeKindChip active={filter === "all"} onClick={() => setFilter("all")}>
               Todos
             </ChangeKindChip>
             {kinds.map(([k, n]) => (
@@ -80,25 +93,46 @@ export function Group6NotProcessable({ rows }: { rows: ClassifiedRow[] }) {
       {rows.length === 0 ? (
         <EmptyGroup message="Todas las filas se pudieron procesar." />
       ) : (
-        <div>
-          {visible.slice(0, 300).map((r) => (
-            <EnrichedRow
-              key={r.sourceRow}
-              sourceRow={r.sourceRow}
-              sku={r.row.sku ?? null}
-              extra={
-                <div className="mt-0.5 suma-caption text-warning-strong">
+        <ReportTable
+          head={
+            <>
+              <Th>Producto (archivo)</Th>
+              <Th>Código cliente</Th>
+              <Th>Motivo</Th>
+            </>
+          }
+        >
+          {visible.slice(0, 500).map((r) => {
+            const sku = r.row.sku ?? null;
+            const catalog = sku ? catalogBySku.get(sku) : undefined;
+            return (
+              <tr key={r.sourceRow}>
+                <ProductCell
+                  sku={sku}
+                  brand={catalog?.commercial_brand ?? null}
+                  description={catalog?.commercial_description ?? null}
+                  sourceRow={r.sourceRow}
+                  muted
+                />
+                <ClientCodeCell
+                  code={r.row.client_code}
+                  description={r.row.client_description}
+                  muted
+                />
+                <td className="px-2 py-1.5 suma-caption text-warning-strong align-top">
                   {describeRowReason(r)}
-                </div>
-              }
-            />
-          ))}
-          {visible.length > 300 && (
-            <p className="mt-2 suma-caption text-text-tertiary">
-              …y {visible.length - 300} más.
-            </p>
+                </td>
+              </tr>
+            );
+          })}
+          {visible.length > 500 && (
+            <tr>
+              <td colSpan={3} className="px-2 py-2 suma-caption text-text-tertiary">
+                …y {visible.length - 500} más.
+              </td>
+            </tr>
           )}
-        </div>
+        </ReportTable>
       )}
     </GroupShell>
   );

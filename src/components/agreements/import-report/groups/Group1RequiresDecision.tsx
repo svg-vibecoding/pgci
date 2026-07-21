@@ -1,21 +1,22 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import type {
   CatalogProduct,
   ClassifiedRow,
-  DiffResult,
 } from "@/lib/agreement-import";
 import { Chip } from "@/components/sumatec";
 import { Button } from "@/components/ui/button";
-import { PositionCard } from "@/components/agreements/PositionCard";
-import { GroupShell } from "../parts";
+import {
+  GroupShell,
+  ReportTable,
+  Th,
+  ProductCell,
+  StatusCell,
+  PriceCell,
+  DateRangeCell,
+} from "../parts";
+import { DECISION_REASON_LABEL } from "../labels";
 import type { DecisionsState } from "../state";
-
-const REASON_LABEL: Record<string, string> = {
-  sku_in_multiple_positions: "SKU en múltiples posiciones",
-  code_sku_mismatch: "Código y SKU no coinciden",
-  client_code_replace: "El código cliente ya está en otra posición",
-  duplicate_in_file: "Duplicado en el archivo",
-};
 
 export function Group1RequiresDecision({
   rows,
@@ -25,7 +26,6 @@ export function Group1RequiresDecision({
   rows: ClassifiedRow[];
   catalogBySku: Map<string, CatalogProduct>;
   decisions: DecisionsState;
-  result: DiffResult;
 }) {
   return (
     <GroupShell
@@ -37,9 +37,7 @@ export function Group1RequiresDecision({
           <Button
             size="sm"
             variant="outline"
-            onClick={() =>
-              decisions.setMany(rows, { kind: "ignore" })
-            }
+            onClick={() => decisions.setMany(rows, { kind: "ignore" })}
           >
             Ignorar todas
           </Button>
@@ -49,22 +47,35 @@ export function Group1RequiresDecision({
       {rows.length === 0 ? (
         <EmptyGroup message="No hay filas que requieran decisión." />
       ) : (
-        <ul className="space-y-4">
+        <ReportTable
+          head={
+            <>
+              <Th className="w-6" />
+              <Th>Producto (archivo)</Th>
+              <Th>Motivo</Th>
+              <Th align="right">Precio</Th>
+              <Th>Vigencia</Th>
+              <Th>Código cliente</Th>
+              <Th align="right">Estado decisión</Th>
+              <Th align="right">Acciones</Th>
+            </>
+          }
+        >
           {rows.map((r) => (
-            <DecisionItem
+            <DecisionRow
               key={r.sourceRow}
               row={r}
               catalogBySku={catalogBySku}
               decisions={decisions}
             />
           ))}
-        </ul>
+        </ReportTable>
       )}
     </GroupShell>
   );
 }
 
-function DecisionItem({
+function DecisionRow({
   row,
   catalogBySku,
   decisions,
@@ -73,143 +84,142 @@ function DecisionItem({
   catalogBySku: Map<string, CatalogProduct>;
   decisions: DecisionsState;
 }) {
-  const [expanded, setExpanded] = useState(true);
+  const [open, setOpen] = useState(true);
   const decision = decisions.get(row.sourceRow);
   const sku = row.row.sku ?? null;
-  // Catalog lookup returns product_id but no name/description; keep placeholders.
   const catalog = sku ? catalogBySku.get(sku) : undefined;
   const reasonLabel = row.reason
-    ? REASON_LABEL[row.reason] ?? row.reason
+    ? DECISION_REASON_LABEL[row.reason] ?? row.reason
     : "Requiere decisión";
+  const candidates = row.candidates ?? [];
+  const hasCandidates = candidates.length > 0;
 
   return (
-    <li className="rounded-lg border border-warning/40 bg-warning/5">
-      <div className="flex flex-wrap items-start justify-between gap-3 px-4 py-3 border-b border-warning/30">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[11px] text-text-tertiary">
-              Fila {row.sourceRow}
+    <Fragment>
+      <tr className="bg-warning/5 hover:bg-warning/10">
+        <td className="px-2 py-1.5 align-top">
+          {hasCandidates && (
+            <button
+              type="button"
+              onClick={() => setOpen((v) => !v)}
+              className="text-text-tertiary hover:text-text-primary"
+              aria-label={open ? "Ocultar candidatas" : "Ver candidatas"}
+            >
+              {open ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronRight className="h-4 w-4" />
+              )}
+            </button>
+          )}
+        </td>
+        <ProductCell
+          sku={sku}
+          brand={catalog?.commercial_brand ?? null}
+          description={catalog?.commercial_description ?? null}
+          sourceRow={row.sourceRow}
+        />
+        <td className="px-2 py-1.5 align-top">
+          <Chip color="warning" variant="soft" size="small">
+            {reasonLabel}
+          </Chip>
+          {hasCandidates && (
+            <div className="mt-0.5 text-[11px] text-text-tertiary">
+              {candidates.length}{" "}
+              {candidates.length === 1 ? "candidata" : "candidatas"}
+            </div>
+          )}
+        </td>
+        <PriceCell value={row.row.sale_price} />
+        <DateRangeCell start={row.row.start_date} end={row.row.end_date} />
+        <td className="px-2 py-1.5 align-top">
+          {row.row.client_code ? (
+            <span className="font-mono text-xs font-semibold">
+              {row.row.client_code}
             </span>
-            <Chip color="warning" variant="soft" size="small">
-              {reasonLabel}
-            </Chip>
-          </div>
-          <div className="mt-1 flex items-center gap-2 flex-wrap">
-            <span className="font-mono text-sm font-semibold text-foreground">
-              {sku ?? "—"}
-            </span>
-            {catalog && (
-              <span className="suma-caption text-text-tertiary">
-                en catálogo
-              </span>
-            )}
-            {row.row.client_code && (
-              <span className="font-mono text-sm text-text-secondary">
-                · {row.row.client_code}
-              </span>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
+          ) : (
+            <span className="text-text-tertiary">—</span>
+          )}
+        </td>
+        <td className="px-2 py-1.5 align-top text-right">
           <DecisionChip decision={decision} />
+        </td>
+        <td className="px-2 py-1.5 align-top text-right whitespace-nowrap">
           <Button
             type="button"
             size="sm"
-            variant="ghost"
-            onClick={() => setExpanded((v) => !v)}
+            variant={decision.kind === "create_new" ? "default" : "outline"}
+            onClick={() =>
+              decisions.set(row.sourceRow, { kind: "create_new" })
+            }
           >
-            {expanded ? "Ocultar" : "Ver opciones"}
+            Crear nueva
+          </Button>{" "}
+          <Button
+            type="button"
+            size="sm"
+            variant={decision.kind === "ignore" ? "default" : "ghost"}
+            onClick={() => decisions.set(row.sourceRow, { kind: "ignore" })}
+          >
+            Ignorar
           </Button>
-        </div>
-      </div>
-
-      {expanded && (
-        <div className="p-4 space-y-3">
-          {row.candidates && row.candidates.length > 0 ? (
-            <>
-              <p className="suma-caption text-text-secondary">
-                Este SKU tiene {row.candidates.length}{" "}
-                {row.candidates.length === 1 ? "posición" : "posiciones"} en el
-                acuerdo. Elige a cuál aplicar la fila del archivo.
-              </p>
-              <div className="grid gap-2 md:grid-cols-2">
-                {row.candidates.map((c) => {
-                  const isChosen =
-                    decision.kind === "apply_to_candidate" &&
-                    decision.positionId === c.position_id;
-                  return (
-                    <PositionCard
-                      key={c.position_id}
-                      status={statusToBadge(c.status)}
-                      statusLabel={statusLabel(c.status)}
-                      startDate={c.start_date}
-                      endDate={c.end_date}
-                      price={c.sale_price}
-                      parPrice={c.par_price}
-                      tone={isChosen ? "info" : "default"}
-                      footer={
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant={isChosen ? "default" : "outline"}
-                          onClick={() =>
-                            decisions.set(row.sourceRow, {
-                              kind: "apply_to_candidate",
-                              positionId: c.position_id,
-                            })
-                          }
-                        >
-                          {isChosen ? "✓ Aplicar aquí" : "Aplicar a esta"}
-                        </Button>
-                      }
-                    />
-                  );
-                })}
-              </div>
-            </>
-          ) : (
-            <p className="suma-caption text-text-secondary">
-              No hay posiciones candidatas para esta fila.
-            </p>
-          )}
-
-          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border/60">
-            <Button
-              type="button"
-              size="sm"
-              variant={decision.kind === "create_new" ? "default" : "outline"}
-              onClick={() =>
-                decisions.set(row.sourceRow, { kind: "create_new" })
-              }
-            >
-              Crear posición nueva
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant={decision.kind === "ignore" ? "default" : "ghost"}
-              onClick={() =>
-                decisions.set(row.sourceRow, { kind: "ignore" })
-              }
-            >
-              Ignorar esta fila
-            </Button>
-            {decision.kind !== "pending" && (
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                onClick={() =>
-                  decisions.set(row.sourceRow, { kind: "pending" })
-                }
-              >
-                Deshacer
-              </Button>
-            )}
-          </div>
-        </div>
+        </td>
+      </tr>
+      {hasCandidates && open && (
+        <tr className="bg-warning/[0.03]">
+          <td className="px-2 py-2" />
+          <td colSpan={7} className="px-2 pb-3">
+            <div className="text-[11px] uppercase tracking-wide text-text-tertiary mb-1.5">
+              Posiciones candidatas en el acuerdo
+            </div>
+            <div className="overflow-x-auto rounded border border-border/60 bg-white">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/30 text-left text-[10.5px] uppercase tracking-wide text-text-tertiary">
+                  <tr>
+                    <Th>Estado</Th>
+                    <Th align="right">Precio</Th>
+                    <Th>Vigencia</Th>
+                    <Th align="right">Acción</Th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60">
+                  {candidates.map((c) => {
+                    const chosen =
+                      decision.kind === "apply_to_candidate" &&
+                      decision.positionId === c.position_id;
+                    return (
+                      <tr key={c.position_id} className={chosen ? "bg-info/5" : ""}>
+                        <StatusCell status={c.status} />
+                        <PriceCell value={c.sale_price} />
+                        <DateRangeCell
+                          start={c.start_date}
+                          end={c.end_date}
+                        />
+                        <td className="px-2 py-1.5 text-right whitespace-nowrap">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={chosen ? "default" : "outline"}
+                            onClick={() =>
+                              decisions.set(row.sourceRow, {
+                                kind: "apply_to_candidate",
+                                positionId: c.position_id,
+                              })
+                            }
+                          >
+                            {chosen ? "✓ Aplicada" : "Aplicar a esta"}
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </td>
+        </tr>
       )}
-    </li>
+    </Fragment>
   );
 }
 
@@ -243,21 +253,6 @@ function DecisionChip({
       </Chip>
     );
   return null;
-}
-
-function statusToBadge(s: string) {
-  if (s === "active") return "active" as const;
-  if (s === "requires_review") return "review" as const;
-  if (s === "excluded") return "danger" as const;
-  if (s === "draft") return "pending" as const;
-  return "neutral" as const;
-}
-function statusLabel(s: string) {
-  if (s === "active") return "Activa";
-  if (s === "requires_review") return "En revisión";
-  if (s === "excluded") return "Excluida";
-  if (s === "draft") return "Borrador";
-  return s;
 }
 
 export function EmptyGroup({ message }: { message: string }) {

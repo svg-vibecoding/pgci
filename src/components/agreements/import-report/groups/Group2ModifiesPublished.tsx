@@ -5,8 +5,17 @@ import type {
   PositionSnapshot,
 } from "@/lib/agreement-import";
 import { Button } from "@/components/ui/button";
-import { PositionCard } from "@/components/agreements/PositionCard";
-import { GroupShell, ChangeKindChip, ChangesBlock } from "../parts";
+import {
+  GroupShell,
+  ChangeKindChip,
+  ChangesInline,
+  ReportTable,
+  Th,
+  ProductCell,
+  StatusCell,
+  PriceCell,
+  DateRangeCell,
+} from "../parts";
 import type { DecisionsState } from "../state";
 import { EmptyGroup } from "./Group1RequiresDecision";
 
@@ -55,10 +64,7 @@ export function Group2ModifiesPublished({
       hint="Cambian datos de posiciones activas, en revisión o excluidas. Por defecto se aplicarán."
       toolbar={
         <>
-          <ChangeKindChip
-            active={filter === "all"}
-            onClick={() => setFilter("all")}
-          >
+          <ChangeKindChip active={filter === "all"} onClick={() => setFilter("all")}>
             Todas
           </ChangeKindChip>
           <ChangeKindChip
@@ -95,7 +101,18 @@ export function Group2ModifiesPublished({
       {rows.length === 0 ? (
         <EmptyGroup message="Sin cambios sobre posiciones publicadas." />
       ) : (
-        <div className="grid gap-3 md:grid-cols-2">
+        <ReportTable
+          head={
+            <>
+              <Th>Producto</Th>
+              <Th>Estado</Th>
+              <Th align="right">Precio actual</Th>
+              <Th>Vigencia actual</Th>
+              <Th>Cambios propuestos</Th>
+              <Th align="right">Acción</Th>
+            </>
+          }
+        >
           {visible.map((r) => {
             const pos = r.resolvedPositionId
               ? positionsById.get(r.resolvedPositionId)
@@ -104,69 +121,48 @@ export function Group2ModifiesPublished({
             const decision = decisions.get(r.sourceRow);
             const excluded = decision.kind === "ignore";
             return (
-              <PositionCard
-                key={r.sourceRow}
-                status={statusToBadge(pos.status)}
-                statusLabel={statusLabel(pos.status)}
-                startDate={pos.start_date}
-                endDate={pos.end_date}
-                price={pos.sale_price}
-                parPrice={pos.par_price}
-                sku={pos.sku}
-                tone={excluded ? "muted" : "default"}
-                className={excluded ? "opacity-60" : ""}
-                footer={
-                  <>
-                    <span className="text-[11px] text-text-tertiary mr-auto">
-                      Fila {r.sourceRow}
-                    </span>
-                    {excluded ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() =>
-                          decisions.set(r.sourceRow, { kind: "apply" })
-                        }
-                      >
-                        Reincluir
-                      </Button>
-                    ) : (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() =>
-                          decisions.set(r.sourceRow, { kind: "ignore" })
-                        }
-                      >
-                        Excluir
-                      </Button>
-                    )}
-                  </>
-                }
-              >
-                {r.changes && r.changes.length > 0 && (
-                  <ChangesBlock changes={r.changes} />
-                )}
-              </PositionCard>
+              <tr key={r.sourceRow} className={excluded ? "" : ""}>
+                <ProductCell
+                  sku={pos.sku}
+                  brand={pos.commercial_brand}
+                  description={pos.commercial_description}
+                  sourceRow={r.sourceRow}
+                  muted={excluded}
+                />
+                <StatusCell status={pos.status} muted={excluded} />
+                <PriceCell value={pos.sale_price} muted={excluded} />
+                <DateRangeCell
+                  start={pos.start_date}
+                  end={pos.end_date}
+                  muted={excluded}
+                />
+                <td className={"px-2 py-1.5 align-top " + (excluded ? "opacity-60" : "")}>
+                  <ChangesInline changes={r.changes ?? []} />
+                </td>
+                <td className="px-2 py-1.5 text-right whitespace-nowrap">
+                  {excluded ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => decisions.set(r.sourceRow, { kind: "apply" })}
+                    >
+                      Reincluir
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => decisions.set(r.sourceRow, { kind: "ignore" })}
+                    >
+                      Excluir
+                    </Button>
+                  )}
+                </td>
+              </tr>
             );
           })}
-        </div>
+        </ReportTable>
       )}
     </GroupShell>
   );
-}
-
-function statusToBadge(s: string) {
-  if (s === "active") return "active" as const;
-  if (s === "requires_review") return "review" as const;
-  if (s === "excluded") return "danger" as const;
-  if (s === "draft") return "pending" as const;
-  return "neutral" as const;
-}
-function statusLabel(s: string) {
-  if (s === "active") return "Activa";
-  if (s === "requires_review") return "En revisión";
-  if (s === "excluded") return "Excluida";
-  if (s === "draft") return "Borrador";
-  return s;
 }
