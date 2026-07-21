@@ -44,6 +44,10 @@ export type DecisionsState = {
   g1Resolved: number;
   /** Filas totales que "se aplicarán". */
   willApply: number;
+  /** Conteo vivo: posiciones que se crearán al confirmar (G4 create_draft + G1 create_new). */
+  createdCount: number;
+  /** Conteo vivo: posiciones existentes que se modificarán (G2/G3 apply + G1 apply_to_candidate). */
+  modifiedCount: number;
 };
 
 export function useImportDecisions(result: DiffResult | null): DecisionsState {
@@ -93,6 +97,8 @@ export function useImportDecisions(result: DiffResult | null): DecisionsState {
         newDrafts: 0,
         g1Resolved: 0,
         willApply: 0,
+        createdCount: 0,
+        modifiedCount: 0,
       };
     }
     let pendingG1 = 0;
@@ -101,32 +107,41 @@ export function useImportDecisions(result: DiffResult | null): DecisionsState {
     let newDrafts = 0;
     let g1Resolved = 0;
     let willApply = 0;
+    let createdCount = 0;
+    let modifiedCount = 0;
     for (const r of result.rows) {
       const d = map.get(r.sourceRow) ?? defaultFor(r);
       if (r.group === "requires_decision") {
         if (d.kind === "pending") pendingG1++;
         else {
           g1Resolved++;
-          if (
-            d.kind === "apply_to_candidate" ||
-            d.kind === "create_new" ||
-            d.kind === "apply"
-          )
+          if (d.kind === "create_new") {
+            createdCount++;
             willApply++;
+          } else if (
+            d.kind === "apply_to_candidate" ||
+            d.kind === "apply"
+          ) {
+            modifiedCount++;
+            willApply++;
+          }
         }
       } else if (r.group === "modifies_published") {
         if (d.kind === "apply") {
           publishedWillChange++;
+          modifiedCount++;
           willApply++;
         }
       } else if (r.group === "modifies_draft_or_adds_code") {
         if (d.kind === "apply") {
           draftsWillChange++;
+          modifiedCount++;
           willApply++;
         }
       } else if (r.group === "not_in_agreement") {
         if (d.kind === "create_draft") {
           newDrafts++;
+          createdCount++;
           willApply++;
         }
       }
@@ -138,6 +153,8 @@ export function useImportDecisions(result: DiffResult | null): DecisionsState {
       newDrafts,
       g1Resolved,
       willApply,
+      createdCount,
+      modifiedCount,
     };
   }, [result, map]);
 
