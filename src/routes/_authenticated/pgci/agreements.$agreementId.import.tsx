@@ -18,6 +18,7 @@ import {
   getCatalogProductsBySku,
 } from "@/lib/agreements.functions";
 import {
+  CANONICAL_HEADERS,
   classifyImport,
   downloadPricingTemplate,
   parsePricingFile,
