@@ -145,27 +145,16 @@ function fromExcelSerial(n: number): { y: number; m: number; d: number } | null 
 export function parseDate(value: unknown): DateParse {
   if (value == null || value === "") return { value: null, ok: true };
 
-  // Date nativo (viene por cellDates:true). Extraer con SSF a partir del serial
-  // equivalente para no depender de getters locales/UTC del entorno.
+  // Fallback defensivo: con raw:false las fechas de Excel llegan como string,
+  // pero algún .xls raro podría entregar Date nativo. Extraer con getters UTC
+  // directos (SheetJS fija hora en UTC noon con cellDates:true) para no
+  // reinterpretar el huso.
   if (value instanceof Date) {
     if (Number.isNaN(value.getTime())) return { value: null, ok: false };
-    // SheetJS ofrece datenum(): Date → serial de Excel; luego SSF lo desglosa
-    // sin huso horario. Fallback a getters UTC si no está disponible.
-    const ssf = XLSX.SSF as unknown as {
-      parse_date_code: typeof XLSX.SSF.parse_date_code;
-    };
-    const utilAny = XLSX.utils as unknown as { datenum?: (d: Date) => number };
-    if (typeof utilAny.datenum === "function") {
-      const serial = utilAny.datenum(value);
-      const parts = fromExcelSerial(serial);
-      if (parts) return { value: toIso(parts.y, parts.m, parts.d), ok: true };
-    }
-    // Fallback: getters UTC (SheetJS suele fijar la hora en UTC noon).
     const y = value.getUTCFullYear();
     const m = value.getUTCMonth() + 1;
     const d = value.getUTCDate();
     if (isRealDate(y, m, d)) return { value: toIso(y, m, d), ok: true };
-    void ssf;
     return { value: null, ok: false };
   }
 
