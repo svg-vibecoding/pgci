@@ -1,24 +1,28 @@
-## Diagnóstico: catálogo vacío en importación 3.1
+## Diagnóstico
 
-Agregar dos `console.log` temporales en `src/routes/_authenticated/pgci/agreements.$agreementId.import.tsx`, dentro de `onFile`, justo después de resolver el catálogo (después de la llamada a `catalogFn(...)` y antes de construir `catalogBySku`):
+El archivo del piloto guarda `Fecha inicio` y `Fecha fin` como `datetime` con formato de celda `mm-dd-yy`. En `src/lib/agreement-import/parse.ts`, `readXlsx` usa `raw: false`, así que SheetJS entrega la fecha ya formateada como string `"06-24-24"`. `parseDate` sólo acepta ISO `YYYY-MM-DD` o `D/M/YYYY|D-M-YYYY` con año de 4 dígitos → todas las fechas del archivo caen en **"Fecha no reconocida"** y las 30 filas terminan en *No procesables*.
 
-```ts
-const catalog =
-  skus.length > 0
-    ? ((await catalogFn({ data: { skus } })) as CatalogProduct[])
-    : [];
-console.log("SKUs enviados:", skus.length, skus.slice(0, 3));
-console.log("catálogo recibido:", catalog.length, catalog.slice(0, 3));
-```
+Los precios (`Precio de venta`, `Precio par`) llegan como número nativo (SheetJS con `raw:false` sobre celdas numéricas devuelve el string formateado `"$ 74,127.91"`, y `parsePrice` lo procesa bien). Si tras corregir las fechas siguen apareciendo filas por "Precio par", será por un valor puntual — lo verifico al final.
 
-Sin más cambios: cero edits a server functions, cero edits al motor de cruce, cero edits a la UI. Solo los dos logs.
+## Fix propuesto (mínimo)
 
-### Qué hacer después de aprobar
+Aplicar en `readXlsx` de `src/lib/agreement-import/parse.ts` la misma técnica que ya usamos para la columna SKU, pero para las columnas de fecha (`start_date`, `end_date`):
 
-1. Aplicar el diff mínimo arriba.
-2. Tú subes el archivo del piloto en `/pgci/agreements/<id>/import`.
-3. Me pegas la salida de consola.
-4. Decisión:
-   - `skus` correcto + `catalog` vacío → el bug está en `getCatalogProductsBySku` (permisos RLS del rol autenticado sobre `products`, o el `.in("sku", …)` con SKUs que llegaron con espacios/ceros).
-   - `skus` vacío o con basura → el bug está antes, en el parseo (`parseSku` o lectura de la columna SKU del XLSX).
-5. Retiraré los logs en la siguiente iteración, junto con el fix real.
+1. Detectar las columnas cuyo header canónico sea `start_date` o `end_date`.
+2. Para cada fila no vacía, sobrescribir el valor de esas columnas con `cell.v` crudo (que, gracias a `cellDates:true`, viene como `Date` nativo) en lugar del string formateado que dejó `raw:false`.
+3. `parseDate` ya sabe manejar `Date` (extrae `getUTCFullYear/Month/Date` sin corrimiento de huso), así que no hay que tocar `cells.ts`.
+
+Resultado: fechas con formato `mm-dd-yy`, `dd/mm/yyyy`, `yyyy-mm-dd` u otros formatos de Excel se resuelven todas por la vía del `Date` nativo y dejan de fallar por el string cortado a dos dígitos de año.
+
+## Sin cambios en
+
+- `cells.ts` (`parseDate` ya cubre `Date`).
+- `diff.ts`, motor de clasificación, vista `/import`.
+- Plantilla ni encabezados.
+
+## Verificación
+
+1. Re-subir el mismo `plantilla_acuerdo_Carga_piloto_1.xlsx`.
+2. Confirmar en el reporte que las 30 filas dejan de estar en *No procesables* por fechas.
+3. Si aparecen residuales por "Precio par", inspeccionar celda concreta (probable valor atípico) y decidir si amerita otro fix — fuera de este plan.
+4. Al validar, retirar los `console.log` temporales que quedan en `onFile` de `agreements.$agreementId.import.tsx`.
