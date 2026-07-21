@@ -88,25 +88,28 @@ function readXlsx(buf: ArrayBuffer): { headers: string[]; rows: RawRow[] } {
   // ("1.23457E+12") y corrompe el SKU. Releemos la celda cruda y tomamos
   // .v: string tal cual (preserva "0083") o String(number) sobre el
   // entero crudo (preserva "1234567890123"). Nunca cell.w.
-  let skuHeader: string | null = null;
-  let skuCol = -1;
+  // Localizar columnas que necesitan lectura CRUDA (bypass de raw:false):
+  // - SKU: raw:false devuelve el string formateado (.w), que para números
+  //   largos es notación científica y corrompe el SKU. Releemos .v.
+  // - start_date / end_date: raw:false devuelve la fecha ya formateada según
+  //   el número de formato de la celda (p.ej. "mm-dd-yy" → "06-24-24"), que
+  //   parseDate no reconoce. Con cellDates:true, .v es Date nativo y
+  //   parseDate lo maneja sin corrimiento de huso.
+  const rawColumns: Array<{ header: string; col: number; field: PricingField }> = [];
   for (let c = 0; c < headers.length; c++) {
-    if (matchCanonical(headers[c]) === "sku") {
-      skuHeader = headers[c];
-      skuCol = c;
-      break;
+    const f = matchCanonical(headers[c]);
+    if (f === "sku" || f === "start_date" || f === "end_date") {
+      rawColumns.push({ header: headers[c], col: c, field: f });
     }
   }
-  if (skuHeader && skuCol >= 0) {
+  if (rawColumns.length > 0) {
     const ref = sheet["!ref"];
     const range = ref ? XLSX.utils.decode_range(ref) : null;
-    const startRow = range ? range.s.r + 1 : 1; // saltar cabecera
-    // sheet_to_json con blankrows:false descarta filas totalmente vacías.
-    // Recorremos las mismas filas no-vacías en orden y les asignamos la celda cruda.
+    const startRow = range ? range.s.r + 1 : 1;
     let rowIdx = 0;
     if (range) {
       for (let r = startRow; r <= range.e.r && rowIdx < rows.length; r++) {
-        // detectar si la fila cruda está totalmente vacía → saltar (alinear con blankrows:false)
+        // Alinear con blankrows:false — saltar filas totalmente vacías.
         let anyCell = false;
         for (let c = range.s.c; c <= range.e.c; c++) {
           const cell = sheet[XLSX.utils.encode_cell({ r, c })];
@@ -116,20 +119,24 @@ function readXlsx(buf: ArrayBuffer): { headers: string[]; rows: RawRow[] } {
           }
         }
         if (!anyCell) continue;
-        const skuCell = sheet[XLSX.utils.encode_cell({ r, c: skuCol })];
-        if (!skuCell || skuCell.v === undefined || skuCell.v === null || skuCell.v === "") {
-          rows[rowIdx][skuHeader] = "";
-        } else if (typeof skuCell.v === "string") {
-          rows[rowIdx][skuHeader] = skuCell.v;
-        } else if (typeof skuCell.v === "number") {
-          rows[rowIdx][skuHeader] = String(skuCell.v);
-        } else {
-          rows[rowIdx][skuHeader] = String(skuCell.v);
+        for (const { header, col, field } of rawColumns) {
+          const cell = sheet[XLSX.utils.encode_cell({ r, c: col })];
+          if (!cell || cell.v === undefined || cell.v === null || cell.v === "") {
+            rows[rowIdx][header] = "";
+          } else if (field === "sku") {
+            rows[rowIdx][header] =
+              typeof cell.v === "string" ? cell.v : String(cell.v);
+          } else {
+            // start_date / end_date: pasar el valor crudo tal cual
+            // (Date nativo con cellDates:true, o número/string si no).
+            rows[rowIdx][header] = cell.v as unknown as string;
+          }
         }
         rowIdx++;
       }
     }
   }
+
 
   return { headers, rows };
 }
