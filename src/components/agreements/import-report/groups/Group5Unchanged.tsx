@@ -18,13 +18,17 @@ import { EmptyGroup } from "./Group1RequiresDecision";
 export function Group5Unchanged({
   rows,
   positionsById,
+  icon,
 }: {
   rows: ClassifiedRow[];
   positionsById: Map<string, PositionSnapshot>;
+  icon?: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   return (
     <GroupShell
+      id="g5"
+      icon={icon}
       title="Sin cambios"
       count={rows.length}
       hint="Filas que coinciden exactamente con la posición actual. No hay nada que hacer."

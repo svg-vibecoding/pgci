@@ -276,6 +276,8 @@ function ImportAgreementView() {
           <CardContent>
             <ImportReport
               result={classified}
+              totalRows={parsed?.rows.length ?? 0}
+              activeClientCodes={snapshotQuery.data?.activeClientCodes ?? []}
               positions={snapPositions}
               catalogBySku={catalog}
             />

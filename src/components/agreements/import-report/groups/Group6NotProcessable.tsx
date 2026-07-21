@@ -19,9 +19,11 @@ import { EmptyGroup } from "./Group1RequiresDecision";
 export function Group6NotProcessable({
   rows,
   catalogBySku,
+  icon,
 }: {
   rows: ClassifiedRow[];
   catalogBySku: Map<string, CatalogProduct>;
+  icon?: React.ReactNode;
 }) {
   const [filter, setFilter] = useState<string>("all");
 
@@ -63,6 +65,8 @@ export function Group6NotProcessable({
 
   return (
     <GroupShell
+      id="g6"
+      icon={icon}
       title="No procesables"
       count={rows.length}
       hint="Filas que el sistema no puede clasificar. Corrige el archivo y vuelve a subirlo."

@@ -1,194 +1,203 @@
-## Plan v1 — Reporte completo (Card 3, los 6 grupos)
+Plan: reorganización del reporte de importación (Card 3)
 
-Este plan describe cómo construyo la versión inicial FULL. No entra al pulido fino de cada grupo (eso es la siguiente iteración, grupo por grupo).
+Objetivo
+Transformar el reporte de importación para que hable en modo POSICIÓN, con un layout limpio y consistente: header de 3 métricas sobre el archivo, 6 grupos colapsados en orden 1→6, sticky de decisión dinámico, y el grupo 4 convertido en "Nuevas posiciones" con subgrupos de completitud y opt-in de publicación.
 
----
+CERTEZAS que implementa el plan
 
-### 1. Extracción previa: `PositionCard` compartida
+1. Orden de grupos secuencial 1→6
+  Reordenar en ImportReport.tsx:
+  1. Requieren decisión
+  2. Modifican posiciones publicadas
+  3. Modifican gestión / agregan códigos
+  4. Nuevas posiciones
+  5. Sin cambios
+  6. No procesables
+2. Renombrar grupo 4
+  - Group4NotInAgreement.tsx → Group4NewPositions.tsx
+  - Título: "Nuevas posiciones"
+  - Subtítulo: "No están en el acuerdo. El estado lo trae el archivo; tú defines cuáles crear. Nada se crea por defecto."
+3. Header con 3 cards de indicadores
+  Añadir un nuevo componente ImportReportHeader encima de los grupos, con 3 métricas sobre el archivo:
+  - Filas totales: total de filas del archivo (parsed rows).
+  - Códigos Jaivaná únicos: conteo de códigos cliente únicos presentes en el archivo (solo si hay columna client_code; de lo contrario mostrar "—" o 0 con leyenda).
+  - Jaivaná no identificados: códigos cliente del archivo que no se encontraron como códigos activos del acuerdo. Color de alerta (tono warning/primary rojo Sumatec) porque señala algo a atender.
+   Las cards reutilizan el patrón visual de métricas de la app (Card simple o contenedor con número grande + label pequeño). No incluyen conteos por grupo; esos viven en cada acordeón.
+4. Grupos colapsados por defecto (acordeones)
+  - Reemplazar GroupShell por un contenedor acordeón basado en el componente Accordion existente de shadcn/ui.
+  - Cada grupo siempre visible, incluso con 0 filas.
+  - Fila limpia: título + conteo + chevron. No se muestra el contenido hasta expandir.
+  - La vista en reposo es: header + 6 líneas de acordeón + sticky decision bar.
+  - Se añade un componente reutilizable ImportReportGroup que unifique el encabezado del acordeón.
+5. Sticky de decisión rediseñado
+  - Reemplazar StickyDecisionBar por un componente más simple y centrado en el resultado:
+    - Línea principal: "N filas necesitan tu decisión antes de continuar" (cuando pendingG1 > 0).
+    - Línea de resumen dinámico: "Al confirmar: se crean X posiciones nuevas y se modifican Y existentes." X e Y son conteos vivos de decisiones del usuario, no del cruce inicial.
+    - Botón "Confirmar importación".
+  - Eliminar del sticky los stats "Total", "Requieren tu atención", "Publicadas se modificarán", "Se aplicarán".
+  - Bloqueo del botón: propuesta UX = bloquear mientras haya G1 pendientes, con tooltip/title que indique que hay filas sin resolver. Esto es coherente con el estado actual y evita confirmaciones accidentales.
+6. Grupo "Nuevas posiciones" con dos subgrupos
+  - Dividir las filas del grupo 4 en dos subgrupos según completitud del archivo:
+    - "Listas para publicar": precio y vigencia completos (sale_price != null && start_date != null && end_date != null).
+    - "Quedarán en gestión": les falta precio o vigencia. Se muestra el dato faltante por fila: "sin precio", "sin vigencia" o ambos.
+  - Subtítulo de cada subgrupo: "X de Y marcadas" (Y total del subgrupo, X marcadas por el usuario). Dinámico.
+  - Nada preseleccionado: checkbox apagado por default en cada fila.
+  - Atajos en el header del grupo: "Crear todas" e "Ignorar todas".
+  - Opt-in de publicación dentro de "Listas para publicar": checkbox "Publicar las marcadas al confirmar (~N se ven listas)", apagado por default. El ~N es la estimación de filas marcadas en ese subgrupo. El valor real de cuáles publicar se envía al backend en la confirmación.
 
-Hoy la "tarjeta de posición" existe **inline** dentro de `lines.tsx` (líneas ~1277–1315). No hay componente reutilizable. Para que el reporte hable "en modo posición" con coherencia visual total, el primer paso es extraer esa tarjeta a un componente compartido antes de tocar el reporte.
+Comportamiento dinámico: la regla que gobierna todo
 
-- Nuevo: `src/components/agreements/PositionCard/PositionCard.tsx`
-- Props mínimas: `{ status, statusLabel?, sku, brand?, description?, salePrice, parPrice?, startDate, endDate, clientCodes?: Array<{clientLabel, code, description?}>, headerRight?: ReactNode, footer?: ReactNode, tone?: "default"|"muted"|"warning"|"info", className? }`.
-- Slots (`headerRight`, `footer`, y un `overlay?` opcional para el checkbox de G4) son los que permiten reusar la misma tarjeta en los 4 grupos ricos sin duplicar layout.
-- `lines.tsx` migra a usar `PositionCard` en la misma PR (cambio visual nulo si el port es fiel — verificable en pantalla).
+Todos los conteos de resultado (sticky, subtítulos de subgrupo, opt-in) se derivan del estado de decisiones del usuario, no de la clasificación inicial. El hook useImportDecisions keyed por sourceRow es la fuente de verdad.
 
-Sin esta extracción los 4 grupos ricos re-implementan la tarjeta y perdemos la promesa de coherencia. Es la única refactor obligatoria del plan.
+Para alimentar los nuevos conteos se extiende el hook de decisiones con:
 
----
+- createdCount: número de filas de G4 con decisión create_draft.
+- modifiedCount: número de filas de G2 y G3 con decisión apply + G1 resueltas con apply/create/apply_to_candidate.
+- publishEstimate: número de filas de G4 "listas para publicar" marcadas como create_draft cuando el opt-in está activo.
+- pendingG1: se mantiene.
 
-### 2. Estructura de carpetas del reporte
+El hook ya devuelve stats calculadas; se añaden los campos nuevos a la misma función useMemo sin tocar el motor de clasificación.
 
-Todo el reporte se saca de la ruta y vive en su propio subárbol para poder iterar por grupo:
+DONDE NO HAY CERTEZA — PROPUESTAS DEL PLAN
 
-```text
-src/components/agreements/import-report/
-  ImportReport.tsx              // orquestador: sticky bar + los 6 grupos en orden 1→4→2→3→6→5
-  StickyDecisionBar.tsx
-  GroupShell.tsx                // header común: título, chip conteo, chip "sin resolver", expand/colapsar
-  groups/
-    Group1RequiresDecision.tsx  // master-detail
-    Group2ModifiesPublished.tsx // tarjetas actual→nuevo + filtro
-    Group3DraftsAndCodes.tsx    // 2 sub-secciones
-    Group4NotInAgreement.tsx    // tarjetas con checkbox + banner
-    Group5Unchanged.tsx         // inerte, filas enriquecidas, colapsado
-    Group6NotProcessable.tsx    // inerte, filas + filtro + descarga
-  parts/
-    PositionCardDiff.tsx        // wrapper de PositionCard que renderiza actual→nuevo (G2)
-    PositionCardCandidate.tsx   // wrapper para candidatas de G1 con botón "Aplicar a esta"
-    PositionCardNew.tsx         // wrapper para "así quedará si la creas" (G4)
-    EnrichedRow.tsx             // fila enriquecida compartida por G5 y G6
-    ChangeChips.tsx             // chips "precio venta", "fecha fin", "obs"... reutilizable en G2/G3
-    DeltaPrice.tsx              // Δ% con color, con la regla "solo si actual > 0"
-    ReasonChip.tsx              // motivos de G4 y G6
-```
+1. Vocabulario único de CTAs
+  Para evitar que cada grupo se vea distinto, se propone un vocabulario transversal:
+  - Aplicar cambios: verbo "Aplicar" / "Aplicar a esta" para G1, G2, G3.
+  - Crear posición: verbo "Crear" para G4.
+  - Ignorar/Excluir: unificar como "Ignorar" en todos los grupos. Reemplazar "Excluir" en G2/G3 por "Ignorar" para que la acción de "no aplicar" sea la misma palabra en todos lados.
+  - Reincluir: verbo "Restaurar" o "Incluir" para revertir una decisión de ignorar. Se propone "Incluir" para mantenerlo simple.
+  - Atajos de grupo: en todos los grupos que tengan acciones masivas, usar el mismo patrón: "Aplicar todas / Ignorar todas" (G2/G3) o "Crear todas / Ignorar todas" (G4) o "Ignorar todas" (G1).
+  - Posición de los CTAs: siempre al final de la fila, alineados a la derecha; atajos de grupo en el header del acordeón, alineados a la derecha.
+2. Color/tono de cada subgrupo en G4
+  - "Listas para publicar": tono success (verde) porque están completas y listas para salir.
+  - "Quedarán en gestión": tono warning (amarillo/naranja) porque nacen como borrador y requieren seguimiento.
+  - Se usan chips y badges existentes (success, warning) del design system, no colores inventados.
+3. Iconos y microcopy
+  - Icono de cada grupo en el acordeón: propuestas
+    - G1: AlertTriangle (lucide)
+    - G2: AlertCircle o Edit3
+    - G3: PlusCircle o FilePlus
+    - G4: PlusSquare
+    - G5: CheckCircle2
+    - G6: Ban
+  - Icono de opt-in: CheckCircle2 cuando activo, Circle cuando inactivo.
+  - Microcopy del sticky: "N filas necesitan tu decisión antes de continuar" / "Al confirmar: se crean X posiciones nuevas y se modifican Y existentes." / "Confirmar importación".
+4. Confirmación con pendientes
+  - Propuesta: mantener el botón deshabilitado mientras G1 tenga pendientes. Es la opción más segura y evita que el usuario confirme sin haber resuelto conflictos.
+  - Alternativa (si se prefiere): dejar el botón activo y mostrar un AlertDialog al confirmar con advertencia. Se deja como opción para decisión posterior, pero la propuesta por defecto es bloquear.
 
-La ruta `agreements.$agreementId.import.tsx` queda como shell: sube archivo → parsea → clasifica → pasa `DiffResult` + snapshot + catálogo a `<ImportReport />`. Toda la lógica de decisión vive dentro del componente.
+Cómo se reorganizan los componentes
 
----
+1. ImportReport.tsx
+  - Añadir ImportReportHeader con las 3 métricas.
+  - Reemplazar el listado actual por 6 acordeones usando ImportReportGroup.
+  - Reordenar los grupos 1→6.
+  - Renderizar StickyDecisionBar entre el header y los acordeones, o fijo arriba del listado como está hoy.
+2. StickyDecisionBar.tsx
+  - Simplificar a la caja de resumen con mensaje de pendientes, resumen dinámico y botón.
+  - Recibir createdCount, modifiedCount y publishEstimate (si se quiere anticipar publicación en el resumen) desde decisions.
+3. Nuevo archivo: import-report/ImportReportGroup.tsx
+  - Contenedor acordeón basado en Accordion de shadcn/ui.
+  - Header: icono + título + conteo + toolbar (atajos) + chevron.
+  - Variante de tono para "warning" (G1) y "muted" (G5/G6).
+4. Nuevo archivo: import-report/ImportReportHeader.tsx
+  - Tres cards de métricas sobre el archivo.
+  - Reutilizar componentes Card de shadcn/ui o un contenedor simple con estilos del design system.
+5. Group4NewPositions.tsx (renombrado desde Group4NotInAgreement.tsx)
+  - Dividir rows en ready y draft-subgroup.
+  - Mostrar cada subgrupo con su subtítulo "X de Y marcadas".
+  - Checkbox de creación por fila.
+  - Checkbox de opt-in "Publicar las marcadas al confirmar (~N)" dentro de ready.
+  - Atajos "Crear todas" / "Ignorar todas".
+6. Group1RequiresDecision.tsx, Group2ModifiesPublished.tsx, Group3DraftsAndCodes.tsx, Group5Unchanged.tsx, Group6NotProcessable.tsx
+  - Adaptar para renderizarse dentro de ImportReportGroup.
+  - Unificar vocabulario de CTAs según lo propuesto.
+  - G1: "Ignorar" / "Crear nueva" / "Aplicar a esta".
+  - G2/G3: "Incluir" / "Ignorar" (reemplazar "Reincluir" / "Excluir").
+  - G5/G6: solo lectura, sin acciones.
+7. state.ts
+  - Extender Decision con un nuevo tipo para el opt-in de publicación: se maneja como estado local booleano por subgrupo, no como Decision por fila.
+  - Añadir createdCount, modifiedCount y publishEstimate a las stats calculadas.
+  - Mover la función defaultFor al exportar si se necesita en componentes (no estrictamente necesario, pero útil para subgrupos).
+8. parts.tsx
+  - Añadir un componente reutilizable para el checkbox de fila con estado parcial (indeterminate) si se usa "Crear todas".
+  - No cambiar celdas existentes salvo ajustes menores de espaciado si el acordeón lo requiere.
 
-### 3. Estado de decisiones (fuente única)
+Tareas de construcción detalladas
 
-Un solo hook local en `ImportReport`, sin librería, sin persistencia (contrato: nada se escribe):
+1. Crear ImportReportHeader.tsx y conectarlo con los datos del archivo (totalRows, clientCodes únicos, no identificados).
+2. Crear ImportReportGroup.tsx como acordeón reutilizable.
+3. Refactorizar ImportReport.tsx para usar header + acordeones + reordenamiento.
+4. Refactorizar StickyDecisionBar.tsx con el nuevo lenguaje y conteos dinámicos.
+5. Renombrar Group4NotInAgreement.tsx a Group4NewPositions.tsx e implementar subgrupos + opt-in.
+6. Actualizar Group1RequiresDecision.tsx, Group2ModifiesPublished.tsx, Group3DraftsAndCodes.tsx para unificar vocabulario de CTAs y adaptarse al acordeón.
+7. Extender useImportDecisions en state.ts para calcular createdCount, modifiedCount y publishEstimate.
+8. Actualizar la importación de archivos afectados y corregir cualquier tipo derivado.
+9. Verificar visualmente que los 6 grupos colapsados, el header y el sticky se rendericen correctamente.
 
-```ts
-type Decision =
-  | { kind: "pending" }                              // default G1
-  | { kind: "apply_to_candidate"; positionId: string } // G1
-  | { kind: "create_new" }                           // G1 y G4 (crear)
-  | { kind: "ignore" }                               // G1, G4 (default), G2/G3 excluidas
-  | { kind: "apply" };                               // G2/G3 default
+Archivos que se tocarán
 
-// keyed por sourceRow (identidad estable de la fila del archivo)
-const [decisions, setDecisions] = useState<Map<number, Decision>>(...);
-```
+- src/components/agreements/import-report/ImportReport.tsx
+- src/components/agreements/import-report/StickyDecisionBar.tsx
+- src/components/agreements/import-report/ImportReportHeader.tsx (nuevo)
+- src/components/agreements/import-report/ImportReportGroup.tsx (nuevo)
+- src/components/agreements/import-report/groups/Group4NotInAgreement.tsx → Group4NewPositions.tsx (renombrado)
+- src/components/agreements/import-report/groups/Group1RequiresDecision.tsx
+- src/components/agreements/import-report/groups/Group2ModifiesPublished.tsx
+- src/components/agreements/import-report/groups/Group3DraftsAndCodes.tsx
+- src/components/agreements/import-report/groups/Group5Unchanged.tsx
+- src/components/agreements/import-report/groups/Group6NotProcessable.tsx
+- src/components/agreements/import-report/state.ts
+- src/components/agreements/import-report/parts.tsx (posiblemente)
 
-Al inicializar `decisions` desde `DiffResult`:
-- G1: `pending` (nada preseleccionado — contrato).
-- G2, G3: `apply`.
-- G4: `ignore` (nada preseleccionado — contrato).
-- G5, G6: no entran al mapa (no tienen decisión).
+Intocables respetados
 
-Derivados (memo):
-- `pendingCount` = G1 con `pending` + G4 con `ignore`? → **decisión abierta abajo**.
-- `toApplyCount` = G1 resueltas (`apply_to_candidate|create_new`) + G2 con `apply` + G3 con `apply` + G4 con `create_new`.
-- `publishedModifiedCount` = subset de `toApplyCount` cuya candidata/posición está en status `active` o `requires_review` (esto es el "volumen visible" que pide la sticky bar).
+- No se escribe en la base de datos: todo sigue siendo previsualización y estado local.
+- No se preselecciona nada en G1 ni G4.
+- No se toca el motor diff.ts ni las server functions.
+- Se usan tokens del design system (suma-*, componentes de shadcn/ui existentes).
+- Copy neutro y en español Colombia ("tú").
 
-Acciones en bloque (G1 "ignorar todas", G4 "seleccionar todas / solo completas") son setters masivos sobre el mismo mapa.
+&nbsp;
 
----
+Tu plan está aprobado casi todo. Un cambio importante y tres confirmaciones:
 
-### 4. Barra sticky (`StickyDecisionBar`)
+CAMBIO — el grupo "Nuevas posiciones" va SIMPLE, sin lo que diseñamos de 
 
-Un solo componente arriba del reporte, `position: sticky; top: 0`, fondo sólido, sombra Sumatec cool-gray, dentro del scroll de la Card 3.
+publicación:
 
-Layout (izquierda → derecha):
-- Total de filas leídas.
-- Chip **"Requieren tu atención: N"** (rojo `--primary` si > 0, gris si 0). Suma G1 sin resolver + G4 sin decidir explícitamente… con matiz: G4 no tiene "sin decidir" real porque su default es `ignore`. **Asimetría a resolver antes de construir — ver §7.**
-- Chip **"Se aplicarán: N"** (accent azul).
-- Chip **"Modifican publicadas: N"** (`publishedModifiedCount`, el volumen visible que pediste).
-- Chips informativos G5 (sin cambios) y G6 (no procesables), compactos, sin acción.
-- Botón primario **"Confirmar importación"** al extremo derecho. Deshabilitado con tooltip "Resuelve las N filas del grupo 1 antes de confirmar" mientras G1 tenga `pending`. La confirmación real es out-of-scope de este plan (Paso 4 del motor).
+- SIN subgrupos "Listas para publicar" / "Quedarán en gestión".
 
-La barra no reimplementa cálculos: solo lee los derivados del hook.
+- SIN opt-in de publicación.
 
----
+- SIN tags de "completa/incompleta/lista".
 
-### 5. Layout por grupo (cómo se ensambla la asimetría)
+- Es una tabla plana: checkbox (crear) · Producto (SKU + descripción) · Precio · 
 
-**Regla transversal:** cada grupo se monta con `<GroupShell title conteo hint sinResolverChip? defaultOpen>`. Lo que cambia es el body.
+  Vigencia · Código propuesto.
 
-**G1 Requieren decisión — master-detail**
-- Izquierda (30%): lista compacta de filas del archivo (nº fila + SKU + código cliente + chip resuelto/pendiente). Selección local.
-- Derecha (70%): arriba `<PositionCardNew />` con lo que trae el archivo (título "La fila del archivo"); debajo, "Posiciones candidatas del acuerdo" con `<PositionCardCandidate />` apiladas (cada una con botón "Aplicar a esta" en `footer`, y el `<StatusBadge>` de la posición en `headerRight`).
-- Acciones bottom-of-detail: "Ignorar esta fila" · "Crear como posición nueva".
-- Acción bloque en `GroupShell`: "Ignorar todas las sin resolver".
+- La importación SOLO CREA, todo nace en draft. NO publica (la publicación es un 
 
-**G2 Modifican publicadas — grid de tarjetas-posición con diff**
-- Encabezado del grupo: filtro por tipo de cambio como **chips toggleables** (precio venta / precio par / fecha inicio / fecha fin / observaciones) + ordenamiento (|Δ%| desc default, Δ absoluto, nº fila).
-- Body: grid 1 col (>=lg 2 col) de `<PositionCardDiff />`. Cada tarjeta muestra la posición actual y, dentro del `footer` de la tarjeta, un bloque "Cambios" con filas `campo: actual → nuevo` + `<DeltaPrice>` (regla: solo si `actual > 0`; si no, "nuevo: $X" sin %).
-- `headerRight` de la tarjeta: switch/checkbox "Aplicar" (default ON). Off = excluida esta importación (visual tachado suave).
-- Barra de estadísticas opcional arriba: subidas / bajadas / mediana Δ%. **Marcada como opcional para v1** — si retrasa, va en la iteración de pulido de G2.
+  acto posterior en la gestión de posiciones, con su propia regla — no la tocamos).
 
-**G3 Modifican gestión / agregan códigos — 2 sub-secciones**
-- Sub-header dentro del `GroupShell`: dos títulos con micro-conteo.
-  - **3a. Completan borrador**: `<PositionCardDiff />` con `tone="muted"`; en el footer, en vez de "actual → nuevo", `<ChangeChips>` con "se llenará: precio venta, fecha fin…" (los campos que estaban vacíos).
-  - **3b. Agregan código a posición existente**: `<PositionCardDiff />` mostrando la posición receptora y, en `footer`, un bloque "Nuevo código: CORONA · COR-005 — descripción". Chip "código nuevo" en `headerRight`.
-- Acción por tarjeta: "Excluir". Bloque por sub-sección: "Excluir todas".
-- Tono visual suave (gris/muted, sin colores de alerta) para comunicar "esto completa, no rompe".
+- Los datos se muestran tal como vienen; si falta precio/fecha, se ve vacío o "—". 
 
-**G4 No están en el acuerdo — tarjetas con checkbox + banner**
-- Banner neutro arriba (fondo `--muted`, sin ícono de peligro): *"Estas posiciones no existen en el acuerdo. Por defecto se ignoran. Puedes crearlas como borrador para revisar después."*
-- Body: grid de `<PositionCardNew />` que renderiza "así quedará si la creas" (SKU + marca/descripción si el SKU está en catálogo, precios, vigencia). El `<PositionCard>` recibe `overlay` con un checkbox top-left grande. `headerRight`: `<ReasonChip>` (por qué no coincide: "SKU no está en acuerdo" / "Cliente no cubierto" / "Combinación nueva").
-- Acción bloque en `GroupShell`: "Seleccionar todas" · "Solo con precio y vigencia completos" · "Deseleccionar todas".
-- Contador vivo "N de M seleccionadas para crear".
+  Sin tag ni color que juzgue completitud. El sistema muestra hechos, no opina.
 
-**G5 Sin cambios — inerte, colapsado por default**
-- `GroupShell` colapsado. Al abrirse, `<EnrichedRow>` en lista compacta (una línea por fila): status dot · SKU en mono · marca · descripción · "→ posición actual coincide". Sin acciones. Link "Ver todas" abre un dialog si son >100.
+- La barra de decisión tampoco menciona publicación: solo "se crean X / se 
 
-**G6 No procesables — inerte, filas enriquecidas + descarga**
-- `GroupShell` con acción en el header: botón secundario "Descargar no procesables (.xlsx)" (reutiliza patrón de `agreement-export.ts`).
-- Encabezado del body: chips de filtro por tipo de motivo (agrupados desde `describeRowReason`). Cuenta por tipo.
-- Body: `<EnrichedRow>` por fila con SKU + descripción del catálogo si se pudo resolver (contrato: si no está en catálogo, solo SKU) + motivo formateado como chip en `--primary`.
+  modifican Y", dinámico.
 
----
+CONFIRMA:
 
-### 6. Reutilizaciones concretas
+1. "Confirmar importación" no ejecuta nada aún (Paso 4, no construido).
 
-- `PositionCard` (nueva, extraída de `lines.tsx`) — usada por G1, G2, G3, G4.
-- `StatusBadge` (`@/components/sumatec`) — dentro de `PositionCard.headerRight`.
-- `Chip` (`@/components/sumatec`) — filtros de G2/G6, chips de cambio, motivos.
-- `Badge`, `SummaryToggle` — si aplica en la sticky bar.
-- `formatMoneyCOP` (`@/lib/format`) — todos los precios.
-- Formato de vigencia y `PricingField` label map — ya existe `FIELD_LABELS` y `CANONICAL_HEADERS`; se centraliza en `src/components/agreements/import-report/labels.ts` para no duplicar.
-- `describeRowReason` ya existe — se mueve a `parts/reasons.ts` (v1 no lo reescribe, solo lo mueve para que G6 lo importe sin depender de la ruta).
-- `Accordion` de `@/components/ui/accordion` se descarta: el nuevo `GroupShell` es a medida (el acordeón actual no da espacio para chips de estado del grupo ni acciones inline en el header).
+2. No tocas el motor (diff.ts) ni las server functions.
 
----
+3. Nada se escribe: previsualización, estado local.
 
-### 7. Asimetrías que valen decidir ANTES de construir
+Todo lo demás de tu plan (vocabulario único de CTAs, orden 1→6, renombre a "Nuevas 
 
-Marco las que veo. Son preguntas de contrato, no de layout.
+posiciones", header con 3 indicadores, comportamiento dinámico) queda aprobado tal 
 
-**A) Semántica de "requieren tu atención" en G4.**
-G1 tiene un estado natural `pending` (nadie ha elegido). G4 tiene default `ignore` (contrato). ¿G4 cuenta como "requiere atención" solo mientras el usuario no lo haya mirado (necesita un flag `viewed`), o **no cuenta nunca** porque su default ya es una decisión válida? Mi propuesta v1: **G4 NO cuenta como atención**; solo aporta al contador cuando el usuario marca al menos una para crear (aparece en "se aplicarán"). Si prefieres otra semántica, cambia el hook derivado sin tocar layout.
-
-**B) G3.b "agrega código" no es una posición nueva ni una publicada modificada.**
-Es una **posición existente que recibe un código extra**. La tarjeta debe ser clara sobre cuál es la posición receptora (esa ES una publicada/borrador ya existente) para que no se confunda con G4. Propongo `tone="muted"` + chip "recibe código nuevo" y NO contarla en `publishedModifiedCount` de la sticky (aunque técnicamente toca una publicada). Confirmar.
-
-**C) G2 y G3 con default `apply`: ¿la sticky "Se aplicarán" cambia en vivo si el usuario excluye una tarjeta?**
-Sí en mi diseño. Consecuencia: excluir una tarjeta de G2 baja "Se aplicarán" y "Modifican publicadas" en tiempo real. Confirmar que este acoplamiento vivo es deseado (creo que sí — es el punto de la sticky).
-
-**D) Duplicados en archivo (`duplicate_in_file`) cae en G1 con `reason`.**
-Merece copy propio dentro de la tarjeta de decisión ("esta fila del archivo aparece dos veces; elige cuál conservar") vs. el flujo estándar "elige contra qué candidata". Para v1 lo trato con el mismo layout master-detail pero con un banner interno de aviso. Si quieres un mini-layout distinto para duplicados, va en el pulido fino de G1.
-
-**E) Grid 2 col en G2/G3/G4.**
-Con viewport ≥ lg mostramos 2 columnas; en ≤ md, 1. Impacta densidad. Si prefieres siempre 1 columna (más lectura, menos densidad), lo bajamos — no cambia estructura.
-
-**F) `PositionCard` extraída: ¿bloqueante o paralelo?**
-Mi recomendación: **bloqueante** (paso 1 del plan). Sin ella cada grupo re-implementa la tarjeta y pierden coherencia. Si quieres desacoplar, la alternativa es duplicar la tarjeta ahora en el reporte y unificar después — no lo recomiendo.
-
----
-
-### 8. Fuera de alcance de esta v1
-
-Explícito para no ampliar por accidente:
-- Confirmación real de importación (Paso 4 del motor). El botón "Confirmar" queda deshabilitado y visible; su handler es un `TODO`.
-- Descarga XLSX de G6 puede quedar como botón deshabilitado si `agreement-export.ts` no cubre el caso — no bloquea el resto.
-- Estadísticas de G2 (mediana Δ%, sparklines) — opcional para v1, pulido de G2.
-- Diálogo "Ver todas" de G5 cuando >100 filas — opcional; v1 puede renderizar todas ya que G5 es colapsado por default.
-- Persistencia de decisiones entre recargas (contrato explícito: no).
-
----
-
-### 9. Orden de construcción propuesto (cuando pases a build)
-
-1. Extraer `PositionCard` de `lines.tsx` y migrar `lines.tsx` (verificación visual: sin cambios).
-2. Andamiaje: `ImportReport`, `StickyDecisionBar`, `GroupShell`, hook de decisiones, labels/reasons compartidos.
-3. G5 y G6 (inertes — los más simples, validan `EnrichedRow`).
-4. G2 y G3 (default `apply`, validan `PositionCardDiff` y `ChangeChips`).
-5. G4 (checkbox + banner, valida `PositionCardNew` con overlay).
-6. G1 (master-detail — el más complejo, se apoya en todo lo anterior).
-7. Cablear sticky con derivados reales y pulir vacíos/estados edge.
-
-Cada paso deja el reporte funcional (los grupos aún no construidos siguen renderizándose con el fallback simple actual), así se puede auditar en el navegador entre pasos sin romper la vista.
+cual. Con estos ajustes, construye.

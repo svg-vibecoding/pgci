@@ -20,10 +20,12 @@ export function Group3DraftsAndCodes({
   rows,
   positionsById,
   decisions,
+  icon,
 }: {
   rows: ClassifiedRow[];
   positionsById: Map<string, PositionSnapshot>;
   decisions: DecisionsState;
+  icon?: React.ReactNode;
 }) {
   const drafts: ClassifiedRow[] = [];
   const newCodes: ClassifiedRow[] = [];
@@ -37,9 +39,31 @@ export function Group3DraftsAndCodes({
 
   return (
     <GroupShell
+      id="g3"
+      icon={icon}
       title="Modifican gestión / agregan códigos"
       count={rows.length}
       hint="Completan borradores o agregan un nuevo código a una posición existente. Se aplican por defecto."
+      toolbar={
+        rows.length > 0 && (
+          <>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => decisions.setMany(rows, { kind: "apply" })}
+            >
+              Aplicar todas
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => decisions.setMany(rows, { kind: "ignore" })}
+            >
+              Ignorar todas
+            </Button>
+          </>
+        )
+      }
     >
       {rows.length === 0 ? (
         <EmptyGroup message="Sin cambios en gestión ni códigos nuevos." />
@@ -128,7 +152,7 @@ function Sub({
                     variant="outline"
                     onClick={() => decisions.set(r.sourceRow, { kind: "apply" })}
                   >
-                    Reincluir
+                    Incluir
                   </Button>
                 ) : (
                   <Button
@@ -136,7 +160,7 @@ function Sub({
                     variant="ghost"
                     onClick={() => decisions.set(r.sourceRow, { kind: "ignore" })}
                   >
-                    Excluir
+                    Ignorar
                   </Button>
                 )}
               </td>
