@@ -68,7 +68,7 @@ function MappedColumns({
 
   return (
     <section className="space-y-3">
-      <h3 className="suma-overline">Columnas mapeadas</h3>
+      <h3 className="suma-subtitle text-text-primary">Columnas mapeadas</h3>
       <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3 lg:grid-cols-4">
         {ordered.map((field) => {
           const n = countNonEmpty(rows, field);
@@ -168,19 +168,21 @@ function ProgressRing({
 function IgnoredColumns({ headers }: { headers: string[] }) {
   return (
     <section className="space-y-2">
-      <h3 className="suma-overline">Columnas del archivo que no se usan</h3>
+      <h3 className="suma-subtitle text-text-primary">
+        Columnas del archivo que no se usan
+      </h3>
       {headers.length === 0 ? (
-        <p className="suma-caption text-text-tertiary">
+        <p className="suma-body text-text-secondary">
           No hay columnas adicionales: el archivo trae solo columnas que PGCI
           reconoce.
         </p>
       ) : (
         <>
-          <p className="suma-caption text-text-tertiary">
+          <p className="suma-body text-text-secondary">
             Estos encabezados vinieron en el archivo pero no corresponden a
             campos que PGCI lee en este paso. No afectan la clasificación.
           </p>
-          <p className="suma-body text-text-tertiary/70">
+          <p className="suma-body text-text-tertiary">
             {headers.join("  /  ")}
           </p>
         </>
