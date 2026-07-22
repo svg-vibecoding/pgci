@@ -413,8 +413,18 @@ function PositionChangeCard({
 }
 
 // ---------------------------------------------------------------------------
-// Grid de cambios: columnas presentes; fila superior = nuevo, inferior = actual
+// Grid de cambios: SIEMPRE 4 columnas en orden fijo.
+// Fila superior = "nuevo" (cómo quedará). Fila inferior = "actual".
 // ---------------------------------------------------------------------------
+
+const COLS: ChangeCategory[] = ["relations", "observations", "dates", "prices"];
+
+const LABEL: Record<ChangeCategory, string> = {
+  relations: "Relación",
+  observations: "Observaciones",
+  dates: "Vigencia",
+  prices: "Precios de venta",
+};
 
 function ChangeGrid({
   pos,
@@ -425,55 +435,44 @@ function ChangeGrid({
   changes: FieldChange[];
   counts: ReturnType<typeof categoryCounts>;
 }) {
-  const cols: ChangeCategory[] = [];
-  if (counts.relations) cols.push("relations");
-  if (counts.observations) cols.push("observations");
-  if (counts.dates) cols.push("dates");
-  if (counts.prices) cols.push("prices");
-
-  if (cols.length === 0) return null;
-
-  const gridCols = {
-    1: "grid-cols-1",
-    2: "grid-cols-1 md:grid-cols-2",
-    3: "grid-cols-1 md:grid-cols-3",
-    4: "grid-cols-1 md:grid-cols-2 lg:grid-cols-4",
-  }[cols.length] ?? "grid-cols-1";
-
   return (
-    <div className={cn("grid gap-x-4 gap-y-1", gridCols)}>
-      {cols.map((col) => (
-        <div key={col} className="text-[10.5px] uppercase tracking-wide text-text-tertiary font-semibold">
-          {LABEL[col]}{" "}
-          <span className="tabular-nums font-normal">({countFor(col, counts)})</span>
-        </div>
-      ))}
-      {cols.map((col) => (
+    <div className="grid grid-cols-1 gap-x-6 gap-y-2 md:grid-cols-2 lg:grid-cols-4">
+      {COLS.map((col) => {
+        const n = counts[col];
+        const active = n > 0;
+        return (
+          <div
+            key={`h-${col}`}
+            className={cn(
+              "text-[13px] font-normal",
+              active ? "text-text-secondary" : "text-text-tertiary",
+            )}
+          >
+            {LABEL[col]}{" "}
+            <span className="tabular-nums text-text-tertiary">({n})</span>
+          </div>
+        );
+      })}
+      {COLS.map((col) => (
         <div key={`new-${col}`} className="text-sm">
-          <NewCell col={col} pos={pos} changes={changes} />
+          {counts[col] > 0 ? (
+            <NewCell col={col} pos={pos} changes={changes} />
+          ) : (
+            <SinCambios />
+          )}
         </div>
       ))}
-      {cols.map((col) => (
+      {COLS.map((col) => (
         <div key={`old-${col}`} className="text-xs text-text-tertiary">
-          <OldCell col={col} pos={pos} changes={changes} />
+          {counts[col] > 0 ? (
+            <OldCell col={col} pos={pos} changes={changes} />
+          ) : (
+            <span className="text-text-tertiary/60">—</span>
+          )}
         </div>
       ))}
     </div>
   );
-}
-
-const LABEL: Record<ChangeCategory, string> = {
-  prices: "Precios de venta",
-  dates: "Vigencia",
-  observations: "Observaciones",
-  relations: "Relación",
-};
-
-function countFor(
-  col: ChangeCategory,
-  c: ReturnType<typeof categoryCounts>,
-): number {
-  return c[col];
 }
 
 function NewCell({
