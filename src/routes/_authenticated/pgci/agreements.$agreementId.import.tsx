@@ -6,7 +6,6 @@ import { ArrowLeft, Download, Paperclip, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Chip } from "@/components/sumatec";
 import {
   getAgreementImportSnapshot,
   getCatalogProductsBySku,
@@ -22,7 +21,7 @@ import {
   type PricingField,
 } from "@/lib/agreement-import";
 import { ImportReport } from "@/components/agreements/import-report/ImportReport";
-import { FIELD_LABEL } from "@/components/agreements/import-report/labels";
+import { ImportFileReading } from "@/components/agreements/import-report/ImportFileReading";
 
 export const Route = createFileRoute(
   "/_authenticated/pgci/agreements/$agreementId/import",
@@ -238,28 +237,23 @@ function ImportAgreementView() {
         </CardContent>
       </Card>
 
-      {/* Card 2: qué se reconoció */}
+      {/* Card 2: lectura del archivo */}
       {parsed && (
         <Card>
           <CardHeader>
-            <CardTitle className="suma-h4">2. Qué se reconoció</CardTitle>
+            <CardTitle className="suma-h4">2. Lectura del archivo</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <Chip>{parsed.presentColumns.length} columnas</Chip>
-              <span className="suma-body text-text-secondary">
-                {parsed.presentColumns
-                  .map((c) => FIELD_LABEL[c])
-                  .join(" · ")}
-              </span>
-            </div>
-            <p className="suma-body text-text-primary">
-              <strong>{totalRows}</strong>{" "}
-              {totalRows === 1 ? "fila de datos leída" : "filas de datos leídas"}
-              .
-            </p>
+          <CardContent>
+            <ImportFileReading
+              totalRows={totalRows}
+              rows={parsed.rows}
+              presentColumns={parsed.presentColumns}
+              ignoredColumns={parsed.ignoredColumns}
+              classifiedRows={classified?.rows ?? []}
+              activeClientCodes={snapshotQuery.data?.activeClientCodes ?? []}
+            />
             {!hasClientCode && (
-              <p className="suma-caption text-text-tertiary">
+              <p className="mt-4 suma-caption text-text-tertiary">
                 Sin columna de código cliente: el cruce se hace solo por SKU.
               </p>
             )}
@@ -276,8 +270,6 @@ function ImportAgreementView() {
           <CardContent>
             <ImportReport
               result={classified}
-              totalRows={parsed?.rows.length ?? 0}
-              activeClientCodes={snapshotQuery.data?.activeClientCodes ?? []}
               positions={snapPositions}
               catalogBySku={catalog}
             />
