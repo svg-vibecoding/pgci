@@ -1,7 +1,9 @@
 import type { ClassifiedRow } from "@/lib/agreement-import";
+import { IndicatorCard } from "@/components/setup/IndicatorCard";
 
 /**
  * Header del reporte: 3 métricas sobre el ARCHIVO (hechos, no decisiones).
+ * Usa IndicatorCard para unificar con el resto de vistas.
  */
 export function ImportReportHeader({
   totalRows,
@@ -25,36 +27,16 @@ export function ImportReportHeader({
 
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-      <Metric label="Filas totales" value={totalRows} />
-      <Metric label="Códigos Jaivaná únicos" value={codesInFile.size} />
-      <Metric
+      <IndicatorCard label="Filas totales" value={totalRows} />
+      <IndicatorCard label="Códigos Jaivaná únicos" value={codesInFile.size} />
+      <IndicatorCard
         label="Jaivaná no identificados"
-        value={unidentified}
-        tone={unidentified > 0 ? "alert" : "muted"}
+        value={
+          <span className={unidentified > 0 ? "text-primary" : undefined}>
+            {unidentified}
+          </span>
+        }
       />
-    </div>
-  );
-}
-
-function Metric({
-  label,
-  value,
-  tone = "muted",
-}: {
-  label: string;
-  value: number;
-  tone?: "muted" | "alert";
-}) {
-  const valueCls =
-    tone === "alert" ? "text-primary" : "text-text-primary";
-  return (
-    <div className="rounded-lg border border-border bg-white px-4 py-3">
-      <div className="suma-caption text-text-tertiary">{label}</div>
-      <div
-        className={"mt-1 tabular-nums text-2xl font-bold " + valueCls}
-      >
-        {value}
-      </div>
     </div>
   );
 }

@@ -1,14 +1,14 @@
 import type { ClassifiedRow, ParsedRow, PricingField } from "@/lib/agreement-import";
 import { CANONICAL_HEADERS, CANONICAL_ORDER } from "@/lib/agreement-import";
-import { Chip } from "@/components/sumatec";
 import { ImportReportHeader } from "./ImportReportHeader";
 
 /**
  * Card 2 — "Lectura del archivo".
  * Muestra HECHOS previos a la clasificación:
- *  - 3 métricas del archivo (filas, códigos únicos, no identificados).
- *  - Columnas mapeadas con conteo de valores no vacíos (N / total).
- *  - Columnas del archivo que no se usan (transparencia).
+ *  - 3 métricas del archivo (via IndicatorCard, unificado con el resto).
+ *  - Columnas mapeadas: grid liviano sin bordes, con anillo de progreso
+ *    (N/total) en la esquina superior derecha.
+ *  - Columnas del archivo que no se usan: texto plano separado por "/", off.
  */
 export function ImportFileReading({
   totalRows,
@@ -26,7 +26,7 @@ export function ImportFileReading({
   activeClientCodes: Array<{ client_code: string }>;
 }) {
   return (
-    <div className="space-y-5">
+    <div className="space-y-8">
       <ImportReportHeader
         totalRows={totalRows}
         rows={classifiedRows}
@@ -64,33 +64,21 @@ function MappedColumns({
   presentColumns: PricingField[];
   totalRows: number;
 }) {
-  // Mostrar en orden canónico, solo las presentes.
   const ordered = CANONICAL_ORDER.filter((f) => presentColumns.includes(f));
 
   return (
-    <section className="space-y-2">
-      <h3 className="suma-body font-semibold text-text-primary">
-        Columnas mapeadas
-      </h3>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+    <section className="space-y-3">
+      <h3 className="suma-overline">Columnas mapeadas</h3>
+      <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3 lg:grid-cols-4">
         {ordered.map((field) => {
           const n = countNonEmpty(rows, field);
-          const partial = totalRows > 0 && n < totalRows;
-          const wrapperCls =
-            "rounded-lg border border-border bg-white px-3 py-2 " +
-            (partial ? "border-l-4 border-l-accent" : "");
           return (
-            <div key={field} className={wrapperCls}>
-              <div className="suma-caption text-text-tertiary">
-                {CANONICAL_HEADERS[field]}
-              </div>
-              <div className="mt-0.5 suma-body font-semibold tabular-nums text-text-primary">
-                {n}{" "}
-                <span className="font-normal text-text-tertiary">
-                  / {totalRows}
-                </span>
-              </div>
-            </div>
+            <MappedColumnItem
+              key={field}
+              label={CANONICAL_HEADERS[field]}
+              value={n}
+              total={totalRows}
+            />
           );
         })}
       </div>
@@ -98,12 +86,89 @@ function MappedColumns({
   );
 }
 
+function MappedColumnItem({
+  label,
+  value,
+  total,
+}: {
+  label: string;
+  value: number;
+  total: number;
+}) {
+  const ratio = total > 0 ? value / total : 0;
+  return (
+    <div className="relative pr-10">
+      <div className="suma-caption text-text-tertiary">{label}</div>
+      <div className="mt-0.5 suma-body font-semibold tabular-nums text-text-primary">
+        {value}
+        <span className="font-normal text-text-tertiary"> / {total}</span>
+      </div>
+      <ProgressRing ratio={ratio} className="absolute right-0 top-0" />
+    </div>
+  );
+}
+
+function ProgressRing({
+  ratio,
+  className,
+}: {
+  ratio: number;
+  className?: string;
+}) {
+  const size = 28;
+  const stroke = 3;
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const clamped = Math.max(0, Math.min(1, ratio));
+  const offset = c * (1 - clamped);
+
+  const isEmpty = clamped === 0;
+  const isFull = clamped === 1;
+  const trackColor = "var(--gray-100)";
+  const progressColor = isEmpty
+    ? "var(--gray-200)"
+    : isFull
+      ? "var(--success-strong)"
+      : "var(--color-accent)";
+
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox={`0 0 ${size} ${size}`}
+      className={className}
+      aria-hidden="true"
+    >
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        fill="none"
+        stroke={trackColor}
+        strokeWidth={stroke}
+      />
+      {!isEmpty && (
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke={progressColor}
+          strokeWidth={stroke}
+          strokeDasharray={c}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        />
+      )}
+    </svg>
+  );
+}
+
 function IgnoredColumns({ headers }: { headers: string[] }) {
   return (
     <section className="space-y-2">
-      <h3 className="suma-body font-semibold text-text-primary">
-        Columnas del archivo que no se usan
-      </h3>
+      <h3 className="suma-overline">Columnas del archivo que no se usan</h3>
       {headers.length === 0 ? (
         <p className="suma-caption text-text-tertiary">
           No hay columnas adicionales: el archivo trae solo columnas que PGCI
@@ -115,13 +180,9 @@ function IgnoredColumns({ headers }: { headers: string[] }) {
             Estos encabezados vinieron en el archivo pero no corresponden a
             campos que PGCI lee en este paso. No afectan la clasificación.
           </p>
-          <div className="flex flex-wrap gap-2">
-            {headers.map((h) => (
-              <Chip key={h} variant="outline" color="neutral">
-                {h}
-              </Chip>
-            ))}
-          </div>
+          <p className="suma-body text-text-tertiary/70">
+            {headers.join("  /  ")}
+          </p>
         </>
       )}
     </section>
