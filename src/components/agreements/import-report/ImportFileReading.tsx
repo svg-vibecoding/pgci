@@ -26,12 +26,15 @@ export function ImportFileReading({
   activeClientCodes: Array<{ client_code: string }>;
 }) {
   return (
-    <div className="space-y-8">
-      <ImportReportHeader
-        totalRows={totalRows}
-        rows={classifiedRows}
-        activeClientCodes={activeClientCodes}
-      />
+    <div className="space-y-6">
+      <section className="space-y-1.5">
+        <h3 className="suma-subtitle text-text-primary">Resultados principales</h3>
+        <ImportReportHeader
+          totalRows={totalRows}
+          rows={classifiedRows}
+          activeClientCodes={activeClientCodes}
+        />
+      </section>
 
       <MappedColumns
         rows={rows}
@@ -67,9 +70,9 @@ function MappedColumns({
   const ordered = CANONICAL_ORDER.filter((f) => presentColumns.includes(f));
 
   return (
-    <section className="space-y-3">
+    <section className="space-y-1.5">
       <h3 className="suma-subtitle text-text-primary">Columnas mapeadas</h3>
-      <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-x-6 gap-y-4 pt-2 sm:grid-cols-3 lg:grid-cols-4">
         {ordered.map((field) => {
           const n = countNonEmpty(rows, field);
           return (
@@ -98,12 +101,12 @@ function MappedColumnItem({
   const ratio = total > 0 ? value / total : 0;
   return (
     <div className="relative pr-10">
-      <div className="suma-caption text-text-tertiary">{label}</div>
-      <div className="mt-0.5 suma-body font-semibold tabular-nums text-text-primary">
+      <div className="suma-body text-text-secondary">{label}</div>
+      <div className="mt-0.5 suma-subtitle tabular-nums text-text-primary">
         {value}
         <span className="font-normal text-text-tertiary"> / {total}</span>
       </div>
-      <ProgressRing ratio={ratio} className="absolute right-0 top-0" />
+      <ProgressRing ratio={ratio} className="absolute right-0 top-1/2 -translate-y-1/2" />
     </div>
   );
 }
@@ -167,7 +170,7 @@ function ProgressRing({
 
 function IgnoredColumns({ headers }: { headers: string[] }) {
   return (
-    <section className="space-y-2">
+    <section className="space-y-1.5">
       <h3 className="suma-subtitle text-text-primary">
         Columnas del archivo que no se usan
       </h3>
