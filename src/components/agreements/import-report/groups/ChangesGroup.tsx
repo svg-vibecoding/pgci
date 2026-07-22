@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/sumatec";
 import { formatMoneyCOP } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { GroupShell, DeltaValue } from "../parts";
+import { GroupShell } from "../parts";
 import { statusMeta } from "../labels";
 import type { DecisionsState } from "../state";
 import { EmptyGroup } from "./Group1RequiresDecision";
