@@ -629,5 +629,3 @@ function SinCambios({ label = "Sin cambios" }: { label?: string }) {
   return <span className="text-text-tertiary italic">{label}</span>;
 }
 
-// Re-export DeltaValue to keep parts import surface intact even if unused elsewhere.
-export { DeltaValue };
