@@ -28,7 +28,6 @@ export function ImportFileReading({
   return (
     <div className="space-y-6">
       <section className="space-y-1.5">
-        <h3 className="suma-subtitle text-text-primary">Resultados principales</h3>
         <ImportReportHeader
           totalRows={totalRows}
           rows={classifiedRows}
