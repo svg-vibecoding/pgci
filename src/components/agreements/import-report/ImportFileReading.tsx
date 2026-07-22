@@ -41,7 +41,6 @@ export function ImportFileReading({
         totalRows={totalRows}
       />
 
-      <IgnoredColumns headers={ignoredColumns} />
     </div>
   );
 }
