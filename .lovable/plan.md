@@ -1,203 +1,118 @@
-Plan: reorganización del reporte de importación (Card 3)
+# Plan: Card 2 — "Lectura del archivo"
 
-Objetivo
-Transformar el reporte de importación para que hable en modo POSICIÓN, con un layout limpio y consistente: header de 3 métricas sobre el archivo, 6 grupos colapsados en orden 1→6, sticky de decisión dinámico, y el grupo 4 convertido en "Nuevas posiciones" con subgrupos de completitud y opt-in de publicación.
+## Objetivo
 
-CERTEZAS que implementa el plan
+Dar identidad clara a la Card 2 del flujo de importación: que sea **solo lo que el archivo trae**, antes de cualquier clasificación. Card 3 queda exclusivamente para clasificación y decisiones.
 
-1. Orden de grupos secuencial 1→6
-  Reordenar en ImportReport.tsx:
-  1. Requieren decisión
-  2. Modifican posiciones publicadas
-  3. Modifican gestión / agregan códigos
-  4. Nuevas posiciones
-  5. Sin cambios
-  6. No procesables
-2. Renombrar grupo 4
-  - Group4NotInAgreement.tsx → Group4NewPositions.tsx
-  - Título: "Nuevas posiciones"
-  - Subtítulo: "No están en el acuerdo. El estado lo trae el archivo; tú defines cuáles crear. Nada se crea por defecto."
-3. Header con 3 cards de indicadores
-  Añadir un nuevo componente ImportReportHeader encima de los grupos, con 3 métricas sobre el archivo:
-  - Filas totales: total de filas del archivo (parsed rows).
-  - Códigos Jaivaná únicos: conteo de códigos cliente únicos presentes en el archivo (solo si hay columna client_code; de lo contrario mostrar "—" o 0 con leyenda).
-  - Jaivaná no identificados: códigos cliente del archivo que no se encontraron como códigos activos del acuerdo. Color de alerta (tono warning/primary rojo Sumatec) porque señala algo a atender.
-   Las cards reutilizan el patrón visual de métricas de la app (Card simple o contenedor con número grande + label pequeño). No incluyen conteos por grupo; esos viven en cada acordeón.
-4. Grupos colapsados por defecto (acordeones)
-  - Reemplazar GroupShell por un contenedor acordeón basado en el componente Accordion existente de shadcn/ui.
-  - Cada grupo siempre visible, incluso con 0 filas.
-  - Fila limpia: título + conteo + chevron. No se muestra el contenido hasta expandir.
-  - La vista en reposo es: header + 6 líneas de acordeón + sticky decision bar.
-  - Se añade un componente reutilizable ImportReportGroup que unifique el encabezado del acordeón.
-5. Sticky de decisión rediseñado
-  - Reemplazar StickyDecisionBar por un componente más simple y centrado en el resultado:
-    - Línea principal: "N filas necesitan tu decisión antes de continuar" (cuando pendingG1 > 0).
-    - Línea de resumen dinámico: "Al confirmar: se crean X posiciones nuevas y se modifican Y existentes." X e Y son conteos vivos de decisiones del usuario, no del cruce inicial.
-    - Botón "Confirmar importación".
-  - Eliminar del sticky los stats "Total", "Requieren tu atención", "Publicadas se modificarán", "Se aplicarán".
-  - Bloqueo del botón: propuesta UX = bloquear mientras haya G1 pendientes, con tooltip/title que indique que hay filas sin resolver. Esto es coherente con el estado actual y evita confirmaciones accidentales.
-6. Grupo "Nuevas posiciones" con dos subgrupos
-  - Dividir las filas del grupo 4 en dos subgrupos según completitud del archivo:
-    - "Listas para publicar": precio y vigencia completos (sale_price != null && start_date != null && end_date != null).
-    - "Quedarán en gestión": les falta precio o vigencia. Se muestra el dato faltante por fila: "sin precio", "sin vigencia" o ambos.
-  - Subtítulo de cada subgrupo: "X de Y marcadas" (Y total del subgrupo, X marcadas por el usuario). Dinámico.
-  - Nada preseleccionado: checkbox apagado por default en cada fila.
-  - Atajos en el header del grupo: "Crear todas" e "Ignorar todas".
-  - Opt-in de publicación dentro de "Listas para publicar": checkbox "Publicar las marcadas al confirmar (~N se ven listas)", apagado por default. El ~N es la estimación de filas marcadas en ese subgrupo. El valor real de cuáles publicar se envía al backend en la confirmación.
+## Cambios de certeza
 
-Comportamiento dinámico: la regla que gobierna todo
+### 1. Mover métricas del archivo a Card 2
 
-Todos los conteos de resultado (sticky, subtítulos de subgrupo, opt-in) se derivan del estado de decisiones del usuario, no de la clasificación inicial. El hook useImportDecisions keyed por sourceRow es la fuente de verdad.
+- Las 3 métricas actuales de `ImportReportHeader` (Filas totales · Códigos Jaivaná únicos · Códigos Jaivaná no identificados) pasan de Card 3 a Card 2.
+- Card 3 ya no las muestra; solo conserva la barra de decisión y los 6 acordeones de grupos.
 
-Para alimentar los nuevos conteos se extiende el hook de decisiones con:
+### 2. Renombrar Card 2
 
-- createdCount: número de filas de G4 con decisión create_draft.
-- modifiedCount: número de filas de G2 y G3 con decisión apply + G1 resueltas con apply/create/apply_to_candidate.
-- publishEstimate: número de filas de G4 "listas para publicar" marcadas como create_draft cuando el opt-in está activo.
-- pendingG1: se mantiene.
+- Título actual: **"Qué se reconoció"** → nuevo: **"Lectura del archivo"**.
+- El `CardTitle` en la ruta de importación se actualiza.
 
-El hook ya devuelve stats calculadas; se añaden los campos nuevos a la misma función useMemo sin tocar el motor de clasificación.
+### 3. Columnas mapeadas con conteo de valores
 
-DONDE NO HAY CERTEZA — PROPUESTAS DEL PLAN
+Para cada una de las 8 columnas canónicas presentes en el archivo se mostrará:
 
-1. Vocabulario único de CTAs
-  Para evitar que cada grupo se vea distinto, se propone un vocabulario transversal:
-  - Aplicar cambios: verbo "Aplicar" / "Aplicar a esta" para G1, G2, G3.
-  - Crear posición: verbo "Crear" para G4.
-  - Ignorar/Excluir: unificar como "Ignorar" en todos los grupos. Reemplazar "Excluir" en G2/G3 por "Ignorar" para que la acción de "no aplicar" sea la misma palabra en todos lados.
-  - Reincluir: verbo "Restaurar" o "Incluir" para revertir una decisión de ignorar. Se propone "Incluir" para mantenerlo simple.
-  - Atajos de grupo: en todos los grupos que tengan acciones masivas, usar el mismo patrón: "Aplicar todas / Ignorar todas" (G2/G3) o "Crear todas / Ignorar todas" (G4) o "Ignorar todas" (G1).
-  - Posición de los CTAs: siempre al final de la fila, alineados a la derecha; atajos de grupo en el header del acordeón, alineados a la derecha.
-2. Color/tono de cada subgrupo en G4
-  - "Listas para publicar": tono success (verde) porque están completas y listas para salir.
-  - "Quedarán en gestión": tono warning (amarillo/naranja) porque nacen como borrador y requieren seguimiento.
-  - Se usan chips y badges existentes (success, warning) del design system, no colores inventados.
-3. Iconos y microcopy
-  - Icono de cada grupo en el acordeón: propuestas
-    - G1: AlertTriangle (lucide)
-    - G2: AlertCircle o Edit3
-    - G3: PlusCircle o FilePlus
-    - G4: PlusSquare
-    - G5: CheckCircle2
-    - G6: Ban
-  - Icono de opt-in: CheckCircle2 cuando activo, Circle cuando inactivo.
-  - Microcopy del sticky: "N filas necesitan tu decisión antes de continuar" / "Al confirmar: se crean X posiciones nuevas y se modifican Y existentes." / "Confirmar importación".
-4. Confirmación con pendientes
-  - Propuesta: mantener el botón deshabilitado mientras G1 tenga pendientes. Es la opción más segura y evita que el usuario confirme sin haber resuelto conflictos.
-  - Alternativa (si se prefiere): dejar el botón activo y mostrar un AlertDialog al confirmar con advertencia. Se deja como opción para decisión posterior, pero la propuesta por defecto es bloquear.
+```
+Código Jaivaná    31 / 31
+Precio par         8 / 31
+Observaciones      2 / 31
+```
 
-Cómo se reorganizan los componentes
+- El conteo se deriva de `parsed.rows`: recorre las filas y cuenta cuántas traen valor no vacío para cada `PricingField` presente.
+- Es un **hecho**: se muestra el número sin etiquetas de "completo" / "incompleto".
+- Se muestra el conteo en **todas** las columnas mapeadas, incluidas las 31/31, para verificar en pantalla si el total estorba o no.
 
-1. ImportReport.tsx
-  - Añadir ImportReportHeader con las 3 métricas.
-  - Reemplazar el listado actual por 6 acordeones usando ImportReportGroup.
-  - Reordenar los grupos 1→6.
-  - Renderizar StickyDecisionBar entre el header y los acordeones, o fijo arriba del listado como está hoy.
-2. StickyDecisionBar.tsx
-  - Simplificar a la caja de resumen con mensaje de pendientes, resumen dinámico y botón.
-  - Recibir createdCount, modifiedCount y publishEstimate (si se quiere anticipar publicación en el resumen) desde decisions.
-3. Nuevo archivo: import-report/ImportReportGroup.tsx
-  - Contenedor acordeón basado en Accordion de shadcn/ui.
-  - Header: icono + título + conteo + toolbar (atajos) + chevron.
-  - Variante de tono para "warning" (G1) y "muted" (G5/G6).
-4. Nuevo archivo: import-report/ImportReportHeader.tsx
-  - Tres cards de métricas sobre el archivo.
-  - Reutilizar componentes Card de shadcn/ui o un contenedor simple con estilos del design system.
-5. Group4NewPositions.tsx (renombrado desde Group4NotInAgreement.tsx)
-  - Dividir rows en ready y draft-subgroup.
-  - Mostrar cada subgrupo con su subtítulo "X de Y marcadas".
-  - Checkbox de creación por fila.
-  - Checkbox de opt-in "Publicar las marcadas al confirmar (~N)" dentro de ready.
-  - Atajos "Crear todas" / "Ignorar todas".
-6. Group1RequiresDecision.tsx, Group2ModifiesPublished.tsx, Group3DraftsAndCodes.tsx, Group5Unchanged.tsx, Group6NotProcessable.tsx
-  - Adaptar para renderizarse dentro de ImportReportGroup.
-  - Unificar vocabulario de CTAs según lo propuesto.
-  - G1: "Ignorar" / "Crear nueva" / "Aplicar a esta".
-  - G2/G3: "Incluir" / "Ignorar" (reemplazar "Reincluir" / "Excluir").
-  - G5/G6: solo lectura, sin acciones.
-7. state.ts
-  - Extender Decision con un nuevo tipo para el opt-in de publicación: se maneja como estado local booleano por subgrupo, no como Decision por fila.
-  - Añadir createdCount, modifiedCount y publishEstimate a las stats calculadas.
-  - Mover la función defaultFor al exportar si se necesita en componentes (no estrictamente necesario, pero útil para subgrupos).
-8. parts.tsx
-  - Añadir un componente reutilizable para el checkbox de fila con estado parcial (indeterminate) si se usa "Crear todas".
-  - No cambiar celdas existentes salvo ajustes menores de espaciado si el acordeón lo requiere.
+### 4. Columnas ignoradas (nueva sección)
 
-Tareas de construcción detalladas
+Listar los encabezados del archivo que **no** correspondan a ninguna de las 8 columnas canónicas. El parser ya lee todos los headers crudos; solo falta exponerlos en la salida.
 
-1. Crear ImportReportHeader.tsx y conectarlo con los datos del archivo (totalRows, clientCodes únicos, no identificados).
-2. Crear ImportReportGroup.tsx como acordeón reutilizable.
-3. Refactorizar ImportReport.tsx para usar header + acordeones + reordenamiento.
-4. Refactorizar StickyDecisionBar.tsx con el nuevo lenguaje y conteos dinámicos.
-5. Renombrar Group4NotInAgreement.tsx a Group4NewPositions.tsx e implementar subgrupos + opt-in.
-6. Actualizar Group1RequiresDecision.tsx, Group2ModifiesPublished.tsx, Group3DraftsAndCodes.tsx para unificar vocabulario de CTAs y adaptarse al acordeón.
-7. Extender useImportDecisions en state.ts para calcular createdCount, modifiedCount y publishEstimate.
-8. Actualizar la importación de archivos afectados y corregir cualquier tipo derivado.
-9. Verificar visualmente que los 6 grupos colapsados, el header y el sticky se rendericen correctamente.
+- **Copy propuesto:**
+  - Título: **"Columnas del archivo que no se usan"**
+  - Descripción: **"Estos encabezados vinieron en el archivo pero no corresponden a campos que PGCI lee en este paso. No afectan la clasificación."**
+  - Vacío: **"No hay columnas adicionales: el archivo trae solo columnas que PGCI reconoce."**
+- **Nota técnica:** hoy `ParseResult` solo devuelve `rows` y `presentColumns`. Para mostrar las ignoradas sin duplicar lectura del archivo, se propone añadir `rawHeaders: string[]` al tipo de retorno — solo plomería, sin cambiar la lógica de parseo. La UI deriva las ignoradas filtrando por `matchCanonical`.
 
-Archivos que se tocarán
+## Propuesta visual
 
-- src/components/agreements/import-report/ImportReport.tsx
-- src/components/agreements/import-report/StickyDecisionBar.tsx
-- src/components/agreements/import-report/ImportReportHeader.tsx (nuevo)
-- src/components/agreements/import-report/ImportReportGroup.tsx (nuevo)
-- src/components/agreements/import-report/groups/Group4NotInAgreement.tsx → Group4NewPositions.tsx (renombrado)
-- src/components/agreements/import-report/groups/Group1RequiresDecision.tsx
-- src/components/agreements/import-report/groups/Group2ModifiesPublished.tsx
-- src/components/agreements/import-report/groups/Group3DraftsAndCodes.tsx
-- src/components/agreements/import-report/groups/Group5Unchanged.tsx
-- src/components/agreements/import-report/groups/Group6NotProcessable.tsx
-- src/components/agreements/import-report/state.ts
-- src/components/agreements/import-report/parts.tsx (posiblemente)
+### Layout de Card 2 (de arriba hacia abajo)
 
-Intocables respetados
+1. **3 métricas** en fila (`grid-cols-1 sm:grid-cols-3`), reutilizando el componente `ImportReportHeader`.
+2. **Columnas mapeadas** — título de sección + grid de mini-cards.
+3. **Columnas ignoradas** — título de sección + lista de chips neutrales.
 
-- No se escribe en la base de datos: todo sigue siendo previsualización y estado local.
-- No se preselecciona nada en G1 ni G4.
-- No se toca el motor diff.ts ni las server functions.
-- Se usan tokens del design system (suma-*, componentes de shadcn/ui existentes).
-- Copy neutro y en español Colombia ("tú").
+### Columnas mapeadas: mini-cards compactas
 
-&nbsp;
+En lugar de chips puros, se propone un **grid de mini-cards** (`grid-cols-2 sm:grid-cols-3 lg:grid-cols-4` con `gap-3`) para que cada columna sea escaneable como un dato:
 
-Tu plan está aprobado casi todo. Un cambio importante y tres confirmaciones:
+- Fondo `bg-white` con borde `border-border`.
+- Esquinas redondeadas (`rounded-lg`).
+- Padding reducido (`px-3 py-2`).
+- Label en `suma-caption text-text-tertiary`.
+- Conteo en `suma-body font-semibold tabular-nums text-text-primary`.
+- El `"/total"` en `text-text-tertiary` para bajar su peso visual.
+- **Acento para columnas parciales:** un sutil `border-l-4` en `border-accent` (azul institucional) o un fondo `bg-surface-sunken` cuando `N < total`. Esto es solo para ayudar a escanear rápido qué columnas traen datos y cuáles no; sin palabras ni iconos de valoración.
 
-CAMBIO — el grupo "Nuevas posiciones" va SIMPLE, sin lo que diseñamos de 
+### Columnas ignoradas: lista discreta
 
-publicación:
+Para diferenciar claramente "se usan" de "no se usan":
 
-- SIN subgrupos "Listas para publicar" / "Quedarán en gestión".
+- Usar `Chip` con `variant="outline"` y `color="neutral"`.
+- Los chips muestran el nombre original del encabezado del archivo.
+- No se usan iconos de "error" ni "X"; se opta por un estilo neutro para evitar que suene a fallo.
 
-- SIN opt-in de publicación.
+## Archivos a tocar
 
-- SIN tags de "completa/incompleta/lista".
+1. `**src/lib/agreement-import/types.ts**` — añadir `rawHeaders: string[]` a `ParseResult`.
+2. `**src/lib/agreement-import/parse.ts**` — devolver `rawHeaders` en las rutas `.xlsx`/`.xls` y `.csv`.
+3. `**src/components/agreements/import-report/ImportReport.tsx**` — eliminar `ImportReportHeader` de Card 3.
+4. `**src/components/agreements/import-report/ImportReportHeader.tsx**` — reutilizarlo en Card 2 (no cambia de nombre, solo de ubicación).
+5. **Crear `src/components/agreements/import-report/ImportFileReading.tsx**` — nuevo componente que contiene métricas, columnas mapeadas y columnas ignoradas.
+6. `**src/routes/_authenticated/pgci/agreements.$agreementId.import.tsx**` — renombrar Card 2, usar `ImportFileReading` en su contenido, mantener Card 3 sin cambios salvo quitar el prop `totalRows` que ya no necesita.
 
-- Es una tabla plana: checkbox (crear) · Producto (SKU + descripción) · Precio · 
+## Restricciones respetadas
 
-  Vigencia · Código propuesto.
+- Nada se escribe en base de datos: la Card 2 sigue siendo solo previsualización.
+- Conteo como hecho: solo números, sin juicios de valor.
+- Copy neutro y voz español Colombia (tú).
+- Design system Sumatec: tokens, fuentes, bordes redondeados y componentes existentes (`Card`, `Chip`, `ImportReportHeader`).
+- No se modifica la lógica del diff engine ni el motor de clasificación; solo se consume lo que ya devuelven.
 
-- La importación SOLO CREA, todo nace en draft. NO publica (la publicación es un 
+Plan aprobado con una precisión importante sobre las columnas ignoradas:
 
-  acto posterior en la gestión de posiciones, con su propia regla — no la tocamos).
+El ParseResult actual NO expone los headers que no mapearon — solo presentColumns 
 
-- Los datos se muestran tal como vienen; si falta precio/fecha, se ve vacío o "—". 
+(las que sí). Verificado en el código. El parser SÍ lee los headers crudos 
 
-  Sin tag ni color que juzgue completitud. El sistema muestra hechos, no opina.
+(readXlsx/readCsv los tienen) pero los descarta al retornar.
 
-- La barra de decisión tampoco menciona publicación: solo "se crean X / se 
+Para las "columnas ignoradas" necesitas un cambio mínimo en parse.ts: calcular los 
 
-  modifican Y", dinámico.
+headers que no matchean ninguna de las 8 canónicas y exponerlos en ParseResult como 
 
-CONFIRMA:
+un campo nuevo (ej. ignoredColumns: string[]). Es solo agregar un campo de salida — 
 
-1. "Confirmar importación" no ejecuta nada aún (Paso 4, no construido).
+NO cambies la lógica de parseo existente, que está verificada. Solo reporta un dato 
 
-2. No tocas el motor (diff.ts) ni las server functions.
+que el parser ya conoce.
 
-3. Nada se escribe: previsualización, estado local.
+El conteo por columna (N/total) sí es 100% derivable de lo que ya devuelve el parser 
 
-Todo lo demás de tu plan (vocabulario único de CTAs, orden 1→6, renombre a "Nuevas 
+(recorrer ParsedRow, contar no-nulos por campo) — ahí no toques nada.
 
-posiciones", header con 3 indicadores, comportamiento dinámico) queda aprobado tal 
+Todo lo demás de tu plan (mover indicadores, renombrar, tu propuesta visual de barras 
 
-cual. Con estos ajustes, construye.
+de progreso + destacar incompletas) aprobado. 
+
+Confirma: al agregar ignoredColumns al parser, NO modificas parseSku, parseDate, 
+
+parsePrice, ni la lectura de celdas — solo añades el cálculo de headers no mapeados y 
+
+el campo de salida.

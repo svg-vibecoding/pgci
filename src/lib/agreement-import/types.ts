@@ -37,6 +37,8 @@ export type ParseResult = {
   rows: ParsedRow[];
   /** Columnas presentes en el archivo, en orden canónico. */
   presentColumns: PricingField[];
+  /** Encabezados crudos del archivo que NO corresponden a ninguna columna canónica. */
+  ignoredColumns: string[];
 };
 
 export type PricingFileFormatCode =

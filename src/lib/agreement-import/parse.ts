@@ -271,6 +271,19 @@ export async function parsePricingFile(file: File): Promise<ParseResult> {
 
   const { headerByField, presentColumns } = buildHeaderIndex(headers);
 
+  const ignoredColumns: string[] = [];
+  const seenIgnored = new Set<string>();
+  for (const raw of headers) {
+    if (raw == null) continue;
+    const s = String(raw).trim();
+    if (!s) continue;
+    if (matchCanonical(s)) continue;
+    const key = s.toLowerCase();
+    if (seenIgnored.has(key)) continue;
+    seenIgnored.add(key);
+    ignoredColumns.push(s);
+  }
+
   const parsed: ParsedRow[] = [];
   rows.forEach((raw, i) => {
     // sourceRow: fila 1 = cabecera; primera fila de datos = 2.
@@ -278,5 +291,5 @@ export async function parsePricingFile(file: File): Promise<ParseResult> {
     if (row) parsed.push(row);
   });
 
-  return { rows: parsed, presentColumns };
+  return { rows: parsed, presentColumns, ignoredColumns };
 }

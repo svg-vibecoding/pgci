@@ -7,7 +7,6 @@ import type {
 } from "@/lib/agreement-import";
 import { useImportDecisions } from "./state";
 import { StickyDecisionBar } from "./StickyDecisionBar";
-import { ImportReportHeader } from "./ImportReportHeader";
 import { Group1RequiresDecision } from "./groups/Group1RequiresDecision";
 import { Group2ModifiesPublished } from "./groups/Group2ModifiesPublished";
 import { Group3DraftsAndCodes } from "./groups/Group3DraftsAndCodes";
@@ -24,14 +23,10 @@ import { Group6NotProcessable } from "./groups/Group6NotProcessable";
  */
 export function ImportReport({
   result,
-  totalRows,
-  activeClientCodes,
   positions,
   catalogBySku,
 }: {
   result: DiffResult;
-  totalRows: number;
-  activeClientCodes: Array<{ client_code: string }>;
   positions: PositionSnapshot[];
   catalogBySku: Map<string, CatalogProduct>;
 }) {
@@ -59,11 +54,6 @@ export function ImportReport({
 
   return (
     <div className="space-y-4">
-      <ImportReportHeader
-        totalRows={totalRows}
-        rows={result.rows}
-        activeClientCodes={activeClientCodes}
-      />
       <StickyDecisionBar decisions={decisions} />
       <div className="space-y-3">
         <Group1RequiresDecision
