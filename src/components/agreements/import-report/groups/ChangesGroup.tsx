@@ -500,7 +500,7 @@ function NewCell({
         </div>
         {(par || pos.par_price != null) && (
           <div className={cn(par ? "text-text-primary" : "text-text-tertiary")}>
-            <span className="text-[10px] uppercase tracking-wide mr-1">Par</span>
+            <span className="text-[11px] font-normal text-text-tertiary mr-1.5">Par</span>
             {parValue != null ? formatMoneyCOP(parValue) : "—"}
           </div>
         )}
@@ -516,11 +516,11 @@ function NewCell({
     return (
       <div className="space-y-0.5 tabular-nums">
         <div className={cn(start ? "text-text-primary font-semibold" : "text-text-tertiary")}>
-          <span className="text-[10px] uppercase tracking-wide mr-1">Desde</span>
+          <span className="text-[11px] font-normal text-text-tertiary mr-1.5">Desde</span>
           {fmtDate(startTo)}
         </div>
         <div className={cn(end ? "text-text-primary font-semibold" : "text-text-tertiary")}>
-          <span className="text-[10px] uppercase tracking-wide mr-1">Hasta</span>
+          <span className="text-[11px] font-normal text-text-tertiary mr-1.5">Hasta</span>
           {fmtDate(endTo)}
         </div>
       </div>
@@ -583,7 +583,7 @@ function OldCell({
         </div>
         {(hasPar || pos.par_price != null) && (
           <div>
-            <span className="text-[10px] uppercase tracking-wide mr-1">Par</span>
+            <span className="text-[11px] font-normal text-text-tertiary mr-1.5">Par</span>
             {hasPar
               ? pos.par_price != null
                 ? formatMoneyCOP(pos.par_price)
@@ -601,11 +601,11 @@ function OldCell({
     return (
       <div className="space-y-0.5 tabular-nums">
         <div>
-          <span className="text-[10px] uppercase tracking-wide mr-1">Desde</span>
+          <span className="text-[11px] font-normal text-text-tertiary mr-1.5">Desde</span>
           {hasStart ? fmtDate(pos.start_date) : "Sin cambios"}
         </div>
         <div>
-          <span className="text-[10px] uppercase tracking-wide mr-1">Hasta</span>
+          <span className="text-[11px] font-normal text-text-tertiary mr-1.5">Hasta</span>
           {hasEnd ? fmtDate(pos.end_date) : "Sin cambios"}
         </div>
       </div>
