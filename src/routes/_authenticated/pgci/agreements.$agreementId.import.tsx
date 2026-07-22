@@ -49,6 +49,7 @@ function ImportAgreementView() {
   const [parsed, setParsed] = useState<{
     rows: ParsedRow[];
     presentColumns: PricingField[];
+    ignoredColumns: string[];
   } | null>(null);
   const [classified, setClassified] = useState<DiffResult | null>(null);
   const [catalog, setCatalog] = useState<Map<string, CatalogProduct>>(
@@ -81,7 +82,7 @@ function ImportAgreementView() {
     resetAll();
     setFileName(file.name);
 
-    let parseResult: { rows: ParsedRow[]; presentColumns: PricingField[] };
+    let parseResult: { rows: ParsedRow[]; presentColumns: PricingField[]; ignoredColumns: string[] };
     try {
       parseResult = await parsePricingFile(file);
     } catch (err) {
