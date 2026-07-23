@@ -1506,7 +1506,10 @@ export const addAgreementMember = createServerFn({ method: "POST" })
             assigned_by: context.userId,
             started_by: context.userId,
           });
-        if (accErr) throw new Error(`No se pudo asignar el cliente: ${accErr.message}`);
+        // 23505 = unique_violation: la fila ya existe pero la RLS del SELECT previo
+        // no nos deja verla. Es equivalente a "ya tenía acceso", no un error.
+        if (accErr && accErr.code !== "23505")
+          throw new Error(`No se pudo asignar el cliente: ${accErr.message}`);
       }
     }
 
