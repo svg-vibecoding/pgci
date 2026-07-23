@@ -19,9 +19,6 @@ import { EmptyGroup } from "./Group1RequiresDecision";
  *
  * RN-IMP-07: NADA viene preseleccionado. El default es NO crear.
  * Crear posiciones nuevas requiere intención explícita del usuario.
- *
- * Layout: checkbox · Jaivaná · Código del cliente · Vigencia · Precios.
- * Observaciones: línea secundaria ancho completo bajo la fila (solo si existen).
  */
 
 type FilterKey = "all" | "selected" | "discarded";
@@ -80,31 +77,15 @@ export function Group4NewPositions({
       icon={icon}
       title="Nuevas posiciones"
       count={rows.length}
-      hint="No están en el acuerdo. Nada se marca por defecto: elige cuáles crear. Todo nace como borrador."
-      toolbar={
-        rows.length > 0 && (
-          <>
-            <span className="suma-caption text-text-tertiary tabular-nums">
-              {marked} se crearán · {discarded} descartadas
-            </span>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() =>
-                decisions.setMany(rows, { kind: "create_draft" })
-              }
-            >
-              Crear todas
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => decisions.setMany(rows, { kind: "ignore" })}
-            >
-              Ignorar todas
-            </Button>
-          </>
-        )
+      headerRight={
+        rows.length > 0 ? (
+          <span className="suma-caption text-text-tertiary tabular-nums font-normal">
+            <span className="font-semibold text-text-primary">{marked}</span>{" "}
+            {marked === 1 ? "posición nueva" : "posiciones nuevas"}{" "}
+            <span className="font-semibold text-text-primary">{discarded}</span>{" "}
+            {discarded === 1 ? "descartada" : "descartadas"}
+          </span>
+        ) : undefined
       }
     >
       {rows.length === 0 ? (
@@ -112,6 +93,41 @@ export function Group4NewPositions({
       ) : (
         <div className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="relative w-full max-w-sm">
+              <Search
+                size={14}
+                className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-text-tertiary"
+              />
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Busca por código o descripción Jaivaná…"
+                className="h-9 pl-8 text-[13px]"
+              />
+            </div>
+            <div className="flex items-center gap-3">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => decisions.setMany(rows, { kind: "ignore" })}
+                disabled={marked === 0}
+              >
+                Descartar todas ({marked})
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  decisions.setMany(rows, { kind: "create_draft" })
+                }
+                disabled={discarded === 0}
+              >
+                Crear todas ({discarded})
+              </Button>
+            </div>
+          </div>
+
+          <div className="border-b border-border/60">
             <div className="flex items-center gap-1">
               <FilterTab
                 active={filter === "all"}
@@ -132,34 +148,24 @@ export function Group4NewPositions({
                 count={discarded}
               />
             </div>
-            <div className="relative w-full max-w-xs">
-              <Search
-                size={14}
-                className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-text-tertiary"
-              />
-              <Input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Buscar por SKU, marca, producto o código"
-                className="h-8 pl-8 text-[13px]"
-              />
-            </div>
           </div>
 
-          <div className="overflow-hidden rounded-md border border-border/60">
+          <div className="overflow-hidden">
             <table className="w-full text-sm">
-              <thead className="bg-muted/40">
-                <tr className="text-left text-[10.5px] uppercase tracking-wide text-text-tertiary">
-                  <th className="w-10 px-3 py-2" />
-                  <th className="px-2 py-2 font-semibold">Jaivaná</th>
-                  <th className="px-2 py-2 font-semibold">Código del cliente</th>
-                  <th className="px-2 py-2 font-semibold whitespace-nowrap">Vigencia</th>
-                  <th className="px-2 py-2 font-semibold text-right whitespace-nowrap">
+              <thead>
+                <tr className="text-left text-[10.5px] uppercase tracking-wide text-text-tertiary border-b border-border/60">
+                  <th className="w-10 px-3 py-2 text-center font-normal">-</th>
+                  <th className="px-2 py-2 font-normal">Sumatec</th>
+                  <th className="px-2 py-2 font-normal">Código del cliente</th>
+                  <th className="px-2 py-2 font-normal text-right whitespace-nowrap">
+                    Vigencia
+                  </th>
+                  <th className="px-2 py-2 font-normal text-right whitespace-nowrap">
                     Precios de venta
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/60">
+              <tbody>
                 {filtered.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-3 py-8 text-center">
@@ -209,10 +215,10 @@ function FilterTab({
       type="button"
       onClick={onClick}
       className={cn(
-        "rounded-md px-2.5 py-1 text-[13px] font-medium transition-colors",
+        "relative px-3 py-2 text-[13px] transition-colors -mb-px border-b-2",
         active
-          ? "bg-surface-sunken text-text-primary"
-          : "text-text-tertiary hover:text-text-primary hover:bg-surface-sunken/60",
+          ? "text-text-primary font-semibold border-text-primary"
+          : "text-text-tertiary hover:text-text-primary font-normal border-transparent",
       )}
     >
       {label}{" "}
@@ -250,12 +256,7 @@ function PositionRow({
 
   return (
     <>
-      <tr
-        className={cn(
-          "align-top transition-colors",
-          willCreate ? "" : "bg-surface-sunken/30",
-        )}
-      >
+      <tr className={cn("align-top border-b border-border/60", obs && "!border-b-0")}>
         <td className="w-10 px-3 py-3">
           <Checkbox
             checked={willCreate}
@@ -263,46 +264,46 @@ function PositionRow({
             aria-label="Crear como borrador"
           />
         </td>
-        <td className={cn("px-2 py-3", !willCreate && "opacity-60")}>
-          <div className="text-[10.5px] text-text-tertiary tabular-nums">
-            #{row.sourceRow}
-          </div>
+        <td className="px-2 py-3">
           <div className="flex flex-wrap items-baseline gap-x-2">
+            <span className="text-[11px] text-text-tertiary tabular-nums">
+              #{row.sourceRow}
+            </span>
+            <span className="text-text-tertiary">·</span>
             <span className="font-mono text-[13px] font-semibold text-text-primary">
               {sku || "—"}
             </span>
             {brand && (
-              <span className="text-[10.5px] font-semibold uppercase tracking-wide text-accent">
-                {brand}
-              </span>
+              <>
+                <span className="text-text-tertiary">·</span>
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-accent">
+                  {brand}
+                </span>
+              </>
             )}
           </div>
           {description && (
-            <div className="text-[12px] text-text-secondary line-clamp-2 max-w-[42ch]">
+            <div className="text-[12.5px] text-text-secondary line-clamp-2 max-w-[42ch] uppercase">
               {description}
             </div>
           )}
         </td>
-        <td className={cn("px-2 py-3", !willCreate && "opacity-60")}>
+        <td className="px-2 py-3">
           {clientCode ? (
             <div className="font-mono text-[12.5px] font-semibold text-text-primary">
               {clientCode}
             </div>
-          ) : (
-            <div className="text-text-tertiary">—</div>
-          )}
+          ) : null}
           {clientDesc && (
-            <div className="text-[12px] text-text-secondary line-clamp-2 max-w-[32ch]">
+            <div className="text-[12.5px] text-text-secondary line-clamp-2 max-w-[32ch] uppercase">
               {clientDesc}
             </div>
           )}
-        </td>
-        <td
-          className={cn(
-            "px-2 py-3 whitespace-nowrap tabular-nums text-[12.5px] text-text-secondary",
-            !willCreate && "opacity-60",
+          {!clientCode && !clientDesc && (
+            <span className="text-text-tertiary">—</span>
           )}
-        >
+        </td>
+        <td className="px-2 py-3 whitespace-nowrap tabular-nums text-[12.5px] text-text-secondary text-right">
           {start || end ? (
             <>
               {fmtDate(start)} <span className="text-text-tertiary">→</span>{" "}
@@ -312,35 +313,30 @@ function PositionRow({
             <span className="text-text-tertiary">—</span>
           )}
         </td>
-        <td
-          className={cn(
-            "px-2 py-3 whitespace-nowrap tabular-nums text-right",
-            !willCreate && "opacity-60",
+        <td className="px-2 py-3 whitespace-nowrap tabular-nums text-right">
+          {sale != null ? (
+            <div className="text-[13px] font-semibold text-text-primary">
+              {formatMoneyCOP(sale)}
+            </div>
+          ) : (
+            <span className="text-text-tertiary">-</span>
           )}
-        >
-          <div className="text-[13px] font-semibold text-text-primary">
-            {sale != null ? formatMoneyCOP(sale) : "—"}
-          </div>
           {par != null && (
             <div className="text-[11px] text-text-tertiary">
-              Par {formatMoneyCOP(par)}
+              <span className="mr-1">Par</span>
+              {formatMoneyCOP(par)}
             </div>
           )}
         </td>
       </tr>
       {obs && (
-        <tr
-          className={cn(
-            "align-top",
-            willCreate ? "" : "bg-surface-sunken/30 opacity-60",
-          )}
-        >
+        <tr className="align-top border-b border-border/60">
           <td />
           <td colSpan={4} className="px-2 pb-3 pt-0">
-            <div className="text-[12px] text-text-secondary">
-              <span className="font-semibold text-text-primary">
-                Observaciones:{" "}
-              </span>
+            <div className="text-[12.5px] text-text-secondary">
+              <div className="font-semibold text-text-primary mb-0.5">
+                Observaciones:
+              </div>
               {obs}
             </div>
           </td>
