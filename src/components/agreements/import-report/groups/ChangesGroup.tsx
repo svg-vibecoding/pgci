@@ -326,6 +326,7 @@ function PositionChangeCard({
   row,
   pos,
   changes,
+  clientsById,
   discarded,
   onDiscard,
   onRestore,
@@ -333,12 +334,12 @@ function PositionChangeCard({
   row: ClassifiedRow;
   pos: PositionSnapshot;
   changes: FieldChange[];
+  clientsById: Map<string, string>;
   discarded: boolean;
   onDiscard: () => void;
   onRestore: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const counts = categoryCounts(changes);
   const status = statusMeta(pos.status);
 
   const changesLabel = discarded
@@ -353,7 +354,7 @@ function PositionChangeCard({
       )}
     >
       {/* Header */}
-      <div className="flex items-center gap-3 px-3 py-2.5">
+      <div className="flex items-center gap-3 px-4 py-3">
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
@@ -378,7 +379,7 @@ function PositionChangeCard({
               <StatusBadge status={status.badge} label={status.label} />
             </div>
             {pos.erp_description && (
-              <div className="text-xs text-muted-foreground line-clamp-1">
+              <div className="mt-0.5 suma-subtitle text-text-primary line-clamp-1">
                 {pos.erp_description}
               </div>
             )}
@@ -414,11 +415,15 @@ function PositionChangeCard({
       {open && (
         <div
           className={cn(
-            "border-t border-border/60 px-3 pb-3 pt-2",
+            "border-t border-border/60 px-4 pb-4 pt-4",
             discarded && "opacity-60",
           )}
         >
-          <ChangeGrid pos={pos} changes={changes} counts={counts} />
+          <ChangeBlocks
+            pos={pos}
+            changes={changes}
+            clientsById={clientsById}
+          />
         </div>
       )}
     </div>
@@ -426,218 +431,319 @@ function PositionChangeCard({
 }
 
 // ---------------------------------------------------------------------------
-// Grid de cambios: SIEMPRE 4 columnas en orden fijo.
-// Fila superior = "nuevo" (cómo quedará). Fila inferior = "actual".
+// Bloques de cambio: solo se renderizan los que TIENEN cambios.
+// Ancho igual repartido según cuántos bloques haya (1, 2, 3 o 4).
+// Relaciones tiene tratamiento visual diferenciado (fondo accent suave).
 // ---------------------------------------------------------------------------
 
-const COLS: ChangeCategory[] = ["relations", "observations", "dates", "prices"];
+type BlockKey = "relations" | "prices" | "dates" | "observations";
 
-const LABEL: Record<ChangeCategory, string> = {
-  relations: "Relación",
-  observations: "Observaciones",
-  dates: "Vigencia",
-  prices: "Precios de venta",
+const BLOCK_ORDER: BlockKey[] = [
+  "relations",
+  "prices",
+  "dates",
+  "observations",
+];
+
+const BLOCK_META: Record<
+  BlockKey,
+  { label: string; Icon: typeof Tag }
+> = {
+  relations: { label: "Relaciones", Icon: Link2 },
+  prices: { label: "Precios de venta", Icon: Tag },
+  dates: { label: "Vigencias", Icon: Calendar },
+  observations: { label: "Observaciones", Icon: AlignLeft },
 };
 
-function ChangeGrid({
+// Enumeradas para que Tailwind las conserve.
+const GRID_COLS: Record<number, string> = {
+  1: "grid-cols-1",
+  2: "grid-cols-1 md:grid-cols-2",
+  3: "grid-cols-1 md:grid-cols-3",
+  4: "grid-cols-1 md:grid-cols-2 lg:grid-cols-4",
+};
+
+function ChangeBlocks({
   pos,
   changes,
-  counts,
+  clientsById,
 }: {
   pos: PositionSnapshot;
   changes: FieldChange[];
-  counts: ReturnType<typeof categoryCounts>;
+  clientsById: Map<string, string>;
 }) {
+  const counts = categoryCounts(changes);
+  const present = BLOCK_ORDER.filter((k) => counts[k] > 0);
+  const cols = GRID_COLS[present.length] ?? GRID_COLS[4];
+
   return (
-    <div className="grid grid-cols-1 gap-x-6 gap-y-2 md:grid-cols-2 lg:grid-cols-4">
-      {COLS.map((col) => {
-        const n = counts[col];
-        const active = n > 0;
-        return (
-          <div
-            key={`h-${col}`}
-            className={cn(
-              "text-[13px] font-normal",
-              active ? "text-text-secondary" : "text-text-tertiary",
-            )}
-          >
-            {LABEL[col]}{" "}
-            <span className="tabular-nums text-text-tertiary">({n})</span>
-          </div>
-        );
-      })}
-      {COLS.map((col) => (
-        <div key={`new-${col}`} className="text-sm">
-          {counts[col] > 0 ? (
-            <NewCell col={col} pos={pos} changes={changes} />
-          ) : (
-            <SinCambios />
-          )}
-        </div>
-      ))}
-      {COLS.map((col) => (
-        <div key={`old-${col}`} className="text-xs text-text-tertiary">
-          {counts[col] > 0 ? (
-            <OldCell col={col} pos={pos} changes={changes} />
-          ) : (
-            <span className="text-text-tertiary/60">—</span>
-          )}
-        </div>
+    <div className={cn("grid gap-3", cols)}>
+      {present.map((key) => (
+        <Block
+          key={key}
+          blockKey={key}
+          pos={pos}
+          changes={changes}
+          clientsById={clientsById}
+        />
       ))}
     </div>
   );
 }
 
-function NewCell({
-  col,
+function Block({
+  blockKey,
+  pos,
+  changes,
+  clientsById,
+}: {
+  blockKey: BlockKey;
+  pos: PositionSnapshot;
+  changes: FieldChange[];
+  clientsById: Map<string, string>;
+}) {
+  const { label, Icon } = BLOCK_META[blockKey];
+  const isRelations = blockKey === "relations";
+
+  return (
+    <section
+      className={cn(
+        "flex h-full flex-col rounded-md p-3",
+        isRelations
+          ? "bg-accent/[0.04] border border-accent/20"
+          : "border border-transparent",
+      )}
+    >
+      <header className="mb-2 flex items-center gap-2">
+        <span
+          className={cn(
+            "grid h-6 w-6 place-items-center rounded",
+            isRelations
+              ? "bg-accent/10 text-accent"
+              : "bg-muted text-text-secondary",
+          )}
+        >
+          <Icon className="h-3.5 w-3.5" strokeWidth={2} />
+        </span>
+        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary">
+          {label}
+        </h4>
+      </header>
+      <div className="flex-1">
+        {blockKey === "prices" && <PricesBody pos={pos} changes={changes} />}
+        {blockKey === "dates" && <DatesBody pos={pos} changes={changes} />}
+        {blockKey === "observations" && (
+          <ObservationsBody pos={pos} changes={changes} />
+        )}
+        {blockKey === "relations" && (
+          <RelationsBody changes={changes} clientsById={clientsById} />
+        )}
+      </div>
+    </section>
+  );
+}
+
+// ---------- Precios ----------
+
+function PricesBody({
   pos,
   changes,
 }: {
-  col: ChangeCategory;
   pos: PositionSnapshot;
   changes: FieldChange[];
 }) {
-  if (col === "prices") {
-    const sale = changes.find((c) => c.field === "sale_price");
-    const par = changes.find((c) => c.field === "par_price");
-    const saleValue =
-      sale && sale.field === "sale_price"
-        ? sale.to
-        : pos.sale_price;
-    const parValue =
-      par && par.field === "par_price" ? par.to : pos.par_price;
-    return (
-      <div className="space-y-0.5 tabular-nums">
-        <div className={cn("font-semibold", sale ? "text-text-primary" : "text-text-tertiary")}>
-          {saleValue != null ? formatMoneyCOP(saleValue) : "—"}
-        </div>
-        {(par || pos.par_price != null) && (
-          <div className={cn(par ? "text-text-primary" : "text-text-tertiary")}>
-            <span className="text-[11px] font-normal text-text-tertiary mr-1.5">Par</span>
-            {parValue != null ? formatMoneyCOP(parValue) : "—"}
-          </div>
-        )}
-      </div>
-    );
-  }
-  if (col === "dates") {
-    const start = changes.find((c) => c.field === "start_date");
-    const end = changes.find((c) => c.field === "end_date");
-    const startTo =
-      start && start.field === "start_date" ? start.to : pos.start_date;
-    const endTo = end && end.field === "end_date" ? end.to : pos.end_date;
-    return (
-      <div className="space-y-0.5 tabular-nums">
-        <div className={cn(start ? "text-text-primary font-semibold" : "text-text-tertiary")}>
-          <span className="text-[11px] font-normal text-text-tertiary mr-1.5">Desde</span>
-          {fmtDate(startTo)}
-        </div>
-        <div className={cn(end ? "text-text-primary font-semibold" : "text-text-tertiary")}>
-          <span className="text-[11px] font-normal text-text-tertiary mr-1.5">Hasta</span>
-          {fmtDate(endTo)}
-        </div>
-      </div>
-    );
-  }
-  if (col === "observations") {
-    const obs = changes.find((c) => c.field === "observations");
-    const value =
-      obs && obs.field === "observations" ? obs.to : pos.observations;
-    return (
-      <div className="text-text-primary line-clamp-3">
-        {value || <span className="text-text-tertiary">vacío</span>}
-      </div>
-    );
-  }
-  // relations: add_client_code
-  const adds = changes.filter((c) => c.field === "add_client_code");
+  const sale = changes.find((c) => c.field === "sale_price");
+  const par = changes.find((c) => c.field === "par_price");
+  const hasSale = !!sale;
+  const hasPar = !!par;
+
+  const saleTo = hasSale && sale.field === "sale_price" ? sale.to : pos.sale_price;
+  const saleFrom = hasSale && sale.field === "sale_price" ? sale.from : pos.sale_price;
+  const parTo = hasPar && par.field === "par_price" ? par.to : pos.par_price;
+  const parFrom = hasPar && par.field === "par_price" ? par.from : pos.par_price;
+
   return (
-    <div className="space-y-1">
-      {adds.map((c, i) => {
-        if (c.field !== "add_client_code") return null;
-        return (
-          <div key={i}>
-            <div className="font-mono font-semibold text-text-primary">
-              {c.client_code}
-            </div>
-            {c.description && (
-              <div className="text-[11px] text-text-tertiary line-clamp-1">
-                {c.description}
-              </div>
-            )}
-          </div>
-        );
-      })}
+    <div className="space-y-3 tabular-nums">
+      <PriceLine
+        label="Unidad"
+        changed={hasSale}
+        from={saleFrom}
+        to={saleTo}
+        emptyPrevText="no tenía precio unidad"
+      />
+      {(hasPar || pos.par_price != null) && (
+        <PriceLine
+          label="Par"
+          changed={hasPar}
+          from={parFrom}
+          to={parTo}
+          emptyPrevText="no tenía precio par"
+        />
+      )}
     </div>
   );
 }
 
-function OldCell({
-  col,
+function PriceLine({
+  label,
+  changed,
+  from,
+  to,
+  emptyPrevText,
+}: {
+  label: string;
+  changed: boolean;
+  from: number | null;
+  to: number | null;
+  emptyPrevText: string;
+}) {
+  const pct = pctDelta(from, to);
+  return (
+    <div>
+      <div className="suma-caption text-text-tertiary">{label}</div>
+      <div className="flex items-baseline gap-2">
+        <span
+          className={cn(
+            "text-lg font-bold",
+            changed ? "text-text-primary" : "text-text-tertiary",
+          )}
+        >
+          {to != null ? formatMoneyCOP(to) : "—"}
+        </span>
+        {changed && pct != null && <DeltaPct pct={pct} />}
+      </div>
+      {changed && (
+        <div className="mt-0.5 suma-caption text-text-tertiary">
+          {from != null ? `antes ${formatMoneyCOP(from)}` : emptyPrevText}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function pctDelta(from: number | null, to: number | null): number | null {
+  if (from == null || to == null || from === 0) return null;
+  return ((to - from) / from) * 100;
+}
+
+function DeltaPct({ pct }: { pct: number }) {
+  const up = pct > 0;
+  const arrow = up ? "↑" : pct < 0 ? "↓" : "";
+  const rounded = Math.round(Math.abs(pct));
+  return (
+    <span className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-text-secondary bg-muted">
+      <span aria-hidden>{arrow}</span>
+      {rounded}%
+    </span>
+  );
+}
+
+// ---------- Vigencias ----------
+
+function DatesBody({
   pos,
   changes,
 }: {
-  col: ChangeCategory;
   pos: PositionSnapshot;
   changes: FieldChange[];
 }) {
-  if (col === "prices") {
-    const hasSale = changes.some((c) => c.field === "sale_price");
-    const hasPar = changes.some((c) => c.field === "par_price");
-    if (!hasSale && !hasPar) return <SinCambios />;
-    return (
-      <div className="space-y-0.5 tabular-nums">
-        <div>
-          {hasSale
-            ? pos.sale_price != null
-              ? formatMoneyCOP(pos.sale_price)
-              : "vacío"
-            : "Sin cambios"}
-        </div>
-        {(hasPar || pos.par_price != null) && (
-          <div>
-            <span className="text-[11px] font-normal text-text-tertiary mr-1.5">Par</span>
-            {hasPar
-              ? pos.par_price != null
-                ? formatMoneyCOP(pos.par_price)
-                : "vacío"
-              : "Sin cambios"}
-          </div>
-        )}
+  const start = changes.find((c) => c.field === "start_date");
+  const end = changes.find((c) => c.field === "end_date");
+  const hadPrev = pos.start_date || pos.end_date;
+  const startTo = start && start.field === "start_date" ? start.to : pos.start_date;
+  const endTo = end && end.field === "end_date" ? end.to : pos.end_date;
+  const startFrom = start && start.field === "start_date" ? start.from : pos.start_date;
+  const endFrom = end && end.field === "end_date" ? end.from : pos.end_date;
+
+  return (
+    <div className="tabular-nums">
+      <div className="flex items-baseline gap-2 text-base font-bold text-text-primary">
+        <span>{fmtDate(startTo)}</span>
+        <span className="text-text-tertiary">→</span>
+        <span>{fmtDate(endTo)}</span>
       </div>
-    );
-  }
-  if (col === "dates") {
-    const hasStart = changes.some((c) => c.field === "start_date");
-    const hasEnd = changes.some((c) => c.field === "end_date");
-    if (!hasStart && !hasEnd) return <SinCambios />;
-    return (
-      <div className="space-y-0.5 tabular-nums">
-        <div>
-          <span className="text-[11px] font-normal text-text-tertiary mr-1.5">Desde</span>
-          {hasStart ? fmtDate(pos.start_date) : "Sin cambios"}
-        </div>
-        <div>
-          <span className="text-[11px] font-normal text-text-tertiary mr-1.5">Hasta</span>
-          {hasEnd ? fmtDate(pos.end_date) : "Sin cambios"}
-        </div>
+      <div className="mt-1 suma-caption text-text-tertiary">
+        {hadPrev
+          ? `antes ${fmtDate(startFrom)} → ${fmtDate(endFrom)}`
+          : "no tenía vigencia"}
       </div>
-    );
-  }
-  if (col === "observations") {
-    const hasObs = changes.some((c) => c.field === "observations");
-    if (!hasObs) return <SinCambios />;
-    return (
-      <div className="line-clamp-3">
-        {pos.observations || <em>vacío</em>}
-      </div>
-    );
-  }
-  // relations
-  return <SinCambios label="No había este código" />;
+    </div>
+  );
 }
 
-function SinCambios({ label = "Sin cambios" }: { label?: string }) {
-  return <span className="text-text-tertiary italic">{label}</span>;
+// ---------- Observaciones ----------
+
+function ObservationsBody({
+  pos,
+  changes,
+}: {
+  pos: PositionSnapshot;
+  changes: FieldChange[];
+}) {
+  const obs = changes.find((c) => c.field === "observations");
+  const to = obs && obs.field === "observations" ? obs.to : pos.observations;
+  const from = obs && obs.field === "observations" ? obs.from : pos.observations;
+
+  return (
+    <div>
+      <p className="text-sm text-text-primary leading-snug line-clamp-4">
+        {to || <span className="text-text-tertiary italic">vacío</span>}
+      </p>
+      <p className="mt-2 suma-caption text-text-tertiary leading-snug line-clamp-3">
+        {from ? `antes: ${from}` : "no tenía observaciones"}
+      </p>
+    </div>
+  );
+}
+
+// ---------- Relaciones ----------
+
+function RelationsBody({
+  changes,
+  clientsById,
+}: {
+  changes: FieldChange[];
+  clientsById: Map<string, string>;
+}) {
+  const adds = changes.filter(
+    (c): c is Extract<FieldChange, { field: "add_client_code" }> =>
+      c.field === "add_client_code",
+  );
+  return (
+    <div className="space-y-1.5">
+      <p className="suma-caption text-text-tertiary">
+        Códigos de cliente agregados
+      </p>
+      <ul className="space-y-1">
+        {adds.map((c, i) => {
+          const clientName = clientsById.get(c.client_id) ?? c.client_id;
+          return (
+            <li
+              key={i}
+              className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm"
+            >
+              <span className="text-[11px] font-semibold uppercase tracking-wide text-accent">
+                {clientName}
+              </span>
+              <span className="text-text-tertiary">·</span>
+              <span className="font-mono text-text-primary">
+                {c.client_code}
+              </span>
+              {c.description && (
+                <>
+                  <span className="text-text-tertiary">·</span>
+                  <span className="text-text-secondary line-clamp-1">
+                    {c.description}
+                  </span>
+                </>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 }
 
