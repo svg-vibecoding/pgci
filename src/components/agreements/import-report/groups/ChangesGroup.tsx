@@ -612,12 +612,13 @@ function PricesBlock({
   pos: PositionSnapshot;
   changes: FieldChange[];
 }) {
-  const sale = changes.find((c) => c.field === "sale_price") as
-    | Extract<FieldChange, { field: "sale_price" }>
-    | undefined;
-  const par = changes.find((c) => c.field === "par_price") as
-    | Extract<FieldChange, { field: "par_price" }>
-    | undefined;
+  type PriceChange = { field: "sale_price" | "par_price"; from: number | null; to: number | null };
+  const sale = changes.find(
+    (c): c is PriceChange => c.field === "sale_price",
+  );
+  const par = changes.find(
+    (c): c is PriceChange => c.field === "par_price",
+  );
 
   const showPar = !!par || (pos.par_price != null && pos.par_price > 0);
 
