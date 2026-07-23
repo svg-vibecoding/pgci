@@ -22,7 +22,6 @@ import { statusMeta } from "../labels";
 import type { DecisionsState } from "../state";
 import { EmptyGroup } from "./Group1RequiresDecision";
 
-
 type FilterKey =
   | "all"
   | "prices"
@@ -30,19 +29,13 @@ type FilterKey =
   | "observations"
   | "relations";
 
-type ChangeCategory = "prices" | "dates" | "observations" | "relations";
+type BlockKey = "relations" | "prices" | "dates" | "observations";
 
-function categoryOf(f: FieldChange): ChangeCategory {
+function categoryOf(f: FieldChange): Exclude<BlockKey, never> {
   if (f.field === "sale_price" || f.field === "par_price") return "prices";
   if (f.field === "start_date" || f.field === "end_date") return "dates";
   if (f.field === "observations") return "observations";
   return "relations";
-}
-
-function categoryCounts(changes: FieldChange[]) {
-  const c = { prices: 0, dates: 0, observations: 0, relations: 0 };
-  for (const ch of changes) c[categoryOf(ch)]++;
-  return c;
 }
 
 function statusRank(s: string | undefined | null): number {
@@ -71,11 +64,11 @@ function fmtDate(iso: string | null | undefined): string {
   });
 }
 
-/**
- * ChangesGroup — grupos B y C del reporte de importación.
- * Comportamiento: TODOS los cambios se aplican por defecto. La acción del
- * usuario es DESCARTAR. Un descarte se puede deshacer ("Recuperar cambios").
- */
+// ---------------------------------------------------------------------------
+// ChangesGroup — grupos B (publicadas) y C (en gestión).
+// Default = aplicar. La acción es descartar; se puede revertir con "Incluir".
+// ---------------------------------------------------------------------------
+
 export function ChangesGroup({
   id,
   icon,
@@ -98,7 +91,6 @@ export function ChangesGroup({
   const [filter, setFilter] = useState<FilterKey>("all");
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
-
 
   const enriched = useMemo(() => {
     return rows
@@ -131,14 +123,7 @@ export function ChangesGroup({
     const q = query.trim().toLowerCase();
     return enriched.filter(({ pos, changes }) => {
       if (filter !== "all") {
-        const key = filter === "prices"
-          ? "prices"
-          : filter === "dates"
-            ? "dates"
-            : filter === "observations"
-              ? "observations"
-              : "relations";
-        if (!changes.some((c) => categoryOf(c) === key)) return false;
+        if (!changes.some((c) => categoryOf(c) === filter)) return false;
       }
       if (q) {
         const hay = [pos!.sku, pos!.commercial_brand, pos!.erp_description]
@@ -168,13 +153,13 @@ export function ChangesGroup({
       icon={icon}
       title={title}
       count={changesCount}
-      hint={`${changesCount} cambios en ${positionsCount} posiciones. Se aplicarán al confirmar salvo los que descartes.`}
+      hint={`${changesCount} actualizaciones en ${positionsCount} posiciones. Se aplicarán al confirmar salvo las que descartes.`}
     >
       {rows.length === 0 ? (
         <EmptyGroup message={emptyMessage} />
       ) : (
         <div className="space-y-3">
-          {/* Toolbar: buscador + filtros + descartar todos */}
+          {/* Toolbar */}
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
@@ -201,7 +186,7 @@ export function ChangesGroup({
             <FilterTab
               active={filter === "all"}
               onClick={() => setFilter("all")}
-              label="Todos"
+              label="Todas"
               count={totals.all}
             />
             <FilterTab
@@ -240,7 +225,7 @@ export function ChangesGroup({
                     )
                   }
                 >
-                  Recuperar todos ({positionsCount - activeCount})
+                  Incluir todas ({positionsCount - activeCount})
                 </Button>
               ) : null}
               <Button
@@ -254,16 +239,16 @@ export function ChangesGroup({
                   )
                 }
               >
-                Descartar todos ({activeChangesCount})
+                Descartar todas ({activeChangesCount})
               </Button>
             </div>
           </div>
 
-          {/* Lista de cards por posición */}
+          {/* Cards */}
           <div className="space-y-2">
             {visible.length === 0 ? (
               <p className="suma-caption text-text-tertiary px-1 py-4">
-                Ningún cambio coincide con el filtro.
+                Ninguna actualización coincide con el filtro.
               </p>
             ) : (
               visible.map(({ r, pos, changes }) => (
@@ -282,7 +267,6 @@ export function ChangesGroup({
                   }
                 />
               ))
-
             )}
           </div>
         </div>
@@ -319,7 +303,7 @@ function FilterTab({
 }
 
 // ---------------------------------------------------------------------------
-// Card por posición (colapsable individual)
+// Card por posición
 // ---------------------------------------------------------------------------
 
 function PositionChangeCard({
@@ -341,75 +325,88 @@ function PositionChangeCard({
 }) {
   const [open, setOpen] = useState(false);
   const status = statusMeta(pos.status);
-
-  const changesLabel = discarded
-    ? `Recuperar cambios (${changes.length})`
-    : `Descartar cambios (${changes.length})`;
+  const action = discarded
+    ? `Incluir (${changes.length})`
+    : `Descartar (${changes.length})`;
 
   return (
     <div
       className={cn(
         "rounded-lg border bg-white transition-colors",
-        discarded ? "border-border/60 bg-muted/20" : "border-border",
+        discarded ? "border-primary/20 bg-primary/[0.02]" : "border-border",
       )}
     >
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3">
+      <div className="flex items-start gap-3 px-4 py-3">
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="flex flex-1 items-start gap-3 min-w-0 text-left"
+          className="flex flex-1 min-w-0 flex-col items-start text-left"
         >
-          <div className={cn("min-w-0 flex-1", discarded && "opacity-60")}>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[10.5px] text-text-tertiary tabular-nums">
-                #{row.sourceRow}
-              </span>
-              <span className="font-mono text-sm font-semibold text-foreground">
-                {pos.sku || "—"}
-              </span>
-              {pos.commercial_brand && (
-                <>
-                  <span className="text-text-tertiary">·</span>
-                  <span className="text-[11px] font-semibold uppercase tracking-wide text-accent">
-                    {pos.commercial_brand}
-                  </span>
-                </>
-              )}
-              <StatusBadge status={status.badge} label={status.label} />
-            </div>
-            {pos.erp_description && (
-              <div className="mt-0.5 suma-subtitle text-text-primary line-clamp-1">
-                {pos.erp_description}
-              </div>
+          {/* Meta line */}
+          <div className={cn("flex items-center gap-2 flex-wrap", discarded && "opacity-60")}>
+            <span className="text-[11px] text-text-tertiary tabular-nums">
+              #{row.sourceRow}
+            </span>
+            <span className="font-mono text-xs text-text-secondary">
+              {pos.sku || "—"}
+            </span>
+            {pos.commercial_brand && (
+              <>
+                <span className="text-text-tertiary">·</span>
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-accent">
+                  {pos.commercial_brand}
+                </span>
+              </>
             )}
+            <StatusBadge status={status.badge} label={status.label} />
           </div>
-        </button>
-        <button
-          type="button"
-          onClick={discarded ? onRestore : onDiscard}
-          className={cn(
-            "shrink-0 text-xs transition-colors",
-            discarded
-              ? "text-accent hover:text-accent/80"
-              : "text-text-tertiary hover:text-primary",
+          {/* Product name — protagonista */}
+          {pos.erp_description && (
+            <div
+              className={cn(
+                "mt-1 text-base font-bold uppercase tracking-wide text-text-primary line-clamp-1",
+                discarded && "opacity-60",
+              )}
+            >
+              {pos.erp_description}
+            </div>
           )}
-        >
-          {changesLabel}
         </button>
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          className="shrink-0 text-text-tertiary hover:text-text-primary"
-          aria-label={open ? "Colapsar" : "Expandir"}
-        >
-          <ChevronDown
-            className={cn(
-              "h-4 w-4 transition-transform",
-              open && "rotate-180",
-            )}
-          />
-        </button>
+        <div className="shrink-0 flex flex-col items-end gap-1">
+          {discarded && (
+            <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10.5px] font-semibold text-primary">
+              Actualizaciones descartadas
+            </span>
+          )}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={discarded ? onRestore : onDiscard}
+              className={cn(
+                "text-xs transition-colors",
+                discarded
+                  ? "text-accent hover:text-accent/80 font-semibold"
+                  : "text-text-tertiary hover:text-primary",
+              )}
+            >
+              {action}
+            </button>
+            <button
+              type="button"
+              onClick={() => setOpen((v) => !v)}
+              className="text-text-tertiary hover:text-text-primary"
+              aria-label={open ? "Colapsar" : "Expandir"}
+            >
+              <ChevronDown
+                className={cn(
+                  "h-4 w-4 transition-transform",
+                  open && "rotate-180",
+                )}
+              />
+            </button>
+          </div>
+        </div>
       </div>
 
       {open && (
@@ -419,7 +416,7 @@ function PositionChangeCard({
             discarded && "opacity-60",
           )}
         >
-          <ChangeBlocks
+          <CardBody
             pos={pos}
             changes={changes}
             clientsById={clientsById}
@@ -431,39 +428,22 @@ function PositionChangeCard({
 }
 
 // ---------------------------------------------------------------------------
-// Bloques de cambio: solo se renderizan los que TIENEN cambios.
-// Ancho igual repartido según cuántos bloques haya (1, 2, 3 o 4).
-// Relaciones tiene tratamiento visual diferenciado (fondo accent suave).
+// Body: Relaciones full-width arriba; resto rellena el ancho (1/2/3).
 // ---------------------------------------------------------------------------
 
-type BlockKey = "relations" | "prices" | "dates" | "observations";
-
-const BLOCK_ORDER: BlockKey[] = [
-  "relations",
+const REST_ORDER: Exclude<BlockKey, "relations">[] = [
   "prices",
   "dates",
   "observations",
 ];
 
-const BLOCK_META: Record<
-  BlockKey,
-  { label: string; Icon: typeof Tag }
-> = {
-  relations: { label: "Relaciones", Icon: Link2 },
-  prices: { label: "Precios de venta", Icon: Tag },
-  dates: { label: "Vigencias", Icon: Calendar },
-  observations: { label: "Observaciones", Icon: AlignLeft },
-};
-
-// Enumeradas para que Tailwind las conserve.
 const GRID_COLS: Record<number, string> = {
   1: "grid-cols-1",
   2: "grid-cols-1 md:grid-cols-2",
   3: "grid-cols-1 md:grid-cols-3",
-  4: "grid-cols-1 md:grid-cols-2 lg:grid-cols-4",
 };
 
-function ChangeBlocks({
+function CardBody({
   pos,
   changes,
   clientsById,
@@ -472,150 +452,239 @@ function ChangeBlocks({
   changes: FieldChange[];
   clientsById: Map<string, string>;
 }) {
-  const counts = categoryCounts(changes);
-  const present = BLOCK_ORDER.filter((k) => counts[k] > 0);
-  const cols = GRID_COLS[present.length] ?? GRID_COLS[4];
+  const byCat = {
+    prices: changes.filter((c) => categoryOf(c) === "prices"),
+    dates: changes.filter((c) => categoryOf(c) === "dates"),
+    observations: changes.filter((c) => categoryOf(c) === "observations"),
+    relations: changes.filter((c) => categoryOf(c) === "relations"),
+  };
+  const rest = REST_ORDER.filter((k) => byCat[k].length > 0);
+  const cols = GRID_COLS[rest.length] ?? GRID_COLS[3];
 
   return (
-    <div className={cn("grid gap-3", cols)}>
-      {present.map((key) => (
-        <Block
-          key={key}
-          blockKey={key}
-          pos={pos}
-          changes={changes}
+    <div className="space-y-3">
+      {byCat.relations.length > 0 && (
+        <RelationsBlock
+          changes={byCat.relations}
           clientsById={clientsById}
         />
-      ))}
+      )}
+      {rest.length > 0 && (
+        <div className={cn("grid gap-3", cols)}>
+          {rest.map((key) =>
+            key === "prices" ? (
+              <PricesBlock key="prices" pos={pos} changes={byCat.prices} />
+            ) : key === "dates" ? (
+              <DatesBlock key="dates" pos={pos} changes={byCat.dates} />
+            ) : (
+              <ObservationsBlock
+                key="observations"
+                pos={pos}
+                changes={byCat.observations}
+              />
+            ),
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
-function Block({
-  blockKey,
-  pos,
-  changes,
-  clientsById,
-}: {
-  blockKey: BlockKey;
-  pos: PositionSnapshot;
-  changes: FieldChange[];
-  clientsById: Map<string, string>;
-}) {
-  const { label, Icon } = BLOCK_META[blockKey];
-  const isRelations = blockKey === "relations";
+// ---------------------------------------------------------------------------
+// Bloque genérico
+// ---------------------------------------------------------------------------
 
+function BlockShell({
+  Icon,
+  label,
+  counter,
+  children,
+  variant = "default",
+}: {
+  Icon: typeof Tag;
+  label: string;
+  counter?: string;
+  children: React.ReactNode;
+  variant?: "default" | "accent";
+}) {
+  const accent = variant === "accent";
   return (
     <section
       className={cn(
         "flex h-full flex-col rounded-md p-3",
-        isRelations
-          ? "bg-accent/[0.04] border border-accent/20"
-          : "border border-transparent",
+        accent
+          ? "bg-accent/[0.05] border border-accent/25"
+          : "bg-muted/30 border border-transparent",
       )}
     >
-      <header className="mb-2 flex items-center gap-2">
+      <header className="mb-2 flex items-start gap-2">
         <span
           className={cn(
-            "grid h-6 w-6 place-items-center rounded",
-            isRelations
-              ? "bg-accent/10 text-accent"
-              : "bg-muted text-text-secondary",
+            "grid h-6 w-6 shrink-0 place-items-center rounded",
+            accent ? "bg-accent/15 text-accent" : "bg-white text-text-secondary",
           )}
         >
           <Icon className="h-3.5 w-3.5" strokeWidth={2} />
         </span>
-        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary">
-          {label}
-        </h4>
+        <div className="min-w-0">
+          <div
+            className={cn(
+              "text-sm font-semibold leading-tight",
+              accent ? "text-accent" : "text-text-primary",
+            )}
+          >
+            {label}
+          </div>
+          {counter && (
+            <div className="suma-caption text-text-tertiary leading-tight">
+              {counter}
+            </div>
+          )}
+        </div>
       </header>
-      <div className="flex-1">
-        {blockKey === "prices" && <PricesBody pos={pos} changes={changes} />}
-        {blockKey === "dates" && <DatesBody pos={pos} changes={changes} />}
-        {blockKey === "observations" && (
-          <ObservationsBody pos={pos} changes={changes} />
-        )}
-        {blockKey === "relations" && (
-          <RelationsBody changes={changes} clientsById={clientsById} />
-        )}
-      </div>
+      <div className="flex-1">{children}</div>
     </section>
   );
 }
 
+// ---------- Helpers de conteo ----------
+
+type Op = { kind: "cambio" | "nuevo" };
+
+function opsFromPrice(changes: FieldChange[]): Op[] {
+  const ops: Op[] = [];
+  for (const c of changes) {
+    if (c.field === "sale_price" || c.field === "par_price") {
+      ops.push({ kind: c.from == null ? "nuevo" : "cambio" });
+    }
+  }
+  return ops;
+}
+
+function opsFromDates(changes: FieldChange[]): Op[] {
+  const ops: Op[] = [];
+  for (const c of changes) {
+    if (c.field === "start_date" || c.field === "end_date") {
+      ops.push({ kind: c.from == null ? "nuevo" : "cambio" });
+    }
+  }
+  return ops;
+}
+
+function opsFromObs(changes: FieldChange[]): Op[] {
+  const ops: Op[] = [];
+  for (const c of changes) {
+    if (c.field === "observations") {
+      ops.push({ kind: c.from == null ? "nuevo" : "cambio" });
+    }
+  }
+  return ops;
+}
+
+function counterText(
+  ops: Op[],
+  gender: "m" | "f" = "m",
+): string {
+  const cambio = ops.filter((o) => o.kind === "cambio").length;
+  const nuevo = ops.filter((o) => o.kind === "nuevo").length;
+  const parts: string[] = [];
+  if (cambio > 0) parts.push(`${cambio} ${cambio === 1 ? "cambio" : "cambios"}`);
+  if (nuevo > 0) {
+    const word =
+      gender === "f"
+        ? nuevo === 1
+          ? "nueva"
+          : "nuevas"
+        : nuevo === 1
+          ? "nuevo"
+          : "nuevos";
+    parts.push(`${nuevo} ${word}`);
+  }
+  return parts.join(" · ");
+}
+
 // ---------- Precios ----------
 
-function PricesBody({
+function PricesBlock({
   pos,
   changes,
 }: {
   pos: PositionSnapshot;
   changes: FieldChange[];
 }) {
-  const sale = changes.find((c) => c.field === "sale_price");
-  const par = changes.find((c) => c.field === "par_price");
-  const hasSale = !!sale;
-  const hasPar = !!par;
+  type PriceChange = { field: "sale_price" | "par_price"; from: number | null; to: number | null };
+  const sale = changes.find(
+    (c): c is PriceChange => c.field === "sale_price",
+  );
+  const par = changes.find(
+    (c): c is PriceChange => c.field === "par_price",
+  );
 
-  const saleTo = hasSale && sale.field === "sale_price" ? sale.to : pos.sale_price;
-  const saleFrom = hasSale && sale.field === "sale_price" ? sale.from : pos.sale_price;
-  const parTo = hasPar && par.field === "par_price" ? par.to : pos.par_price;
-  const parFrom = hasPar && par.field === "par_price" ? par.from : pos.par_price;
+  const showPar = !!par || (pos.par_price != null && pos.par_price > 0);
 
   return (
-    <div className="space-y-3 tabular-nums">
-      <PriceLine
-        label="Unidad"
-        changed={hasSale}
-        from={saleFrom}
-        to={saleTo}
-        emptyPrevText="no tenía precio unidad"
-      />
-      {(hasPar || pos.par_price != null) && (
+    <BlockShell
+      Icon={Tag}
+      label="Precios de venta"
+      counter={counterText(opsFromPrice(changes), "m")}
+    >
+      <div className="space-y-3 tabular-nums">
         <PriceLine
-          label="Par"
-          changed={hasPar}
-          from={parFrom}
-          to={parTo}
-          emptyPrevText="no tenía precio par"
+          label="Unidad"
+          value={sale ? sale.to : pos.sale_price}
+          previous={sale ? sale.from : null}
+          state={sale ? (sale.from == null ? "new" : "changed") : "unchanged"}
         />
-      )}
-    </div>
+        {showPar && (
+          <PriceLine
+            label="Precio par"
+            value={par ? par.to : pos.par_price}
+            previous={par ? par.from : null}
+            state={par ? (par.from == null ? "new" : "changed") : "unchanged"}
+          />
+        )}
+      </div>
+    </BlockShell>
   );
 }
 
 function PriceLine({
   label,
-  changed,
-  from,
-  to,
-  emptyPrevText,
+  value,
+  previous,
+  state,
 }: {
   label: string;
-  changed: boolean;
-  from: number | null;
-  to: number | null;
-  emptyPrevText: string;
+  value: number | null;
+  previous: number | null;
+  state: "new" | "changed" | "unchanged";
 }) {
-  const pct = pctDelta(from, to);
+  const isUnchanged = state === "unchanged";
+  const isNew = state === "new";
+  const pct = state === "changed" ? pctDelta(previous, value) : null;
+
   return (
-    <div>
+    <div className={cn(isUnchanged && "opacity-50")}>
       <div className="suma-caption text-text-tertiary">{label}</div>
       <div className="flex items-baseline gap-2">
         <span
           className={cn(
-            "text-lg font-bold",
-            changed ? "text-text-primary" : "text-text-tertiary",
+            "text-base font-bold",
+            isUnchanged ? "text-text-tertiary" : "text-text-primary",
           )}
         >
-          {to != null ? formatMoneyCOP(to) : "—"}
+          {value != null ? formatMoneyCOP(value) : "—"}
         </span>
-        {changed && pct != null && <DeltaPct pct={pct} />}
+        {pct != null && <DeltaPct pct={pct} />}
       </div>
-      {changed && (
+      {isNew && <div className="mt-0.5 text-xs font-semibold text-accent">Nuevo</div>}
+      {state === "changed" && previous != null && (
         <div className="mt-0.5 suma-caption text-text-tertiary">
-          {from != null ? `antes ${formatMoneyCOP(from)}` : emptyPrevText}
+          Antes: {formatMoneyCOP(previous)}
         </div>
+      )}
+      {isUnchanged && (
+        <div className="mt-0.5 suma-caption text-text-tertiary">Sin cambios</div>
       )}
     </div>
   );
@@ -631,7 +700,14 @@ function DeltaPct({ pct }: { pct: number }) {
   const arrow = up ? "↑" : pct < 0 ? "↓" : "";
   const rounded = Math.round(Math.abs(pct));
   return (
-    <span className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-text-secondary bg-muted">
+    <span
+      className={cn(
+        "inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[11px] font-medium tabular-nums",
+        up
+          ? "bg-accent/10 text-accent"
+          : "bg-orange-500/10 text-orange-600",
+      )}
+    >
       <span aria-hidden>{arrow}</span>
       {rounded}%
     </span>
@@ -640,65 +716,185 @@ function DeltaPct({ pct }: { pct: number }) {
 
 // ---------- Vigencias ----------
 
-function DatesBody({
+function DatesBlock({
   pos,
   changes,
 }: {
   pos: PositionSnapshot;
   changes: FieldChange[];
 }) {
-  const start = changes.find((c) => c.field === "start_date");
-  const end = changes.find((c) => c.field === "end_date");
-  const hadPrev = pos.start_date || pos.end_date;
-  const startTo = start && start.field === "start_date" ? start.to : pos.start_date;
-  const endTo = end && end.field === "end_date" ? end.to : pos.end_date;
-  const startFrom = start && start.field === "start_date" ? start.from : pos.start_date;
-  const endFrom = end && end.field === "end_date" ? end.from : pos.end_date;
+  type DateChange = { field: "start_date" | "end_date"; from: string | null; to: string | null };
+  const start = changes.find(
+    (c): c is DateChange => c.field === "start_date",
+  );
+  const end = changes.find(
+    (c): c is DateChange => c.field === "end_date",
+  );
+
+  const startValue = start ? start.to : pos.start_date;
+  const endValue = end ? end.to : pos.end_date;
+  const startState: DateState = start
+    ? start.from == null
+      ? "new"
+      : "changed"
+    : "unchanged";
+  const endState: DateState = end
+    ? end.from == null
+      ? "new"
+      : "changed"
+    : "unchanged";
+
+  // Ausencia crítica: hay op en la otra fecha y esta no existe ni en snapshot ni en archivo.
+  const startMissing =
+    startValue == null && (endState !== "unchanged");
+  const endMissing =
+    endValue == null && (startState !== "unchanged");
 
   return (
-    <div className="tabular-nums">
-      <div className="flex items-baseline gap-2 text-base font-bold text-text-primary">
-        <span>{fmtDate(startTo)}</span>
-        <span className="text-text-tertiary">→</span>
-        <span>{fmtDate(endTo)}</span>
+    <BlockShell
+      Icon={Calendar}
+      label="Vigencias"
+      counter={counterText(opsFromDates(changes), "m")}
+    >
+      <div className="grid grid-cols-[1fr_auto_1fr] items-baseline gap-2 tabular-nums">
+        <DateField
+          label="Desde"
+          value={startValue}
+          previous={start ? start.from : null}
+          state={startState}
+          missing={startMissing}
+          missingLabel="Sin fecha de inicio"
+        />
+        <span className="text-text-tertiary self-center">→</span>
+        <DateField
+          label="Hasta"
+          value={endValue}
+          previous={end ? end.from : null}
+          state={endState}
+          missing={endMissing}
+          missingLabel="Sin fecha fin"
+        />
       </div>
-      <div className="mt-1 suma-caption text-text-tertiary">
-        {hadPrev
-          ? `antes ${fmtDate(startFrom)} → ${fmtDate(endFrom)}`
-          : "no tenía vigencia"}
-      </div>
+    </BlockShell>
+  );
+}
+
+type DateState = "new" | "changed" | "unchanged";
+
+function DateField({
+  label,
+  value,
+  previous,
+  state,
+  missing,
+  missingLabel,
+}: {
+  label: string;
+  value: string | null;
+  previous: string | null;
+  state: DateState;
+  missing: boolean;
+  missingLabel: string;
+}) {
+  const isUnchanged = state === "unchanged";
+  const isNew = state === "new";
+  return (
+    <div className={cn(isUnchanged && !missing && "opacity-50")}>
+      <div className="suma-caption text-text-tertiary">{label}</div>
+      {missing ? (
+        <div className="text-sm font-semibold text-primary">{missingLabel}</div>
+      ) : (
+        <div
+          className={cn(
+            "text-sm font-bold",
+            isUnchanged ? "text-text-tertiary" : "text-text-primary",
+          )}
+        >
+          {fmtDate(value)}
+        </div>
+      )}
+      {isNew && !missing && (
+        <div className="mt-0.5 text-xs font-semibold text-accent">Nuevo</div>
+      )}
+      {state === "changed" && previous != null && (
+        <div className="mt-0.5 suma-caption text-text-tertiary">
+          Antes: {fmtDate(previous)}
+        </div>
+      )}
+      {isUnchanged && !missing && (
+        <div className="mt-0.5 suma-caption text-text-tertiary">Sin cambios</div>
+      )}
     </div>
   );
 }
 
 // ---------- Observaciones ----------
 
-function ObservationsBody({
+function ObservationsBlock({
   pos,
   changes,
 }: {
   pos: PositionSnapshot;
   changes: FieldChange[];
 }) {
-  const obs = changes.find((c) => c.field === "observations");
-  const to = obs && obs.field === "observations" ? obs.to : pos.observations;
-  const from = obs && obs.field === "observations" ? obs.from : pos.observations;
+  const [expanded, setExpanded] = useState(false);
+  const obs = changes.find((c) => c.field === "observations") as
+    | Extract<FieldChange, { field: "observations" }>
+    | undefined;
+  const to = obs ? obs.to : pos.observations;
+  const from = obs ? obs.from : null;
+  const isNew = obs ? obs.from == null : false;
+
+  const showToggle = (to && to.length > 180) || (from && from.length > 180);
 
   return (
-    <div>
-      <p className="text-sm text-text-primary leading-snug line-clamp-4">
-        {to || <span className="text-text-tertiary italic">vacío</span>}
-      </p>
-      <p className="mt-2 suma-caption text-text-tertiary leading-snug line-clamp-3">
-        {from ? `antes: ${from}` : "no tenía observaciones"}
-      </p>
-    </div>
+    <BlockShell
+      Icon={AlignLeft}
+      label="Observaciones"
+      counter={counterText(opsFromObs(changes), "f")}
+    >
+      <div className="space-y-2">
+        {isNew && (
+          <div className="text-xs font-semibold text-accent">Nueva</div>
+        )}
+        <p
+          className={cn(
+            "text-sm text-text-primary leading-snug whitespace-pre-wrap",
+            !expanded && "line-clamp-3",
+          )}
+        >
+          {to || <span className="text-text-tertiary italic">vacío</span>}
+        </p>
+        {!isNew && from && (
+          <>
+            <p className="suma-caption text-text-tertiary">Antes</p>
+            <p
+              className={cn(
+                "suma-caption text-text-tertiary leading-snug whitespace-pre-wrap",
+                !expanded && "line-clamp-3",
+              )}
+            >
+              {from}
+            </p>
+          </>
+        )}
+        {showToggle && (
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="text-xs font-semibold text-accent hover:text-accent/80"
+          >
+            {expanded ? "Ver menos" : "Ver más"}
+          </button>
+        )}
+      </div>
+    </BlockShell>
   );
 }
 
 // ---------- Relaciones ----------
 
-function RelationsBody({
+function RelationsBlock({
   changes,
   clientsById,
 }: {
@@ -710,10 +906,7 @@ function RelationsBody({
       c.field === "add_client_code",
   );
   return (
-    <div className="space-y-1.5">
-      <p className="suma-caption text-text-tertiary">
-        Códigos de cliente agregados
-      </p>
+    <BlockShell Icon={Link2} label="Relación" variant="accent">
       <ul className="space-y-1">
         {adds.map((c, i) => {
           const clientName = clientsById.get(c.client_id) ?? c.client_id;
@@ -726,7 +919,7 @@ function RelationsBody({
                 {clientName}
               </span>
               <span className="text-text-tertiary">·</span>
-              <span className="font-mono text-text-primary">
+              <span className="font-mono text-text-primary font-semibold">
                 {c.client_code}
               </span>
               {c.description && (
@@ -741,9 +934,6 @@ function RelationsBody({
           );
         })}
       </ul>
-    </div>
+    </BlockShell>
   );
 }
-
-
-
