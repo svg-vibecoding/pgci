@@ -27,6 +27,7 @@ export function GroupShell({
   toolbar,
   children,
   tone = "default",
+  headerRight,
 }: {
   id?: string;
   icon?: ReactNode;
@@ -36,6 +37,7 @@ export function GroupShell({
   toolbar?: ReactNode;
   children: ReactNode;
   tone?: "default" | "muted";
+  headerRight?: ReactNode;
 }) {
   const value = id ?? title.replace(/\s+/g, "-").toLowerCase();
   return (
@@ -58,13 +60,19 @@ export function GroupShell({
               <span className="suma-h4 text-text-primary truncate">
                 {title}
               </span>
-              <span className="tabular-nums text-text-tertiary font-normal">
-                {count}
-              </span>
+              {headerRight == null && (
+                <span className="tabular-nums text-text-tertiary font-normal">
+                  {count}
+                </span>
+              )}
             </div>
-            <ChevronDown className="h-4 w-4 shrink-0 text-text-tertiary transition-transform duration-200 group-data-[state=open]:rotate-180" />
+            <div className="flex items-center gap-3 shrink-0">
+              {headerRight}
+              <ChevronDown className="h-4 w-4 text-text-tertiary transition-transform duration-200 group-data-[state=open]:rotate-180" />
+            </div>
           </div>
         </AccordionTrigger>
+
         <AccordionContent className="border-t border-border/60 px-4 pb-4 pt-3">
           {(hint || toolbar) && (
             <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
