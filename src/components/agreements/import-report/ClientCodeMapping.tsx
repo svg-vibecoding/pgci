@@ -26,8 +26,9 @@ export function ClientCodeMapping({
   return (
     <div className="space-y-4">
       <p className="suma-body text-text-secondary">
-        Un archivo = un cliente. Elige el cliente al que pertenecen los códigos
-        de la columna <span className="font-medium text-text-primary">Código del cliente</span>.
+        Elige el cliente al que pertenecen los productos de la columna{" "}
+        <span className="font-medium text-text-primary">Código del cliente</span>{" "}
+        y <span className="font-medium text-text-primary">Descripción del cliente</span>.
       </p>
       <div
         role="radiogroup"
