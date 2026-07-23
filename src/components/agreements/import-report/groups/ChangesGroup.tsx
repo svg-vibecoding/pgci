@@ -1,5 +1,12 @@
 import { useMemo, useState } from "react";
-import { ChevronDown, Search } from "lucide-react";
+import {
+  AlignLeft,
+  Calendar,
+  ChevronDown,
+  Link2,
+  Search,
+  Tag,
+} from "lucide-react";
 import type {
   ClassifiedRow,
   FieldChange,
@@ -14,6 +21,7 @@ import { GroupShell } from "../parts";
 import { statusMeta } from "../labels";
 import type { DecisionsState } from "../state";
 import { EmptyGroup } from "./Group1RequiresDecision";
+
 
 type FilterKey =
   | "all"
