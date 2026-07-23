@@ -5,11 +5,13 @@ import { ChangesGroup } from "./ChangesGroup";
 export function Group3DraftsAndCodes({
   rows,
   positionsById,
+  clientsById,
   decisions,
   icon,
 }: {
   rows: ClassifiedRow[];
   positionsById: Map<string, PositionSnapshot>;
+  clientsById: Map<string, string>;
   decisions: DecisionsState;
   icon?: React.ReactNode;
 }) {
@@ -20,6 +22,7 @@ export function Group3DraftsAndCodes({
       title="Cambios en posiciones en gestión"
       rows={rows}
       positionsById={positionsById}
+      clientsById={clientsById}
       decisions={decisions}
       emptyMessage="Sin cambios sobre posiciones en gestión."
     />

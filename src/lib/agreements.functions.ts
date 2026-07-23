@@ -3032,9 +3032,10 @@ export const getAgreementImportSnapshot = createServerFn({ method: "GET" })
         .eq("agreement_id", data.agreement_id),
       context.supabase
         .from("agreement_companies")
-        .select("client_id")
+        .select("client_id, clients:client_id(commercial_name, legal_name)")
         .eq("agreement_id", data.agreement_id)
         .is("valid_until", null),
+
     ]);
     if (posRes.error)
       throw new Error(`No se pudo cargar posiciones: ${posRes.error.message}`);
@@ -3111,14 +3112,30 @@ export const getAgreementImportSnapshot = createServerFn({ method: "GET" })
       });
     }
 
+    const companyRows = (companiesRes.data ?? []) as Array<{
+      client_id: string;
+      clients:
+        | { commercial_name: string | null; legal_name: string | null }
+        | { commercial_name: string | null; legal_name: string | null }[]
+        | null;
+    }>;
     const clientIds = Array.from(
-      new Set(((companiesRes.data ?? []) as Array<{ client_id: string }>).map(
-        (c) => c.client_id,
-      )),
+      new Set(companyRows.map((c) => c.client_id)),
     );
+    const clientsMap = new Map<string, string>();
+    for (const c of companyRows) {
+      const cl = Array.isArray(c.clients) ? c.clients[0] : c.clients;
+      const name = cl?.commercial_name ?? cl?.legal_name ?? c.client_id;
+      clientsMap.set(c.client_id, name);
+    }
+    const clients = Array.from(clientsMap.entries()).map(([id, name]) => ({
+      id,
+      name,
+    }));
 
-    return { positions, activeClientCodes, clientIds };
+    return { positions, activeClientCodes, clientIds, clients };
   });
+
 
 const skuBatchInput = z.object({ skus: z.array(z.string()).max(100000) });
 
