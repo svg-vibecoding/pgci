@@ -1,118 +1,171 @@
-# Plan: Card 2 — "Lectura del archivo"
+# Plan: Paso de mapeo de cliente (Card 3)
 
 ## Objetivo
 
-Dar identidad clara a la Card 2 del flujo de importación: que sea **solo lo que el archivo trae**, antes de cualquier clasificación. Card 3 queda exclusivamente para clasificación y decisiones.
+Insertar entre "Lectura del archivo" y la clasificación un paso donde el usuario declare a qué cliente pertenecen los códigos del archivo, para que `classifyImport` reciba `mappedClientId` real y el bloque "Relaciones" del reporte funcione.
 
-## Cambios de certeza
+## Certezas implementadas
 
-### 1. Mover métricas del archivo a Card 2
+### 1. Cuándo aparece el paso
 
-- Las 3 métricas actuales de `ImportReportHeader` (Filas totales · Códigos Jaivaná únicos · Códigos Jaivaná no identificados) pasan de Card 3 a Card 2.
-- Card 3 ya no las muestra; solo conserva la barra de decisión y los 6 acordeones de grupos.
+Aparece **solo** cuando se cumplen TODAS estas condiciones:
 
-### 2. Renombrar Card 2
+- El archivo trae la columna canónica `client_code`.
+- Al menos una fila tiene un `client_code` no vacío.
+- El acuerdo tiene **más de un cliente vigente** (`valid_until IS NULL`).
 
-- Título actual: **"Qué se reconoció"** → nuevo: **"Lectura del archivo"**.
-- El `CardTitle` en la ruta de importación se actualiza.
+Si el acuerdo es **mono-cliente**, se usa automáticamente ese único cliente como `mappedClientId`; no se muestra el paso.
+Si el archivo **no trae códigos**, el paso no aparece y `mappedClientId` queda `null`.
 
-### 3. Columnas mapeadas con conteo de valores
+### 2. Fuente de clientes
 
-Para cada una de las 8 columnas canónicas presentes en el archivo se mostrará:
+El snapshot ya devuelve `clients: Array<{ id, name }>` y `clientIds: string[]` desde `getAgreementImportSnapshot`. No se toca el backend.
 
-```
-Código Jaivaná    31 / 31
-Precio par         8 / 31
-Observaciones      2 / 31
-```
+### 3. Recálculo del reporte
 
-- El conteo se deriva de `parsed.rows`: recorre las filas y cuenta cuántas traen valor no vacío para cada `PricingField` presente.
-- Es un **hecho**: se muestra el número sin etiquetas de "completo" / "incompleto".
-- Se muestra el conteo en **todas** las columnas mapeadas, incluidas las 31/31, para verificar en pantalla si el total estorba o no.
+Al elegir o cambiar de cliente se vuelve a ejecutar `classifyImport` con el nuevo `mappedClientId` y se resetean las decisiones tomadas en el reporte (es un cruce distinto).
 
-### 4. Columnas ignoradas (nueva sección)
+### 4. Nada se escribe
 
-Listar los encabezados del archivo que **no** correspondan a ninguna de las 8 columnas canónicas. El parser ya lee todos los headers crudos; solo falta exponerlos en la salida.
+Todo es estado local en la vista de importación.
 
-- **Copy propuesto:**
-  - Título: **"Columnas del archivo que no se usan"**
-  - Descripción: **"Estos encabezados vinieron en el archivo pero no corresponden a campos que PGCI lee en este paso. No afectan la clasificación."**
-  - Vacío: **"No hay columnas adicionales: el archivo trae solo columnas que PGCI reconoce."**
-- **Nota técnica:** hoy `ParseResult` solo devuelve `rows` y `presentColumns`. Para mostrar las ignoradas sin duplicar lectura del archivo, se propone añadir `rawHeaders: string[]` al tipo de retorno — solo plomería, sin cambiar la lógica de parseo. La UI deriva las ignoradas filtrando por `matchCanonical`.
+### 5. Restricciones respetadas
 
-## Propuesta visual
+- No se modifica `diff.ts`, `parse.ts`, `types.ts` ni `agreements.functions.ts`.
+- Un archivo = un cliente: el selector admite una sola opción.
+- Design system y copy neutro en español Colombia.
 
-### Layout de Card 2 (de arriba hacia abajo)
+## Propuesta de UX (a mi criterio)
 
-1. **3 métricas** en fila (`grid-cols-1 sm:grid-cols-3`), reutilizando el componente `ImportReportHeader`.
-2. **Columnas mapeadas** — título de sección + grid de mini-cards.
-3. **Columnas ignoradas** — título de sección + lista de chips neutrales.
+### Numeración del flujo
 
-### Columnas mapeadas: mini-cards compactas
+Se inserta la nueva card como **Card 3**, desplazando la clasificación a **Card 4**:
 
-En lugar de chips puros, se propone un **grid de mini-cards** (`grid-cols-2 sm:grid-cols-3 lg:grid-cols-4` con `gap-3`) para que cada columna sea escaneable como un dato:
+1. Sube el archivo
+2. Lectura del archivo
+3. Cliente de los códigos
+4. Cómo se clasifica
 
-- Fondo `bg-white` con borde `border-border`.
-- Esquinas redondeadas (`rounded-lg`).
-- Padding reducido (`px-3 py-2`).
-- Label en `suma-caption text-text-tertiary`.
-- Conteo en `suma-body font-semibold tabular-nums text-text-primary`.
-- El `"/total"` en `text-text-tertiary` para bajar su peso visual.
-- **Acento para columnas parciales:** un sutil `border-l-4` en `border-accent` (azul institucional) o un fondo `bg-surface-sunken` cuando `N < total`. Esto es solo para ayudar a escanear rápido qué columnas traen datos y cuáles no; sin palabras ni iconos de valoración.
+### Forma del selector
 
-### Columnas ignoradas: lista discreta
+**Radio cards de cliente** en un grid de 1 columna en móvil y 2-3 en escritorio. Cada card muestra el nombre comercial del cliente (o razón social si no hay nombre comercial). Ventajas sobre un dropdown: escaneable, difícil de elegir sin querer, y comunica que la elección es intencional.
 
-Para diferenciar claramente "se usan" de "no se usan":
+No hay opción preseleccionada. El usuario debe elegir explícitamente para continuar. El botón / acción de confirmación queda implícito en la elección misma: al hacer clic en una card se recalcula el reporte inmediatamente. Se añade un indicador de "Cliente elegido" en la card seleccionada.
 
-- Usar `Chip` con `variant="outline"` y `color="neutral"`.
-- Los chips muestran el nombre original del encabezado del archivo.
-- No se usan iconos de "error" ni "X"; se opta por un estilo neutro para evitar que suene a fallo.
+### Copy propuesto
+
+- Título de la card: **"Cliente de los códigos"**
+- Pregunta: **"¿A qué cliente pertenecen los códigos de este archivo?"**
+- Subtítulo: **"Un archivo = un cliente. Elige el cliente que corresponde a la columna Código del cliente."**
+- Estado vacío / sin elegir: **"Elige un cliente para ver cómo se cruzan los códigos."**
+- Cliente seleccionado: chip o label **"Código del cliente asignado a [Nombre]"**
+
+### Qué mostrar cuando el paso no aplica
+
+- **Sin columna de códigos**: una nota informativa breve al final de Card 2: *"El archivo no trae columna de código cliente, así que el cruce se hará solo por SKU."* No se muestra Card 3.
+- **Mono-cliente**: una nota breve en Card 2 o como encabezado de Card 3: *"Este acuerdo tiene un solo cliente vigente, así que los códigos se asignan automáticamente a [Nombre]."* Se muestra Card 3 en modo informativo (sin selector) o, preferiblemente, se omite y se muestra la nota justo antes de Card 4.
+
+Propongo **omitir la card cuando no aplica** y mostrar la nota justo debajo de Card 2 (en el mismo espacio de transición). Así el flujo no salta de Card 2 a Card 4 de forma abrupta: la nota explica por qué no hay Card 3.
+
+### Comportamiento del flujo
+
+1. Usuario sube archivo → Card 2 se renderiza.
+2. La vista evalúa si aplica el paso de mapeo.
+3. Si aplica: se renderiza Card 3 con las radio cards. Nada preseleccionado. Card 4 no aparece hasta que se elija cliente.
+4. Si no aplica: aparece la nota informativa y Card 4 se renderiza de inmediato (con `mappedClientId` automático o `null`).
+5. Al cambiar de cliente en Card 3: se resetea el estado de decisiones del reporte y se recalcula Card 4.
 
 ## Archivos a tocar
 
-1. `**src/lib/agreement-import/types.ts**` — añadir `rawHeaders: string[]` a `ParseResult`.
-2. `**src/lib/agreement-import/parse.ts**` — devolver `rawHeaders` en las rutas `.xlsx`/`.xls` y `.csv`.
-3. `**src/components/agreements/import-report/ImportReport.tsx**` — eliminar `ImportReportHeader` de Card 3.
-4. `**src/components/agreements/import-report/ImportReportHeader.tsx**` — reutilizarlo en Card 2 (no cambia de nombre, solo de ubicación).
-5. **Crear `src/components/agreements/import-report/ImportFileReading.tsx**` — nuevo componente que contiene métricas, columnas mapeadas y columnas ignoradas.
-6. `**src/routes/_authenticated/pgci/agreements.$agreementId.import.tsx**` — renombrar Card 2, usar `ImportFileReading` en su contenido, mantener Card 3 sin cambios salvo quitar el prop `totalRows` que ya no necesita.
+1. **Crear `src/components/agreements/import-report/ClientCodeMapping.tsx**` — nuevo componente con el grid de radio cards, manejo de selección y chip de confirmación.
+2. **Editar `src/routes/_authenticated/pgci/agreements.$agreementId.import.tsx**`:
+  - Añadir estado `mappedClientId`.
+  - Calcular `hasClientCodeValues` a partir de `parsed.rows`.
+  - Calcular `isMultiClient` a partir de `snapshotQuery.data.clients`.
+  - Determinar `autoClientId` para mono-cliente.
+  - Renderizar Card 3 (`ClientCodeMapping`) cuando aplica.
+  - Renderizar Card 4 (renombrado de "3. Cómo se clasifica") solo cuando ya se resolvió el cliente (automático o elegido).
+  - Resetear `classified` y decisiones al cambiar de cliente.
+  - Añadir la nota informativa cuando el paso no aplica.
+3. **Editar `src/components/agreements/import-report/ImportFileReading.tsx**` (opcional, ligero): si conviene, mostrar un resumen de cliente mapeado al final de Card 2 para que el usuario lo vea antes de entrar a Card 3. Esto es secundario; se puede omitir.
 
-## Restricciones respetadas
+## Implementación técnica
 
-- Nada se escribe en base de datos: la Card 2 sigue siendo solo previsualización.
-- Conteo como hecho: solo números, sin juicios de valor.
-- Copy neutro y voz español Colombia (tú).
-- Design system Sumatec: tokens, fuentes, bordes redondeados y componentes existentes (`Card`, `Chip`, `ImportReportHeader`).
-- No se modifica la lógica del diff engine ni el motor de clasificación; solo se consume lo que ya devuelven.
+### Estado en la ruta
 
-Plan aprobado con una precisión importante sobre las columnas ignoradas:
+```typescript
+const [mappedClientId, setMappedClientId] = useState<string | null>(null);
+```
 
-El ParseResult actual NO expone los headers que no mapearon — solo presentColumns 
+### Helpers
 
-(las que sí). Verificado en el código. El parser SÍ lee los headers crudos 
+```typescript
+const hasClientCodeColumn = parsed?.presentColumns.includes("client_code") ?? false;
+const hasClientCodeValues = hasClientCodeColumn && (parsed?.rows.some((r) => r.client_code && r.client_code.trim().length > 0) ?? false);
+const clients = snapshotQuery.data?.clients ?? [];
+const isMultiClient = clients.length > 1;
+const autoClientId = !isMultiClient && clients.length === 1 ? clients[0].id : null;
+```
 
-(readXlsx/readCsv los tienen) pero los descarta al retornar.
+### Reglas de renderizado
 
-Para las "columnas ignoradas" necesitas un cambio mínimo en parse.ts: calcular los 
+- Si `!hasClientCodeValues`: mostrar nota informativa, pasar `mappedClientId = null` a Card 4.
+- Si `autoClientId`: mostrar nota informativa con nombre del cliente, pasar `mappedClientId = autoClientId` a Card 4.
+- Si `isMultiClient && hasClientCodeValues`: mostrar Card 3 con selector. Card 4 solo si `mappedClientId !== null` (o si se quiere mostrar vacío con mensaje de "elige cliente").
 
-headers que no matchean ninguna de las 8 canónicas y exponerlos en ParseResult como 
+### Recálculo
 
-un campo nuevo (ej. ignoredColumns: string[]). Es solo agregar un campo de salida — 
+```typescript
+useEffect(() => {
+  if (!parsed) return;
+  const effectiveClientId = isMultiClient ? mappedClientId : autoClientId;
+  // ... recalcular classifyImport con effectiveClientId, resetear decisiones
+}, [mappedClientId, autoClientId, parsed, snapshotQuery.data]);
+```
 
-NO cambies la lógica de parseo existente, que está verificada. Solo reporta un dato 
+O, alternativamente, manejarlo en el handler `onClientSelect` sin `useEffect` para evitar doble render. La decisión de implementación se deja al momento de construir, pero el resultado debe ser: al cambiar cliente, el reporte se recalcula y las decisiones previas se pierden.
 
-que el parser ya conoce.
+## Notas
 
-El conteo por columna (N/total) sí es 100% derivable de lo que ya devuelve el parser 
+- El motor `diff.ts` ya soporta `mappedClientId`; no requiere cambios.
+- El parser ya expone `client_code` en `ParsedRow`; no requiere cambios.
+- El snapshot ya trae nombres de cliente; no requiere cambios.
+- No se añaden tablas ni migraciones.
 
-(recorrer ParsedRow, contar no-nulos por campo) — ahí no toques nada.
+Plan aprobado con UNA corrección importante que faltaba en mi prompt anterior:
 
-Todo lo demás de tu plan (mover indicadores, renombrar, tu propuesta visual de barras 
+INTOCABLE (guía Paso 3 / spec §7): el selector NO lista todos los clientes vigentes 
 
-de progreso + destacar incompletas) aprobado. 
+del acuerdo. Lista SOLO los clientes sobre los que el usuario tiene 
 
-Confirma: al agregar ignoredColumns al parser, NO modificas parseSku, parseDate, 
+can_manage_client_catalog.
 
-parsePrice, ni la lectura de celdas — solo añades el cálculo de headers no mapeados y 
+La función can_manage_client_catalog existe en la base (verificado). Aplica ese 
 
-el campo de salida.
+filtro donde corresponda — probablemente en getAgreementImportSnapshot, que sí 
+
+tendrá que tocarse para devolver solo los clientes permitidos (o marcar cuáles lo 
+
+son).
+
+Motivo: un usuario no debe poder mapear los códigos de un archivo a un cliente sobre 
+
+el que no tiene autoridad de catálogo. Es una regla de permisos, no de UI.
+
+Casos a manejar:
+
+- Si el usuario tiene permiso sobre 1 solo cliente del acuerdo → ese es el 
+
+  auto-seleccionado (aunque el acuerdo tenga varios clientes). Se comporta como 
+
+  mono-cliente.
+
+- Si no tiene permiso sobre ninguno → el paso debe comunicarlo claramente ("no 
+
+  tienes permiso de catálogo sobre los clientes de este acuerdo"), no mostrar una 
+
+  lista vacía.
+
+Todo lo demás del plan (flujo condicional, radio cards, copy, recálculo al cambiar 
+
+cliente, reset de decisiones) queda aprobado tal cual. Construye con esa corrección.
