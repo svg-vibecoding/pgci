@@ -723,12 +723,13 @@ function DatesBlock({
   pos: PositionSnapshot;
   changes: FieldChange[];
 }) {
-  const start = changes.find((c) => c.field === "start_date") as
-    | Extract<FieldChange, { field: "start_date" }>
-    | undefined;
-  const end = changes.find((c) => c.field === "end_date") as
-    | Extract<FieldChange, { field: "end_date" }>
-    | undefined;
+  type DateChange = { field: "start_date" | "end_date"; from: string | null; to: string | null };
+  const start = changes.find(
+    (c): c is DateChange => c.field === "start_date",
+  );
+  const end = changes.find(
+    (c): c is DateChange => c.field === "end_date",
+  );
 
   const startValue = start ? start.to : pos.start_date;
   const endValue = end ? end.to : pos.end_date;
