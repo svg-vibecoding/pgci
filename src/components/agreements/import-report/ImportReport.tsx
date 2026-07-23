@@ -25,10 +25,12 @@ export function ImportReport({
   result,
   positions,
   catalogBySku,
+  clients,
 }: {
   result: DiffResult;
   positions: PositionSnapshot[];
   catalogBySku: Map<string, CatalogProduct>;
+  clients: Array<{ id: string; name: string }>;
 }) {
   const decisions = useImportDecisions(result);
   const positionsById = useMemo(() => {
@@ -36,6 +38,12 @@ export function ImportReport({
     for (const p of positions) m.set(p.id, p);
     return m;
   }, [positions]);
+  const clientsById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const c of clients) m.set(c.id, c.name);
+    return m;
+  }, [clients]);
+
 
   const byGroup = useMemo(() => {
     const g = {
