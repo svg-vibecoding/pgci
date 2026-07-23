@@ -73,15 +73,18 @@ export function ImportReport({
         <Group2ModifiesPublished
           rows={byGroup.modifies_published}
           positionsById={positionsById}
+          clientsById={clientsById}
           decisions={decisions}
           icon={icon(Wand2)}
         />
         <Group3DraftsAndCodes
           rows={byGroup.modifies_draft_or_adds_code}
           positionsById={positionsById}
+          clientsById={clientsById}
           decisions={decisions}
           icon={icon(FilePlus)}
         />
+
         <Group4NewPositions
           rows={byGroup.not_in_agreement}
           catalogBySku={catalogBySku}
