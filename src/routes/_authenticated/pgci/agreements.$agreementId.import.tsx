@@ -371,7 +371,7 @@ function ImportAgreementView() {
       {parsed && mappingState.kind === "visible" && (
         <Card>
           <CardHeader>
-            <CardTitle className="suma-h4">3. Cliente de los códigos</CardTitle>
+            <CardTitle className="suma-h4">3. Selección del catálogo de cliente</CardTitle>
           </CardHeader>
           <CardContent>
             <ClientCodeMapping
