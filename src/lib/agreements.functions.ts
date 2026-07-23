@@ -3032,9 +3032,10 @@ export const getAgreementImportSnapshot = createServerFn({ method: "GET" })
         .eq("agreement_id", data.agreement_id),
       context.supabase
         .from("agreement_companies")
-        .select("client_id")
+        .select("client_id, clients:client_id(commercial_name, legal_name)")
         .eq("agreement_id", data.agreement_id)
         .is("valid_until", null),
+
     ]);
     if (posRes.error)
       throw new Error(`No se pudo cargar posiciones: ${posRes.error.message}`);
