@@ -272,6 +272,7 @@ export function ChangesGroup({
                   row={r}
                   pos={pos!}
                   changes={changes}
+                  clientsById={clientsById}
                   discarded={decisions.get(r.sourceRow).kind === "ignore"}
                   onDiscard={() =>
                     decisions.set(r.sourceRow, { kind: "ignore" })
@@ -281,6 +282,7 @@ export function ChangesGroup({
                   }
                 />
               ))
+
             )}
           </div>
         </div>
