@@ -83,27 +83,49 @@ function computeChanges(
 
   const present = new Set(presentColumns);
 
-  if (present.has("sale_price") && row.sale_price !== position.sale_price) {
+  if (
+    present.has("sale_price") &&
+    typeof row.sale_price === "number" &&
+    row.sale_price > 0 &&
+    row.sale_price !== position.sale_price
+  ) {
     changes.push({ field: "sale_price", from: position.sale_price, to: row.sale_price });
   }
-  if (present.has("par_price") && row.par_price !== position.par_price) {
+  if (
+    present.has("par_price") &&
+    typeof row.par_price === "number" &&
+    row.par_price > 0 &&
+    row.par_price !== position.par_price
+  ) {
     changes.push({ field: "par_price", from: position.par_price, to: row.par_price });
   }
-  if (present.has("start_date") && row.start_date !== position.start_date) {
+  if (
+    present.has("start_date") &&
+    row.start_date !== null &&
+    row.start_date !== "" &&
+    row.start_date !== position.start_date
+  ) {
     changes.push({ field: "start_date", from: position.start_date, to: row.start_date });
   }
-  if (present.has("end_date") && row.end_date !== position.end_date) {
+  if (
+    present.has("end_date") &&
+    row.end_date !== null &&
+    row.end_date !== "" &&
+    row.end_date !== position.end_date
+  ) {
     changes.push({ field: "end_date", from: position.end_date, to: row.end_date });
   }
   if (present.has("observations")) {
-    const from = position.observations;
     const to = row.observations;
-    // null y "" cuentan como iguales
-    const norm = (v: string | null) => (v === null || v === "" ? null : v);
-    if (norm(from) !== norm(to)) {
-      changes.push({ field: "observations", from, to });
+    if (to !== null && to !== "") {
+      const from = position.observations;
+      const norm = (v: string | null) => (v === null || v === "" ? null : v);
+      if (norm(from) !== norm(to)) {
+        changes.push({ field: "observations", from, to });
+      }
     }
   }
+
 
   // add_client_code / client_code_replace
   if (
