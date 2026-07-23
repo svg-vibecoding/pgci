@@ -3128,13 +3128,27 @@ export const getAgreementImportSnapshot = createServerFn({ method: "GET" })
       const name = cl?.commercial_name ?? cl?.legal_name ?? c.client_id;
       clientsMap.set(c.client_id, name);
     }
-    const clients = Array.from(clientsMap.entries()).map(([id, name]) => ({
+    const clientEntries = Array.from(clientsMap.entries());
+    const perms = await Promise.all(
+      clientEntries.map(async ([id]) => {
+        const { data: canManage, error: rpcErr } = await context.supabase.rpc(
+          "can_manage_client_catalog",
+          { p_client_id: id },
+        );
+        if (rpcErr) throw new Error(rpcErr.message);
+        return { id, can_manage: !!canManage };
+      }),
+    );
+    const canManageById = new Map(perms.map((p) => [p.id, p.can_manage]));
+    const clients = clientEntries.map(([id, name]) => ({
       id,
       name,
+      can_manage: canManageById.get(id) ?? false,
     }));
 
     return { positions, activeClientCodes, clientIds, clients };
   });
+
 
 
 const skuBatchInput = z.object({ skus: z.array(z.string()).max(100000) });

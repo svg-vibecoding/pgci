@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, Download, Paperclip, X } from "lucide-react";
+import { ArrowLeft, Download, Info, Paperclip, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +22,7 @@ import {
 } from "@/lib/agreement-import";
 import { ImportReport } from "@/components/agreements/import-report/ImportReport";
 import { ImportFileReading } from "@/components/agreements/import-report/ImportFileReading";
+import { ClientCodeMapping } from "@/components/agreements/import-report/ClientCodeMapping";
 
 export const Route = createFileRoute(
   "/_authenticated/pgci/agreements/$agreementId/import",
@@ -57,6 +58,7 @@ function ImportAgreementView() {
   );
   const [fileError, setFileError] = useState<string | null>(null);
   const [loadingClassify, setLoadingClassify] = useState(false);
+  const [mappedClientId, setMappedClientId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const snapshotQuery = useQuery({
@@ -73,8 +75,36 @@ function ImportAgreementView() {
     setClassified(null);
     setCatalog(new Map());
     setFileError(null);
+    setMappedClientId(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
+
+  const runClassify = useCallback(
+    (
+      parseResult: {
+        rows: ParsedRow[];
+        presentColumns: PricingField[];
+      },
+      catalogBySku: Map<string, CatalogProduct>,
+      clientIdForRun: string | null,
+    ) => {
+      const snap = snapshotQuery.data;
+      if (!snap) return;
+      const result = classifyImport({
+        rows: parseResult.rows,
+        presentColumns: parseResult.presentColumns,
+        snapshot: {
+          positions: snap.positions,
+          activeClientCodes: snap.activeClientCodes,
+          catalogBySku,
+          clientIds: new Set(snap.clientIds),
+        },
+        mappedClientId: clientIdForRun,
+      });
+      setClassified(result);
+    },
+    [snapshotQuery.data],
+  );
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -125,19 +155,20 @@ function ImportAgreementView() {
       for (const p of catalogList) catalogBySku.set(p.sku, p);
       setCatalog(catalogBySku);
 
-      const result = classifyImport({
-        rows: parseResult.rows,
-        presentColumns: parseResult.presentColumns,
-        snapshot: {
-          positions: snap.positions,
-          activeClientCodes: snap.activeClientCodes,
-          catalogBySku,
-          clientIds: new Set(snap.clientIds),
-        },
-        mappedClientId: null,
-      });
-
-      setClassified(result);
+      // Decidir mappedClientId automático (sin selector) según reglas de negocio.
+      const manageableClients = (snap.clients ?? []).filter((c) => c.can_manage);
+      const hasClientCodeColumn = parseResult.presentColumns.includes("client_code");
+      const hasClientCodeValues =
+        hasClientCodeColumn &&
+        parseResult.rows.some(
+          (r) => r.client_code && r.client_code.trim().length > 0,
+        );
+      let initialClientId: string | null = null;
+      if (hasClientCodeValues && manageableClients.length === 1) {
+        initialClientId = manageableClients[0].id;
+      }
+      setMappedClientId(initialClientId);
+      runClassify(parseResult, catalogBySku, initialClientId);
     } catch {
       setFileError(
         "No fue posible clasificar el archivo. Intenta nuevamente en unos segundos.",
@@ -148,12 +179,64 @@ function ImportAgreementView() {
   }
 
   const totalRows = parsed?.rows.length ?? 0;
-  const hasClientCode =
+  const hasClientCodeColumn =
     parsed?.presentColumns.includes("client_code") ?? false;
+  const hasClientCodeValues = useMemo(
+    () =>
+      hasClientCodeColumn &&
+      (parsed?.rows.some(
+        (r) => r.client_code && r.client_code.trim().length > 0,
+      ) ??
+        false),
+    [hasClientCodeColumn, parsed],
+  );
   const snapPositions = useMemo(
     () => snapshotQuery.data?.positions ?? [],
     [snapshotQuery.data],
   );
+  const allClients = snapshotQuery.data?.clients ?? [];
+  const manageableClients = useMemo(
+    () => allClients.filter((c) => c.can_manage),
+    [allClients],
+  );
+
+  // Estado de la Card 3 (mapeo de cliente)
+  type MappingState =
+    | { kind: "hidden_no_codes" }
+    | { kind: "hidden_auto"; clientName: string }
+    | { kind: "hidden_no_permission" }
+    | { kind: "visible"; mustChoose: boolean };
+
+  const mappingState: MappingState = useMemo(() => {
+    if (!parsed) return { kind: "hidden_no_codes" };
+    if (!hasClientCodeValues) return { kind: "hidden_no_codes" };
+    if (manageableClients.length === 0) return { kind: "hidden_no_permission" };
+    if (manageableClients.length === 1) {
+      return { kind: "hidden_auto", clientName: manageableClients[0].name };
+    }
+    return { kind: "visible", mustChoose: mappedClientId === null };
+  }, [parsed, hasClientCodeValues, manageableClients, mappedClientId]);
+
+  function onClientSelect(id: string) {
+    if (id === mappedClientId) return;
+    setMappedClientId(id);
+    if (parsed) {
+      runClassify(parsed, catalog, id);
+    }
+  }
+
+  // Si el snapshot llega tarde y ya había parsed, correr clasificación una vez.
+  useEffect(() => {
+    if (parsed && snapshotQuery.data && !classified && !loadingClassify) {
+      runClassify(parsed, catalog, mappedClientId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [snapshotQuery.data]);
+
+  const canShowReport =
+    !!classified &&
+    !!parsed &&
+    (mappingState.kind !== "visible" || !mappingState.mustChoose);
 
   return (
     <div className="space-y-6">
@@ -253,32 +336,93 @@ function ImportAgreementView() {
               classifiedRows={classified?.rows ?? []}
               activeClientCodes={snapshotQuery.data?.activeClientCodes ?? []}
             />
-            {!hasClientCode && (
-              <p className="mt-4 suma-caption text-text-tertiary">
-                Sin columna de código cliente: el cruce se hace solo por SKU.
-              </p>
-            )}
           </CardContent>
         </Card>
       )}
 
-      {/* Card 3: cómo se clasifica */}
-      {classified && (
+      {/* Nota informativa cuando el paso de mapeo no aplica */}
+      {parsed && mappingState.kind === "hidden_no_codes" && hasClientCodeColumn === false && (
+        <MappingNote>
+          El archivo no trae la columna <strong>Código del cliente</strong>. El
+          cruce se hace solo por SKU.
+        </MappingNote>
+      )}
+      {parsed && mappingState.kind === "hidden_no_codes" && hasClientCodeColumn && (
+        <MappingNote>
+          La columna <strong>Código del cliente</strong> no trae valores. El
+          cruce se hace solo por SKU.
+        </MappingNote>
+      )}
+      {parsed && mappingState.kind === "hidden_auto" && (
+        <MappingNote>
+          Los códigos del archivo se asignan automáticamente a{" "}
+          <strong>{mappingState.clientName}</strong>.
+        </MappingNote>
+      )}
+      {parsed && mappingState.kind === "hidden_no_permission" && (
+        <MappingNote tone="warning">
+          No tienes permiso de catálogo sobre ninguno de los clientes de este
+          acuerdo, así que la columna <strong>Código del cliente</strong> no se
+          puede mapear. El cruce se hace solo por SKU.
+        </MappingNote>
+      )}
+
+      {/* Card 3: cliente de los códigos (solo cuando hay que elegir) */}
+      {parsed && mappingState.kind === "visible" && (
         <Card>
           <CardHeader>
-            <CardTitle className="suma-h4">3. Cómo se clasifica</CardTitle>
+            <CardTitle className="suma-h4">3. Cliente de los códigos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ClientCodeMapping
+              clients={allClients}
+              selectedId={mappedClientId}
+              onSelect={onClientSelect}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Card 4: cómo se clasifica */}
+      {canShowReport && classified && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="suma-h4">
+              {mappingState.kind === "visible" ? "4." : "3."} Cómo se clasifica
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <ImportReport
               result={classified}
               positions={snapPositions}
               catalogBySku={catalog}
-              clients={snapshotQuery.data?.clients ?? []}
+              clients={allClients}
             />
-
           </CardContent>
         </Card>
       )}
+    </div>
+  );
+}
+
+function MappingNote({
+  children,
+  tone = "info",
+}: {
+  children: React.ReactNode;
+  tone?: "info" | "warning";
+}) {
+  return (
+    <div
+      className={
+        "flex items-start gap-2 rounded-lg border px-4 py-3 " +
+        (tone === "warning"
+          ? "border-warning/40 bg-warning-soft text-text-primary"
+          : "border-accent/30 bg-accent-soft text-text-primary")
+      }
+    >
+      <Info className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+      <p className="suma-body">{children}</p>
     </div>
   );
 }
