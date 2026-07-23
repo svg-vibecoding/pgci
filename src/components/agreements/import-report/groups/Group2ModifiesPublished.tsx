@@ -19,7 +19,7 @@ export function Group2ModifiesPublished({
     <ChangesGroup
       id="g2"
       icon={icon}
-      title="Cambios en posiciones publicadas en el acuerdo"
+      title="Actualizaciones en posiciones publicadas en el acuerdo"
       rows={rows}
       positionsById={positionsById}
       clientsById={clientsById}

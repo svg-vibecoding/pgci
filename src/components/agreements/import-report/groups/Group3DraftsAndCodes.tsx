@@ -19,7 +19,7 @@ export function Group3DraftsAndCodes({
     <ChangesGroup
       id="g3"
       icon={icon}
-      title="Cambios en posiciones en gestión"
+      title="Actualizaciones en posiciones en gestión"
       rows={rows}
       positionsById={positionsById}
       clientsById={clientsById}
