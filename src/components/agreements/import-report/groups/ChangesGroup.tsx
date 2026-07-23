@@ -82,6 +82,7 @@ export function ChangesGroup({
   title,
   rows,
   positionsById,
+  clientsById,
   decisions,
   emptyMessage,
 }: {
@@ -90,12 +91,14 @@ export function ChangesGroup({
   title: string;
   rows: ClassifiedRow[];
   positionsById: Map<string, PositionSnapshot>;
+  clientsById: Map<string, string>;
   decisions: DecisionsState;
   emptyMessage: string;
 }) {
   const [filter, setFilter] = useState<FilterKey>("all");
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+
 
   const enriched = useMemo(() => {
     return rows
