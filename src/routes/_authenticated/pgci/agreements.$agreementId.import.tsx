@@ -273,7 +273,9 @@ function ImportAgreementView() {
               result={classified}
               positions={snapPositions}
               catalogBySku={catalog}
+              clients={snapshotQuery.data?.clients ?? []}
             />
+
           </CardContent>
         </Card>
       )}
