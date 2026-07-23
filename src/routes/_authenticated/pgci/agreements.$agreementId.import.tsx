@@ -388,7 +388,7 @@ function ImportAgreementView() {
         <Card>
           <CardHeader>
             <CardTitle className="suma-h4">
-              {mappingState.kind === "visible" ? "4." : "3."} Cómo se clasifica
+              {mappingState.kind === "visible" ? "4." : "3."}&nbsp;Decisiones
             </CardTitle>
           </CardHeader>
           <CardContent>
