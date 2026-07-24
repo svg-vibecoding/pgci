@@ -98,7 +98,6 @@ export function ImportReport({
         />
         <Group6NotProcessable
           rows={byGroup.not_processable}
-          catalogBySku={catalogBySku}
           icon={icon(Ban)}
         />
       </div>

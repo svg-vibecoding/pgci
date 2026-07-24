@@ -180,6 +180,18 @@ function isEmpty(value: unknown): boolean {
   return false;
 }
 
+function rawValueToString(value: unknown): string {
+  if (value == null) return "";
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return "";
+    const y = value.getUTCFullYear();
+    const m = String(value.getUTCMonth() + 1).padStart(2, "0");
+    const d = String(value.getUTCDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+  return String(value).trim();
+}
+
 function parseRow(
   raw: RawRow,
   sourceRow: number,
@@ -225,7 +237,11 @@ function parseRow(
         if (isEmpty(rawVal)) break;
         const r = parsePrice(rawVal);
         if (!r.ok) {
-          cellErrors.push({ field, reason: "Precio no reconocido" });
+          cellErrors.push({
+            field,
+            reason: "Precio no reconocido",
+            rawValue: rawValueToString(rawVal),
+          });
         } else {
           if (field === "sale_price") out.sale_price = r.value;
           else out.par_price = r.value;
@@ -237,7 +253,11 @@ function parseRow(
         if (isEmpty(rawVal)) break;
         const r = parseDate(rawVal);
         if (!r.ok) {
-          cellErrors.push({ field, reason: "Fecha no reconocida" });
+          cellErrors.push({
+            field,
+            reason: "Fecha no reconocida",
+            rawValue: rawValueToString(rawVal),
+          });
         } else {
           if (field === "start_date") out.start_date = r.value;
           else out.end_date = r.value;

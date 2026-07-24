@@ -14,6 +14,8 @@ export type PricingField =
 export type CellError = {
   field: PricingField;
   reason: string;
+  /** Valor crudo tal cual llegó del archivo (para mostrarlo al usuario). */
+  rawValue?: string;
 };
 
 export type ParsedRow = {

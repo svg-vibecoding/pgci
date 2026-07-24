@@ -1,148 +1,268 @@
 import { useMemo, useState } from "react";
 import { Download } from "lucide-react";
-import type {
-  CatalogProduct,
-  ClassifiedRow,
-} from "@/lib/agreement-import";
+import * as XLSX from "xlsx";
+import type { CellError, ClassifiedRow } from "@/lib/agreement-import";
+import { CANONICAL_HEADERS } from "@/lib/agreement-import";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   GroupShell,
-  ChangeKindChip,
   ReportTable,
   Th,
-  ProductCell,
-  ClientCodeCell,
+  FilterTab,
+  FilterTabsBar,
 } from "../parts";
-import { describeRowReason, reasonKind } from "../labels";
 import { EmptyGroup } from "./Group1RequiresDecision";
+
+/**
+ * Group 6 — Filas no procesables.
+ *
+ * Agrupa POR FILA del archivo (no por error). Cada fila puede tener varios
+ * problemas. Los problemas de SKU (sku_not_in_catalog / no_anchor) afectan
+ * a la fila entera y ocultan cualquier otro problema — si el producto no
+ * existe, señalar el precio no aporta.
+ */
+
+type FilterKey = "all" | "sku" | "dates" | "prices";
+
+type SkuProblem = { kind: "sku"; description: string };
+type CellProblem = {
+  kind: "cell";
+  field: CellError["field"];
+  fieldLabel: string;
+  reason: string; // "no reconocida" | "no reconocido"
+  rawValue: string;
+};
+type Problem = SkuProblem | CellProblem;
+
+function reasonPhrase(field: CellError["field"], raw: string): string {
+  // Concordancia: fechas → "no reconocida", precios → "no reconocido".
+  const s = raw.toLowerCase();
+  if (s.includes("fecha")) return "no reconocida";
+  if (s.includes("precio")) return "no reconocido";
+  // Fallback por si el motor introduce nuevos motivos.
+  return field === "start_date" || field === "end_date"
+    ? "no reconocida"
+    : "no reconocido";
+}
+
+function rowProblems(r: ClassifiedRow): Problem[] {
+  if (r.reason === "no_anchor") {
+    return [{ kind: "sku", description: "SKU no asignado" }];
+  }
+  if (r.reason === "sku_not_in_catalog") {
+    return [{ kind: "sku", description: "SKU no identificado en el catálogo" }];
+  }
+  const errs = r.row.cellErrors ?? [];
+  return errs.map<Problem>((e) => ({
+    kind: "cell",
+    field: e.field,
+    fieldLabel: CANONICAL_HEADERS[e.field],
+    reason: reasonPhrase(e.field, e.reason),
+    rawValue: e.rawValue ?? "",
+  }));
+}
+
+function hasKind(problems: Problem[], kind: FilterKey): boolean {
+  if (kind === "sku") return problems.some((p) => p.kind === "sku");
+  if (kind === "dates")
+    return problems.some(
+      (p) =>
+        p.kind === "cell" &&
+        (p.field === "start_date" || p.field === "end_date"),
+    );
+  if (kind === "prices")
+    return problems.some(
+      (p) =>
+        p.kind === "cell" &&
+        (p.field === "sale_price" || p.field === "par_price"),
+    );
+  return true;
+}
 
 export function Group6NotProcessable({
   rows,
-  catalogBySku,
   icon,
 }: {
   rows: ClassifiedRow[];
-  catalogBySku: Map<string, CatalogProduct>;
   icon?: React.ReactNode;
 }) {
-  const [filter, setFilter] = useState<string>("all");
+  const [filter, setFilter] = useState<FilterKey>("all");
 
-  const kinds = useMemo(() => {
-    const m = new Map<string, number>();
-    for (const r of rows) {
-      const k = reasonKind(r);
-      m.set(k, (m.get(k) ?? 0) + 1);
-    }
-    return Array.from(m.entries());
-  }, [rows]);
-
-  const visible = rows.filter(
-    (r) => filter === "all" || reasonKind(r) === filter,
+  const enriched = useMemo(
+    () => rows.map((r) => ({ row: r, problems: rowProblems(r) })),
+    [rows],
   );
 
-  function downloadCsv() {
-    const header = ["fila", "sku", "codigo_cliente", "motivo"].join(",");
-    const body = rows
-      .map((r) =>
-        [
-          r.sourceRow,
-          csv(r.row.sku ?? ""),
-          csv(r.row.client_code ?? ""),
-          csv(describeRowReason(r)),
-        ].join(","),
-      )
-      .join("\n");
-    const blob = new Blob(["\uFEFF" + header + "\n" + body], {
-      type: "text/csv;charset=utf-8",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "no_procesables.csv";
-    a.click();
-    URL.revokeObjectURL(url);
+  const counts = useMemo(() => {
+    let sku = 0;
+    let dates = 0;
+    let prices = 0;
+    for (const { problems } of enriched) {
+      if (hasKind(problems, "sku")) sku++;
+      if (hasKind(problems, "dates")) dates++;
+      if (hasKind(problems, "prices")) prices++;
+    }
+    return { sku, dates, prices };
+  }, [enriched]);
+
+  const visible = enriched.filter(({ problems }) => hasKind(problems, filter));
+
+  function downloadXlsx() {
+    const data = enriched.map(({ row, problems }) => ({
+      Fila: row.sourceRow,
+      [CANONICAL_HEADERS.sku]: row.row.sku ?? "",
+      [CANONICAL_HEADERS.client_code]: row.row.client_code ?? "",
+      Motivos: problems
+        .map((p) =>
+          p.kind === "sku"
+            ? p.description
+            : `${p.fieldLabel}: ${p.reason}${p.rawValue ? ` (${p.rawValue})` : ""}`,
+        )
+        .join(" · "),
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "No procesables");
+    XLSX.writeFile(wb, "filas_no_procesables.xlsx");
   }
 
   return (
     <GroupShell
       id="g6"
       icon={icon}
-      title="No procesables"
+      title="Filas no procesables"
       count={rows.length}
-      hint="Filas que el sistema no puede clasificar. Corrige el archivo y vuelve a subirlo."
+      hint="Filas del archivo que el sistema no logra clasificar para importar. Resuelve las inconsistencias para actualizar."
       tone="muted"
-      toolbar={
-        rows.length > 0 && (
-          <>
-            <ChangeKindChip active={filter === "all"} onClick={() => setFilter("all")}>
-              Todos
-            </ChangeKindChip>
-            {kinds.map(([k, n]) => (
-              <ChangeKindChip
-                key={k}
-                active={filter === k}
-                onClick={() => setFilter(k)}
-                count={n}
-              >
-                {k}
-              </ChangeKindChip>
-            ))}
-            <Button size="sm" variant="outline" onClick={downloadCsv}>
-              <Download className="mr-1 h-3.5 w-3.5" /> Descargar CSV
-            </Button>
-          </>
-        )
-      }
     >
       {rows.length === 0 ? (
         <EmptyGroup message="Todas las filas se pudieron procesar." />
       ) : (
-        <ReportTable
-          head={
-            <>
-              <Th>Producto (archivo)</Th>
-              <Th>Código cliente</Th>
-              <Th>Motivo</Th>
-            </>
-          }
-        >
-          {visible.slice(0, 500).map((r) => {
-            const sku = r.row.sku ?? null;
-            const catalog = sku ? catalogBySku.get(sku) : undefined;
-            return (
-              <tr key={r.sourceRow}>
-                <ProductCell
-                  sku={sku}
-                  brand={catalog?.commercial_brand ?? null}
-                  description={catalog?.erp_description ?? null}
-                  sourceRow={r.sourceRow}
-                  muted
-                />
-                <ClientCodeCell
-                  code={r.row.client_code}
-                  description={r.row.client_description}
-                  muted
-                />
-                <td className="px-2 py-1.5 suma-caption text-warning-strong align-top">
-                  {describeRowReason(r)}
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <FilterTabsBar>
+              <FilterTab
+                active={filter === "all"}
+                onClick={() => setFilter("all")}
+                label="Todas"
+                count={rows.length}
+              />
+              <FilterTab
+                active={filter === "sku"}
+                onClick={() => setFilter("sku")}
+                label="Código Jaivaná"
+                count={counts.sku}
+              />
+              <FilterTab
+                active={filter === "dates"}
+                onClick={() => setFilter("dates")}
+                label="Fechas"
+                count={counts.dates}
+              />
+              <FilterTab
+                active={filter === "prices"}
+                onClick={() => setFilter("prices")}
+                label="Precios"
+                count={counts.prices}
+              />
+            </FilterTabsBar>
+            <Button size="sm" variant="outline" onClick={downloadXlsx}>
+              <Download className="mr-1 h-3.5 w-3.5" /> Descargar Excel
+            </Button>
+          </div>
+
+          <ReportTable
+            head={
+              <>
+                <Th className="w-[220px]">Fila en archivo</Th>
+                <Th>Detalles</Th>
+              </>
+            }
+          >
+            {visible.length === 0 ? (
+              <tr>
+                <td colSpan={2} className="px-4 py-8 text-center">
+                  <p className="suma-caption text-text-tertiary">
+                    No hay filas en este filtro.
+                  </p>
                 </td>
               </tr>
-            );
-          })}
-          {visible.length > 500 && (
-            <tr>
-              <td colSpan={3} className="px-2 py-2 suma-caption text-text-tertiary">
-                …y {visible.length - 500} más.
-              </td>
-            </tr>
-          )}
-        </ReportTable>
+            ) : (
+              visible.map(({ row, problems }) => (
+                <tr
+                  key={row.sourceRow}
+                  className="border-b border-border/60 bg-card last:border-b-0 hover:bg-surface-page"
+                >
+                  <td className="px-4 py-3 align-top">
+                    <div className="flex items-baseline gap-2">
+                      <span className="tabular-nums text-[11px] text-text-tertiary">
+                        Fila
+                      </span>
+                      <span className="tabular-nums text-[13px] font-semibold text-text-primary">
+                        #{row.sourceRow}
+                      </span>
+                    </div>
+                    <div className="mt-0.5 font-mono text-[12.5px] text-text-secondary">
+                      {row.row.client_code || "—"}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 align-top">
+                    <ul className="space-y-1">
+                      {problems.map((p, i) => (
+                        <li
+                          key={i}
+                          className="text-[13px] leading-[1.4] text-text-primary"
+                        >
+                          {p.kind === "sku" ? (
+                            <span>{p.description}</span>
+                          ) : (
+                            <ProblemLine
+                              label={p.fieldLabel}
+                              reason={p.reason}
+                              rawValue={p.rawValue}
+                            />
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </td>
+                </tr>
+              ))
+            )}
+          </ReportTable>
+        </div>
       )}
     </GroupShell>
   );
 }
 
-function csv(s: string): string {
-  if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
-  return s;
+function ProblemLine({
+  label,
+  reason,
+  rawValue,
+}: {
+  label: string;
+  reason: string;
+  rawValue: string;
+}) {
+  return (
+    <span>
+      <span className="text-text-tertiary">·</span>{" "}
+      <span className="font-semibold text-text-primary">{label}</span>
+      <span className="text-text-secondary">: {reason}</span>
+      {rawValue && (
+        <>
+          <span className="text-text-tertiary"> · </span>
+          <span
+            className={cn(
+              "font-mono font-semibold text-text-primary break-all",
+            )}
+          >
+            {rawValue}
+          </span>
+        </>
+      )}
+    </span>
+  );
 }
