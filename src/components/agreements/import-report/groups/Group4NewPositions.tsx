@@ -154,15 +154,15 @@ export function Group4NewPositions({
 
           <div className="overflow-hidden">
             <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-[10.5px] uppercase tracking-wide text-text-tertiary border-b border-border/60">
-                  <th className="w-10 px-3 py-2 text-center font-normal">-</th>
-                  <th className="px-2 py-2 font-normal">Sumatec</th>
-                  <th className="px-2 py-2 font-normal">Código del cliente</th>
-                  <th className="px-2 py-2 font-normal text-right whitespace-nowrap">
+              <thead className="bg-surface-page">
+                <tr className="border-b border-border text-left">
+                  <th scope="col" className="suma-body w-10 px-4 py-2.5 text-center font-normal text-text-tertiary">-</th>
+                  <th scope="col" className="suma-body px-4 py-2.5 font-normal text-text-tertiary whitespace-nowrap">Sumatec</th>
+                  <th scope="col" className="suma-body px-4 py-2.5 font-normal text-text-tertiary whitespace-nowrap">Código del cliente</th>
+                  <th scope="col" className="suma-body px-4 py-2.5 font-normal text-right whitespace-nowrap text-text-tertiary">
                     Vigencia
                   </th>
-                  <th className="px-2 py-2 font-normal text-right whitespace-nowrap">
+                  <th scope="col" className="suma-body px-4 py-2.5 font-normal text-right whitespace-nowrap text-text-tertiary">
                     Precios de venta
                   </th>
                 </tr>
