@@ -122,7 +122,7 @@ export function Group4NewPositions({
                 }
                 disabled={discarded === 0}
               >
-                Crear todas ({discarded})
+                Confirmar todas ({discarded})
               </Button>
             </div>
           </div>
