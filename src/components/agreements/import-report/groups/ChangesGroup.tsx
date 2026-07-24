@@ -756,7 +756,7 @@ function DatesBlock({
       label="Vigencias"
       counter={counterText(opsFromDates(changes), "m")}
     >
-      <div className="grid grid-cols-[1fr_auto_1fr] items-baseline gap-2 tabular-nums">
+      <div className="flex items-baseline gap-6 tabular-nums">
         <DateField
           label="Desde"
           value={startValue}
@@ -765,7 +765,7 @@ function DatesBlock({
           missing={startMissing}
           missingLabel="Sin fecha de inicio"
         />
-        <span className="text-text-tertiary self-center">→</span>
+        <span className="text-text-tertiary self-center -mx-3">→</span>
         <DateField
           label="Hasta"
           value={endValue}
