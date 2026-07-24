@@ -178,8 +178,8 @@ function DecisionRow({
             </div>
             <div className="overflow-x-auto rounded border border-border/60 bg-white">
               <table className="w-full text-sm">
-                <thead className="bg-muted/30 text-left text-[10.5px] uppercase tracking-wide text-text-tertiary">
-                  <tr>
+                <thead className="bg-surface-page">
+                  <tr className="border-b border-border text-left">
                     <Th>Estado</Th>
                     <Th align="right">Precio</Th>
                     <Th>Vigencia</Th>
