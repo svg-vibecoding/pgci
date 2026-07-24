@@ -276,13 +276,13 @@ function PositionRow({
             <span className="text-[11px] text-text-tertiary tabular-nums">
               #{row.sourceRow}
             </span>
-            <span className="text-text-tertiary">·</span>
+            <span className="text-text-tertiary">{"\n"}</span>
             <span className="font-mono text-[13px] font-semibold text-text-primary">
               {sku || "—"}
             </span>
             {brand && (
               <>
-                <span className="text-text-tertiary">·</span>
+                <span className="text-text-tertiary">{"\n"}</span>
                 <span className="text-[11px] font-semibold uppercase tracking-wide text-accent">
                   {brand}
                 </span>
