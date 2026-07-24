@@ -225,7 +225,11 @@ function parseRow(
         if (isEmpty(rawVal)) break;
         const r = parsePrice(rawVal);
         if (!r.ok) {
-          cellErrors.push({ field, reason: "Precio no reconocido" });
+          cellErrors.push({
+            field,
+            reason: "Precio no reconocido",
+            rawValue: rawValueToString(rawVal),
+          });
         } else {
           if (field === "sale_price") out.sale_price = r.value;
           else out.par_price = r.value;
@@ -237,7 +241,11 @@ function parseRow(
         if (isEmpty(rawVal)) break;
         const r = parseDate(rawVal);
         if (!r.ok) {
-          cellErrors.push({ field, reason: "Fecha no reconocida" });
+          cellErrors.push({
+            field,
+            reason: "Fecha no reconocida",
+            rawValue: rawValueToString(rawVal),
+          });
         } else {
           if (field === "start_date") out.start_date = r.value;
           else out.end_date = r.value;
