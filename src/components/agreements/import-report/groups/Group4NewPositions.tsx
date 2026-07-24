@@ -138,7 +138,7 @@ export function Group4NewPositions({
               <FilterTab
                 active={filter === "selected"}
                 onClick={() => setFilter("selected")}
-                label="Se crearán"
+                label="Confirmadas"
                 count={marked}
               />
               <FilterTab
