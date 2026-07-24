@@ -281,12 +281,9 @@ function PositionRow({
               {sku || "—"}
             </span>
             {brand && (
-              <>
-                <span className="text-text-tertiary">·</span>
-                <span className="text-[11px] font-semibold uppercase tracking-wide text-accent">
-                  {brand}
-                </span>
-              </>
+              <span className="ml-1 text-[11px] font-semibold uppercase tracking-wide text-accent">
+                {brand}
+              </span>
             )}
           </div>
           {description && (
