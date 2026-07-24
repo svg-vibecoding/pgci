@@ -77,13 +77,15 @@ export function Group4NewPositions({
       icon={icon}
       title="Nuevas posiciones"
       count={rows.length}
+      hint="Estas filas pueden crearse como posiciones del acuerdo. Las que selecciones quedarán en gestión, listas para completar y publicar."
       headerRight={
         rows.length > 0 ? (
           <span className="suma-caption text-text-tertiary tabular-nums font-normal">
+            <span className="font-semibold text-text-primary">{rows.length}</span>{" "}
+            {rows.length === 1 ? "posición nueva" : "posiciones nuevas"}{" "}
+            <span className="text-text-tertiary">·</span>{" "}
             <span className="font-semibold text-text-primary">{marked}</span>{" "}
-            {marked === 1 ? "posición nueva" : "posiciones nuevas"}{" "}
-            <span className="font-semibold text-text-primary">{discarded}</span>{" "}
-            {discarded === 1 ? "descartada" : "descartadas"}
+            se {marked === 1 ? "creará" : "crearán"}
           </span>
         ) : undefined
       }
@@ -112,7 +114,7 @@ export function Group4NewPositions({
                 onClick={() => decisions.setMany(rows, { kind: "ignore" })}
                 disabled={marked === 0}
               >
-                Descartar todas ({marked})
+                Descartar todas
               </Button>
               <Button
                 size="sm"
@@ -122,7 +124,7 @@ export function Group4NewPositions({
                 }
                 disabled={discarded === 0}
               >
-                Confirmar todas ({discarded})
+                Crear todas
               </Button>
             </div>
           </div>
@@ -138,7 +140,7 @@ export function Group4NewPositions({
               <FilterTab
                 active={filter === "selected"}
                 onClick={() => setFilter("selected")}
-                label="Confirmadas"
+                label="Se crearán"
                 count={marked}
               />
               <FilterTab
