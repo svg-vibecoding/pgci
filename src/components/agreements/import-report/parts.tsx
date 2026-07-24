@@ -146,8 +146,8 @@ export function ReportTable({
       )}
     >
       <table className="w-full text-sm">
-        <thead className="bg-muted/40">
-          <tr className="text-left text-[10.5px] uppercase tracking-wide text-text-tertiary">
+        <thead className="bg-surface-page">
+          <tr className="border-b border-border text-left">
             {head}
           </tr>
         </thead>
