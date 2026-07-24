@@ -6,18 +6,31 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Chip, StatusBadge } from "@/components/sumatec";
-import { formatMoneyCOP } from "@/lib/format";
+import { Chip, StatusBadge, IdentityCell } from "@/components/sumatec";
+import { formatMoneyCOP, formatDateShort } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { FieldChange } from "@/lib/agreement-import";
 import { FIELD_LABEL, statusMeta } from "./labels";
 
 /**
- * GroupShell — acordeón uniforme para cada grupo del reporte.
- * Colapsado por defecto. Fila limpia: (icono) + título + conteo + chevron.
- * hint y toolbar se muestran dentro del cuerpo al abrir, para no competir
- * con el clic del acordeón.
+ * parts.tsx — piezas compartidas del reporte de importación.
+ *
+ * Regla del sistema (no negociable):
+ *  - Toda tabla del reporte usa el MISMO estilo de header/celdas que el
+ *    DataTable de Sumatec: header 11px uppercase tertiary sobre `surface-page`,
+ *    celdas `px-4 py-3 align-top`, texto 13px Roboto, numéricas a la derecha
+ *    con `tabular-nums`, filas separadas por `border-b border-border/60`.
+ *  - Las celdas se importan desde este módulo (`ProductCell`, `StatusCell`,
+ *    `PriceCell`, `DateRangeCell`, `ClientCodeCell`). No re-implementar
+ *    layouts equivalentes por grupo.
+ *  - Los tabs de filtro usan `FilterTab` (sublínea underline en text-primary),
+ *    consistente con los tabs de posiciones del acuerdo.
  */
+
+// ---------------------------------------------------------------------------
+// Contenedor de grupo (acordeón)
+// ---------------------------------------------------------------------------
+
 export function GroupShell({
   id,
   icon,
@@ -48,7 +61,7 @@ export function GroupShell({
           "overflow-hidden rounded-lg border !border-b",
           tone === "muted"
             ? "border-border/60 bg-muted/20"
-            : "border-border bg-white",
+            : "border-border bg-card",
         )}
       >
         <AccordionTrigger className="group px-4 py-3 hover:no-underline [&>svg]:hidden">
@@ -97,7 +110,51 @@ export function GroupShell({
   );
 }
 
-/** Chip tipo-cambio para filtros de G2/G6. */
+// ---------------------------------------------------------------------------
+// Filtros de tabla — tabs underline (mismo patrón que la app)
+// ---------------------------------------------------------------------------
+
+export function FilterTab({
+  active,
+  onClick,
+  label,
+  count,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+  count?: number;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "relative -mb-px border-b-2 px-3 py-2 text-[13px] transition-colors",
+        active
+          ? "border-text-primary font-semibold text-text-primary"
+          : "border-transparent font-normal text-text-tertiary hover:text-text-primary",
+      )}
+    >
+      {label}
+      {count != null && (
+        <span className="ml-1 tabular-nums font-normal opacity-70">
+          ({count})
+        </span>
+      )}
+    </button>
+  );
+}
+
+export function FilterTabsBar({ children }: { children: ReactNode }) {
+  return (
+    <div className="border-b border-border/60">
+      <div className="flex flex-wrap items-center gap-1">{children}</div>
+    </div>
+  );
+}
+
+/** Chip tipo-cambio para toolbars (G6). Usa el token Chip de Sumatec. */
 export function ChangeKindChip({
   active,
   onClick,
@@ -141,17 +198,15 @@ export function ReportTable({
   return (
     <div
       className={cn(
-        "overflow-x-auto rounded-md border border-border/60",
+        "overflow-hidden rounded-lg border border-border bg-card",
         compact && "text-xs",
       )}
     >
-      <table className="w-full text-sm">
+      <table className="w-full border-collapse font-body text-[13px] leading-5 text-text-secondary">
         <thead className="bg-surface-page">
-          <tr className="border-b border-border text-left">
-            {head}
-          </tr>
+          <tr className="border-b border-border">{head}</tr>
         </thead>
-        <tbody className="divide-y divide-border/60">{children}</tbody>
+        <tbody>{children}</tbody>
       </table>
     </div>
   );
@@ -181,7 +236,46 @@ export function Th({
   );
 }
 
-/** Cabecera "Producto" — SKU (mono) + descripción debajo + marca en pill. */
+/** Fila del reporte — mismo border/hover que DataTable. */
+export function Tr({
+  children,
+  onClick,
+  className,
+  highlighted,
+}: {
+  children: ReactNode;
+  onClick?: () => void;
+  className?: string;
+  highlighted?: "warning" | "info" | "success" | null;
+}) {
+  const hl =
+    highlighted === "warning"
+      ? "bg-warning-soft/40"
+      : highlighted === "info"
+        ? "bg-info-soft/40"
+        : highlighted === "success"
+          ? "bg-success-soft/30"
+          : "bg-card hover:bg-surface-page";
+  return (
+    <tr
+      onClick={onClick}
+      className={cn(
+        "border-b border-border/60 transition-colors last:border-b-0",
+        hl,
+        onClick && "cursor-pointer",
+        className,
+      )}
+    >
+      {children}
+    </tr>
+  );
+}
+
+/**
+ * ProductCell — celda de producto para las tablas del reporte.
+ * Reutiliza IdentityCell del sistema para SKU + descripción y añade una
+ * línea meta discreta con `#fila` y la marca comercial.
+ */
 export function ProductCell({
   sku,
   brand,
@@ -196,27 +290,22 @@ export function ProductCell({
   muted?: boolean;
 }) {
   return (
-    <td className={cn("px-2 py-1.5 align-top", muted && "opacity-60")}>
-      <div className="flex items-center gap-2 flex-wrap">
-        {sourceRow != null && (
-          <span className="text-[10.5px] text-text-tertiary tabular-nums">
-            #{sourceRow}
-          </span>
-        )}
-        {brand && (
-          <span className="text-[10.5px] font-semibold uppercase tracking-wide text-accent">
-            {brand}
-          </span>
-        )}
-        <span className="font-mono text-sm font-semibold text-foreground">
-          {sku || "—"}
-        </span>
-      </div>
-      {description && (
-        <div className="text-xs text-muted-foreground line-clamp-2 max-w-[42ch]">
-          {description}
+    <td className={cn("px-4 py-3 align-top", muted && "opacity-60")}>
+      {(sourceRow != null || brand) && (
+        <div className="mb-0.5 flex items-center gap-2 text-[11px]">
+          {sourceRow != null && (
+            <span className="tabular-nums text-text-tertiary">
+              #{sourceRow}
+            </span>
+          )}
+          {brand && (
+            <span className="font-semibold uppercase tracking-wide text-accent">
+              {brand}
+            </span>
+          )}
         </div>
       )}
+      <IdentityCell code={sku || "—"} description={description ?? undefined} />
     </td>
   );
 }
@@ -232,14 +321,24 @@ export function StatusCell({
 }) {
   if (!status)
     return (
-      <td className={cn("px-2 py-1.5 text-text-tertiary", muted && "opacity-60")}>
+      <td
+        className={cn(
+          "px-4 py-3 align-top text-text-tertiary",
+          muted && "opacity-60",
+        )}
+      >
         —
       </td>
     );
   const m = statusMeta(status);
   return (
-    <td className={cn("px-2 py-1.5 whitespace-nowrap", muted && "opacity-60")}>
-      <StatusBadge status={m.badge} label={overrideLabel ?? m.label} />
+    <td
+      className={cn(
+        "whitespace-nowrap px-4 py-3 align-top",
+        muted && "opacity-60",
+      )}
+    >
+      <StatusBadge size="sm" status={m.badge} label={overrideLabel ?? m.label} />
     </td>
   );
 }
@@ -254,24 +353,13 @@ export function PriceCell({
   return (
     <td
       className={cn(
-        "px-2 py-1.5 whitespace-nowrap tabular-nums text-right",
+        "whitespace-nowrap px-4 py-3 text-right align-top tabular-nums text-text-primary",
         muted && "opacity-60",
       )}
     >
       {value != null ? formatMoneyCOP(value) : "—"}
     </td>
   );
-}
-
-function fmtDate(iso: string | null | undefined): string {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("es-CO", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "2-digit",
-  });
 }
 
 export function DateRangeCell({
@@ -285,18 +373,25 @@ export function DateRangeCell({
 }) {
   if (!start && !end)
     return (
-      <td className={cn("px-2 py-1.5 text-text-tertiary", muted && "opacity-60")}>
+      <td
+        className={cn(
+          "px-4 py-3 align-top text-text-tertiary",
+          muted && "opacity-60",
+        )}
+      >
         —
       </td>
     );
   return (
     <td
       className={cn(
-        "px-2 py-1.5 whitespace-nowrap tabular-nums text-xs text-text-secondary",
+        "whitespace-nowrap px-4 py-3 align-top tabular-nums text-text-primary",
         muted && "opacity-60",
       )}
     >
-      {fmtDate(start)} → {fmtDate(end)}
+      {formatDateShort(start)}
+      <span className="mx-1 text-text-tertiary">→</span>
+      {formatDateShort(end)}
     </td>
   );
 }
@@ -312,21 +407,23 @@ export function ClientCodeCell({
 }) {
   if (!code && !description)
     return (
-      <td className={cn("px-2 py-1.5 text-text-tertiary", muted && "opacity-60")}>
+      <td
+        className={cn(
+          "px-4 py-3 align-top text-text-tertiary",
+          muted && "opacity-60",
+        )}
+      >
         —
       </td>
     );
   return (
-    <td className={cn("px-2 py-1.5 align-top", muted && "opacity-60")}>
-      {code && (
-        <div className="font-mono text-xs font-semibold text-foreground">
-          {code}
-        </div>
-      )}
-      {description && (
-        <div className="text-[11px] text-muted-foreground line-clamp-1 max-w-[24ch]">
+    <td className={cn("px-4 py-3 align-top", muted && "opacity-60")}>
+      {code ? (
+        <IdentityCell code={code} description={description ?? undefined} />
+      ) : (
+        <span className="text-text-secondary line-clamp-2 max-w-[32ch]">
           {description}
-        </div>
+        </span>
       )}
     </td>
   );
@@ -334,7 +431,7 @@ export function ClientCodeCell({
 
 /**
  * DeltaValue — actual→nuevo (precio o texto), con Δ% solo si actual > 0.
- * Se usa dentro de celdas Cambios.
+ * Colores: subida en warning, bajada en success. Nunca colores crudos.
  */
 export function DeltaValue({
   from,
@@ -400,7 +497,7 @@ export function ChangesInline({ changes }: { changes: FieldChange[] }) {
         if (c.field === "sale_price" || c.field === "par_price") {
           return (
             <div key={i} className="text-xs">
-              <span className="text-text-tertiary uppercase tracking-wide text-[10px] mr-1.5">
+              <span className="mr-1.5 text-[10px] uppercase tracking-wide text-text-tertiary">
                 {FIELD_LABEL[c.field]}
               </span>
               <DeltaValue from={c.from} to={c.to} kind="price" />
@@ -410,13 +507,15 @@ export function ChangesInline({ changes }: { changes: FieldChange[] }) {
         if (c.field === "start_date" || c.field === "end_date") {
           return (
             <div key={i} className="text-xs tabular-nums">
-              <span className="text-text-tertiary uppercase tracking-wide text-[10px] mr-1.5">
+              <span className="mr-1.5 text-[10px] uppercase tracking-wide text-text-tertiary">
                 {FIELD_LABEL[c.field]}
               </span>
-              <span className="text-text-tertiary">{fmtDate(c.from)}</span>
+              <span className="text-text-tertiary">
+                {formatDateShort(c.from)}
+              </span>
               <span className="mx-1 text-text-tertiary">→</span>
               <span className="font-semibold text-text-primary">
-                {fmtDate(c.to)}
+                {formatDateShort(c.to)}
               </span>
             </div>
           );
@@ -424,10 +523,10 @@ export function ChangesInline({ changes }: { changes: FieldChange[] }) {
         if (c.field === "observations") {
           return (
             <div key={i} className="text-xs">
-              <span className="text-text-tertiary uppercase tracking-wide text-[10px] mr-1.5">
+              <span className="mr-1.5 text-[10px] uppercase tracking-wide text-text-tertiary">
                 {FIELD_LABEL.observations}
               </span>
-              <span className="text-text-secondary line-through mr-1">
+              <span className="mr-1 text-text-secondary line-through">
                 {c.from || "vacío"}
               </span>
               <span className="text-text-primary">{c.to || "vacío"}</span>
@@ -437,10 +536,10 @@ export function ChangesInline({ changes }: { changes: FieldChange[] }) {
         if (c.field === "add_client_code") {
           return (
             <div key={i} className="text-xs">
-              <span className="text-text-tertiary uppercase tracking-wide text-[10px] mr-1.5">
+              <span className="mr-1.5 text-[10px] uppercase tracking-wide text-text-tertiary">
                 Nuevo código
               </span>
-              <span className="font-mono font-semibold text-foreground">
+              <span className="font-mono font-semibold text-text-primary">
                 {c.client_code}
               </span>
               {c.description && (
@@ -451,48 +550,6 @@ export function ChangesInline({ changes }: { changes: FieldChange[] }) {
         }
         return null;
       })}
-    </div>
-  );
-}
-
-/** Fila enriquecida para grupos INERTES (G5, G6). */
-export function EnrichedRow({
-  sourceRow,
-  sku,
-  brand,
-  description,
-  right,
-  extra,
-}: {
-  sourceRow: number;
-  sku: string | null;
-  brand?: string | null;
-  description?: string | null;
-  right?: ReactNode;
-  extra?: ReactNode;
-}) {
-  return (
-    <div className="flex items-start justify-between gap-3 border-t border-border/60 py-2 first:border-t-0 first:pt-0">
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-[10.5px] text-text-tertiary tabular-nums">
-            #{sourceRow}
-          </span>
-          {brand && (
-            <span className="text-[10.5px] font-semibold uppercase tracking-wide text-accent">
-              {brand}
-            </span>
-          )}
-          <span className="font-mono text-sm font-semibold text-foreground">
-            {sku || "—"}
-          </span>
-        </div>
-        {description && (
-          <div className="text-xs text-muted-foreground">{description}</div>
-        )}
-        {extra}
-      </div>
-      {right && <div className="shrink-0">{right}</div>}
     </div>
   );
 }
