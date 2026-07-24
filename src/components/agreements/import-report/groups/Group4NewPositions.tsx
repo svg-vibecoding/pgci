@@ -254,6 +254,13 @@ function PositionRow({
       kind: willCreate ? "ignore" : "create_draft",
     });
 
+  // Spacer que mimetiza la altura de la primera línea del bloque Sumatec
+  // (SKU + meta) para anclar el contenido de las columnas de un solo valor
+  // con la SEGUNDA línea (descripción), no con el SKU.
+  const rowSpacer = (
+    <div aria-hidden className="text-[13px] leading-[1.5]">&nbsp;</div>
+  );
+
   return (
     <>
       <tr className={cn("align-top border-b border-border/60", obs && "!border-b-0")}>
@@ -283,27 +290,32 @@ function PositionRow({
             )}
           </div>
           {description && (
-            <div className="text-[12.5px] text-text-secondary line-clamp-2 max-w-[42ch] uppercase">
+            <div className="text-[13px] font-normal text-text-primary line-clamp-2 max-w-[42ch] uppercase">
               {description}
             </div>
           )}
         </td>
         <td className="px-2 py-3">
           {clientCode ? (
-            <div className="font-mono text-[12.5px] font-semibold text-text-primary">
-              {clientCode}
-            </div>
-          ) : null}
-          {clientDesc && (
-            <div className="text-[12.5px] text-text-secondary line-clamp-2 max-w-[32ch] uppercase">
-              {clientDesc}
-            </div>
-          )}
-          {!clientCode && !clientDesc && (
-            <span className="text-text-tertiary">—</span>
+            <>
+              <div className="font-mono text-[13px] font-semibold text-text-primary">
+                {clientCode}
+              </div>
+              {clientDesc && (
+                <div className="text-[13px] font-normal text-text-primary line-clamp-2 max-w-[32ch] uppercase">
+                  {clientDesc}
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              {rowSpacer}
+              <span className="text-text-tertiary">—</span>
+            </>
           )}
         </td>
-        <td className="px-2 py-3 whitespace-nowrap tabular-nums text-[12.5px] text-text-secondary text-right">
+        <td className="px-2 py-3 whitespace-nowrap tabular-nums text-[13px] text-text-primary text-right">
+          {rowSpacer}
           {start || end ? (
             <>
               {fmtDate(start)} <span className="text-text-tertiary">→</span>{" "}
@@ -314,6 +326,7 @@ function PositionRow({
           )}
         </td>
         <td className="px-2 py-3 whitespace-nowrap tabular-nums text-right">
+          {rowSpacer}
           {sale != null ? (
             <div className="text-[13px] font-semibold text-text-primary">
               {formatMoneyCOP(sale)}
@@ -322,7 +335,7 @@ function PositionRow({
             <span className="text-text-tertiary">-</span>
           )}
           {par != null && par > 0 && (
-            <div className="text-[11px] text-text-tertiary">
+            <div className="text-[12px] text-text-secondary">
               <span className="mr-1">Par</span>
               {formatMoneyCOP(par)}
             </div>
