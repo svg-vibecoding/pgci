@@ -14,10 +14,10 @@ import type {
 } from "@/lib/agreement-import";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { StatusBadge } from "@/components/sumatec";
-import { formatMoneyCOP } from "@/lib/format";
+import { IdentityCell, StatusBadge } from "@/components/sumatec";
+import { formatMoneyCOP, formatDateShort } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { GroupShell } from "../parts";
+import { FilterTab, FilterTabsBar, GroupShell } from "../parts";
 import { statusMeta } from "../labels";
 import type { DecisionsState } from "../state";
 import { EmptyGroup } from "./Group1RequiresDecision";
