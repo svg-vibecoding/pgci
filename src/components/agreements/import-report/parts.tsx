@@ -226,8 +226,11 @@ export function Th({
       scope="col"
       className={cn(
         "suma-body whitespace-nowrap px-4 py-2.5 font-normal text-text-tertiary",
-        align === "right" && "text-right",
-        align === "center" && "text-center",
+        align === "right"
+          ? "text-right"
+          : align === "center"
+            ? "text-center"
+            : "text-left",
         className,
       )}
     >
