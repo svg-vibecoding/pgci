@@ -225,7 +225,7 @@ export function ChangesGroup({
                     )
                   }
                 >
-                  Incluir todas ({positionsCount - activeCount})
+                  Incluir todas
                 </Button>
               ) : null}
               <Button
@@ -239,7 +239,7 @@ export function ChangesGroup({
                   )
                 }
               >
-                Descartar todas ({activeChangesCount})
+                Descartar todas
               </Button>
             </div>
           </div>
