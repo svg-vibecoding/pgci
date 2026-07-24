@@ -53,16 +53,7 @@ function statusRank(s: string | undefined | null): number {
   }
 }
 
-function fmtDate(iso: string | null | undefined): string {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("es-CO", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "2-digit",
-  });
-}
+const fmtDate = formatDateShort;
 
 // ---------------------------------------------------------------------------
 // ChangesGroup — grupos B (publicadas) y C (en gestión).
@@ -275,32 +266,7 @@ export function ChangesGroup({
   );
 }
 
-function FilterTab({
-  active,
-  onClick,
-  label,
-  count,
-}: {
-  active: boolean;
-  onClick: () => void;
-  label: string;
-  count: number;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "px-2.5 py-1 text-xs rounded-md transition-colors",
-        active
-          ? "text-text-primary font-semibold border-b-2 border-primary rounded-none"
-          : "text-text-tertiary hover:text-text-primary",
-      )}
-    >
-      {label} <span className="tabular-nums">({count})</span>
-    </button>
-  );
-}
+// FilterTab shared en ../parts
 
 // ---------------------------------------------------------------------------
 // Card por posición
