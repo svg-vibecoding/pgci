@@ -310,34 +310,29 @@ function PositionChangeCard({
           className="flex flex-1 min-w-0 flex-col items-start text-left"
         >
           {/* Meta line */}
-          <div className={cn("flex items-center gap-2 flex-wrap", discarded && "opacity-60")}>
+          <div
+            className={cn(
+              "flex items-center gap-2 flex-wrap",
+              discarded && "opacity-60",
+            )}
+          >
             <span className="text-[11px] text-text-tertiary tabular-nums">
               #{row.sourceRow}
             </span>
-            <span className="font-mono text-xs text-text-secondary">
-              {pos.sku || "—"}
-            </span>
             {pos.commercial_brand && (
-              <>
-                <span className="text-text-tertiary">·</span>
-                <span className="text-[11px] font-semibold uppercase tracking-wide text-accent">
-                  {pos.commercial_brand}
-                </span>
-              </>
+              <span className="text-[11px] font-semibold uppercase tracking-wide text-accent">
+                {pos.commercial_brand}
+              </span>
             )}
-            <StatusBadge status={status.badge} label={status.label} />
+            <StatusBadge size="sm" status={status.badge} label={status.label} />
           </div>
-          {/* Product name — protagonista */}
-          {pos.erp_description && (
-            <div
-              className={cn(
-                "mt-1 text-base font-bold uppercase tracking-wide text-text-primary line-clamp-1",
-                discarded && "opacity-60",
-              )}
-            >
-              {pos.erp_description}
-            </div>
-          )}
+          {/* SKU + descripción (mismo patrón de IdentityCell del sistema) */}
+          <div className={cn("mt-1 min-w-0", discarded && "opacity-60")}>
+            <IdentityCell
+              code={pos.sku || "—"}
+              description={pos.erp_description ?? undefined}
+            />
+          </div>
         </button>
         <div className="shrink-0 flex flex-col items-end gap-1">
           {discarded && (
@@ -670,8 +665,8 @@ function DeltaPct({ pct }: { pct: number }) {
       className={cn(
         "inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[11px] font-medium tabular-nums",
         up
-          ? "bg-accent/10 text-accent"
-          : "bg-orange-500/10 text-orange-600",
+          ? "bg-warning-soft text-warning-strong"
+          : "bg-success-soft text-success-strong",
       )}
     >
       <span aria-hidden>{arrow}</span>
