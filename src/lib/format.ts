@@ -18,3 +18,19 @@ export function formatMoneyCOP(
   const body = fd > 0 ? `${withThousands},${decPart}` : withThousands;
   return `${neg ? "-" : ""}$${body}`;
 }
+
+/**
+ * Fecha corta estándar PGCI: "dd/mm/aa" con locale es-CO.
+ * Usado en tablas densas (reporte de importación, listados) donde el
+ * ancho de columna manda.
+ */
+export function formatDateShort(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("es-CO", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+  });
+}

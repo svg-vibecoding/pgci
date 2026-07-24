@@ -14,10 +14,10 @@ import type {
 } from "@/lib/agreement-import";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { StatusBadge } from "@/components/sumatec";
-import { formatMoneyCOP } from "@/lib/format";
+import { IdentityCell, StatusBadge } from "@/components/sumatec";
+import { formatMoneyCOP, formatDateShort } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { GroupShell } from "../parts";
+import { FilterTab, FilterTabsBar, GroupShell } from "../parts";
 import { statusMeta } from "../labels";
 import type { DecisionsState } from "../state";
 import { EmptyGroup } from "./Group1RequiresDecision";
@@ -53,16 +53,7 @@ function statusRank(s: string | undefined | null): number {
   }
 }
 
-function fmtDate(iso: string | null | undefined): string {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("es-CO", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "2-digit",
-  });
-}
+const fmtDate = formatDateShort;
 
 // ---------------------------------------------------------------------------
 // ChangesGroup — grupos B (publicadas) y C (en gestión).
@@ -275,32 +266,7 @@ export function ChangesGroup({
   );
 }
 
-function FilterTab({
-  active,
-  onClick,
-  label,
-  count,
-}: {
-  active: boolean;
-  onClick: () => void;
-  label: string;
-  count: number;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "px-2.5 py-1 text-xs rounded-md transition-colors",
-        active
-          ? "text-text-primary font-semibold border-b-2 border-primary rounded-none"
-          : "text-text-tertiary hover:text-text-primary",
-      )}
-    >
-      {label} <span className="tabular-nums">({count})</span>
-    </button>
-  );
-}
+// FilterTab shared en ../parts
 
 // ---------------------------------------------------------------------------
 // Card por posición
@@ -344,34 +310,29 @@ function PositionChangeCard({
           className="flex flex-1 min-w-0 flex-col items-start text-left"
         >
           {/* Meta line */}
-          <div className={cn("flex items-center gap-2 flex-wrap", discarded && "opacity-60")}>
+          <div
+            className={cn(
+              "flex items-center gap-2 flex-wrap",
+              discarded && "opacity-60",
+            )}
+          >
             <span className="text-[11px] text-text-tertiary tabular-nums">
               #{row.sourceRow}
             </span>
-            <span className="font-mono text-xs text-text-secondary">
-              {pos.sku || "—"}
-            </span>
             {pos.commercial_brand && (
-              <>
-                <span className="text-text-tertiary">·</span>
-                <span className="text-[11px] font-semibold uppercase tracking-wide text-accent">
-                  {pos.commercial_brand}
-                </span>
-              </>
+              <span className="text-[11px] font-semibold uppercase tracking-wide text-accent">
+                {pos.commercial_brand}
+              </span>
             )}
-            <StatusBadge status={status.badge} label={status.label} />
+            <StatusBadge size="sm" status={status.badge} label={status.label} />
           </div>
-          {/* Product name — protagonista */}
-          {pos.erp_description && (
-            <div
-              className={cn(
-                "mt-1 text-base font-bold uppercase tracking-wide text-text-primary line-clamp-1",
-                discarded && "opacity-60",
-              )}
-            >
-              {pos.erp_description}
-            </div>
-          )}
+          {/* SKU + descripción (mismo patrón de IdentityCell del sistema) */}
+          <div className={cn("mt-1 min-w-0", discarded && "opacity-60")}>
+            <IdentityCell
+              code={pos.sku || "—"}
+              description={pos.erp_description ?? undefined}
+            />
+          </div>
         </button>
         <div className="shrink-0 flex flex-col items-end gap-1">
           {discarded && (
@@ -704,8 +665,8 @@ function DeltaPct({ pct }: { pct: number }) {
       className={cn(
         "inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[11px] font-medium tabular-nums",
         up
-          ? "bg-accent/10 text-accent"
-          : "bg-orange-500/10 text-orange-600",
+          ? "bg-warning-soft text-warning-strong"
+          : "bg-success-soft text-success-strong",
       )}
     >
       <span aria-hidden>{arrow}</span>

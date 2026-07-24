@@ -7,9 +7,15 @@ import type {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { formatMoneyCOP } from "@/lib/format";
+import { formatMoneyCOP, formatDateShort } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { GroupShell } from "../parts";
+import {
+  GroupShell,
+  ReportTable,
+  Th,
+  FilterTab,
+  FilterTabsBar,
+} from "../parts";
 import type { DecisionsState } from "../state";
 import { EmptyGroup } from "./Group1RequiresDecision";
 
@@ -19,6 +25,14 @@ import { EmptyGroup } from "./Group1RequiresDecision";
  *
  * RN-IMP-07: NADA viene preseleccionado. El default es NO crear.
  * Crear posiciones nuevas requiere intención explícita del usuario.
+ *
+ * Reglas visuales:
+ *  - Usa ReportTable/Th (mismo estilo que el resto del reporte y que el
+ *    DataTable de la app).
+ *  - Producto y código cliente van en IdentityCell-like inline; los
+ *    valores de una sola línea (vigencia, precio) se alinean con la
+ *    descripción del producto usando `align-top` + un `pt-` proporcional
+ *    en lugar de spacers invisibles.
  */
 
 type FilterKey = "all" | "selected" | "discarded";
@@ -129,103 +143,66 @@ export function Group4NewPositions({
             </div>
           </div>
 
-          <div className="border-b border-border/60">
-            <div className="flex items-center gap-1">
-              <FilterTab
-                active={filter === "all"}
-                onClick={() => setFilter("all")}
-                label="Todas"
-                count={rows.length}
-              />
-              <FilterTab
-                active={filter === "selected"}
-                onClick={() => setFilter("selected")}
-                label="Se crearán"
-                count={marked}
-              />
-              <FilterTab
-                active={filter === "discarded"}
-                onClick={() => setFilter("discarded")}
-                label="Descartadas"
-                count={discarded}
-              />
-            </div>
-          </div>
+          <FilterTabsBar>
+            <FilterTab
+              active={filter === "all"}
+              onClick={() => setFilter("all")}
+              label="Todas"
+              count={rows.length}
+            />
+            <FilterTab
+              active={filter === "selected"}
+              onClick={() => setFilter("selected")}
+              label="Se crearán"
+              count={marked}
+            />
+            <FilterTab
+              active={filter === "discarded"}
+              onClick={() => setFilter("discarded")}
+              label="Descartadas"
+              count={discarded}
+            />
+          </FilterTabsBar>
 
-          <div className="overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-surface-page">
-                <tr className="border-b border-border text-left">
-                  <th scope="col" className="suma-body w-10 px-4 py-2.5 text-center font-normal text-text-tertiary">-</th>
-                  <th scope="col" className="suma-body px-4 py-2.5 font-normal text-text-tertiary whitespace-nowrap">Sumatec</th>
-                  <th scope="col" className="suma-body px-4 py-2.5 font-normal text-text-tertiary whitespace-nowrap">Código del cliente</th>
-                  <th scope="col" className="suma-body px-4 py-2.5 font-normal text-right whitespace-nowrap text-text-tertiary">
-                    Vigencia
-                  </th>
-                  <th scope="col" className="suma-body px-4 py-2.5 font-normal text-right whitespace-nowrap text-text-tertiary">
-                    Precios de venta
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-3 py-8 text-center">
-                      <p className="suma-caption text-text-tertiary">
-                        {query
-                          ? "Sin resultados para tu búsqueda."
-                          : filter === "selected"
-                            ? "Aún no has marcado ninguna."
-                            : "No hay posiciones descartadas."}
-                      </p>
-                    </td>
-                  </tr>
-                ) : (
-                  filtered.map((r) => (
-                    <PositionRow
-                      key={r.sourceRow}
-                      row={r}
-                      catalog={
-                        r.row.sku ? catalogBySku.get(r.row.sku) : undefined
-                      }
-                      decisions={decisions}
-                    />
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+          <ReportTable
+            head={
+              <>
+                <Th className="w-10 text-center">-</Th>
+                <Th>Sumatec</Th>
+                <Th>Código del cliente</Th>
+                <Th align="right">Vigencia</Th>
+                <Th align="right">Precios de venta</Th>
+              </>
+            }
+          >
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-4 py-8 text-center">
+                  <p className="suma-caption text-text-tertiary">
+                    {query
+                      ? "Sin resultados para tu búsqueda."
+                      : filter === "selected"
+                        ? "Aún no has marcado ninguna."
+                        : "No hay posiciones descartadas."}
+                  </p>
+                </td>
+              </tr>
+            ) : (
+              filtered.map((r) => (
+                <PositionRow
+                  key={r.sourceRow}
+                  row={r}
+                  catalog={
+                    r.row.sku ? catalogBySku.get(r.row.sku) : undefined
+                  }
+                  decisions={decisions}
+                />
+              ))
+            )}
+          </ReportTable>
         </div>
       )}
     </GroupShell>
-  );
-}
-
-function FilterTab({
-  active,
-  onClick,
-  label,
-  count,
-}: {
-  active: boolean;
-  onClick: () => void;
-  label: string;
-  count: number;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "relative px-3 py-2 text-[13px] transition-colors -mb-px border-b-2",
-        active
-          ? "text-text-primary font-semibold border-text-primary"
-          : "text-text-tertiary hover:text-text-primary font-normal border-transparent",
-      )}
-    >
-      {label}{" "}
-      <span className="tabular-nums font-normal opacity-70">({count})</span>
-    </button>
   );
 }
 
@@ -256,76 +233,86 @@ function PositionRow({
       kind: willCreate ? "ignore" : "create_draft",
     });
 
-  // Spacer que mimetiza la altura de la primera línea del bloque Sumatec
-  // (SKU + meta) para anclar el contenido de las columnas de un solo valor
-  // con la SEGUNDA línea (descripción), no con el SKU.
-  const rowSpacer = (
-    <div aria-hidden className="text-[13px] leading-[1.5]">&nbsp;</div>
-  );
+  // Alinea el contenido de las columnas mono-línea con la SEGUNDA línea del
+  // bloque producto (la descripción). La primera línea (fila + SKU + marca)
+  // mide ~18px de alto → pt-5 iguala el arranque visual sin usar spacers.
+  const singleLinePad = "pt-5";
 
   return (
     <>
-      <tr className={cn("align-top border-b border-border/60", obs && "!border-b-0")}>
-        <td className="w-10 px-3 py-3">
+      <tr
+        className={cn(
+          "border-b border-border/60 bg-card hover:bg-surface-page",
+          obs && "!border-b-0",
+        )}
+      >
+        <td className="w-10 px-4 py-3 align-top">
           <Checkbox
             checked={willCreate}
             onCheckedChange={toggle}
             aria-label="Crear como borrador"
           />
         </td>
-        <td className="px-2 py-3">
-          <div className="flex flex-wrap items-baseline gap-x-2">
-            <span className="text-[11px] text-text-tertiary tabular-nums">
+        <td className="px-4 py-3 align-top">
+          <div className="mb-0.5 flex items-center gap-2 text-[11px]">
+            <span className="tabular-nums text-text-tertiary">
               #{row.sourceRow}
             </span>
-            <span className="text-text-tertiary">{"\n"}</span>
-            <span className="font-mono text-[13px] font-semibold text-text-primary">
+            <span className="font-mono text-[12.5px] font-semibold text-text-primary">
               {sku || "—"}
             </span>
             {brand && (
-              <span className="ml-1 text-[11px] font-semibold uppercase tracking-wide text-accent">
+              <span className="font-semibold uppercase tracking-wide text-accent">
                 {brand}
               </span>
             )}
           </div>
           {description && (
-            <div className="text-[13px] font-normal text-text-primary line-clamp-2 max-w-[42ch] uppercase">
+            <div className="text-[13px] font-normal leading-[1.35] text-text-primary line-clamp-2 max-w-[42ch]">
               {description}
             </div>
           )}
         </td>
-        <td className="px-2 py-3">
+        <td className="px-4 py-3 align-top">
           {clientCode ? (
             <>
-              <div className="font-mono text-[13px] font-semibold text-text-primary">
+              <div className="font-mono text-[12.5px] font-semibold text-text-primary">
                 {clientCode}
               </div>
               {clientDesc && (
-                <div className="text-[13px] font-normal text-text-primary line-clamp-2 max-w-[32ch] uppercase">
+                <div className="text-[13px] font-normal leading-[1.35] text-text-primary line-clamp-2 max-w-[32ch]">
                   {clientDesc}
                 </div>
               )}
             </>
           ) : (
-            <>
-              {rowSpacer}
-              <span className="text-text-tertiary">—</span>
-            </>
+            <span className={cn("block text-text-tertiary", singleLinePad)}>
+              —
+            </span>
           )}
         </td>
-        <td className="px-2 py-3 whitespace-nowrap tabular-nums text-[13px] text-text-primary text-right">
-          {rowSpacer}
+        <td
+          className={cn(
+            "whitespace-nowrap px-4 py-3 text-right align-top tabular-nums text-[13px] text-text-primary",
+            singleLinePad,
+          )}
+        >
           {start || end ? (
             <>
-              {fmtDate(start)} <span className="text-text-tertiary">→</span>{" "}
-              {fmtDate(end)}
+              {formatDateShort(start)}{" "}
+              <span className="text-text-tertiary">→</span>{" "}
+              {formatDateShort(end)}
             </>
           ) : (
             <span className="text-text-tertiary">—</span>
           )}
         </td>
-        <td className="px-2 py-3 whitespace-nowrap tabular-nums text-right">
-          {rowSpacer}
+        <td
+          className={cn(
+            "whitespace-nowrap px-4 py-3 text-right align-top tabular-nums",
+            singleLinePad,
+          )}
+        >
           {sale != null ? (
             <div className="text-[13px] font-semibold text-text-primary">
               {formatMoneyCOP(sale)}
@@ -342,9 +329,9 @@ function PositionRow({
         </td>
       </tr>
       {obs && (
-        <tr className="align-top border-b border-border/60">
+        <tr className="border-b border-border/60 bg-card">
           <td />
-          <td colSpan={4} className="px-2 pb-3 pt-0">
+          <td colSpan={4} className="px-4 pb-3 pt-0">
             <div className="text-[12.5px] text-text-secondary">
               <div className="font-semibold text-text-primary mb-0.5">
                 Observaciones:
@@ -356,15 +343,4 @@ function PositionRow({
       )}
     </>
   );
-}
-
-function fmtDate(iso: string | null | undefined): string {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("es-CO", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "2-digit",
-  });
 }
