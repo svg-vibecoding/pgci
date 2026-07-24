@@ -321,7 +321,7 @@ function PositionRow({
           ) : (
             <span className="text-text-tertiary">-</span>
           )}
-          {par != null && (
+          {par != null && par > 0 && (
             <div className="text-[11px] text-text-tertiary">
               <span className="mr-1">Par</span>
               {formatMoneyCOP(par)}
