@@ -133,7 +133,7 @@ export function Group6NotProcessable({
       icon={icon}
       title="Filas no procesables"
       count={rows.length}
-      hint="Filas del archivo que el sistema no logra clasificar para importar. Resuelve las inconsistencias para actualizar."
+      hint="Filas que no se pudieron importar por datos ilegibles o códigos Jaivaná no identificados. Corrige el archivo y vuelve a subirlo."
       tone="muted"
     >
       {rows.length === 0 ? (
