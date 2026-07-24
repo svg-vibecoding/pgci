@@ -180,6 +180,18 @@ function isEmpty(value: unknown): boolean {
   return false;
 }
 
+function rawValueToString(value: unknown): string {
+  if (value == null) return "";
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return "";
+    const y = value.getUTCFullYear();
+    const m = String(value.getUTCMonth() + 1).padStart(2, "0");
+    const d = String(value.getUTCDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+  return String(value).trim();
+}
+
 function parseRow(
   raw: RawRow,
   sourceRow: number,
